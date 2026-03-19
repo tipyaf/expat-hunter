@@ -1,0 +1,28 @@
+{
+  "name": "expat-hunter",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --parallel --filter './apps/*' dev",
+    "dev:api": "pnpm --filter @expat-hunter/api dev",
+    "dev:web": "pnpm --filter @expat-hunter/web dev",
+    "build": "pnpm --filter @expat-hunter/shared build && pnpm --parallel --filter './apps/*' build",
+    "build:api": "pnpm --filter @expat-hunter/api build",
+    "build:web": "pnpm --filter @expat-hunter/web build",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "test": "pnpm --parallel --filter './apps/*' test",
+    "test:api": "pnpm --filter @expat-hunter/api test",
+    "test:web": "pnpm --filter @expat-hunter/web test",
+    "db:migrate": "pnpm --filter @expat-hunter/api db:migrate",
+    "db:seed": "pnpm --filter @expat-hunter/api db:seed",
+    "db:reset": "pnpm --filter @expat-hunter/api db:reset"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.15.0"
+}

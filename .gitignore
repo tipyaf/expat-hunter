@@ -21,3 +21,16 @@ build/
 # Logs
 *.log
 logs/
+
+# AdonisJS
+tmp/
+.adonisjs/
+
+# Uploads
+uploads/
+
+# Coverage
+coverage/
+
+# pnpm
+.pnpm-store/

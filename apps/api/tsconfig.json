@@ -1,0 +1,40 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ESNext"],
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "./build",
+    "rootDir": "./",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "paths": {
+      "#controllers/*": ["./app/controllers/*.js"],
+      "#exceptions/*": ["./app/exceptions/*.js"],
+      "#models/*": ["./app/models/*.js"],
+      "#services/*": ["./app/services/*.js"],
+      "#listeners/*": ["./app/listeners/*.js"],
+      "#events/*": ["./app/events/*.js"],
+      "#middleware/*": ["./app/middleware/*.js"],
+      "#validators/*": ["./app/validators/*.js"],
+      "#providers/*": ["./providers/*.js"],
+      "#policies/*": ["./app/policies/*.js"],
+      "#abilities/*": ["./app/abilities/*.js"],
+      "#config/*": ["./config/*.js"],
+      "#start/*": ["./start/*.js"],
+      "#migrations/*": ["./database/migrations/*.js"],
+      "#seeders/*": ["./database/seeders/*.js"],
+      "#factories/*": ["./database/factories/*.js"]
+    }
+  },
+  "include": ["**/*.ts"],
+  "exclude": ["node_modules", "build"]
+}
