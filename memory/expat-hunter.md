@@ -3,9 +3,9 @@
 ## Metadata
 - **Projet**: expat-hunter
 - **Démarré le**: 2026-03-17
-- **Phase courante**: Phase 1 — Plan (Architect) (validée)
+- **Phase courante**: Phase 2 — Scaffold (Developer) (validée)
 - **Dernière mise à jour**: 2026-03-19
-- **Prochaine phase**: Phase 2 — Scaffold (Developer)
+- **Prochaine phase**: Phase 2.5 — Refinement (première feature: candidate-profile)
 
 ## Spec
 - **Fichier**: `specs/expat-hunter.yaml`
@@ -82,7 +82,10 @@
 - **Stack profiles**: `stacks/typescript-adonisjs.md`, `stacks/typescript-nextjs.md`
 
 ### Phase 2 — Scaffold (Developer)
-- **Statut**: [ ] Non démarré
+- **Statut**: [x] Validée
+- **Résumé**: Monorepo pnpm créé via init-project.sh (framework en git submodule). AdonisJS 7 (core, lucid, auth access_tokens, mail, i18n, cors, shield, drive) scaffoldé avec User model UUID, env validation, configs complètes. Next.js 14 (App Router) + Tailwind CSS v4 avec design system tokens, sidebar, login, dashboard placeholder. Package shared avec tous les types (User, CandidateProfile, Company, Contact, EmailMessage, SourcingRun) + constantes (pipeline, relevance, countries). Docker-compose (PostgreSQL 16 + Redis 7), Biome, .env.example.
+- **Repo**: `/Volumes/Samsung_T5/dev/expat-hunter/`
+- **Note**: AdonisJS v7 (pas v6 comme prévu initialement — les packages nécessitaient v7)
 
 ### Phase 3 — Implement (Developer)
 - **Statut**: [ ] Non démarré
