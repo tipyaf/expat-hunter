@@ -3,6 +3,7 @@ import { mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
 import type { HttpContext } from '@adonisjs/core/http'
 import app from '@adonisjs/core/services/app'
+import CvExtractor from '#ai/cv_extractor'
 import CvParserService from '#services/cv_parser_service'
 import ProfileService from '#services/profile_service'
 import { updateProfileValidator } from '#validators/profile_validator'
@@ -10,6 +11,7 @@ import { updateProfileValidator } from '#validators/profile_validator'
 export default class ProfileController {
   private profileService = new ProfileService()
   private cvParserService = new CvParserService()
+  private cvExtractor = new CvExtractor()
 
   async show({ auth, response }: HttpContext) {
     const user = auth.getUserOrFail()
@@ -78,14 +80,47 @@ export default class ProfileController {
       })
     }
 
-    const profile = await this.profileService.updateProfile(user, {
+    // Save raw text first
+    let profile = await this.profileService.updateProfile(user, {
       cvFilePath: filePath,
       cvText,
     })
 
+    // AI extraction (non-blocking: if it fails, we still have the raw text)
+    let aiExtraction = null
+    try {
+      aiExtraction = await this.cvExtractor.extract(cvText)
+      if (aiExtraction) {
+        const updateData: Record<string, unknown> = {}
+
+        // Only auto-fill skills if the user hasn't set them yet
+        if (profile.skills.length === 0 && aiExtraction.skills.length > 0) {
+          updateData.skills = aiExtraction.skills
+        }
+        if (profile.targetRoles.length === 0 && aiExtraction.suggestedRoles.length > 0) {
+          updateData.targetRoles = aiExtraction.suggestedRoles
+        }
+        if (profile.targetSectors.length === 0 && aiExtraction.suggestedSectors.length > 0) {
+          updateData.targetSectors = aiExtraction.suggestedSectors
+        }
+        if (profile.experienceYears === 0 && aiExtraction.experienceYears) {
+          updateData.experienceYears = aiExtraction.experienceYears
+        }
+
+        if (Object.keys(updateData).length > 0) {
+          profile = await this.profileService.updateProfile(user, updateData)
+        }
+      }
+    } catch {
+      // AI extraction failure is not critical — raw text is already saved
+    }
+
     return response.ok({
       data: this.serializeProfile(profile),
-      message: 'CV uploaded and parsed successfully',
+      aiExtraction,
+      message: aiExtraction
+        ? 'CV uploaded, parsed and analyzed by AI'
+        : 'CV uploaded and parsed successfully',
     })
   }
 

@@ -20,8 +20,17 @@ export interface CandidateProfile {
   updatedAt: string
 }
 
+export interface AiExtraction {
+  skills: string[]
+  suggestedRoles: string[]
+  suggestedSectors: string[]
+  experienceYears: number | null
+  summary: string
+}
+
 interface ProfileResponse {
   data: CandidateProfile | null
+  aiExtraction?: AiExtraction | null
   message?: string
 }
 
@@ -111,7 +120,7 @@ export function useProfile() {
 
       const res = (await response.json()) as ProfileResponse
       setProfile(res.data)
-      return res.data
+      return { profile: res.data, aiExtraction: res.aiExtraction ?? null }
     },
     [token],
   )

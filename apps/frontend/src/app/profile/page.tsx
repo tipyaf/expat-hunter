@@ -74,11 +74,22 @@ export default function ProfilePage() {
       setIsSaving(true)
 
       try {
-        await uploadCv(file)
-        setMessage(t('cvUploadSuccess'))
+        const result = await uploadCv(file)
+        if (result?.aiExtraction) {
+          // Refresh local state with AI-updated profile
+          if (result.profile) {
+            setSkills(result.profile.skills)
+            setExperienceYears(result.profile.experienceYears)
+            setTargetSectors(result.profile.targetSectors)
+            setTargetRoles(result.profile.targetRoles)
+          }
+          setMessage(t('cvAiAnalyzed'))
+        } else {
+          setMessage(t('cvUploadSuccess'))
+        }
         setTimeout(() => {
           setMessage('')
-        }, 3000)
+        }, 5000)
       } catch (err) {
         setError(err instanceof Error ? err.message : t('cvUploadError'))
       } finally {

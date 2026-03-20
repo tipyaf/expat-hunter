@@ -58,6 +58,7 @@
     "cvReplace": "Replace CV",
     "cvUpload": "Upload a CV",
     "cvUploadSuccess": "CV uploaded and analyzed successfully",
+    "cvAiAnalyzed": "AI updated your profile with data extracted from the CV.",
     "cvUploadError": "Error uploading file",
     "cvExtractedText": "Text extracted from CV",
     "setup": {
@@ -74,6 +75,9 @@
       "chooseFile": "Choose a file",
       "cvFileHint": "PDF or TXT, max 5 MB",
       "cvUploadSuccess": "CV uploaded successfully",
+      "cvAiAnalyzed": "AI extracted your skills and suggestions from the CV.",
+      "cvAiSkillsApplied": "Extracted skills applied to your profile.",
+      "cvUploading": "Analyzing CV...",
       "skipStep": "Skip this step",
       "summaryTitle": "Summary",
       "summarySkills": "Skills",

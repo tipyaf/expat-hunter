@@ -78,6 +78,8 @@ export default function ProfileSetupPage() {
     [skills, experienceYears, targetCountries, targetSectors, targetRoles, updateProfile, t],
   )
 
+  const [aiMessage, setAiMessage] = useState('')
+
   const handleCvUpload = useCallback(
     async (e: ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0]
@@ -86,10 +88,28 @@ export default function ProfileSetupPage() {
       }
       setCvFile(file)
       setError('')
+      setAiMessage('')
       setIsSaving(true)
 
       try {
-        await uploadCv(file)
+        const result = await uploadCv(file)
+        if (result?.aiExtraction) {
+          const ai = result.aiExtraction
+          // Auto-fill empty fields with AI suggestions
+          if (skills.length === 0 && ai.skills.length > 0) {
+            setSkills(ai.skills)
+          }
+          if (targetRoles.length === 0 && ai.suggestedRoles.length > 0) {
+            setTargetRoles(ai.suggestedRoles)
+          }
+          if (targetSectors.length === 0 && ai.suggestedSectors.length > 0) {
+            setTargetSectors(ai.suggestedSectors)
+          }
+          if (experienceYears === 0 && ai.experienceYears) {
+            setExperienceYears(ai.experienceYears)
+          }
+          setAiMessage(t('cvAiAnalyzed'))
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : t('cvUploadError'))
         setCvFile(null)
@@ -97,7 +117,7 @@ export default function ProfileSetupPage() {
         setIsSaving(false)
       }
     },
-    [uploadCv, t],
+    [uploadCv, t, skills.length, targetRoles.length, targetSectors.length, experienceYears],
   )
 
   const handleComplete = useCallback(async () => {
@@ -260,8 +280,14 @@ export default function ProfileSetupPage() {
                 />
               </label>
               <p className="mt-2 text-xs text-[var(--color-text-muted)]">{t('cvFileHint')}</p>
-              {cvFile && (
+              {isSaving && (
+                <p className="mt-2 text-sm text-[var(--color-text-muted)] animate-pulse">{t('cvUploading')}</p>
+              )}
+              {cvFile && !isSaving && (
                 <p className="mt-2 text-sm text-primary font-medium">{t('cvUploadSuccess')}</p>
+              )}
+              {aiMessage && (
+                <p className="mt-2 text-sm text-green-600 font-medium">{aiMessage}</p>
               )}
             </div>
 

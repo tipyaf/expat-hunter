@@ -40,4 +40,12 @@ export default await Env.create(new URL('../', import.meta.url), {
   |--------------------------------------------------------------------------
   */
   DRIVE_DISK: Env.schema.enum(['local', 's3'] as const),
+
+  /*
+  |--------------------------------------------------------------------------
+  | OpenRouter (AI)
+  |--------------------------------------------------------------------------
+  */
+  OPENROUTER_API_KEY: Env.schema.string.optional(),
+  OPENROUTER_MODEL: Env.schema.string.optional(),
 })
