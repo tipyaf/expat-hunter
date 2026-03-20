@@ -48,4 +48,11 @@ export default await Env.create(new URL('../', import.meta.url), {
   */
   OPENROUTER_API_KEY: Env.schema.string.optional(),
   OPENROUTER_MODEL: Env.schema.string.optional(),
+
+  /*
+  |--------------------------------------------------------------------------
+  | Apify (Scraping fallback)
+  |--------------------------------------------------------------------------
+  */
+  APIFY_TOKEN: Env.schema.string.optional(),
 })

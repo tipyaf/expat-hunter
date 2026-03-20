@@ -3,6 +3,8 @@ import { middleware } from '#start/kernel'
 
 const AuthController = () => import('#controllers/auth_controller')
 const ProfileController = () => import('#controllers/profile_controller')
+const SourcingController = () => import('#controllers/sourcing_controller')
+const ContactsController = () => import('#controllers/contacts_controller')
 
 router.get('/', async () => {
   return { name: '@expat-hunter/api', status: 'ok' }
@@ -29,4 +31,24 @@ router
     router.post('/complete-onboarding', [ProfileController, 'completeOnboarding'])
   })
   .prefix('/api/profile')
+  .use(middleware.auth())
+
+router
+  .group(() => {
+    router.post('/run', [SourcingController, 'run'])
+    router.get('/runs', [SourcingController, 'index'])
+    router.get('/runs/:id', [SourcingController, 'show'])
+    router.get('/sources', [SourcingController, 'sources'])
+  })
+  .prefix('/api/sourcing')
+  .use(middleware.auth())
+
+router
+  .group(() => {
+    router.get('/', [ContactsController, 'index'])
+    router.get('/:id', [ContactsController, 'show'])
+    router.patch('/:id/status', [ContactsController, 'updateStatus'])
+    router.put('/:id/override', [ContactsController, 'override'])
+  })
+  .prefix('/api/contacts')
   .use(middleware.auth())

@@ -13,8 +13,9 @@ export function Sidebar() {
 
   const navItems = [
     { label: t('dashboard'), href: '/', icon: 'D' },
+    { label: t('sourcing'), href: '/sourcing', icon: 'S' },
+    { label: t('contacts'), href: '/contacts', icon: 'C' },
     { label: t('profile'), href: '/profile', icon: 'P' },
-    { label: t('pipeline'), href: '/pipeline', icon: 'G' },
   ]
 
   return (
