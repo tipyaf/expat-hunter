@@ -10,19 +10,19 @@ export enum ContactStatus {
 }
 
 export interface Contact {
-  id: string; // uuid
-  userId: string;
-  companyId: string;
-  sourcingRunId?: string;
-  fullName: string;
-  role: string;
-  email?: string;
-  linkedinUrl?: string;
-  source: string;
-  status: ContactStatus;
-  relevanceScore?: number;
-  relevanceLabel?: string;
-  relevanceReason?: string;
-  aiRecommendation?: string;
-  userOverride?: string;
+  id: string // uuid
+  userId: string
+  companyId: string
+  sourcingRunId?: string
+  fullName: string
+  role: string
+  email?: string
+  linkedinUrl?: string
+  source: string
+  status: ContactStatus
+  relevanceScore?: number
+  relevanceLabel?: string
+  relevanceReason?: string
+  aiRecommendation?: string
+  userOverride?: string
 }

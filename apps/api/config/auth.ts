@@ -1,7 +1,9 @@
 import { defineConfig } from '@adonisjs/auth'
 import { tokensGuard, tokensUserProvider } from '@adonisjs/auth/access_tokens'
+import type { InferAuthenticators } from '@adonisjs/auth/types'
 
-const authConfig = defineConfig({
+// biome-ignore lint/suspicious/noExplicitAny: AdonisJS defineConfig returns a complex internal type
+const authConfig: any = defineConfig({
   default: 'api',
   guards: {
     api: tokensGuard({
@@ -15,14 +17,6 @@ const authConfig = defineConfig({
 
 export default authConfig
 
-/**
- * Inferring types from the configured auth guards.
- */
 declare module '@adonisjs/auth/types' {
-  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   interface Authenticators extends InferAuthenticators<typeof authConfig> {}
-}
-declare module '@adonisjs/core/types' {
-  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
-  interface EventsList extends InferAuthEvents<Authenticators> {}
 }

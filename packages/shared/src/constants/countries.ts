@@ -1,7 +1,7 @@
 export interface SupportedCountry {
-  code: string;
-  name: string;
-  sources: string[];
+  code: string
+  name: string
+  sources: string[]
 }
 
 export const SUPPORTED_COUNTRIES: SupportedCountry[] = [
@@ -55,12 +55,12 @@ export const SUPPORTED_COUNTRIES: SupportedCountry[] = [
     name: 'Suisse',
     sources: ['linkedin', 'jobs.ch', 'indeed'],
   },
-];
+]
 
 export function getCountryByCode(code: string): SupportedCountry | undefined {
-  return SUPPORTED_COUNTRIES.find((c) => c.code === code);
+  return SUPPORTED_COUNTRIES.find((c) => c.code === code)
 }
 
 export function getCountryCodes(): string[] {
-  return SUPPORTED_COUNTRIES.map((c) => c.code);
+  return SUPPORTED_COUNTRIES.map((c) => c.code)
 }

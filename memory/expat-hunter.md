@@ -77,7 +77,7 @@
 
 ### Phase 1 — Plan (Architect)
 - **Statut**: [x] Validée
-- **Résumé**: Architecture complète produite. Layered architecture, monorepo pnpm (apps/api + apps/web + packages/shared). 8 entités Lucid détaillées (User, CandidateProfile, Company, Contact, EmailMessage, SourcingRun, SourcingSource, FollowUpSequence). 9 épiques d'implémentation ordonnées. 7 ADRs (TypeScript fullstack, AdonisJS, Next.js App Router, REST API, scrapers pluggables, BullMQ jobs, pnpm workspaces). Stack profiles créés pour AdonisJS et Next.js.
+- **Résumé**: Architecture complète produite. Layered architecture, monorepo pnpm (apps/api + apps/frontend + packages/shared). 8 entités Lucid détaillées (User, CandidateProfile, Company, Contact, EmailMessage, SourcingRun, SourcingSource, FollowUpSequence). 9 épiques d'implémentation ordonnées. 7 ADRs (TypeScript fullstack, AdonisJS, Next.js App Router, REST API, scrapers pluggables, BullMQ jobs, pnpm workspaces). Stack profiles créés pour AdonisJS et Next.js.
 - **Fichier**: `specs/expat-hunter-architecture.md`
 - **Stack profiles**: `stacks/typescript-adonisjs.md`, `stacks/typescript-nextjs.md`
 

@@ -20,6 +20,7 @@ export default defineConfig({
   providers: [
     () => import('@adonisjs/core/providers/app_provider'),
     () => import('@adonisjs/core/providers/hash_provider'),
+    () => import('@adonisjs/core/providers/vinejs_provider'),
     {
       file: () => import('@adonisjs/core/providers/repl_provider'),
       environment: ['repl', 'test'],
@@ -38,10 +39,7 @@ export default defineConfig({
   | Preloads
   |--------------------------------------------------------------------------
   */
-  preloads: [
-    () => import('#start/routes'),
-    () => import('#start/kernel'),
-  ],
+  preloads: [() => import('#start/routes'), () => import('#start/kernel')],
 
   /*
   |--------------------------------------------------------------------------

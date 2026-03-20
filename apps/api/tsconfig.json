@@ -16,6 +16,7 @@
     "rootDir": "./",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
+    "rewriteRelativeImportExtensions": true,
     "paths": {
       "#controllers/*": ["./app/controllers/*.js"],
       "#exceptions/*": ["./app/exceptions/*.js"],

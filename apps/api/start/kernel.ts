@@ -13,9 +13,11 @@ server.errorHandler(() => import('#exceptions/handler'))
  * the route handler is invoked.
  */
 server.use([
+  () => import('@adonisjs/core/bodyparser_middleware'),
   () => import('@adonisjs/cors/cors_middleware'),
   () => import('@adonisjs/static/static_middleware'),
   () => import('@adonisjs/shield/shield_middleware'),
+  () => import('@adonisjs/auth/initialize_auth_middleware'),
 ])
 
 /**
@@ -30,5 +32,5 @@ router.use([])
  * a given middleware.
  */
 export const middleware = router.named({
-  auth: () => import('@adonisjs/auth/initialize_auth_middleware'),
+  auth: () => import('#middleware/auth_middleware'),
 })

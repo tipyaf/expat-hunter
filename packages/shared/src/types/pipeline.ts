@@ -1,10 +1,10 @@
-import { ContactStatus } from './contact';
+import { ContactStatus } from './contact'
 
 export interface PipelineColumn {
-  id: string;
-  label: string;
-  statuses: ContactStatus[];
-  order: number;
+  id: string
+  label: string
+  statuses: ContactStatus[]
+  order: number
 }
 
 export const PIPELINE_COLUMNS: PipelineColumn[] = [
@@ -56,7 +56,7 @@ export const PIPELINE_COLUMNS: PipelineColumn[] = [
     statuses: [ContactStatus.REJECTED],
     order: 7,
   },
-];
+]
 
 export const STATUS_TO_COLUMN: Record<ContactStatus, string> = {
   [ContactStatus.IDENTIFIED]: 'identified',
@@ -67,4 +67,4 @@ export const STATUS_TO_COLUMN: Record<ContactStatus, string> = {
   [ContactStatus.INTERVIEW]: 'interview',
   [ContactStatus.OFFER]: 'offer',
   [ContactStatus.REJECTED]: 'rejected',
-};
+}

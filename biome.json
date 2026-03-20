@@ -8,14 +8,54 @@
     "rules": {
       "recommended": true,
       "complexity": {
-        "noForEach": "off"
+        "noForEach": "off",
+        "noUselessFragments": "error",
+        "noUselessTypeConstraint": "error",
+        "useFlatMap": "error",
+        "useOptionalChain": "error"
+      },
+      "correctness": {
+        "noUnusedImports": "error",
+        "noUnusedVariables": "error",
+        "useExhaustiveDependencies": "warn",
+        "useHookAtTopLevel": "error"
       },
       "style": {
         "noNonNullAssertion": "warn",
-        "useConst": "error"
+        "useConst": "error",
+        "useBlockStatements": "error",
+        "useCollapsedElseIf": "error",
+        "useConsistentArrayType": {
+          "level": "error",
+          "options": { "syntax": "shorthand" }
+        },
+        "useImportType": "error",
+        "useNodejsImportProtocol": "error",
+        "useTemplate": "error"
       },
       "suspicious": {
-        "noExplicitAny": "warn"
+        "noExplicitAny": "warn",
+        "noConsoleLog": "warn",
+        "noDoubleEquals": "error",
+        "noEmptyBlockStatements": "error",
+        "noConfusingVoidType": "error",
+        "noAssignInExpressions": "error"
+      },
+      "performance": {
+        "noAccumulatingSpread": "error",
+        "noDelete": "warn"
+      },
+      "security": {
+        "noDangerouslySetInnerHtml": "error"
+      },
+      "a11y": {
+        "noAriaUnsupportedElements": "error",
+        "noBlankTarget": "error",
+        "useAltText": "error",
+        "useAnchorContent": "error",
+        "useButtonType": "error",
+        "useKeyWithClickEvents": "error",
+        "useValidAnchor": "error"
       }
     }
   },
@@ -33,14 +73,31 @@
     }
   },
   "files": {
-    "ignore": [
-      "node_modules",
-      "dist",
-      "build",
-      ".next",
-      ".adonisjs",
-      "*.min.js",
-      "pnpm-lock.yaml"
-    ]
-  }
+    "ignore": ["node_modules", "dist", "build", ".next", ".adonisjs", "*.min.js", "pnpm-lock.yaml"]
+  },
+  "overrides": [
+    {
+      "include": ["apps/api/**"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "useExhaustiveDependencies": "off",
+            "useHookAtTopLevel": "off"
+          },
+          "a11y": {
+            "noAriaUnsupportedElements": "off",
+            "noBlankTarget": "off",
+            "useAltText": "off",
+            "useAnchorContent": "off",
+            "useButtonType": "off",
+            "useKeyWithClickEvents": "off",
+            "useValidAnchor": "off"
+          },
+          "security": {
+            "noDangerouslySetInnerHtml": "off"
+          }
+        }
+      }
+    }
+  ]
 }

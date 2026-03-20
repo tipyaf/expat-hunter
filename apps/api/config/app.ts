@@ -1,6 +1,6 @@
-import app from '@adonisjs/core/services/app'
-import { defineConfig } from '@adonisjs/core/http'
 import { Secret } from '@adonisjs/core/helpers'
+import { defineConfig } from '@adonisjs/core/http'
+import app from '@adonisjs/core/services/app'
 import env from '#start/env'
 
 /**

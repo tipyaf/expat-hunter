@@ -4,7 +4,7 @@
 
 ### Architecture
 - **Pattern** : Layered Architecture (MVC côté API, App Router côté frontend)
-- **Monorepo** : pnpm workspaces (`apps/api`, `apps/web`, `packages/shared`)
+- **Monorepo** : pnpm workspaces (`apps/api`, `apps/frontend`, `packages/shared`)
 - **Communication** : REST API (JSON) entre frontend et backend
 - **Background jobs** : BullMQ via @adonisjs/queue (Redis)
 - **Base de données** : PostgreSQL 16
@@ -14,7 +14,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                    apps/web (Next.js)                │
+│                    apps/frontend (Next.js)                │
 │  App Router → Pages → Components → Hooks → API Client│
 ├─────────────────────────────────────────────────────┤
 │                      REST API (JSON)                 │
@@ -607,7 +607,7 @@ Les features sont regroupées en épiques, ordonnées par dépendances :
 ```
 0.1 [Setup] Initialiser le monorepo pnpm + packages/shared
 0.2 [Setup] Scaffolder apps/api (AdonisJS 6) avec config de base
-0.3 [Setup] Scaffolder apps/web (Next.js 14, App Router, Tailwind)
+0.3 [Setup] Scaffolder apps/frontend (Next.js 14, App Router, Tailwind)
 0.4 [Setup] docker-compose.yml (PostgreSQL + Redis)
 0.5 [Setup] Configurer Biome (linting/formatting)
 0.6 [Setup] Configurer les scripts root (dev, build, lint, test)
@@ -842,7 +842,7 @@ VPS Hostinger KVM2
 ├── Redis 7 (service systemd)
 ├── Node.js 20 LTS
 ├── apps/api → PM2 (process manager)
-├── apps/web → PM2 (Next.js standalone)
+├── apps/frontend → PM2 (Next.js standalone)
 └── Nginx (reverse proxy, SSL via Let's Encrypt)
 ```
 

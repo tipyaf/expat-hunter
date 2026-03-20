@@ -16,14 +16,14 @@ export enum EmailType {
 }
 
 export interface EmailMessage {
-  id: string; // uuid
-  contactId: string;
-  subject: string;
-  body: string;
-  type: EmailType;
-  status: EmailStatus;
-  sentAt?: Date;
-  scheduledAt?: Date;
-  openedAt?: Date;
-  repliedAt?: Date;
+  id: string // uuid
+  contactId: string
+  subject: string
+  body: string
+  type: EmailType
+  status: EmailStatus
+  sentAt?: Date
+  scheduledAt?: Date
+  openedAt?: Date
+  repliedAt?: Date
 }
