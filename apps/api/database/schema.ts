@@ -5,21 +5,10 @@
  */
 
 import { BaseModel, column } from '@adonisjs/lucid/orm'
-import type { DateTime } from 'luxon'
+import { DateTime } from 'luxon'
 
 export class AuthAccessTokenSchema extends BaseModel {
-  static $columns = [
-    'abilities',
-    'createdAt',
-    'expiresAt',
-    'hash',
-    'id',
-    'lastUsedAt',
-    'name',
-    'tokenableId',
-    'type',
-    'updatedAt',
-  ] as const
+  static $columns = ['abilities', 'createdAt', 'expiresAt', 'hash', 'id', 'lastUsedAt', 'name', 'tokenableId', 'type', 'updatedAt'] as const
   $columns = AuthAccessTokenSchema.$columns
   @column()
   declare abilities: string
@@ -43,16 +32,58 @@ export class AuthAccessTokenSchema extends BaseModel {
   declare updatedAt: DateTime | null
 }
 
+export class CandidateProfileSchema extends BaseModel {
+  static $columns = ['createdAt', 'cvFilePath', 'cvText', 'experienceYears', 'id', 'onboardingCompleted', 'preferences', 'skills', 'targetCountries', 'targetRoles', 'targetSectors', 'updatedAt', 'userId'] as const
+  $columns = CandidateProfileSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare cvFilePath: string | null
+  @column()
+  declare cvText: string | null
+  @column()
+  declare experienceYears: number
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare onboardingCompleted: boolean
+  @column()
+  declare preferences: any | null
+  @column()
+  declare skills: any
+  @column()
+  declare targetCountries: any
+  @column()
+  declare targetRoles: any
+  @column()
+  declare targetSectors: any
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare userId: string
+}
+
+export class FollowUpSequenceSchema extends BaseModel {
+  static $columns = ['createdAt', 'delayDays1', 'delayDays2', 'delayDays3', 'id', 'updatedAt', 'userId'] as const
+  $columns = FollowUpSequenceSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare delayDays1: number
+  @column()
+  declare delayDays2: number
+  @column()
+  declare delayDays3: number
+  @column({ isPrimary: true })
+  declare id: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare userId: string
+}
+
 export class UserSchema extends BaseModel {
-  static $columns = [
-    'createdAt',
-    'email',
-    'fullName',
-    'id',
-    'locale',
-    'password',
-    'updatedAt',
-  ] as const
+  static $columns = ['createdAt', 'email', 'fullName', 'id', 'locale', 'password', 'updatedAt'] as const
   $columns = UserSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
