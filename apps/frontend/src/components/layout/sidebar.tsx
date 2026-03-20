@@ -3,22 +3,25 @@
 import { useAuth } from '@/contexts/auth-context'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-
-const navItems = [
-  { label: 'Dashboard', href: '/', icon: 'D' },
-  { label: 'Profil', href: '/profil', icon: 'P' },
-  { label: 'Pipeline', href: '/pipeline', icon: 'G' },
-]
+import { useTranslations } from 'next-intl'
 
 export function Sidebar() {
   const pathname = usePathname()
   const { user, logout } = useAuth()
+  const t = useTranslations('sidebar')
+  const tc = useTranslations('common')
+
+  const navItems = [
+    { label: t('dashboard'), href: '/', icon: 'D' },
+    { label: t('profile'), href: '/profile', icon: 'P' },
+    { label: t('pipeline'), href: '/pipeline', icon: 'G' },
+  ]
 
   return (
     <aside className="flex h-screen w-64 flex-col border-r border-[var(--color-border)] bg-[var(--color-surface-light)]">
       <div className="flex h-16 items-center px-6 border-b border-[var(--color-border)]">
         <Link href="/" className="text-xl font-bold text-primary">
-          ExpatHunter
+          {tc('appName')}
         </Link>
       </div>
       <nav className="flex-1 px-3 py-4 space-y-1">
@@ -54,7 +57,7 @@ export function Sidebar() {
           }}
           className="w-full rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-sm font-medium text-[var(--color-text-muted)] transition-colors hover:bg-[var(--color-error)]/10 hover:text-[var(--color-error)] hover:border-[var(--color-error)]/30"
         >
-          Se deconnecter
+          {t('logout')}
         </button>
       </div>
     </aside>
