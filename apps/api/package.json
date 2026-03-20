@@ -5,15 +5,16 @@
   "type": "module",
   "license": "UNLICENSED",
   "scripts": {
-    "dev": "node --loader ts-node/esm ace serve --hmr",
-    "build": "node --loader ts-node/esm ace build",
+    "dev": "NODE_OPTIONS='--import tsx/esm' node ace serve --hmr",
+    "build": "node --import tsx/esm ace build",
     "start": "node bin/server.js",
     "lint": "eslint .",
-    "test": "node --loader ts-node/esm/transpile-only bin/test.ts",
+    "test": "node --import tsx/esm bin/test.ts",
     "typecheck": "tsc --noEmit"
   },
   "imports": {
     "#ai/*": "./app/ai/*.js",
+    "#scrapers/*": "./app/scrapers/*.js",
     "#controllers/*": "./app/controllers/*.js",
     "#exceptions/*": "./app/exceptions/*.js",
     "#models/*": "./app/models/*.js",
@@ -64,6 +65,7 @@
     "@types/node": "^25.5.0",
     "@types/pdf-parse": "^1.1.5",
     "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
     "typescript": "5"
   }
 }

@@ -92,10 +92,45 @@
       "targetCountriesLabel": "Target countries (ISO codes: NZ, AU, FR...)"
     }
   },
+  "sourcing": {
+    "title": "Sourcing",
+    "subtitle": "Launch sourcing campaigns to find companies and contacts.",
+    "launchTitle": "Launch sourcing",
+    "countryLabel": "Country",
+    "sectorLabel": "Sector",
+    "sectorPlaceholder": "e.g. technology, finance, healthcare...",
+    "launchButton": "Launch",
+    "launching": "Sourcing in progress...",
+    "historyTitle": "Run history",
+    "noRuns": "No sourcing runs yet.",
+    "colStatus": "Status",
+    "colCountry": "Country",
+    "colSector": "Sector",
+    "colContacts": "Contacts",
+    "colSources": "Sources",
+    "colDate": "Date",
+    "colErrors": "Errors"
+  },
+  "contacts": {
+    "title": "Contacts",
+    "subtitle": "Manage your contacts and track your pipeline.",
+    "all": "All",
+    "noContacts": "No contacts found. Launch a sourcing run to get started.",
+    "source": "Source",
+    "status_identified": "Identified",
+    "status_analyzed": "Analyzed",
+    "status_to_contact": "To contact",
+    "status_contacted": "Contacted",
+    "status_replied": "Replied",
+    "status_interview": "Interview",
+    "status_offer": "Offer",
+    "status_rejected": "Rejected"
+  },
   "sidebar": {
     "dashboard": "Dashboard",
+    "sourcing": "Sourcing",
+    "contacts": "Contacts",
     "profile": "Profile",
-    "pipeline": "Pipeline",
     "logout": "Sign out"
   }
 }

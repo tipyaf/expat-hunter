@@ -63,6 +63,74 @@ export class CandidateProfileSchema extends BaseModel {
   declare userId: string
 }
 
+export class CompanySchema extends BaseModel {
+  static $columns = ['city', 'country', 'createdAt', 'id', 'linkedinUrl', 'name', 'sector', 'signals', 'size', 'source', 'updatedAt', 'website'] as const
+  $columns = CompanySchema.$columns
+  @column()
+  declare city: string | null
+  @column()
+  declare country: string
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare linkedinUrl: string | null
+  @column()
+  declare name: string
+  @column()
+  declare sector: string | null
+  @column()
+  declare signals: any | null
+  @column()
+  declare size: string | null
+  @column()
+  declare source: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare website: string | null
+}
+
+export class ContactSchema extends BaseModel {
+  static $columns = ['aiRecommendation', 'companyId', 'createdAt', 'email', 'fullName', 'id', 'linkedinUrl', 'relevanceLabel', 'relevanceReason', 'relevanceScore', 'role', 'source', 'sourcingRunId', 'status', 'updatedAt', 'userId', 'userOverride'] as const
+  $columns = ContactSchema.$columns
+  @column()
+  declare aiRecommendation: string | null
+  @column()
+  declare companyId: string
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare email: string | null
+  @column()
+  declare fullName: string
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare linkedinUrl: string | null
+  @column()
+  declare relevanceLabel: string | null
+  @column()
+  declare relevanceReason: string | null
+  @column()
+  declare relevanceScore: number | null
+  @column()
+  declare role: string
+  @column()
+  declare source: string
+  @column()
+  declare sourcingRunId: string | null
+  @column()
+  declare status: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare userId: string
+  @column()
+  declare userOverride: boolean
+}
+
 export class FollowUpSequenceSchema extends BaseModel {
   static $columns = ['createdAt', 'delayDays1', 'delayDays2', 'delayDays3', 'id', 'updatedAt', 'userId'] as const
   $columns = FollowUpSequenceSchema.$columns
@@ -80,6 +148,58 @@ export class FollowUpSequenceSchema extends BaseModel {
   declare updatedAt: DateTime
   @column()
   declare userId: string
+}
+
+export class SourcingRunSchema extends BaseModel {
+  static $columns = ['completedAt', 'contactsFound', 'country', 'createdAt', 'errors', 'id', 'sector', 'sources', 'startedAt', 'status', 'updatedAt', 'userId'] as const
+  $columns = SourcingRunSchema.$columns
+  @column.dateTime()
+  declare completedAt: DateTime | null
+  @column()
+  declare contactsFound: number
+  @column()
+  declare country: string
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare errors: any | null
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare sector: string | null
+  @column()
+  declare sources: any
+  @column.dateTime()
+  declare startedAt: DateTime | null
+  @column()
+  declare status: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare userId: string
+}
+
+export class SourcingSourceSchema extends BaseModel {
+  static $columns = ['baseUrl', 'config', 'country', 'createdAt', 'enabled', 'id', 'name', 'scraperClass', 'updatedAt'] as const
+  $columns = SourcingSourceSchema.$columns
+  @column()
+  declare baseUrl: string
+  @column()
+  declare config: any | null
+  @column()
+  declare country: string
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare enabled: boolean
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare name: string
+  @column()
+  declare scraperClass: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
 }
 
 export class UserSchema extends BaseModel {
