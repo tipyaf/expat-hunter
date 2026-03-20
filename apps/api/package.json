@@ -5,14 +5,15 @@
   "type": "module",
   "license": "UNLICENSED",
   "scripts": {
-    "dev": "node ace serve --hmr",
-    "build": "node ace build",
+    "dev": "node --loader ts-node/esm ace serve --hmr",
+    "build": "node --loader ts-node/esm ace build",
     "start": "node bin/server.js",
     "lint": "eslint .",
     "test": "node --loader ts-node/esm/transpile-only bin/test.ts",
     "typecheck": "tsc --noEmit"
   },
   "imports": {
+    "#ai/*": "./app/ai/*.js",
     "#controllers/*": "./app/controllers/*.js",
     "#exceptions/*": "./app/exceptions/*.js",
     "#models/*": "./app/models/*.js",
