@@ -3,8 +3,11 @@ import { DbAccessTokensProvider } from '@adonisjs/auth/access_tokens'
 import { withAuthFinder } from '@adonisjs/auth/mixins/lucid'
 import { compose } from '@adonisjs/core/helpers'
 import hash from '@adonisjs/core/services/hash'
-import { BaseModel, beforeCreate, column } from '@adonisjs/lucid/orm'
+import { BaseModel, beforeCreate, column, hasOne } from '@adonisjs/lucid/orm'
+import type { HasOne } from '@adonisjs/lucid/types/relations'
 import type { DateTime } from 'luxon'
+import CandidateProfile from '#models/candidate_profile'
+import FollowUpSequence from '#models/follow_up_sequence'
 
 const AuthFinder = withAuthFinder(() => hash.use('bcrypt'), {
   uids: ['email'],
@@ -41,6 +44,12 @@ export default class User extends compose(BaseModel, AuthFinder) {
       user.id = randomUUID()
     }
   }
+
+  @hasOne(() => CandidateProfile)
+  declare candidateProfile: HasOne<typeof CandidateProfile>
+
+  @hasOne(() => FollowUpSequence)
+  declare followUpSequence: HasOne<typeof FollowUpSequence>
 
   static accessTokens = DbAccessTokensProvider.forModel(User)
 }

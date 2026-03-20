@@ -612,9 +612,10 @@ Les features sont regroupées en épiques, ordonnées par dépendances :
 0.5 [Setup] Configurer Biome (linting/formatting)
 0.6 [Setup] Configurer les scripts root (dev, build, lint, test)
 0.7 [Setup] Design system de base (tokens Tailwind, composants ui/)
+0.8 [Setup] i18n infrastructure (next-intl frontend + @adonisjs/i18n backend, fichiers fr.json + en.json)
 ```
 **Dépendances** : aucune
-**Livrable** : monorepo fonctionnel, `pnpm dev` lance API + Web
+**Livrable** : monorepo fonctionnel, `pnpm dev` lance API + Web, i18n opérationnel
 
 #### Épique 1 : Auth & User (Feature: candidate-profile — partie auth)
 ```
@@ -719,17 +720,17 @@ Les features sont regroupées en épiques, ordonnées par dépendances :
 **Dépendances** : Épiques 1-6 (le dashboard agrège tout)
 **Livrable** : dashboard fonctionnel, settings complets
 
-#### Épique 8 : Polish & i18n
+#### Épique 8 : Polish & Audit
 ```
-8.1 [i18n] Traductions backend (fr + en)
-8.2 [i18n] Traductions frontend (fr + en)
-8.3 [UI] Dark mode (CSS variables, toggle settings)
-8.4 [UI] Responsive mobile (sidebar hamburger, kanban horizontal scroll)
-8.5 [A11y] Accessibilité WCAG 2.1 AA (focus, aria, skip link, clavier)
-8.6 [Test] Tests i18n + a11y
+8.1 [i18n] Audit couverture traductions (vérifier qu'aucun texte n'est en dur)
+8.2 [UI] Dark mode (CSS variables, toggle settings)
+8.3 [UI] Responsive mobile (sidebar hamburger, kanban horizontal scroll)
+8.4 [A11y] Accessibilité WCAG 2.1 AA (focus, aria, skip link, clavier)
+8.5 [Test] Tests i18n + a11y
 ```
 **Dépendances** : Épique 7
-**Livrable** : app bilingue, dark mode, responsive, accessible
+**Note** : L'infrastructure i18n est mise en place à l'Épique 0.8. Chaque feature ajoute ses traductions au fur et à mesure. Cette épique ne fait qu'auditer la couverture et corriger les oublis.
+**Livrable** : couverture i18n complète, dark mode, responsive, accessible
 
 #### Épique 9 : Scrapers additionnels
 ```

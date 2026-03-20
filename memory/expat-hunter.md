@@ -3,9 +3,11 @@
 ## Metadata
 - **Projet**: expat-hunter
 - **Démarré le**: 2026-03-17
-- **Phase courante**: Phase 2 — Scaffold (Developer) (validée)
-- **Dernière mise à jour**: 2026-03-19
-- **Prochaine phase**: Phase 2.5 — Refinement (première feature: candidate-profile)
+- **Phase courante**: Phase 3 — Implement (Épique 1 Auth terminée)
+- **Dernière mise à jour**: 2026-03-20
+- **Prochaine épique**: Épique 2 — Profil candidat
+- **Repo GitHub**: https://github.com/tipyaf/expat-hunter (public)
+- **Branches**: main (protégée, défaut), develop (protégée, base dev), feature/* → PR vers develop
 
 ## Spec
 - **Fichier**: `specs/expat-hunter.yaml`

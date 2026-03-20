@@ -2,6 +2,7 @@ import router from '@adonisjs/core/services/router'
 import { middleware } from '#start/kernel'
 
 const AuthController = () => import('#controllers/auth_controller')
+const ProfileController = () => import('#controllers/profile_controller')
 
 router.get('/', async () => {
   return { name: '@expat-hunter/api', status: 'ok' }
@@ -19,3 +20,13 @@ router
     router.get('me', [AuthController, 'me']).use(middleware.auth())
   })
   .prefix('/api/auth')
+
+router
+  .group(() => {
+    router.get('/', [ProfileController, 'show'])
+    router.put('/', [ProfileController, 'update'])
+    router.post('/cv', [ProfileController, 'uploadCv'])
+    router.post('/complete-onboarding', [ProfileController, 'completeOnboarding'])
+  })
+  .prefix('/api/profile')
+  .use(middleware.auth())

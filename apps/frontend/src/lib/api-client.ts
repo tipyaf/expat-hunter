@@ -25,10 +25,11 @@ async function request<T>(
   })
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({
+    const body = await response.json().catch(() => ({
       message: response.statusText,
     }))
-    throw new ApiError(response.status, error.message ?? 'Request failed')
+    const message = body?.message ?? body?.error?.message ?? body?.errors?.[0]?.message ?? 'Request failed'
+    throw new ApiError(response.status, message)
   }
 
   if (response.status === 204) {

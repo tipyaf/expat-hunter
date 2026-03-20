@@ -2,14 +2,37 @@
 
 import { Sidebar } from '@/components/layout/sidebar'
 import { useAuth } from '@/contexts/auth-context'
+import { useProfile } from '@/hooks/use-profile'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 
 export default function DashboardPage() {
   const { user, isLoading } = useAuth()
+  const { profile, isLoading: profileLoading } = useProfile()
+  const router = useRouter()
+  const t = useTranslations('dashboard')
+  const tc = useTranslations('common')
 
-  if (isLoading || !user) {
+  useEffect(() => {
+    if (!isLoading && !profileLoading && user && !profile?.onboardingCompleted) {
+      router.push('/profile/setup')
+    }
+  }, [isLoading, profileLoading, user, profile, router])
+
+  if (isLoading || profileLoading || !user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-[var(--color-text-muted)]">Chargement...</p>
+        <p className="text-[var(--color-text-muted)]">{tc('loading')}</p>
+      </div>
+    )
+  }
+
+  // Redirect if profile not set up (null or not completed)
+  if (!profile?.onboardingCompleted) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-[var(--color-text-muted)]">{tc('redirecting')}</p>
       </div>
     )
   }
@@ -18,21 +41,21 @@ export default function DashboardPage() {
     <div className="flex min-h-screen">
       <Sidebar />
       <main className="flex-1 p-8">
-        <h1 className="text-3xl font-bold text-primary mb-6">Dashboard</h1>
-        <p className="text-[var(--color-text-muted)] mb-8">Bienvenue, {user.fullName}</p>
+        <h1 className="text-3xl font-bold text-primary mb-6">{t('title')}</h1>
+        <p className="text-[var(--color-text-muted)] mb-8">{t('welcome', { name: user.fullName })}</p>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-6 shadow-sm">
-            <h2 className="text-sm font-medium text-[var(--color-text-muted)] mb-1">Contacts</h2>
+            <h2 className="text-sm font-medium text-[var(--color-text-muted)] mb-1">{t('contacts')}</h2>
             <p className="text-2xl font-bold">0</p>
           </div>
           <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-6 shadow-sm">
             <h2 className="text-sm font-medium text-[var(--color-text-muted)] mb-1">
-              Emails envoyes
+              {t('emailsSent')}
             </h2>
             <p className="text-2xl font-bold">0</p>
           </div>
           <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-6 shadow-sm">
-            <h2 className="text-sm font-medium text-[var(--color-text-muted)] mb-1">Pipeline</h2>
+            <h2 className="text-sm font-medium text-[var(--color-text-muted)] mb-1">{t('pipeline')}</h2>
             <p className="text-2xl font-bold">0</p>
           </div>
         </div>
