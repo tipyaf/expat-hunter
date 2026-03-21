@@ -17,6 +17,7 @@ interface User {
   email: string
   fullName: string
   locale: string
+  isAdmin: boolean
 }
 
 interface AuthContextValue {
@@ -97,7 +98,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!token && !publicPaths.includes(pathname)) {
       router.replace('/login')
     }
-  }, [isLoading, token, pathname, router])
+    // Redirect authenticated users away from login/register
+    if (token && user && publicPaths.includes(pathname)) {
+      router.replace('/')
+    }
+  }, [isLoading, token, user, pathname, router])
 
   const login = useCallback(
     async (email: string, password: string) => {

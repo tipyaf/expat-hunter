@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { ApiError, useAuth } from '@/contexts/auth-context'
 import Link from 'next/link'
 import { type FormEvent, useState } from 'react'
+import { useTranslations } from 'next-intl'
 
 export default function LoginPage() {
   const { login } = useAuth()
@@ -11,6 +12,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const t = useTranslations('auth')
+  const tc = useTranslations('common')
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -21,9 +24,9 @@ export default function LoginPage() {
       await login(email, password)
     } catch (err) {
       if (err instanceof ApiError) {
-        setError(err.status === 400 ? 'Email ou mot de passe incorrect' : err.message)
+        setError(err.status === 400 ? t('invalidCredentials') : err.message)
       } else {
-        setError('Une erreur est survenue. Veuillez reessayer.')
+        setError(tc('genericError'))
       }
     } finally {
       setIsSubmitting(false)
@@ -33,9 +36,9 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[var(--color-bg-light)]">
       <div className="w-full max-w-md rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-8 shadow-lg">
-        <h1 className="text-2xl font-bold text-center mb-2 text-primary">ExpatHunter</h1>
+        <h1 className="text-2xl font-bold text-center mb-2 text-primary">{tc('appName')}</h1>
         <p className="text-center text-[var(--color-text-muted)] mb-8">
-          Connectez-vous a votre compte
+          {t('loginTitle')}
         </p>
 
         {error && (
@@ -47,7 +50,7 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="email" className="block text-sm font-medium mb-1">
-              Email
+              {t('emailLabel')}
             </label>
             <input
               id="email"
@@ -58,12 +61,12 @@ export default function LoginPage() {
                 setEmail(e.target.value)
               }}
               className="w-full rounded-lg border border-[var(--color-border)] bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
-              placeholder="vous@exemple.com"
+              placeholder={t('emailPlaceholder')}
             />
           </div>
           <div>
             <label htmlFor="password" className="block text-sm font-medium mb-1">
-              Mot de passe
+              {t('passwordLabel')}
             </label>
             <input
               id="password"
@@ -78,17 +81,18 @@ export default function LoginPage() {
             />
           </div>
           <Button type="submit" className="w-full" disabled={isSubmitting}>
-            {isSubmitting ? 'Connexion...' : 'Se connecter'}
+            {isSubmitting ? t('submitting') : t('submit')}
           </Button>
         </form>
 
         <p className="mt-6 text-center text-sm text-[var(--color-text-muted)]">
-          Pas encore de compte ?{' '}
+          {t('noAccount')}{' '}
           <Link href="/register" className="text-primary font-medium hover:underline">
-            Creer un compte
+            {t('createAccount')}
           </Link>
         </p>
       </div>
     </div>
   )
 }
+

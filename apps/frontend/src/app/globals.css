@@ -24,6 +24,7 @@
   --color-text-main: #fafafa;
   --color-text-muted: #a1a1aa;
   --color-border: #3f3f46;
+  color-scheme: dark;
 }
 
 body {

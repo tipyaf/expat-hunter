@@ -2,38 +2,116 @@
 
 import { Sidebar } from '@/components/layout/sidebar'
 import { useAuth } from '@/contexts/auth-context'
+import { useDashboard } from '@/hooks/use-dashboard'
+import { useProfile } from '@/hooks/use-profile'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
+import { useTranslations } from 'next-intl'
+
+const ACTION_ICONS: Record<string, string> = {
+  emails_to_validate: 'M',
+  replies_received: 'R',
+  sourcing_completed: 'S',
+}
 
 export default function DashboardPage() {
   const { user, isLoading } = useAuth()
+  const { profile, isLoading: profileLoading } = useProfile()
+  const { actions, stats, isLoading: dashLoading } = useDashboard()
+  const router = useRouter()
+  const t = useTranslations('dashboard')
+  const tc = useTranslations('common')
 
-  if (isLoading || !user) {
+  useEffect(() => {
+    if (!isLoading && !profileLoading && user && !profile?.onboardingCompleted) {
+      router.push('/profile/setup')
+    }
+  }, [isLoading, profileLoading, user, profile, router])
+
+  if (isLoading || profileLoading || !user) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <p className="text-[var(--color-text-muted)]">Chargement...</p>
+        <p className="text-[var(--color-text-muted)]">{tc('loading')}</p>
+      </div>
+    )
+  }
+
+  if (!profile?.onboardingCompleted) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-[var(--color-text-muted)]">{tc('redirecting')}</p>
       </div>
     )
   }
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex h-dvh overflow-hidden">
       <Sidebar />
-      <main className="flex-1 p-8">
-        <h1 className="text-3xl font-bold text-primary mb-6">Dashboard</h1>
-        <p className="text-[var(--color-text-muted)] mb-8">Bienvenue, {user.fullName}</p>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-6 shadow-sm">
-            <h2 className="text-sm font-medium text-[var(--color-text-muted)] mb-1">Contacts</h2>
-            <p className="text-2xl font-bold">0</p>
-          </div>
-          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-6 shadow-sm">
-            <h2 className="text-sm font-medium text-[var(--color-text-muted)] mb-1">
-              Emails envoyes
+      <main id="main-content" className="flex-1 flex flex-col overflow-hidden">
+        <div className="shrink-0 px-4 md:px-8 pt-8 pb-4 pl-16 md:pl-8 bg-[var(--color-bg-light)]">
+          <h1 className="text-3xl font-bold text-primary mb-2">{t('title')}</h1>
+          <p className="text-[var(--color-text-muted)]">{t('welcome', { name: user.fullName })}</p>
+        </div>
+        <div className="flex-1 overflow-y-auto px-4 md:px-8 pb-8">
+          {/* Actions en attente */}
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold mb-4">
+              {t('pendingActions', { count: actions.length })}
             </h2>
-            <p className="text-2xl font-bold">0</p>
+            {dashLoading ? (
+              <div className="space-y-3">
+                {[1, 2].map((i) => (
+                  <div key={i} className="h-16 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] animate-pulse" />
+                ))}
+              </div>
+            ) : actions.length === 0 ? (
+              <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-6 text-center">
+                <p className="text-[var(--color-text-muted)]">{t('noActions')}</p>
+                <Link href="/sourcing" className="text-primary text-sm font-medium hover:underline mt-2 inline-block">
+                  {t('startSourcing')}
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {actions.map((action) => (
+                  <Link
+                    key={action.type}
+                    href={action.href}
+                    className="flex items-center gap-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-4 shadow-sm hover:border-primary/30 transition-colors"
+                  >
+                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary font-bold">
+                      {ACTION_ICONS[action.type] ?? '?'}
+                    </span>
+                    <div className="flex-1">
+                      <p className="font-medium">
+                        {t(`action_${action.label}`, { count: action.count })}
+                      </p>
+                    </div>
+                    <span className="text-[var(--color-text-muted)] text-sm">{t('view')}</span>
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
-          <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-6 shadow-sm">
-            <h2 className="text-sm font-medium text-[var(--color-text-muted)] mb-1">Pipeline</h2>
-            <p className="text-2xl font-bold">0</p>
+
+          {/* Statistiques rapides */}
+          <div>
+            <h2 className="text-lg font-semibold mb-4">{t('quickStats')}</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-6 shadow-sm">
+                <h3 className="text-sm font-medium text-[var(--color-text-muted)] mb-1">{t('contacts')}</h3>
+                <p className="text-2xl font-bold">{stats.contacts}</p>
+              </div>
+              <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-6 shadow-sm">
+                <h3 className="text-sm font-medium text-[var(--color-text-muted)] mb-1">{t('emailsSent')}</h3>
+                <p className="text-2xl font-bold">{stats.emailsSent}</p>
+              </div>
+              <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-6 shadow-sm">
+                <h3 className="text-sm font-medium text-[var(--color-text-muted)] mb-1">{t('repliesReceived')}</h3>
+                <p className="text-2xl font-bold">{stats.replies}</p>
+              </div>
+            </div>
           </div>
         </div>
       </main>

@@ -5,21 +5,31 @@
  */
 
 import { BaseModel, column } from '@adonisjs/lucid/orm'
-import type { DateTime } from 'luxon'
+import { DateTime } from 'luxon'
+
+export class AiSettingSchema extends BaseModel {
+  static $columns = ['createdAt', 'featureKey', 'id', 'isEnabled', 'maxTokens', 'model', 'temperature', 'updatedAt'] as const
+  $columns = AiSettingSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare featureKey: string
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare isEnabled: boolean
+  @column()
+  declare maxTokens: number
+  @column()
+  declare model: string
+  @column()
+  declare temperature: number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+}
 
 export class AuthAccessTokenSchema extends BaseModel {
-  static $columns = [
-    'abilities',
-    'createdAt',
-    'expiresAt',
-    'hash',
-    'id',
-    'lastUsedAt',
-    'name',
-    'tokenableId',
-    'type',
-    'updatedAt',
-  ] as const
+  static $columns = ['abilities', 'createdAt', 'expiresAt', 'hash', 'id', 'lastUsedAt', 'name', 'tokenableId', 'type', 'updatedAt'] as const
   $columns = AuthAccessTokenSchema.$columns
   @column()
   declare abilities: string
@@ -43,16 +53,207 @@ export class AuthAccessTokenSchema extends BaseModel {
   declare updatedAt: DateTime | null
 }
 
+export class CandidateProfileSchema extends BaseModel {
+  static $columns = ['createdAt', 'cvFilePath', 'cvText', 'experienceYears', 'id', 'onboardingCompleted', 'preferences', 'skills', 'targetCountries', 'targetRoles', 'targetSectors', 'updatedAt', 'userId'] as const
+  $columns = CandidateProfileSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare cvFilePath: string | null
+  @column()
+  declare cvText: string | null
+  @column()
+  declare experienceYears: number
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare onboardingCompleted: boolean
+  @column()
+  declare preferences: any | null
+  @column()
+  declare skills: any
+  @column()
+  declare targetCountries: any
+  @column()
+  declare targetRoles: any
+  @column()
+  declare targetSectors: any
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare userId: string
+}
+
+export class CompanySchema extends BaseModel {
+  static $columns = ['city', 'country', 'createdAt', 'id', 'linkedinUrl', 'name', 'sector', 'signals', 'size', 'source', 'updatedAt', 'website'] as const
+  $columns = CompanySchema.$columns
+  @column()
+  declare city: string | null
+  @column()
+  declare country: string
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare linkedinUrl: string | null
+  @column()
+  declare name: string
+  @column()
+  declare sector: string | null
+  @column()
+  declare signals: any | null
+  @column()
+  declare size: string | null
+  @column()
+  declare source: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare website: string | null
+}
+
+export class ContactSchema extends BaseModel {
+  static $columns = ['aiRecommendation', 'companyId', 'createdAt', 'email', 'fullName', 'id', 'linkedinUrl', 'relevanceLabel', 'relevanceReason', 'relevanceScore', 'role', 'source', 'sourcingRunId', 'status', 'updatedAt', 'userId', 'userOverride'] as const
+  $columns = ContactSchema.$columns
+  @column()
+  declare aiRecommendation: string | null
+  @column()
+  declare companyId: string
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare email: string | null
+  @column()
+  declare fullName: string
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare linkedinUrl: string | null
+  @column()
+  declare relevanceLabel: string | null
+  @column()
+  declare relevanceReason: string | null
+  @column()
+  declare relevanceScore: number | null
+  @column()
+  declare role: string
+  @column()
+  declare source: string
+  @column()
+  declare sourcingRunId: string | null
+  @column()
+  declare status: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare userId: string
+  @column()
+  declare userOverride: boolean
+}
+
+export class EmailMessageSchema extends BaseModel {
+  static $columns = ['body', 'contactId', 'createdAt', 'id', 'openedAt', 'repliedAt', 'scheduledAt', 'sentAt', 'status', 'subject', 'type', 'updatedAt'] as const
+  $columns = EmailMessageSchema.$columns
+  @column()
+  declare body: string
+  @column()
+  declare contactId: string
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column({ isPrimary: true })
+  declare id: string
+  @column.dateTime()
+  declare openedAt: DateTime | null
+  @column.dateTime()
+  declare repliedAt: DateTime | null
+  @column.dateTime()
+  declare scheduledAt: DateTime | null
+  @column.dateTime()
+  declare sentAt: DateTime | null
+  @column()
+  declare status: string
+  @column()
+  declare subject: string
+  @column()
+  declare type: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+}
+
+export class FollowUpSequenceSchema extends BaseModel {
+  static $columns = ['createdAt', 'delayDays1', 'delayDays2', 'delayDays3', 'id', 'updatedAt', 'userId'] as const
+  $columns = FollowUpSequenceSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare delayDays1: number
+  @column()
+  declare delayDays2: number
+  @column()
+  declare delayDays3: number
+  @column({ isPrimary: true })
+  declare id: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare userId: string
+}
+
+export class SourcingRunSchema extends BaseModel {
+  static $columns = ['completedAt', 'contactsFound', 'country', 'createdAt', 'errors', 'id', 'sector', 'sources', 'startedAt', 'status', 'updatedAt', 'userId'] as const
+  $columns = SourcingRunSchema.$columns
+  @column.dateTime()
+  declare completedAt: DateTime | null
+  @column()
+  declare contactsFound: number
+  @column()
+  declare country: string
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare errors: any | null
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare sector: string | null
+  @column()
+  declare sources: any
+  @column.dateTime()
+  declare startedAt: DateTime | null
+  @column()
+  declare status: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare userId: string
+}
+
+export class SourcingSourceSchema extends BaseModel {
+  static $columns = ['baseUrl', 'config', 'country', 'createdAt', 'enabled', 'id', 'name', 'scraperClass', 'updatedAt'] as const
+  $columns = SourcingSourceSchema.$columns
+  @column()
+  declare baseUrl: string
+  @column()
+  declare config: any | null
+  @column()
+  declare country: string
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare enabled: boolean
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare name: string
+  @column()
+  declare scraperClass: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+}
+
 export class UserSchema extends BaseModel {
-  static $columns = [
-    'createdAt',
-    'email',
-    'fullName',
-    'id',
-    'locale',
-    'password',
-    'updatedAt',
-  ] as const
+  static $columns = ['createdAt', 'email', 'fullName', 'id', 'isAdmin', 'locale', 'password', 'updatedAt'] as const
   $columns = UserSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -62,6 +263,8 @@ export class UserSchema extends BaseModel {
   declare fullName: string
   @column({ isPrimary: true })
   declare id: string
+  @column()
+  declare isAdmin: boolean
   @column()
   declare locale: string
   @column({ serializeAs: null })
