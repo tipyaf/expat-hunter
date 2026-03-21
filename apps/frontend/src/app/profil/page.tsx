@@ -112,7 +112,7 @@ export default function ProfilePage() {
   }
 
   if (!profile?.onboardingCompleted) {
-    router.push('/profile/setup')
+    router.push('/profil/setup')
     return null
   }
 

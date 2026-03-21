@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 
 test.describe('Contact to email flow', () => {
   test('contact with "contact" recommendation appears in pipeline', async ({ page }) => {
-    await page.goto('/pipeline')
+    await page.goto('/suivi')
     await page.waitForTimeout(2000)
 
     // Our test contact "Sarah Mitchell" should be visible in the board
@@ -56,7 +56,7 @@ test.describe('Contact to email flow', () => {
   test('sidebar navigation works between all pages', async ({ page }) => {
     // Dashboard
     await page.goto('/')
-    await expect(page.locator('h1')).toContainText('Dashboard')
+    await expect(page.locator('h1')).toContainText('Tableau de bord')
 
     // Contacts
     await page.click('a[href="/contacts"]')
@@ -66,16 +66,16 @@ test.describe('Contact to email flow', () => {
     await page.click('a[href="/emails"]')
     await expect(page.locator('h1')).toContainText('Emails')
 
-    // Pipeline
-    await page.click('a[href="/pipeline"]')
+    // Suivi (ex-Pipeline)
+    await page.click('a[href="/suivi"]')
     await expect(page.locator('h1')).toContainText('Pipeline')
 
-    // Profile
-    await page.click('a[href="/profile"]')
+    // Profil
+    await page.click('a[href="/profil"]')
     await expect(page.locator('h1')).toContainText('profil')
 
     // Back to dashboard
     await page.click('a[href="/"]')
-    await expect(page.locator('h1')).toContainText('Dashboard')
+    await expect(page.locator('h1')).toContainText('Tableau de bord')
   })
 })

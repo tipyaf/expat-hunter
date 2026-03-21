@@ -49,7 +49,7 @@
     "pipeline": "Pipeline",
     "pendingActions": "Pending actions ({count})",
     "noActions": "No pending actions. Everything is up to date!",
-    "startSourcing": "Start sourcing",
+    "startSourcing": "Launch a search",
     "quickStats": "Quick stats",
     "view": "View",
     "action_emails_to_validate": "{count} emails to validate",
@@ -254,11 +254,11 @@
   },
   "sidebar": {
     "dashboard": "Dashboard",
-    "sourcing": "Sourcing",
-    "contacts": "Contacts",
-    "emails": "Emails",
-    "pipeline": "Pipeline",
-    "profile": "Profile",
+    "search": "Find contacts",
+    "contacts": "My contacts",
+    "emails": "My emails",
+    "tracking": "Tracking",
+    "profile": "My profile",
     "settings": "Settings",
     "aiSettings": "AI Config",
     "users": "Users",
@@ -266,5 +266,12 @@
     "logout": "Sign out",
     "openMenu": "Open menu",
     "closeMenu": "Close menu"
+  },
+  "tips": {
+    "welcomeTitle": "Welcome to ExpatHunter!",
+    "welcomeMessage": "Start by completing your profile so the AI can find the most relevant contacts for you.",
+    "welcomeCta": "Complete my profile",
+    "dashboardReady": "Your profile is complete. Launch a search to find contacts in your target countries.",
+    "dashboardReadyCta": "Launch a search"
   }
 }
