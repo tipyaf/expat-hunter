@@ -41,7 +41,7 @@
     "emailConflict": "Cet email est déjà utilisé"
   },
   "dashboard": {
-    "title": "Dashboard",
+    "title": "Tableau de bord",
     "welcome": "Bienvenue, {name}",
     "contacts": "Contacts",
     "emailsSent": "Emails envoyés",
@@ -49,7 +49,7 @@
     "pipeline": "Pipeline",
     "pendingActions": "Actions en attente ({count})",
     "noActions": "Aucune action en attente. Tout est à jour !",
-    "startSourcing": "Lancer un sourcing",
+    "startSourcing": "Lancer une recherche",
     "quickStats": "Statistiques rapides",
     "view": "Voir",
     "action_emails_to_validate": "{count} emails à valider",
@@ -253,12 +253,12 @@
     "user": "Utilisateur"
   },
   "sidebar": {
-    "dashboard": "Dashboard",
-    "sourcing": "Sourcing",
-    "contacts": "Contacts",
-    "emails": "Emails",
-    "pipeline": "Pipeline",
-    "profile": "Profil",
+    "dashboard": "Tableau de bord",
+    "search": "Trouver des contacts",
+    "contacts": "Mes contacts",
+    "emails": "Mes emails",
+    "tracking": "Suivi",
+    "profile": "Mon profil",
     "settings": "Paramètres",
     "aiSettings": "Config. IA",
     "users": "Utilisateurs",
@@ -266,5 +266,12 @@
     "logout": "Se déconnecter",
     "openMenu": "Ouvrir le menu",
     "closeMenu": "Fermer le menu"
+  },
+  "tips": {
+    "welcomeTitle": "Bienvenue sur ExpatHunter !",
+    "welcomeMessage": "Commencez par compléter votre profil pour que l'IA puisse trouver les contacts les plus pertinents pour vous.",
+    "welcomeCta": "Compléter mon profil",
+    "dashboardReady": "Votre profil est complet. Lancez une recherche pour trouver des contacts dans vos pays cibles.",
+    "dashboardReadyCta": "Lancer une recherche"
   }
 }

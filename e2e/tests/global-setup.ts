@@ -39,7 +39,7 @@ setup('authenticate and seed data', async ({ page }) => {
 
   // Step 5: Wait for redirect to dashboard (onboarding completed)
   await page.waitForURL('http://localhost:3000/', { timeout: 15_000 })
-  await expect(page.locator('h1')).toContainText('Dashboard', { timeout: 10_000 })
+  await expect(page.locator('h1')).toContainText('Tableau de bord', { timeout: 10_000 })
 
   // Step 6: Save storage state for other tests
   await page.context().storageState({ path: './fixtures/auth-state.json' })

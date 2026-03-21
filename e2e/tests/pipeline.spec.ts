@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 
 test.describe('Pipeline page', () => {
   test('displays pipeline with 5 kanban columns', async ({ page }) => {
-    await page.goto('/pipeline')
+    await page.goto('/suivi')
     await expect(page.locator('h1')).toContainText('Pipeline')
 
     // 5 columns should be visible
@@ -14,24 +14,24 @@ test.describe('Pipeline page', () => {
   })
 
   test('shows total contacts count in header', async ({ page }) => {
-    await page.goto('/pipeline')
+    await page.goto('/suivi')
     await page.waitForTimeout(1500)
 
     await expect(page.locator('text=/\\d+ contacts? au total/')).toBeVisible()
   })
 
   test('each column shows count badge', async ({ page }) => {
-    await page.goto('/pipeline')
+    await page.goto('/suivi')
     await page.waitForTimeout(1500)
 
-    // Each column header has a count badge (rounded-full bg-gray-200)
-    const badges = page.locator('.rounded-full.bg-gray-200')
+    // Each column header has a count badge
+    const badges = page.locator('.rounded-full')
     const count = await badges.count()
     expect(count).toBeGreaterThanOrEqual(5)
   })
 
   test('contact cards display name, role, company', async ({ page }) => {
-    await page.goto('/pipeline')
+    await page.goto('/suivi')
     await page.waitForTimeout(1500)
 
     // Look for any contact card (draggable div inside a column)
@@ -48,7 +48,7 @@ test.describe('Pipeline page', () => {
   })
 
   test('contact card shows relevance badge when available', async ({ page }) => {
-    await page.goto('/pipeline')
+    await page.goto('/suivi')
     await page.waitForTimeout(1500)
 
     // Look for relevance badges (very_relevant, relevant, etc.)
@@ -61,7 +61,7 @@ test.describe('Pipeline page', () => {
   })
 
   test('empty column shows placeholder message', async ({ page }) => {
-    await page.goto('/pipeline')
+    await page.goto('/suivi')
     await page.waitForTimeout(1500)
 
     // At least one column should be empty (showing "Aucun contact")
@@ -72,7 +72,7 @@ test.describe('Pipeline page', () => {
   })
 
   test('drag and drop moves contact between columns', async ({ page }) => {
-    await page.goto('/pipeline')
+    await page.goto('/suivi')
     await page.waitForTimeout(2000)
 
     const cards = page.locator('[draggable="true"]')

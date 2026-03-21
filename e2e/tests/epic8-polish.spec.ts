@@ -21,7 +21,7 @@ test.describe('Epic 8 — Dark mode', () => {
   })
 
   test('Dark mode toggle applies dark class to html', async ({ page }) => {
-    await page.goto('http://localhost:3000/settings')
+    await page.goto('http://localhost:3000/parametres')
     await page.waitForLoadState('networkidle')
 
     await page.getByRole('button', { name: /sombre/i }).click()
@@ -30,7 +30,7 @@ test.describe('Epic 8 — Dark mode', () => {
   })
 
   test('Light mode removes dark class', async ({ page }) => {
-    await page.goto('http://localhost:3000/settings')
+    await page.goto('http://localhost:3000/parametres')
     await page.waitForLoadState('networkidle')
 
     await page.getByRole('button', { name: /sombre/i }).click()
@@ -40,7 +40,7 @@ test.describe('Epic 8 — Dark mode', () => {
   })
 
   test('Dark mode persists across navigation', async ({ page }) => {
-    await page.goto('http://localhost:3000/settings')
+    await page.goto('http://localhost:3000/parametres')
     await page.waitForLoadState('networkidle')
 
     await page.getByRole('button', { name: /sombre/i }).click()
@@ -51,7 +51,7 @@ test.describe('Epic 8 — Dark mode', () => {
     expect(htmlClass).toContain('dark')
 
     // Cleanup: reset to auto
-    await page.goto('http://localhost:3000/settings')
+    await page.goto('http://localhost:3000/parametres')
     await page.waitForLoadState('networkidle')
     await page.getByRole('button', { name: /automatique/i }).click()
   })
@@ -122,7 +122,7 @@ test.describe('Epic 8 — Accessibility', () => {
   })
 
   test('Settings dark mode buttons have aria-pressed', async ({ page }) => {
-    await page.goto('http://localhost:3000/settings')
+    await page.goto('http://localhost:3000/parametres')
     await page.waitForLoadState('networkidle')
     const themeButtons = page.locator('button[aria-pressed]')
     const count = await themeButtons.count()
@@ -130,7 +130,7 @@ test.describe('Epic 8 — Accessibility', () => {
   })
 
   test('Pipeline badge text is translated (not raw key)', async ({ page }) => {
-    await page.goto('http://localhost:3000/pipeline')
+    await page.goto('http://localhost:3000/suivi')
     await page.waitForLoadState('networkidle')
     const pageContent = await page.textContent('body')
     expect(pageContent).not.toContain('pipeline.relevance_')
@@ -144,7 +144,7 @@ test.describe('Epic 8 — i18n completeness', () => {
   })
 
   test('Sourcing page shows translated country names', async ({ page }) => {
-    await page.goto('http://localhost:3000/sourcing')
+    await page.goto('http://localhost:3000/recherche')
     await page.waitForLoadState('networkidle')
     const countrySelect = page.locator('select#country')
     const firstOption = countrySelect.locator('option').first()
