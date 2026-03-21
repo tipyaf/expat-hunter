@@ -181,6 +181,29 @@ export class EmailMessageSchema extends BaseModel {
   declare updatedAt: DateTime
 }
 
+export class ExternalCacheSchema extends BaseModel {
+  static $columns = ['createdAt', 'data', 'entityKey', 'entityType', 'expiresAt', 'fetchedAt', 'id', 'source', 'updatedAt'] as const
+  $columns = ExternalCacheSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare data: any
+  @column()
+  declare entityKey: string
+  @column()
+  declare entityType: string
+  @column.dateTime()
+  declare expiresAt: DateTime
+  @column.dateTime()
+  declare fetchedAt: DateTime
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare source: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+}
+
 export class FollowUpSequenceSchema extends BaseModel {
   static $columns = ['createdAt', 'delayDays1', 'delayDays2', 'delayDays3', 'id', 'updatedAt', 'userId'] as const
   $columns = FollowUpSequenceSchema.$columns

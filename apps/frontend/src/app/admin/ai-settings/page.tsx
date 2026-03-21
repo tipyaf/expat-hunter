@@ -30,6 +30,13 @@ export default function AiSettingsPage() {
   const [form, setForm] = useState({ model: '', temperature: 0.3, maxTokens: 1024, isEnabled: true })
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
+  const [cacheStats, setCacheStats] = useState<{
+    totalEntries: number
+    expiredEntries: number
+    byType: Record<string, { count: number; avgAgeDays: number }>
+    bySource: Record<string, number>
+  } | null>(null)
+  const [purging, setPurging] = useState(false)
 
   useEffect(() => {
     if (user && !user.isAdmin) router.replace('/')
@@ -40,12 +47,29 @@ export default function AiSettingsPage() {
     try {
       const res = await apiClient.get<{ data: AiSetting[] }>('/api/admin/ai-settings', { token })
       setSettings(res.data)
+      const cacheRes = await apiClient.get<{ data: typeof cacheStats }>('/api/admin/ai-settings/cache/stats', { token })
+      setCacheStats(cacheRes.data)
     } catch {
       // 403 = not admin
     } finally {
       setIsLoading(false)
     }
   }, [token])
+
+  const handlePurgeCache = async () => {
+    if (!token) return
+    setPurging(true)
+    try {
+      await apiClient.post('/api/admin/ai-settings/cache/purge', {}, { token })
+      const cacheRes = await apiClient.get<{ data: typeof cacheStats }>('/api/admin/ai-settings/cache/stats', { token })
+      setCacheStats(cacheRes.data)
+      setMessage(t('cachePurged'))
+    } catch {
+      setMessage(t('settingError'))
+    } finally {
+      setPurging(false)
+    }
+  }
 
   useEffect(() => {
     fetchSettings()
@@ -186,6 +210,46 @@ export default function AiSettingsPage() {
                   </div>
                 )
               })}
+
+              {/* Cache stats section */}
+              {cacheStats && (
+                <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold">{t('cacheTitle')}</h3>
+                    <button
+                      type="button"
+                      onClick={() => void handlePurgeCache()}
+                      disabled={purging}
+                      className="text-sm text-red-600 hover:underline disabled:opacity-50"
+                    >
+                      {purging ? tc('loading') : t('cachePurge')}
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="rounded-lg bg-[var(--color-bg-light)] p-3 text-center">
+                      <p className="text-2xl font-bold text-primary">{cacheStats.totalEntries}</p>
+                      <p className="text-xs text-[var(--color-text-muted)]">{t('cacheTotal')}</p>
+                    </div>
+                    <div className="rounded-lg bg-[var(--color-bg-light)] p-3 text-center">
+                      <p className="text-2xl font-bold text-amber-600">{cacheStats.expiredEntries}</p>
+                      <p className="text-xs text-[var(--color-text-muted)]">{t('cacheExpired')}</p>
+                    </div>
+                  </div>
+                  {Object.keys(cacheStats.byType).length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase">{t('cacheByType')}</p>
+                      {Object.entries(cacheStats.byType).map(([type, info]) => (
+                        <div key={type} className="flex justify-between text-sm">
+                          <span className="capitalize">{type}</span>
+                          <span className="text-[var(--color-text-muted)]">
+                            {info.count} {t('cacheEntries')} · ~{info.avgAgeDays}j
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {message && (
                 <div className="rounded-lg bg-primary/10 text-primary px-4 py-2 text-sm">{message}</div>

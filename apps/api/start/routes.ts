@@ -101,6 +101,8 @@ router
   .group(() => {
     router.get('/', [AiSettingsController, 'index'])
     router.put('/:key', [AiSettingsController, 'upsert'])
+    router.get('/cache/stats', [AiSettingsController, 'cacheStats'])
+    router.post('/cache/purge', [AiSettingsController, 'purgeCache'])
   })
   .prefix('/api/admin/ai-settings')
   .use(middleware.auth())

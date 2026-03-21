@@ -158,7 +158,9 @@
     "labelNotRelevant": "Not relevant",
     "rec_contact": "Contact",
     "rec_skip": "Skip",
-    "rec_manual_review": "Manual review"
+    "rec_manual_review": "Manual review",
+    "confidenceScore": "Confidence score",
+    "sourceInfo": "via {source}, {days} days ago"
   },
   "emails": {
     "title": "Emails",
@@ -250,7 +252,14 @@
     "colEmail": "Email",
     "colAdmin": "Role",
     "admin": "Admin",
-    "user": "User"
+    "user": "User",
+    "cacheTitle": "Intelligence Cache",
+    "cachePurge": "Purge expired entries",
+    "cachePurged": "Expired entries purged",
+    "cacheTotal": "Total entries",
+    "cacheExpired": "Expired",
+    "cacheByType": "By type",
+    "cacheEntries": "entries"
   },
   "sidebar": {
     "dashboard": "Dashboard",

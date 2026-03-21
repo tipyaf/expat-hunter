@@ -2,6 +2,7 @@
 
 import { Sidebar } from '@/components/layout/sidebar'
 import { Button } from '@/components/ui/button'
+import { ConfidenceScore } from '@/components/ui/confidence-score'
 import { useAuth } from '@/contexts/auth-context'
 import { useAnalysis } from '@/hooks/use-analysis'
 import { CONTACT_STATUSES, useContacts, type ContactStatus } from '@/hooks/use-contacts'
@@ -199,6 +200,12 @@ export default function ContactsPage() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <h3 className="font-medium truncate">{contact.fullName}</h3>
+                            {contact.confidenceScore != null && (
+                              <ConfidenceScore
+                                score={contact.confidenceScore}
+                                factors={contact.confidenceFactors}
+                              />
+                            )}
                             <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium shrink-0 ${statusColor(contact.status)}`}>
                               {t(`status_${contact.status}`)}
                             </span>
