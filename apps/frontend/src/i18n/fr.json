@@ -158,7 +158,9 @@
     "labelNotRelevant": "Non pertinent",
     "rec_contact": "Contacter",
     "rec_skip": "Ignorer",
-    "rec_manual_review": "À vérifier"
+    "rec_manual_review": "À vérifier",
+    "confidenceScore": "Score de confiance",
+    "sourceInfo": "via {source}, il y a {days} jours"
   },
   "emails": {
     "title": "Emails",
@@ -250,7 +252,14 @@
     "colEmail": "Email",
     "colAdmin": "Rôle",
     "admin": "Admin",
-    "user": "Utilisateur"
+    "user": "Utilisateur",
+    "cacheTitle": "Cache d'intelligence",
+    "cachePurge": "Purger les entrées expirées",
+    "cachePurged": "Entrées expirées purgées",
+    "cacheTotal": "Entrées totales",
+    "cacheExpired": "Expirées",
+    "cacheByType": "Par type",
+    "cacheEntries": "entrées"
   },
   "sidebar": {
     "dashboard": "Tableau de bord",

@@ -2,6 +2,7 @@ import type { HttpContext } from '@adonisjs/core/http'
 import type { FeatureKey } from '#models/ai_setting'
 import User from '#models/user'
 import AiSettingsService from '#services/ai_settings_service'
+import CacheService from '#services/cache_service'
 import { upsertAiSettingValidator, toggleAdminValidator } from '#validators/ai_settings_validator'
 
 const VALID_KEYS: FeatureKey[] = ['default', 'cv_extraction', 'relevance_analysis', 'email_generation']
@@ -48,6 +49,18 @@ export default class AiSettingsController {
         createdAt: u.createdAt,
       })),
     })
+  }
+
+  async cacheStats({ response }: HttpContext) {
+    const cacheService = new CacheService()
+    const stats = await cacheService.getStats()
+    return response.ok({ data: stats })
+  }
+
+  async purgeCache({ response }: HttpContext) {
+    const cacheService = new CacheService()
+    const purged = await cacheService.purgeExpired()
+    return response.ok({ data: { purgedEntries: purged } })
   }
 
   async toggleAdmin({ params, request, response }: HttpContext) {

@@ -7,9 +7,11 @@ import SourcingRun from '#models/sourcing_run'
 import SourcingSource from '#models/sourcing_source'
 import type { RawContact, ScrapeParams } from '../scrapers/base_scraper.js'
 import { scraperRegistry } from '../scrapers/scraper_registry.js'
+import CacheService from './cache_service.js'
 import { DateTime } from 'luxon'
 
 export default class SourcingService {
+  private cacheService = new CacheService()
   /**
    * Launch a sourcing run: execute scrapers, persist results, update run status.
    */
@@ -105,7 +107,8 @@ export default class SourcingService {
 
     for (const raw of rawContacts) {
       try {
-        // Find or create company
+        // Find or create company (with cache)
+        const companyKey = `${raw.companyName}::${raw.companyCountry}`.toLowerCase()
         const company = await Company.firstOrCreate(
           { name: raw.companyName, country: raw.companyCountry },
           {
@@ -116,6 +119,21 @@ export default class SourcingService {
             city: raw.companyCity ?? null,
             source: raw.source,
           }
+        )
+
+        // Cache company data for enrichment
+        await this.cacheService.getOrFetch(
+          raw.source,
+          'company',
+          companyKey,
+          async () => ({
+            id: company.id,
+            name: company.name,
+            country: company.country,
+            website: company.website,
+            sector: company.sector,
+            city: company.city,
+          })
         )
 
         // Check for existing contact (dedup by linkedin or email)
