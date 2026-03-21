@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { useTranslations } from 'next-intl'
 
 interface ConfidenceFactor {
@@ -15,10 +15,10 @@ interface ConfidenceScoreProps {
   size?: 'sm' | 'md'
 }
 
-function getScoreColor(score: number): string {
-  if (score >= 70) return 'text-green-700 bg-green-100 border-green-300 dark:text-green-400 dark:bg-green-900/30 dark:border-green-700'
-  if (score >= 40) return 'text-amber-700 bg-amber-100 border-amber-300 dark:text-amber-400 dark:bg-amber-900/30 dark:border-amber-700'
-  return 'text-red-700 bg-red-100 border-red-300 dark:text-red-400 dark:bg-red-900/30 dark:border-red-700'
+function getScoreStyle(score: number): React.CSSProperties {
+  if (score >= 70) return { color: '#15803d', backgroundColor: '#bbf7d0', borderColor: '#22c55e' }
+  if (score >= 40) return { color: '#a16207', backgroundColor: '#fde68a', borderColor: '#f59e0b' }
+  return { color: '#b91c1c', backgroundColor: '#fecaca', borderColor: '#ef4444' }
 }
 
 function getFactorIcon(impact: string): string {
@@ -37,7 +37,7 @@ export function ConfidenceScore({ score, factors, size = 'sm' }: ConfidenceScore
   const [showTooltip, setShowTooltip] = useState(false)
   const t = useTranslations('contacts')
 
-  const colorClass = getScoreColor(score)
+  const scoreStyle = getScoreStyle(score)
   const sizeClass = size === 'sm'
     ? 'w-10 h-10 text-xs'
     : 'w-12 h-12 text-sm'
@@ -46,7 +46,8 @@ export function ConfidenceScore({ score, factors, size = 'sm' }: ConfidenceScore
     <div className="relative inline-flex">
       <button
         type="button"
-        className={`${sizeClass} ${colorClass} rounded-full border-2 font-bold flex items-center justify-center cursor-help transition-shadow hover:shadow-md`}
+        style={scoreStyle}
+        className={`${sizeClass} rounded-full border-2 font-bold flex items-center justify-center cursor-help transition-shadow hover:shadow-md`}
         onMouseEnter={() => setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(false)}
         onClick={() => setShowTooltip(!showTooltip)}
