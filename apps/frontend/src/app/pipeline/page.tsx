@@ -50,7 +50,7 @@ function ContactCard({
     <div
       draggable
       onDragStart={(e) => onDragStart(e, contact.id)}
-      className="rounded-lg border border-[var(--color-border)] bg-white p-3 shadow-sm cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow"
+      className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-light)] p-3 shadow-sm cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow"
     >
       <div className="flex items-start justify-between gap-2 mb-1">
         <p className="text-sm font-medium text-[var(--color-text-main)] truncate">
@@ -150,7 +150,7 @@ export default function PipelinePage() {
               {Object.entries(stats).map(([status, count]) => (
                 <span
                   key={status}
-                  className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-600"
+                  className="rounded-full bg-[var(--color-border)] px-3 py-1 text-xs font-medium text-[var(--color-text-muted)]"
                 >
                   {t(`stat_${status}`)}: {count}
                 </span>
@@ -179,7 +179,7 @@ export default function PipelinePage() {
                       <h3 className="text-sm font-semibold text-[var(--color-text-main)]">
                         {t(`col_${col.key}`)}
                       </h3>
-                      <span className="rounded-full bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-600">
+                      <span className="rounded-full bg-[var(--color-border)] px-2 py-0.5 text-xs font-medium text-[var(--color-text-muted)]">
                         {col.count}
                       </span>
                     </div>
