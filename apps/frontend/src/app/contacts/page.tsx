@@ -84,7 +84,7 @@ export default function ContactsPage() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-dvh overflow-hidden">
       <Sidebar />
       <main id="main-content" className="flex-1 flex flex-col overflow-hidden">
         {/* Sticky header */}
@@ -255,7 +255,7 @@ export default function ContactsPage() {
                             value={contact.status}
                             onChange={(e) => void handleStatusChange(contact.id, e.target.value as ContactStatus)}
                             disabled={updatingId === contact.id}
-                            className="rounded-lg border border-[var(--color-border)] bg-white px-2 py-1 text-xs disabled:opacity-50"
+                            className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-light)] text-[var(--color-text-main)] px-2 py-1 text-xs disabled:opacity-50"
                           >
                             {CONTACT_STATUSES.map((s) => (
                               <option key={s} value={s}>

@@ -89,7 +89,7 @@ export default function EmailsPage() {
   const draftCount = emails.filter((e) => e.status === 'draft').length
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-dvh overflow-hidden">
       <Sidebar />
       <main id="main-content" className="flex-1 flex flex-col overflow-hidden">
         <div className="shrink-0 px-4 md:px-8 pt-8 pb-4 pl-16 md:pl-8 bg-[var(--color-bg-light)]">
