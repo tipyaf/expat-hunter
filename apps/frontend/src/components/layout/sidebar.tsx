@@ -15,6 +15,7 @@ export function Sidebar() {
     { label: t('dashboard'), href: '/', icon: 'D' },
     { label: t('sourcing'), href: '/sourcing', icon: 'S' },
     { label: t('contacts'), href: '/contacts', icon: 'C' },
+    { label: t('emails'), href: '/emails', icon: 'E' },
     { label: t('profile'), href: '/profile', icon: 'P' },
   ]
 

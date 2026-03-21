@@ -138,10 +138,33 @@
     "rec_skip": "Skip",
     "rec_manual_review": "Manual review"
   },
+  "emails": {
+    "title": "Emails",
+    "subtitle": "Manage AI-generated emails for your contacts.",
+    "all": "All",
+    "noEmails": "No emails yet. Generate emails for your recommended contacts.",
+    "generateEmails": "Generate emails",
+    "generating": "Generating...",
+    "generateComplete": "{generated} emails generated, {errors} errors",
+    "generateError": "Error generating emails",
+    "to": "To",
+    "approve": "Approve",
+    "approveAll": "Approve all",
+    "reject": "Delete",
+    "regenerate": "Regenerate",
+    "edit": "Edit",
+    "status_draft": "Draft",
+    "status_approved": "Approved",
+    "status_sent": "Sent",
+    "status_opened": "Opened",
+    "status_replied": "Replied",
+    "status_bounced": "Bounced"
+  },
   "sidebar": {
     "dashboard": "Dashboard",
     "sourcing": "Sourcing",
     "contacts": "Contacts",
+    "emails": "Emails",
     "profile": "Profile",
     "logout": "Sign out"
   }
