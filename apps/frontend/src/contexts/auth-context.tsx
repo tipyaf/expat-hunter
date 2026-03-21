@@ -17,6 +17,7 @@ interface User {
   email: string
   fullName: string
   locale: string
+  isAdmin: boolean
 }
 
 interface AuthContextValue {

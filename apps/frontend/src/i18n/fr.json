@@ -40,7 +40,16 @@
     "welcome": "Bienvenue, {name}",
     "contacts": "Contacts",
     "emailsSent": "Emails envoy\u00e9s",
-    "pipeline": "Pipeline"
+    "repliesReceived": "R\u00e9ponses re\u00e7ues",
+    "pipeline": "Pipeline",
+    "pendingActions": "Actions en attente ({count})",
+    "noActions": "Aucune action en attente. Tout est \u00e0 jour !",
+    "startSourcing": "Lancer un sourcing",
+    "quickStats": "Statistiques rapides",
+    "view": "Voir",
+    "action_emails_to_validate": "{count} emails \u00e0 valider",
+    "action_replies_received": "{count} r\u00e9ponses re\u00e7ues",
+    "action_sourcing_completed": "{count} contacts \u00e0 analyser"
   },
   "profile": {
     "title": "Mon profil",
@@ -190,6 +199,42 @@
     "stat_offer": "Offre",
     "stat_rejected": "Rejeté"
   },
+  "settings": {
+    "title": "Param\u00e8tres",
+    "subtitle": "Configurez votre compte et vos pr\u00e9f\u00e9rences.",
+    "account": "Compte",
+    "emailLabel": "Email",
+    "followUpTitle": "S\u00e9quences de relance",
+    "followUp": "Relance {n}",
+    "language": "Langue",
+    "saveSuccess": "Param\u00e8tres sauvegard\u00e9s",
+    "saveError": "Erreur lors de la sauvegarde"
+  },
+  "admin": {
+    "aiSettingsTitle": "Configuration IA",
+    "aiSettingsSubtitle": "Configurez les mod\u00e8les IA par fonctionnalit\u00e9.",
+    "feature_default": "Par d\u00e9faut",
+    "feature_cv_extraction": "Extraction CV",
+    "feature_relevance_analysis": "Analyse de pertinence",
+    "feature_email_generation": "G\u00e9n\u00e9ration d'emails",
+    "configure": "Configurer",
+    "modelLabel": "Mod\u00e8le",
+    "temperatureLabel": "Temp\u00e9rature",
+    "maxTokensLabel": "Max tokens",
+    "enabledLabel": "Actif",
+    "enabled": "Actif",
+    "disabled": "D\u00e9sactiv\u00e9",
+    "notConfigured": "Non configur\u00e9 (utilise les valeurs par d\u00e9faut)",
+    "settingSaved": "Configuration sauvegard\u00e9e",
+    "settingError": "Erreur lors de la sauvegarde",
+    "usersTitle": "Gestion des utilisateurs",
+    "usersSubtitle": "G\u00e9rez les r\u00f4les des utilisateurs.",
+    "colName": "Nom",
+    "colEmail": "Email",
+    "colAdmin": "R\u00f4le",
+    "admin": "Admin",
+    "user": "Utilisateur"
+  },
   "sidebar": {
     "dashboard": "Dashboard",
     "sourcing": "Sourcing",
@@ -197,6 +242,10 @@
     "emails": "Emails",
     "pipeline": "Pipeline",
     "profile": "Profil",
-    "logout": "Se déconnecter"
+    "settings": "Param\u00e8tres",
+    "aiSettings": "Config. IA",
+    "users": "Utilisateurs",
+    "adminSection": "Administration",
+    "logout": "Se d\u00e9connecter"
   }
 }

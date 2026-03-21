@@ -8,6 +8,8 @@ const ContactsController = () => import('#controllers/contacts_controller')
 const AnalysisController = () => import('#controllers/analysis_controller')
 const EmailsController = () => import('#controllers/emails_controller')
 const PipelineController = () => import('#controllers/pipeline_controller')
+const DashboardController = () => import('#controllers/dashboard_controller')
+const AiSettingsController = () => import('#controllers/ai_settings_controller')
 
 router.get('/', async () => {
   return { name: '@expat-hunter/api', status: 'ok' }
@@ -86,3 +88,29 @@ router
   })
   .prefix('/api/pipeline')
   .use(middleware.auth())
+
+router
+  .group(() => {
+    router.get('/actions', [DashboardController, 'actions'])
+    router.get('/stats', [DashboardController, 'stats'])
+  })
+  .prefix('/api/dashboard')
+  .use(middleware.auth())
+
+router
+  .group(() => {
+    router.get('/', [AiSettingsController, 'index'])
+    router.put('/:key', [AiSettingsController, 'upsert'])
+  })
+  .prefix('/api/admin/ai-settings')
+  .use(middleware.auth())
+  .use(middleware.admin())
+
+router
+  .group(() => {
+    router.get('/', [AiSettingsController, 'listUsers'])
+    router.patch('/:id/admin', [AiSettingsController, 'toggleAdmin'])
+  })
+  .prefix('/api/admin/users')
+  .use(middleware.auth())
+  .use(middleware.admin())

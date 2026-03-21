@@ -243,6 +243,7 @@ test.group('GET /api/pipeline', (group) => {
       password: 'hashed',
       full_name: 'Other',
       locale: 'en',
+      is_admin: false,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
@@ -315,6 +316,7 @@ test.group('GET /api/pipeline/stats', (group) => {
       password: 'hashed',
       full_name: 'Other',
       locale: 'en',
+      is_admin: false,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })

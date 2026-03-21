@@ -179,6 +179,7 @@ test.group('GET /api/emails', (group) => {
       password: 'hashed',
       full_name: 'Other User',
       locale: 'en',
+      is_admin: false,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
@@ -268,6 +269,7 @@ test.group('GET /api/emails/:id', (group) => {
       password: 'hashed',
       full_name: 'Other User',
       locale: 'en',
+      is_admin: false,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })

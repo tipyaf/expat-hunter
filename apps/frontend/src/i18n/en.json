@@ -40,7 +40,16 @@
     "welcome": "Welcome, {name}",
     "contacts": "Contacts",
     "emailsSent": "Emails sent",
-    "pipeline": "Pipeline"
+    "repliesReceived": "Replies received",
+    "pipeline": "Pipeline",
+    "pendingActions": "Pending actions ({count})",
+    "noActions": "No pending actions. Everything is up to date!",
+    "startSourcing": "Start sourcing",
+    "quickStats": "Quick stats",
+    "view": "View",
+    "action_emails_to_validate": "{count} emails to validate",
+    "action_replies_received": "{count} replies received",
+    "action_sourcing_completed": "{count} contacts to analyze"
   },
   "profile": {
     "title": "My profile",
@@ -190,6 +199,42 @@
     "stat_offer": "Offer",
     "stat_rejected": "Rejected"
   },
+  "settings": {
+    "title": "Settings",
+    "subtitle": "Configure your account and preferences.",
+    "account": "Account",
+    "emailLabel": "Email",
+    "followUpTitle": "Follow-up sequences",
+    "followUp": "Follow-up {n}",
+    "language": "Language",
+    "saveSuccess": "Settings saved",
+    "saveError": "Error while saving"
+  },
+  "admin": {
+    "aiSettingsTitle": "AI Configuration",
+    "aiSettingsSubtitle": "Configure AI models per feature.",
+    "feature_default": "Default",
+    "feature_cv_extraction": "CV Extraction",
+    "feature_relevance_analysis": "Relevance Analysis",
+    "feature_email_generation": "Email Generation",
+    "configure": "Configure",
+    "modelLabel": "Model",
+    "temperatureLabel": "Temperature",
+    "maxTokensLabel": "Max tokens",
+    "enabledLabel": "Enabled",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "notConfigured": "Not configured (using default values)",
+    "settingSaved": "Configuration saved",
+    "settingError": "Error while saving",
+    "usersTitle": "User Management",
+    "usersSubtitle": "Manage user roles.",
+    "colName": "Name",
+    "colEmail": "Email",
+    "colAdmin": "Role",
+    "admin": "Admin",
+    "user": "User"
+  },
   "sidebar": {
     "dashboard": "Dashboard",
     "sourcing": "Sourcing",
@@ -197,6 +242,10 @@
     "emails": "Emails",
     "pipeline": "Pipeline",
     "profile": "Profile",
+    "settings": "Settings",
+    "aiSettings": "AI Config",
+    "users": "Users",
+    "adminSection": "Administration",
     "logout": "Sign out"
   }
 }

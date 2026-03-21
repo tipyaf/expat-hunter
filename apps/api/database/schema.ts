@@ -7,6 +7,27 @@
 import { BaseModel, column } from '@adonisjs/lucid/orm'
 import { DateTime } from 'luxon'
 
+export class AiSettingSchema extends BaseModel {
+  static $columns = ['createdAt', 'featureKey', 'id', 'isEnabled', 'maxTokens', 'model', 'temperature', 'updatedAt'] as const
+  $columns = AiSettingSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare featureKey: string
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare isEnabled: boolean
+  @column()
+  declare maxTokens: number
+  @column()
+  declare model: string
+  @column()
+  declare temperature: number
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+}
+
 export class AuthAccessTokenSchema extends BaseModel {
   static $columns = ['abilities', 'createdAt', 'expiresAt', 'hash', 'id', 'lastUsedAt', 'name', 'tokenableId', 'type', 'updatedAt'] as const
   $columns = AuthAccessTokenSchema.$columns
@@ -232,7 +253,7 @@ export class SourcingSourceSchema extends BaseModel {
 }
 
 export class UserSchema extends BaseModel {
-  static $columns = ['createdAt', 'email', 'fullName', 'id', 'locale', 'password', 'updatedAt'] as const
+  static $columns = ['createdAt', 'email', 'fullName', 'id', 'isAdmin', 'locale', 'password', 'updatedAt'] as const
   $columns = UserSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -242,6 +263,8 @@ export class UserSchema extends BaseModel {
   declare fullName: string
   @column({ isPrimary: true })
   declare id: string
+  @column()
+  declare isAdmin: boolean
   @column()
   declare locale: string
   @column({ serializeAs: null })

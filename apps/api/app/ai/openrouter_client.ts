@@ -4,6 +4,8 @@
  * Supports any model available on OpenRouter (GPT-4o-mini, Claude 3 Haiku, etc.).
  * Configuration via OPENROUTER_API_KEY and OPENROUTER_MODEL env vars.
  */
+import type { FeatureKey } from '#models/ai_setting'
+import AiSettingsService from '#services/ai_settings_service'
 import env from '#start/env'
 
 interface ChatMessage {
@@ -26,11 +28,27 @@ interface OpenRouterResponse {
 export default class OpenRouterClient {
   private apiKey: string
   private defaultModel: string
+  private defaultTemperature: number
+  private defaultMaxTokens: number
   private baseUrl = 'https://openrouter.ai/api/v1/chat/completions'
 
-  constructor() {
+  constructor(config?: { model?: string; temperature?: number; maxTokens?: number }) {
     this.apiKey = env.get('OPENROUTER_API_KEY', '')
-    this.defaultModel = env.get('OPENROUTER_MODEL', 'openai/gpt-4o-mini')
+    this.defaultModel = config?.model ?? env.get('OPENROUTER_MODEL', 'openai/gpt-4o-mini')
+    this.defaultTemperature = config?.temperature ?? 0.3
+    this.defaultMaxTokens = config?.maxTokens ?? 1024
+  }
+
+  static async forFeature(featureKey: FeatureKey): Promise<OpenRouterClient | null> {
+    const config = await AiSettingsService.getConfig(featureKey)
+    if (!config.isEnabled) {
+      return null
+    }
+    return new OpenRouterClient({
+      model: config.model,
+      temperature: config.temperature,
+      maxTokens: config.maxTokens,
+    })
   }
 
   get isConfigured(): boolean {
@@ -53,8 +71,8 @@ export default class OpenRouterClient {
       body: JSON.stringify({
         model: params.model ?? this.defaultModel,
         messages: params.messages,
-        temperature: params.temperature ?? 0.3,
-        max_tokens: params.maxTokens ?? 1024,
+        temperature: params.temperature ?? this.defaultTemperature,
+        max_tokens: params.maxTokens ?? this.defaultMaxTokens,
       }),
     })
 
