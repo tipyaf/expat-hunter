@@ -18,7 +18,15 @@ export function Sidebar() {
     { label: t('emails'), href: '/emails', icon: 'E' },
     { label: t('pipeline'), href: '/pipeline', icon: 'K' },
     { label: t('profile'), href: '/profile', icon: 'P' },
+    { label: t('settings'), href: '/settings', icon: 'G' },
   ]
+
+  const adminItems = user?.isAdmin
+    ? [
+        { label: t('aiSettings'), href: '/admin/ai-settings', icon: 'A' },
+        { label: t('users'), href: '/admin/users', icon: 'U' },
+      ]
+    : []
 
   return (
     <aside className="flex h-screen w-64 flex-col border-r border-[var(--color-border)] bg-[var(--color-surface-light)]">
@@ -47,6 +55,33 @@ export function Sidebar() {
             </Link>
           )
         })}
+        {adminItems.length > 0 && (
+          <>
+            <div className="my-3 border-t border-[var(--color-border)]" />
+            <p className="px-3 text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider mb-1">
+              {t('adminSection')}
+            </p>
+            {adminItems.map((item) => {
+              const isActive = pathname === item.href
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                    isActive
+                      ? 'bg-primary/10 text-primary'
+                      : 'text-[var(--color-text-muted)] hover:bg-primary/5 hover:text-[var(--color-text-main)]'
+                  }`}
+                >
+                  <span className="flex h-5 w-5 items-center justify-center rounded bg-primary/10 text-xs font-bold text-primary">
+                    {item.icon}
+                  </span>
+                  {item.label}
+                </Link>
+              )
+            })}
+          </>
+        )}
       </nav>
       <div className="border-t border-[var(--color-border)] p-4">
         <div className="mb-2 text-sm font-medium truncate">{user?.fullName ?? ''}</div>

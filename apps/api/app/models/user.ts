@@ -32,6 +32,9 @@ export default class User extends compose(BaseModel, AuthFinder) {
   @column()
   declare locale: string
 
+  @column()
+  declare isAdmin: boolean
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 
