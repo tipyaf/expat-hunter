@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { type KeyboardEvent, useId, useState } from 'react'
 
 interface TagInputProps {
@@ -13,6 +14,7 @@ interface TagInputProps {
 export function TagInput({ label, value, onChange, placeholder, maxLength }: TagInputProps) {
   const [input, setInput] = useState('')
   const inputId = useId()
+  const tc = useTranslations('common')
 
   function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Enter' || e.key === ',') {
@@ -49,9 +51,10 @@ export function TagInput({ label, value, onChange, placeholder, maxLength }: Tag
               onClick={() => {
                 removeTag(tag)
               }}
-              className="ml-1 text-primary/60 hover:text-primary"
+              aria-label={`Supprimer ${tag}`}
+              className="ml-1 text-primary/60 hover:text-primary focus:outline-none focus-visible:ring-1 focus-visible:ring-primary rounded"
             >
-              x
+              ×
             </button>
           </span>
         ))}
@@ -69,7 +72,7 @@ export function TagInput({ label, value, onChange, placeholder, maxLength }: Tag
         />
       </div>
       <p className="mt-1 text-xs text-[var(--color-text-muted)]">
-        Appuyez sur Entree ou virgule pour ajouter
+        {tc('tagHint')}
       </p>
     </div>
   )

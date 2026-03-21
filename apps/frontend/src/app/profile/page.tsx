@@ -119,12 +119,12 @@ export default function ProfilePage() {
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
-      <main className="flex-1 flex flex-col overflow-hidden">
-        <div className="shrink-0 px-8 pt-8 pb-4 bg-[var(--color-bg-light)]">
+      <main id="main-content" className="flex-1 flex flex-col overflow-hidden">
+        <div className="shrink-0 px-4 md:px-8 pt-8 pb-4 pl-16 md:pl-8 bg-[var(--color-bg-light)]">
           <h1 className="text-3xl font-bold text-primary mb-2">{t('title')}</h1>
           <p className="text-[var(--color-text-muted)]">{t('subtitle')}</p>
         </div>
-        <div className="flex-1 overflow-y-auto px-8 pb-8">
+        <div className="flex-1 overflow-y-auto px-4 md:px-8 pb-8">
 
         {message && (
           <div className="mb-6 rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">
