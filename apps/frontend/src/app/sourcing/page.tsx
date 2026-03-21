@@ -66,12 +66,15 @@ export default function SourcingPage() {
   }
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex h-screen overflow-hidden">
       <Sidebar />
-      <main className="flex-1 p-8">
-        <h1 className="text-3xl font-bold text-primary mb-6">{t('title')}</h1>
-        <p className="text-[var(--color-text-muted)] mb-8">{t('subtitle')}</p>
+      <main className="flex-1 flex flex-col overflow-hidden">
+        <div className="shrink-0 px-8 pt-8 pb-4 bg-[var(--color-bg-light)]">
+          <h1 className="text-3xl font-bold text-primary mb-2">{t('title')}</h1>
+          <p className="text-[var(--color-text-muted)]">{t('subtitle')}</p>
+        </div>
 
+        <div className="flex-1 overflow-y-auto px-8 pb-8">
         {/* Launch form */}
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-6 shadow-sm mb-8">
           <h2 className="text-lg font-semibold mb-4">{t('launchTitle')}</h2>
@@ -182,6 +185,7 @@ export default function SourcingPage() {
               </table>
             </div>
           )}
+        </div>
         </div>
       </main>
     </div>

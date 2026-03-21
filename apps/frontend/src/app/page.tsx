@@ -38,11 +38,14 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex h-screen overflow-hidden">
       <Sidebar />
-      <main className="flex-1 p-8">
-        <h1 className="text-3xl font-bold text-primary mb-6">{t('title')}</h1>
-        <p className="text-[var(--color-text-muted)] mb-8">{t('welcome', { name: user.fullName })}</p>
+      <main className="flex-1 flex flex-col overflow-hidden">
+        <div className="shrink-0 px-8 pt-8 pb-4 bg-[var(--color-bg-light)]">
+          <h1 className="text-3xl font-bold text-primary mb-2">{t('title')}</h1>
+          <p className="text-[var(--color-text-muted)]">{t('welcome', { name: user.fullName })}</p>
+        </div>
+        <div className="flex-1 overflow-y-auto px-8 pb-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-6 shadow-sm">
             <h2 className="text-sm font-medium text-[var(--color-text-muted)] mb-1">{t('contacts')}</h2>
@@ -58,6 +61,7 @@ export default function DashboardPage() {
             <h2 className="text-sm font-medium text-[var(--color-text-muted)] mb-1">{t('pipeline')}</h2>
             <p className="text-2xl font-bold">0</p>
           </div>
+        </div>
         </div>
       </main>
     </div>
