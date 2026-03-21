@@ -124,7 +124,19 @@
     "status_replied": "Replied",
     "status_interview": "Interview",
     "status_offer": "Offer",
-    "status_rejected": "Rejected"
+    "status_rejected": "Rejected",
+    "analyzeAll": "Analyze contacts",
+    "analyzing": "Analyzing...",
+    "analysisComplete": "{analyzed} contacts analyzed, {errors} errors",
+    "analysisError": "AI analysis error",
+    "pendingAnalysis": "{count} contacts pending analysis",
+    "labelVeryRelevant": "Very relevant",
+    "labelRelevant": "Relevant",
+    "labelToReview": "To review",
+    "labelNotRelevant": "Not relevant",
+    "rec_contact": "Contact",
+    "rec_skip": "Skip",
+    "rec_manual_review": "Manual review"
   },
   "sidebar": {
     "dashboard": "Dashboard",

@@ -124,7 +124,19 @@
     "status_replied": "R\u00e9pondu",
     "status_interview": "Entretien",
     "status_offer": "Offre",
-    "status_rejected": "Rejet\u00e9"
+    "status_rejected": "Rejeté",
+    "analyzeAll": "Analyser les contacts",
+    "analyzing": "Analyse en cours...",
+    "analysisComplete": "{analyzed} contacts analysés, {errors} erreurs",
+    "analysisError": "Erreur lors de l'analyse IA",
+    "pendingAnalysis": "{count} contacts en attente d'analyse",
+    "labelVeryRelevant": "Très pertinent",
+    "labelRelevant": "Pertinent",
+    "labelToReview": "À vérifier",
+    "labelNotRelevant": "Non pertinent",
+    "rec_contact": "Contacter",
+    "rec_skip": "Ignorer",
+    "rec_manual_review": "À vérifier"
   },
   "sidebar": {
     "dashboard": "Dashboard",

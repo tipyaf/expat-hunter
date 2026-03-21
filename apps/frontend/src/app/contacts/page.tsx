@@ -1,10 +1,12 @@
 'use client'
 
 import { Sidebar } from '@/components/layout/sidebar'
+import { Button } from '@/components/ui/button'
 import { useAuth } from '@/contexts/auth-context'
+import { useAnalysis } from '@/hooks/use-analysis'
 import { CONTACT_STATUSES, useContacts, type ContactStatus } from '@/hooks/use-contacts'
 import { useTranslations } from 'next-intl'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 function statusColor(status: string) {
   switch (status) {
@@ -20,16 +22,33 @@ function statusColor(status: string) {
   }
 }
 
+function relevanceBadge(label: string | null) {
+  switch (label) {
+    case 'very_relevant': return { bg: 'bg-green-100 text-green-700 border-green-300', icon: '★', key: 'veryRelevant' }
+    case 'relevant': return { bg: 'bg-blue-100 text-blue-700 border-blue-300', icon: '●', key: 'relevant' }
+    case 'to_review': return { bg: 'bg-yellow-100 text-yellow-800 border-yellow-300', icon: '?', key: 'toReview' }
+    case 'not_relevant': return { bg: 'bg-red-100 text-red-600 border-red-300', icon: '✕', key: 'notRelevant' }
+    default: return null
+  }
+}
+
 export default function ContactsPage() {
   const { user, isLoading: authLoading } = useAuth()
   const t = useTranslations('contacts')
   const tc = useTranslations('common')
 
   const [statusFilter, setStatusFilter] = useState<string>('')
-  const { contacts, meta, page, isLoading, updateStatus, goToPage } = useContacts({
+  const { contacts, meta, page, isLoading, updateStatus, goToPage, refetch } = useContacts({
     status: statusFilter || undefined,
   })
   const [updatingId, setUpdatingId] = useState<string | null>(null)
+
+  const { isAnalyzing, lastResult, stats, error: analysisError, runAnalysis, fetchStats } = useAnalysis()
+  const [analysisMessage, setAnalysisMessage] = useState<string | null>(null)
+
+  useEffect(() => {
+    void fetchStats()
+  }, [fetchStats])
 
   if (authLoading || !user) {
     return (
@@ -50,12 +69,81 @@ export default function ContactsPage() {
     }
   }
 
+  const handleRunAnalysis = async () => {
+    setAnalysisMessage(null)
+    try {
+      const result = await runAnalysis()
+      setAnalysisMessage(
+        t('analysisComplete', { analyzed: result.analyzed, errors: result.errors })
+      )
+      void refetch()
+      void fetchStats()
+    } catch {
+      setAnalysisMessage(t('analysisError'))
+    }
+  }
+
   return (
     <div className="flex min-h-screen">
       <Sidebar />
       <main className="flex-1 p-8">
-        <h1 className="text-3xl font-bold text-primary mb-2">{t('title')}</h1>
-        <p className="text-[var(--color-text-muted)] mb-6">{t('subtitle')}</p>
+        <div className="flex items-start justify-between mb-2">
+          <div>
+            <h1 className="text-3xl font-bold text-primary">{t('title')}</h1>
+            <p className="text-[var(--color-text-muted)] mt-1">{t('subtitle')}</p>
+          </div>
+          <div className="flex flex-col items-end gap-2">
+            <Button
+              onClick={() => void handleRunAnalysis()}
+              disabled={isAnalyzing}
+              className="shrink-0"
+            >
+              {isAnalyzing ? t('analyzing') : t('analyzeAll')}
+            </Button>
+            {stats && stats.pending > 0 && (
+              <span className="text-xs text-[var(--color-text-muted)]">
+                {t('pendingAnalysis', { count: stats.pending })}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Analysis feedback */}
+        {analysisMessage && (
+          <div className={`mb-4 rounded-lg px-4 py-3 text-sm ${
+            analysisError
+              ? 'bg-[var(--color-error)]/10 border border-[var(--color-error)]/30 text-[var(--color-error)]'
+              : 'bg-[var(--color-success)]/10 border border-[var(--color-success)]/30 text-[var(--color-success)]'
+          }`}>
+            {analysisMessage}
+          </div>
+        )}
+
+        {/* Stats bar */}
+        {stats && stats.analyzed > 0 && (
+          <div className="flex flex-wrap gap-3 mb-4">
+            {stats.byLabel.very_relevant != null && (
+              <span className="inline-flex items-center gap-1 rounded-full border bg-green-100 text-green-700 border-green-300 px-2 py-0.5 text-xs font-medium">
+                ★ {t('labelVeryRelevant')} ({stats.byLabel.very_relevant})
+              </span>
+            )}
+            {stats.byLabel.relevant != null && (
+              <span className="inline-flex items-center gap-1 rounded-full border bg-blue-100 text-blue-700 border-blue-300 px-2 py-0.5 text-xs font-medium">
+                ● {t('labelRelevant')} ({stats.byLabel.relevant})
+              </span>
+            )}
+            {stats.byLabel.to_review != null && (
+              <span className="inline-flex items-center gap-1 rounded-full border bg-yellow-100 text-yellow-800 border-yellow-300 px-2 py-0.5 text-xs font-medium">
+                ? {t('labelToReview')} ({stats.byLabel.to_review})
+              </span>
+            )}
+            {stats.byLabel.not_relevant != null && (
+              <span className="inline-flex items-center gap-1 rounded-full border bg-red-100 text-red-600 border-red-300 px-2 py-0.5 text-xs font-medium">
+                ✕ {t('labelNotRelevant')} ({stats.byLabel.not_relevant})
+              </span>
+            )}
+          </div>
+        )}
 
         {/* Filters */}
         <div className="flex flex-wrap gap-2 mb-6">
@@ -96,56 +184,86 @@ export default function ContactsPage() {
         ) : (
           <>
             <div className="space-y-3">
-              {contacts.map((contact) => (
-                <div
-                  key={contact.id}
-                  className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-4 shadow-sm"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="font-medium truncate">{contact.role}</h3>
-                        <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium shrink-0 ${statusColor(contact.status)}`}>
-                          {t(`status_${contact.status}`)}
-                        </span>
-                      </div>
-                      <p className="text-sm text-[var(--color-text-muted)]">
-                        {contact.company?.name ?? '-'}
-                        {contact.company?.city && ` · ${contact.company.city}`}
-                        {contact.company?.sector && ` · ${contact.company.sector}`}
-                      </p>
-                      <div className="flex gap-4 mt-2 text-xs text-[var(--color-text-muted)]">
-                        {contact.email && <span>{contact.email}</span>}
-                        {contact.linkedinUrl && (
-                          <a
-                            href={contact.linkedinUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary hover:underline"
-                          >
-                            LinkedIn
-                          </a>
+              {contacts.map((contact) => {
+                const badge = relevanceBadge(contact.relevanceLabel)
+                return (
+                  <div
+                    key={contact.id}
+                    className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-4 shadow-sm"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h3 className="font-medium truncate">{contact.fullName}</h3>
+                          <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium shrink-0 ${statusColor(contact.status)}`}>
+                            {t(`status_${contact.status}`)}
+                          </span>
+                          {badge && (
+                            <span
+                              className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium shrink-0 ${badge.bg}`}
+                              title={contact.relevanceReason ?? ''}
+                            >
+                              {badge.icon} {contact.relevanceScore}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm font-medium text-[var(--color-text-main)]">
+                          {contact.role}
+                        </p>
+                        <p className="text-sm text-[var(--color-text-muted)]">
+                          {contact.company?.name ?? '-'}
+                          {contact.company?.city && ` · ${contact.company.city}`}
+                          {contact.company?.sector && ` · ${contact.company.sector}`}
+                        </p>
+                        {contact.relevanceReason && (
+                          <p className="text-xs text-[var(--color-text-muted)] mt-1 italic">
+                            {contact.relevanceReason}
+                          </p>
                         )}
-                        <span>{t('source')}: {contact.source}</span>
+                        <div className="flex gap-4 mt-2 text-xs text-[var(--color-text-muted)]">
+                          {contact.email && <span>{contact.email}</span>}
+                          {contact.linkedinUrl && (
+                            <a
+                              href={contact.linkedinUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary hover:underline"
+                            >
+                              LinkedIn
+                            </a>
+                          )}
+                          <span>{t('source')}: {contact.source}</span>
+                          {contact.aiRecommendation && (
+                            <span className={`font-medium ${
+                              contact.aiRecommendation === 'contact'
+                                ? 'text-green-600'
+                                : contact.aiRecommendation === 'skip'
+                                  ? 'text-red-500'
+                                  : 'text-yellow-600'
+                            }`}>
+                              {t(`rec_${contact.aiRecommendation}`)}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                    <div className="shrink-0">
-                      <select
-                        value={contact.status}
-                        onChange={(e) => void handleStatusChange(contact.id, e.target.value as ContactStatus)}
-                        disabled={updatingId === contact.id}
-                        className="rounded-lg border border-[var(--color-border)] bg-white px-2 py-1 text-xs disabled:opacity-50"
-                      >
-                        {CONTACT_STATUSES.map((s) => (
-                          <option key={s} value={s}>
-                            {t(`status_${s}`)}
-                          </option>
-                        ))}
-                      </select>
+                      <div className="shrink-0">
+                        <select
+                          value={contact.status}
+                          onChange={(e) => void handleStatusChange(contact.id, e.target.value as ContactStatus)}
+                          disabled={updatingId === contact.id}
+                          className="rounded-lg border border-[var(--color-border)] bg-white px-2 py-1 text-xs disabled:opacity-50"
+                        >
+                          {CONTACT_STATUSES.map((s) => (
+                            <option key={s} value={s}>
+                              {t(`status_${s}`)}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
 
             {/* Pagination */}

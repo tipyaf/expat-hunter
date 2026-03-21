@@ -5,6 +5,7 @@ const AuthController = () => import('#controllers/auth_controller')
 const ProfileController = () => import('#controllers/profile_controller')
 const SourcingController = () => import('#controllers/sourcing_controller')
 const ContactsController = () => import('#controllers/contacts_controller')
+const AnalysisController = () => import('#controllers/analysis_controller')
 
 router.get('/', async () => {
   return { name: '@expat-hunter/api', status: 'ok' }
@@ -51,4 +52,13 @@ router
     router.put('/:id/override', [ContactsController, 'override'])
   })
   .prefix('/api/contacts')
+  .use(middleware.auth())
+
+router
+  .group(() => {
+    router.post('/run', [AnalysisController, 'run'])
+    router.post('/contact/:id', [AnalysisController, 'analyzeOne'])
+    router.get('/stats', [AnalysisController, 'stats'])
+  })
+  .prefix('/api/analysis')
   .use(middleware.auth())
