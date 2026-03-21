@@ -6,16 +6,7 @@ import { useSourcing, type SourcingRun } from '@/hooks/use-sourcing'
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 
-const COUNTRIES = [
-  { code: 'NZ', label: 'New Zealand' },
-  { code: 'AU', label: 'Australia' },
-  { code: 'SG', label: 'Singapore' },
-  { code: 'MY', label: 'Malaysia' },
-  { code: 'PH', label: 'Philippines' },
-  { code: 'ID', label: 'Indonesia' },
-  { code: 'TH', label: 'Thailand' },
-  { code: 'HK', label: 'Hong Kong' },
-]
+const COUNTRY_CODES = ['NZ', 'AU', 'SG', 'MY', 'PH', 'ID', 'TH', 'HK'] as const
 
 function statusColor(status: string) {
   switch (status) {
@@ -68,13 +59,13 @@ export default function SourcingPage() {
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
-      <main className="flex-1 flex flex-col overflow-hidden">
-        <div className="shrink-0 px-8 pt-8 pb-4 bg-[var(--color-bg-light)]">
+      <main id="main-content" className="flex-1 flex flex-col overflow-hidden">
+        <div className="shrink-0 px-4 md:px-8 pt-8 pb-4 pl-16 md:pl-8 bg-[var(--color-bg-light)]">
           <h1 className="text-3xl font-bold text-primary mb-2">{t('title')}</h1>
           <p className="text-[var(--color-text-muted)]">{t('subtitle')}</p>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-8 pb-8">
+        <div className="flex-1 overflow-y-auto px-4 md:px-8 pb-8">
         {/* Launch form */}
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-6 shadow-sm mb-8">
           <h2 className="text-lg font-semibold mb-4">{t('launchTitle')}</h2>
@@ -87,11 +78,11 @@ export default function SourcingPage() {
                 id="country"
                 value={country}
                 onChange={(e) => setCountry(e.target.value)}
-                className="w-full rounded-lg border border-[var(--color-border)] bg-white px-3 py-2 text-sm"
+                className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-light)] px-3 py-2 text-sm"
               >
-                {COUNTRIES.map((c) => (
-                  <option key={c.code} value={c.code}>
-                    {c.label} ({c.code})
+                {COUNTRY_CODES.map((code) => (
+                  <option key={code} value={code}>
+                    {t(`country_${code}`)} ({code})
                   </option>
                 ))}
               </select>

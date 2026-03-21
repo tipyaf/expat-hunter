@@ -131,8 +131,8 @@ export default function PipelinePage() {
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />
-      <main className="flex-1 flex flex-col overflow-hidden">
-        <div className="shrink-0 px-8 pt-8 pb-4 bg-[var(--color-bg-light)]">
+      <main id="main-content" className="flex-1 flex flex-col overflow-hidden">
+        <div className="shrink-0 px-4 md:px-8 pt-8 pb-4 pl-16 md:pl-8 bg-[var(--color-bg-light)]">
           <div className="flex items-start justify-between mb-2">
             <div>
               <h1 className="text-3xl font-bold text-primary">{t('title')}</h1>
@@ -159,7 +159,7 @@ export default function PipelinePage() {
           )}
         </div>
 
-        <div className="flex-1 overflow-x-auto overflow-y-hidden px-8 pb-8">
+        <div className="flex-1 overflow-x-auto overflow-y-hidden px-4 md:px-8 pb-8">
           {isLoading ? (
             <p className="text-sm text-[var(--color-text-muted)] pt-4">{tc('loading')}</p>
           ) : (

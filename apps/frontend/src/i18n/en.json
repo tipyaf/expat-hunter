@@ -13,21 +13,26 @@
     "noneF": "None",
     "notProvided": "Not provided",
     "years": "years",
-    "appName": "ExpatHunter"
+    "appName": "ExpatHunter",
+    "tagHint": "Press Enter or comma to add",
+    "skipToContent": "Skip to main content"
   },
   "auth": {
     "loginTitle": "Sign in to your account",
     "emailLabel": "Email",
+    "emailPlaceholder": "you@example.com",
     "passwordLabel": "Password",
+    "passwordPlaceholder": "Minimum 8 characters",
+    "fullNameLabel": "Full name",
+    "fullNamePlaceholder": "John Smith",
     "submitting": "Signing in...",
     "submit": "Sign in",
     "noAccount": "Don't have an account?",
     "createAccount": "Create an account",
     "invalidCredentials": "Invalid email or password",
     "registerTitle": "Create your account",
-    "fullNameLabel": "Full name",
     "localeLabel": "Language",
-    "localeFr": "Fran\u00e7ais",
+    "localeFr": "Français",
     "localeEn": "English",
     "registering": "Creating...",
     "register": "Create my account",
@@ -118,7 +123,15 @@
     "colContacts": "Contacts",
     "colSources": "Sources",
     "colDate": "Date",
-    "colErrors": "Errors"
+    "colErrors": "Errors",
+    "country_NZ": "New Zealand",
+    "country_AU": "Australia",
+    "country_SG": "Singapore",
+    "country_MY": "Malaysia",
+    "country_PH": "Philippines",
+    "country_ID": "Indonesia",
+    "country_TH": "Thailand",
+    "country_HK": "Hong Kong"
   },
   "contacts": {
     "title": "Contacts",
@@ -207,6 +220,10 @@
     "followUpTitle": "Follow-up sequences",
     "followUp": "Follow-up {n}",
     "language": "Language",
+    "darkMode": "Dark mode",
+    "darkModeAuto": "Auto (system)",
+    "darkModeLight": "Light",
+    "darkModeDark": "Dark",
     "saveSuccess": "Settings saved",
     "saveError": "Error while saving"
   },
@@ -246,6 +263,8 @@
     "aiSettings": "AI Config",
     "users": "Users",
     "adminSection": "Administration",
-    "logout": "Sign out"
+    "logout": "Sign out",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu"
   }
 }

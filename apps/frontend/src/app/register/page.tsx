@@ -61,7 +61,7 @@ export default function RegisterPage() {
                 setFullName(e.target.value)
               }}
               className="w-full rounded-lg border border-[var(--color-border)] bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
-              placeholder="Jean Dupont"
+              placeholder={t('fullNamePlaceholder')}
             />
           </div>
           <div>
@@ -77,7 +77,7 @@ export default function RegisterPage() {
                 setEmail(e.target.value)
               }}
               className="w-full rounded-lg border border-[var(--color-border)] bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
-              placeholder="vous@exemple.com"
+              placeholder={t('emailPlaceholder')}
             />
           </div>
           <div>
@@ -94,7 +94,7 @@ export default function RegisterPage() {
                 setPassword(e.target.value)
               }}
               className="w-full rounded-lg border border-[var(--color-border)] bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
-              placeholder="Minimum 8 caractères"
+              placeholder={t('passwordPlaceholder')}
             />
           </div>
           <div>
