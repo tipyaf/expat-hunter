@@ -7,6 +7,7 @@ const SourcingController = () => import('#controllers/sourcing_controller')
 const ContactsController = () => import('#controllers/contacts_controller')
 const AnalysisController = () => import('#controllers/analysis_controller')
 const EmailsController = () => import('#controllers/emails_controller')
+const PipelineController = () => import('#controllers/pipeline_controller')
 
 router.get('/', async () => {
   return { name: '@expat-hunter/api', status: 'ok' }
@@ -67,13 +68,21 @@ router
 router
   .group(() => {
     router.get('/', [EmailsController, 'index'])
+    router.post('/generate', [EmailsController, 'generate'])
+    router.post('/approve-batch', [EmailsController, 'approveBatch'])
     router.get('/:id', [EmailsController, 'show'])
     router.put('/:id', [EmailsController, 'update'])
-    router.post('/generate', [EmailsController, 'generate'])
     router.post('/:id/approve', [EmailsController, 'approve'])
     router.post('/:id/reject', [EmailsController, 'reject'])
     router.post('/:id/regenerate', [EmailsController, 'regenerate'])
-    router.post('/approve-batch', [EmailsController, 'approveBatch'])
   })
   .prefix('/api/emails')
+  .use(middleware.auth())
+
+router
+  .group(() => {
+    router.get('/', [PipelineController, 'index'])
+    router.get('/stats', [PipelineController, 'stats'])
+  })
+  .prefix('/api/pipeline')
   .use(middleware.auth())

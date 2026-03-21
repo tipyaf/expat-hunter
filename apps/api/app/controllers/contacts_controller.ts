@@ -12,8 +12,8 @@ export default class ContactsController {
    */
   async index({ auth, request, response }: HttpContext) {
     const user = auth.getUserOrFail()
-    const page = request.input('page', 1)
-    const limit = request.input('limit', 20)
+    const page = Math.max(1, Math.floor(Number(request.input('page', 1)) || 1))
+    const limit = Math.min(100, Math.max(1, Math.floor(Number(request.input('limit', 20)) || 20)))
     const status = request.input('status')
     const sourcingRunId = request.input('sourcing_run_id')
 
@@ -94,6 +94,13 @@ export default class ContactsController {
   async override({ auth, params, request, response }: HttpContext) {
     const user = auth.getUserOrFail()
     const { aiRecommendation } = request.only(['aiRecommendation'])
+
+    const VALID_RECOMMENDATIONS = ['contact', 'skip', 'manual_review']
+    if (aiRecommendation && !VALID_RECOMMENDATIONS.includes(aiRecommendation)) {
+      return response.badRequest({
+        error: { code: 'INVALID_RECOMMENDATION', message: `Recommendation must be one of: ${VALID_RECOMMENDATIONS.join(', ')}` },
+      })
+    }
 
     const contact = await Contact.query()
       .where('id', params.id)

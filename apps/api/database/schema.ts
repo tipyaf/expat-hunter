@@ -131,6 +131,35 @@ export class ContactSchema extends BaseModel {
   declare userOverride: boolean
 }
 
+export class EmailMessageSchema extends BaseModel {
+  static $columns = ['body', 'contactId', 'createdAt', 'id', 'openedAt', 'repliedAt', 'scheduledAt', 'sentAt', 'status', 'subject', 'type', 'updatedAt'] as const
+  $columns = EmailMessageSchema.$columns
+  @column()
+  declare body: string
+  @column()
+  declare contactId: string
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column({ isPrimary: true })
+  declare id: string
+  @column.dateTime()
+  declare openedAt: DateTime | null
+  @column.dateTime()
+  declare repliedAt: DateTime | null
+  @column.dateTime()
+  declare scheduledAt: DateTime | null
+  @column.dateTime()
+  declare sentAt: DateTime | null
+  @column()
+  declare status: string
+  @column()
+  declare subject: string
+  @column()
+  declare type: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+}
+
 export class FollowUpSequenceSchema extends BaseModel {
   static $columns = ['createdAt', 'delayDays1', 'delayDays2', 'delayDays3', 'id', 'updatedAt', 'userId'] as const
   $columns = FollowUpSequenceSchema.$columns

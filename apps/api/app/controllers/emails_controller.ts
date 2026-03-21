@@ -11,8 +11,8 @@ export default class EmailsController {
    */
   async index({ auth, request, response }: HttpContext) {
     const user = auth.getUserOrFail()
-    const page = request.input('page', 1)
-    const limit = request.input('limit', 20)
+    const page = Math.max(1, Math.floor(Number(request.input('page', 1)) || 1))
+    const limit = Math.min(100, Math.max(1, Math.floor(Number(request.input('limit', 20)) || 20)))
     const status = request.input('status')
     const contactId = request.input('contact_id')
 
@@ -138,10 +138,13 @@ export default class EmailsController {
     const user = auth.getUserOrFail()
     const { contactIds, batchSize } = request.only(['contactIds', 'batchSize'])
 
+    const MAX_BATCH = 50
+    const safeBatch = batchSize ? Math.min(Math.max(1, Math.floor(Number(batchSize) || 10)), MAX_BATCH) : undefined
+
     const service = new EmailGenerationService()
     const result = await service.generateForContacts(user.id, {
       contactIds: contactIds ?? undefined,
-      batchSize: batchSize ? Number(batchSize) : undefined,
+      batchSize: safeBatch,
     })
 
     return response.ok({ data: result })
