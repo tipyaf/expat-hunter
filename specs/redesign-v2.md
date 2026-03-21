@@ -684,11 +684,133 @@ Chaque information recuperee depuis des sources externes (Apify, Hunter, Perplex
 
 ---
 
+### Feature 16 : Configuration avancee d'envoi d'emails (scheduling, relances, fuseaux horaires)
+
+**Priorite** : Must-have
+
+#### Contexte
+La v0.1.0 dispose deja d'une table `follow_up_sequences` basique (champs `delay_days` et `max_count`). Cette feature etend significativement les capacites de planification des envois pour maximiser la delivrabilite et le taux de reponse. Le principe fondamental : **tous les parametres de timing respectent le fuseau horaire du pays CIBLE, pas celui de l'utilisateur**.
+
+#### US-16.1 : Configuration du nombre de relances (follow-ups)
+> En tant qu'utilisateur, je veux definir combien de relances automatiques seront envoyees si un contact ne repond pas, afin de maximiser mes chances sans etre intrusif.
+
+**Criteres d'acceptation** :
+- [ ] L'utilisateur ajoute des relances une par une via un bouton "+ Ajouter une relance"
+- [ ] Chaque relance ajoutee peut etre supprimee individuellement via un bouton "✕"
+- [ ] Par defaut, 1 relance est pre-remplie dans l'interface
+- [ ] 0 relance = un seul email est envoye, sans suivi automatique
+- [ ] Le nombre maximum de relances autorisees est defini par l'administrateur (voir US-16.8) — l'interface affiche "X maximum (defini par l'administrateur)" et bloque l'ajout au-dela de cette limite
+- [ ] Chaque relance est generee par l'IA avec un angle different (rappel poli, valeur ajoutee, derniere tentative)
+- [ ] L'IA a acces au contenu des emails precedents pour eviter les repetitions
+- [ ] Si le contact repond entre deux relances, la sequence est automatiquement arretee
+- [ ] L'utilisateur peut arreter manuellement une sequence de relance pour un contact donne
+- [ ] Les relances sont visibles dans le thread du contact (fiche contact) avec le label "Relance 1/2", "Relance 2/2"
+
+#### US-16.2 : Delai entre chaque envoi
+> En tant qu'utilisateur, je veux definir le delai entre chaque envoi (premier email et relances), afin de respecter les usages professionnels du pays cible.
+
+**Criteres d'acceptation** :
+- [ ] Pour chaque relance, un delai est configurable via un champ numerique accompagne d'un selecteur d'unite : jours / semaines / mois
+- [ ] Delai par defaut pour la relance 1 : 5 jours
+- [ ] La contrainte de delai minimum entre relances est definie par l'administrateur (voir US-16.9) — l'interface empeche de saisir une valeur inferieure et affiche un message explicatif
+- [ ] Les delais sont en **jours ouvres** du pays cible (pas les week-ends, pas les jours feries majeurs)
+- [ ] L'utilisateur peut choisir entre jours ouvres et jours calendaires
+- [ ] Un conseil expert s'affiche pour guider le choix : "En Nouvelle-Zelande, attendez 5-7 jours ouvres entre les relances. Les recruteurs kiwis apprecient la patience."
+
+#### US-16.3 : Creneaux horaires d'envoi
+> En tant qu'utilisateur, je veux que mes emails soient envoyes uniquement pendant les heures de bureau du pays cible, afin qu'ils arrivent en haut de la boite de reception au bon moment.
+
+**Criteres d'acceptation** :
+- [ ] Parametre configurable : creneaux d'envoi (defaut : 9h-12h et 14h-17h)
+- [ ] L'utilisateur peut definir plusieurs plages horaires (matin + apres-midi)
+- [ ] Les heures sont exprimees dans le fuseau horaire du pays cible (pas celui de l'utilisateur)
+- [ ] L'interface affiche la correspondance avec l'heure locale de l'utilisateur : "9h NZST = 21h la veille heure de Paris"
+- [ ] Un email programme en dehors des creneaux est mis en file d'attente jusqu'au prochain creneau valide
+- [ ] Un conseil expert guide le choix : "Le mardi et mercredi entre 9h-10h sont les creneaux avec le meilleur taux d'ouverture pour la NZ tech"
+
+#### US-16.4 : Jours d'envoi autorises
+> En tant qu'utilisateur, je veux choisir les jours de la semaine ou mes emails peuvent etre envoyes, afin d'eviter les week-ends et d'envoyer au moment le plus efficace.
+
+**Criteres d'acceptation** :
+- [ ] Parametre configurable : jours d'envoi autorises (defaut : lundi a vendredi)
+- [ ] Selection par checkbox pour chaque jour de la semaine
+- [ ] Les jours sont evalues dans le fuseau horaire du pays cible
+- [ ] Si un envoi tombe un jour non autorise, il est reporte au prochain jour valide dans le prochain creneau horaire
+- [ ] L'utilisateur peut activer/desactiver le samedi (pour certains pays ou le samedi matin est un jour ouvre : Moyen-Orient, Japon)
+
+#### US-16.5 : Respect du fuseau horaire du pays cible
+> En tant qu'utilisateur ciblant la Nouvelle-Zelande, je veux que mes emails arrivent pendant les heures de bureau de Wellington/Auckland, meme si je suis a Paris, afin de maximiser mon taux d'ouverture.
+
+**Criteres d'acceptation** :
+- [ ] Le systeme determine automatiquement le fuseau horaire du pays cible a partir du pays du contact
+- [ ] Pour les pays a fuseaux multiples (ex: Australie, USA, Canada, Russie), le fuseau de la **capitale economique** est utilise par defaut :
+  - Australie → Sydney (AEST/AEDT)
+  - USA → New York (EST/EDT) — sauf si l'entreprise est localisee dans un autre etat
+  - Canada → Toronto (EST/EDT) — sauf si l'entreprise est localisee dans une autre province
+  - Russie → Moscou (MSK)
+- [ ] L'utilisateur peut overrider le fuseau horaire pour un pays donne dans ses parametres
+- [ ] Le systeme gere correctement les changements d'heure ete/hiver (DST) du pays cible
+- [ ] L'interface affiche clairement le fuseau utilise : "Envoi prevu : mardi 9h15 NZDT (= lundi 21h15 heure de Paris)"
+
+#### US-16.6 : Support multi-pays avec fuseaux differents
+> En tant qu'utilisateur ciblant plusieurs pays (ex: NZ + Australie + Canada), je veux que chaque lot d'emails respecte le fuseau horaire de son propre pays cible, afin que tous mes emails arrivent au bon moment.
+
+**Criteres d'acceptation** :
+- [ ] Lors d'un envoi en masse multi-pays, les emails sont groupes par fuseau horaire
+- [ ] Chaque groupe est programme selon ses propres creneaux et jours autorises
+- [ ] L'interface montre un recapitulatif avant envoi :
+  - "12 emails NZ → envoi mardi 9h NZDT"
+  - "8 emails Australie → envoi mardi 9h AEDT"
+  - "15 emails Canada → envoi mardi 9h EST"
+- [ ] Les relances de chaque groupe respectent egalement le fuseau du pays
+- [ ] La barre de progression indique l'avancement par groupe de pays
+
+#### US-16.7 : Page de configuration dans les parametres
+> En tant qu'utilisateur, je veux configurer mes preferences d'envoi dans une interface claire, afin de parametrer une fois et ne plus y penser.
+
+**Criteres d'acceptation** :
+- [ ] Nouvelle section "Planification des envois" dans `/parametres`
+- [ ] Interface visuelle intuitive :
+  - Slider ou dropdown pour le nombre de relances
+  - Champs numeriques pour les delais entre relances
+  - Selecteur de plages horaires (time picker debut/fin pour chaque plage)
+  - Checkboxes pour les jours de la semaine
+  - Toggle "Jours ouvres" / "Jours calendaires"
+- [ ] Preview visuel d'un exemple de sequence : timeline montrant "Email initial → J+5 Relance 1 → J+12 Relance 2" avec les dates et heures reelles
+- [ ] Les parametres sont sauvegardables en tant que preset (ex: "Config NZ", "Config Europe")
+- [ ] Les parametres s'appliquent par defaut a tous les envois, mais l'utilisateur peut les overrider pour un envoi specifique
+- [ ] Validation : empecher les configurations absurdes (ex: creneau de 0 minutes, delai de 0 jours entre relances)
+
+#### US-16.8 : Limite maximale de relances configurable par l'admin
+> En tant qu'administrateur, je veux definir le nombre maximum de relances qu'un utilisateur peut configurer, afin de maitriser le volume d'envois et la pression sur les contacts.
+
+**Criteres d'acceptation** :
+- [ ] Parametre disponible dans le backoffice admin, sous "Parametres globaux — Emails"
+- [ ] Champ : nombre entier, defaut 3, minimum 0
+- [ ] La limite s'applique a tous les utilisateurs : ils ne peuvent pas ajouter plus de relances que cette valeur
+- [ ] L'interface utilisateur affiche le message "X maximum (defini par l'administrateur)" sous le bouton "+ Ajouter une relance"
+- [ ] Si la limite est abaissee en dessous du nombre de relances deja configurees par un utilisateur, les relances excedentaires sont desactivees avec un avertissement visible
+
+**Priorite** : Must-have
+
+#### US-16.9 : Delai minimum entre relances configurable par l'admin
+> En tant qu'administrateur, je veux definir le delai minimum obligatoire entre deux relances, afin d'eviter des envois trop rapproches qui pourraient nuire a la delivrabilite ou a l'image de la plateforme.
+
+**Criteres d'acceptation** :
+- [ ] Parametre disponible dans le backoffice admin, sous "Parametres globaux — Emails"
+- [ ] Saisie via un champ numerique + selecteur d'unite : jours / semaines ; defaut : 1 jour
+- [ ] Ce delai minimum est enforced cote interface : l'utilisateur ne peut pas saisir une valeur inferieure dans ses parametres de relance (voir US-16.2)
+- [ ] Un message explicatif s'affiche si l'utilisateur tente de saisir une valeur inferieure : "Le delai minimum est de X [jours/semaines] (defini par l'administrateur)"
+
+**Priorite** : Must-have
+
+---
+
 ## 5. Recapitulatif des priorites (MoSCoW)
 
 | Priorite | Features |
 |----------|----------|
-| **Must-have** | F1 Navigation, F2 Automatisation flow, F3 Envoi en masse, F4 Dashboard, F5 Kanban intelligent, F6 Gestion reponses, F7 Anti-doublon/cooldown, F8 Templates/parametres generation, F14 Positionnement expert (snapshot marche, micro-conseils, score confiance, chat dual), F15 Cache d'intelligence (cache + contexte enrichi) |
+| **Must-have** | F1 Navigation, F2 Automatisation flow, F3 Envoi en masse, F4 Dashboard, F5 Kanban intelligent, F6 Gestion reponses, F7 Anti-doublon/cooldown, F8 Templates/parametres generation, F14 Positionnement expert (snapshot marche, micro-conseils, score confiance, chat dual), F15 Cache d'intelligence (cache + contexte enrichi), F16 Configuration avancee d'envoi (relances, scheduling, fuseaux horaires) |
 | **Should-have** | F9 Onboarding, F10 Profil, F11 Adaptation culturelle, F14.5 Expert marche, F14.6 Expert visa, F15.2 Enrichissement progressif |
 | **Could-have** | F12 Notifications temps reel, F13 Parametres simplifies, F14.7 Coach carriere |
 | **Won't-have** | Voir section Hors-scope |
@@ -705,7 +827,7 @@ Les elements suivants ne seront **pas** traites dans ce redesign V2 :
 | Multi-utilisateur / equipes | L'app reste mono-utilisateur pour cette version. Pas de partage de contacts ou de collaboration. |
 | Nouveaux scrapers / nouvelles sources | Le redesign est un chantier UX/frontend. L'ajout de scrapers (LinkedIn global, Europe, Ameriques) est un chantier backend separe. |
 | CRM avance | Le kanban "Suivi" reste simple (5 colonnes). Pas de gestion de taches, rappels, calendrier, ou integration CRM externe. |
-| Relances automatiques | Les relances (follow-up sequences) ne sont pas automatisees dans ce redesign. L'utilisateur peut relancer manuellement via la generation IA de reponses (F6). Les sequences de relance automatiques sont prevues pour une version ulterieure. |
+| ~~Relances automatiques~~ | **Integre dans le scope V2 via F16** : configuration avancee des relances automatiques avec scheduling, fuseaux horaires et support multi-pays. |
 | Facturation / abonnement | Pas de systeme de paiement ou de plans dans ce scope. |
 | Analytics avances | Les stats du dashboard restent basiques. Pas de graphiques temporels, d'export CSV, ou de rapports detailles. |
 | Internationalisation complete | L'app reste en francais et anglais. Pas d'ajout de nouvelles langues dans ce scope (mais l'architecture i18n est preservee). |
@@ -729,6 +851,7 @@ Les elements suivants ne seront **pas** traites dans ce redesign V2 :
 | Pas de deduplication contacts | Anti-doublon + cooldown configurable | Flag "deja contacte" en DB, parametres utilisateur |
 | Pas de templates | Templates + parametres de generation (longueur, ton, framework) | CRUD templates, presets, preview temps reel |
 | Email envoye = fin du flow | Email envoye = debut de la conversation | Boucle complete : envoi → reception → resume → reponse suggeree |
+| Follow-up basique (delay_days + max_count) | Scheduling avance avec relances, creneaux horaires, fuseaux horaires par pays | Migration extension `follow_up_sequences`, nouveau service `SendSchedulerService`, job queue timezone-aware |
 | Pas d'assistant IA | Assistant multi-expert unifie (recrutement, marche, visa) | Panneau chat + conseils proactifs contextuels, routing automatique entre expertises |
 | Pas de cache donnees | Cache d'intelligence avec expiration par type | Table cache en DB, providers extensibles, contexte enrichi pour generation IA |
 | Requetes externes a chaque action | Cache-first : requete externe uniquement si cache expire | Economies tokens/credits, architecture provider extensible |

@@ -143,11 +143,11 @@ Epic 9  Onboarding, profil, expert avance et finitions       (prereq: Epic 1-8)
 
 ## Epic 4 : Emails en masse + templates + conseils email
 
-**Features couvertes** : F3 (Envoi en masse), F8 (Templates et parametres), F14.2 (micro-conseils page emails)
+**Features couvertes** : F3 (Envoi en masse), F8 (Templates et parametres), F16 (Parametres d'envoi — relances), F14.2 (micro-conseils page emails)
 **Prerequis** : Epic 3 (les emails sont generes par le flow)
 **Priorite MoSCoW** : Must-have
 
-**Valeur livree** : L'utilisateur selectionne et approuve des dizaines d'emails d'un coup, les envoie en 1 clic. Il cree ses templates, choisit le ton et le framework. Les emails sont tries par score de confiance. Des **conseils experts** s'affichent sur la page (timing d'envoi, ton culturel).
+**Valeur livree** : L'utilisateur selectionne et approuve des dizaines d'emails d'un coup, les envoie en 1 clic. Il cree ses templates, choisit le ton et le framework, et configure ses relances dans les limites fixees par l'administrateur. Les emails sont tries par score de confiance. Des **conseils experts** s'affichent sur la page (timing d'envoi, ton culturel).
 
 **Backend** :
 - Endpoint : `POST /api/emails/send-batch` (envoi en masse, arriere-plan avec progression)
@@ -159,6 +159,33 @@ Epic 9  Onboarding, profil, expert avance et finitions       (prereq: Epic 1-8)
 - Enrichir `POST /api/recherche` pour accepter template_id et preset_id
 - Filtres avances sur `GET /api/emails` : par pays, pertinence, statut
 - **Endpoint conseils contextuels** : `GET /api/tips/contextual?page=emails&country=X` — retourne des conseils dynamiques (timing optimal par fuseau, ton recommande par culture). Utilise le cache marche
+
+**Backend — contraintes admin F16 (relances)** :
+
+- **Stockage** : reutiliser la table `ai_settings` existante avec deux nouvelles cles globales :
+  - `email_follow_ups` : stocke `{ max_follow_ups: 3 }` (entier, defaut 3)
+  - `email_follow_up_delay` : stocke `{ min_delay: 1, min_delay_unit: 'days' }` (entier + enum `'days'|'weeks'|'months'`, defaut 1 day)
+  - Justification : la table `ai_settings` est deja le registre des reglages globaux admin ; ajouter deux nouvelles `featureKey` evite toute nouvelle migration. Le champ `model` est repurpose comme champ JSON generique pour ces cles (ou on utilise un champ `value` JSON si on etend la migration — voir note architecte ci-dessous).
+  - **Note architecte** : la table `ai_settings` actuelle n'a pas de champ JSON generique. Option A (zero migration) : serialiser la valeur dans le champ `model` (string) avec JSON.stringify/parse — acceptable car ces deux cles ne sont pas des settings IA. Option B (migration legere) : ajouter une colonne `value` nullable de type JSON a la table `ai_settings`. **Recommandation : Option B**, elle est propre et non destructive.
+
+- **Endpoint admin** : `PATCH /api/admin/settings/emails` — modifie `max_follow_ups`, `min_follow_up_delay`, `min_follow_up_delay_unit`. Accessible uniquement aux admins (middleware existant). Retourne les valeurs mises a jour.
+
+- **Endpoint parametres envoi utilisateur** : `GET /api/sending-settings` — retourne les reglages utilisateur (relances configurees) ET les limites admin en lecture seule :
+  ```json
+  {
+    "follow_ups": [...],
+    "limits": {
+      "max_follow_ups": 3,
+      "min_follow_up_delay": 1,
+      "min_follow_up_delay_unit": "days"
+    }
+  }
+  ```
+
+- **Validation backend** (`SendingSettingsValidator`) :
+  - `follow_ups.length <= limits.max_follow_ups` — sinon 422 avec message "Nombre de relances maximum atteint (X)"
+  - Pour chaque relance, convertir le delai utilisateur en jours et verifier `user_delay_days >= admin_min_delay_days` — sinon 422 avec message "Delai minimum entre relances : X jours"
+  - Conversion : `days * 1`, `weeks * 7`, `months * 30` (approximation suffisante pour la validation)
 
 **Frontend** :
 - Refonte page `/emails` : `EmailPreviewRow` avec checkbox, apercu, badge pertinence, `ConfidenceScore`
@@ -173,6 +200,13 @@ Epic 9  Onboarding, profil, expert avance et finitions       (prereq: Epic 1-8)
 - Preview temps reel d'un email exemple
 - **`ProactiveTip` sur la page emails** : "Meilleur moment pour envoyer en NZ : mardi 9h NZST", "Les recruteurs kiwis preferent un ton decontracte"
 
+**Frontend — SendingSettingsPanel (F16)** :
+- Le composant `SendingSettingsPanel` recoit les limites admin en props : `maxFollowUps`, `minFollowUpDelay`, `minFollowUpDelayUnit`
+- Bouton "+ Ajouter une relance" : desactive (`disabled`) quand `follow_ups.length >= maxFollowUps`, avec tooltip "X relances maximum (defini par l'administrateur)"
+- Label sous le compteur de relances : "X maximum (defini par l'administrateur)" affiche en permanence
+- Champ delai de chaque relance : valeur minimale forcee a `minFollowUpDelay` / `minFollowUpDelayUnit`. Si l'utilisateur saisit une valeur inferieure, champ passe en erreur inline : "Delai minimum : X jours (defini par l'administrateur)"
+- Page admin `/admin/ai-settings` : section "Parametres d'envoi" avec champs `max_follow_ups` (input number) et delai minimum (input number + select `jours|semaines|mois`), sauvegarde via `PATCH /api/admin/settings/emails`
+
 **Tests** :
 - E2E : selectionner 5 emails, Approuver, verifier le changement de statut
 - E2E : Envoyer, confirmer, verifier la barre de progression et le toast
@@ -181,6 +215,14 @@ Epic 9  Onboarding, profil, expert avance et finitions       (prereq: Epic 1-8)
 - E2E : verifier qu'un `ProactiveTip` timing s'affiche sur la page emails
 - E2E : verifier que les emails sont tries par score de confiance par defaut
 - Integration : envoi batch de 10 emails, verifier les statuts et erreurs
+- **Tests F16 — contraintes admin relances** :
+  - Unitaire : `SendingSettingsValidator` rejette si `follow_ups.length > max_follow_ups`
+  - Unitaire : `SendingSettingsValidator` rejette si delai utilisateur < delai admin (toutes combinaisons d'unites)
+  - Unitaire : conversion d'unites correcte (1 semaine = 7 jours, 1 mois = 30 jours)
+  - Integration : `PATCH /api/admin/settings/emails` met a jour les valeurs en base et les retourne
+  - Integration : `GET /api/sending-settings` inclut les limites admin dans la reponse
+  - E2E admin : modifier `max_follow_ups` a 2, verifier que le bouton "+ Ajouter une relance" est desactive apres 2 relances cote utilisateur
+  - E2E admin : modifier le delai minimum a 3 jours, verifier qu'un delai de 2 jours est refuse cote frontend et backend
 
 **Estimation relative** : XL
 
@@ -410,7 +452,7 @@ Epic 9  Onboarding, profil, expert avance et finitions       (prereq: Epic 1-8)
 | 1 | F1 Navigation | Must | S | - | Composant `ProactiveTip` + premier conseil statique |
 | 2 | F15 Cache, F14.3 Score confiance | Must | L | - | `ConfidenceScore` sur les contacts |
 | 3 | F2 Automatisation, F7 Anti-doublon, F14.1 Snapshot | Must | XL | Epic 2 | `MarketSnapshot` sur la page recherche |
-| 4 | F3 Envoi masse, F8 Templates | Must | XL | Epic 3 | Conseils timing + ton culturel sur les emails |
+| 4 | F3 Envoi masse, F8 Templates, F16 Relances | Must | XL | Epic 3 | Conseils timing + ton culturel sur les emails |
 | 5 | F4 Dashboard | Must | M | Epic 3, 4 | Conseils stats comparatives sur le dashboard |
 | 6 | F5 Kanban intelligent | Must | L | Epic 4 | Conseils preparation entretien + encouragement refus |
 | 7 | F14.4 Chat dual | Must | XL | Epic 2, 5 | Chat support + expert accessible partout |
