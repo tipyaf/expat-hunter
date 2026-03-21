@@ -30,7 +30,7 @@ export default function EmailsPage() {
   })
   const { isGenerating, generate } = useEmailGeneration()
 
-  const [message, setMessage] = useState<string | null>(null)
+  const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editSubject, setEditSubject] = useState('')
   const [editBody, setEditBody] = useState('')
@@ -48,10 +48,14 @@ export default function EmailsPage() {
     setMessage(null)
     try {
       const result = await generate()
-      setMessage(t('generateComplete', { generated: result.generated, errors: result.errors }))
+      if (result.generated === 0 && result.errors === 0) {
+        setMessage({ text: t('noContactsToGenerate'), type: 'error' })
+      } else {
+        setMessage({ text: t('generateComplete', { generated: result.generated, errors: result.errors }), type: result.errors > 0 ? 'error' : 'success' })
+      }
       void refetch()
     } catch {
-      setMessage(t('generateError'))
+      setMessage({ text: t('generateError'), type: 'error' })
     }
   }
 
@@ -107,8 +111,12 @@ export default function EmailsPage() {
           </div>
 
           {message && (
-            <div className="mb-4 rounded-lg px-4 py-3 text-sm bg-[var(--color-success)]/10 border border-[var(--color-success)]/30 text-[var(--color-success)]">
-              {message}
+            <div className={`mb-4 rounded-lg px-4 py-3 text-sm ${
+              message.type === 'error'
+                ? 'bg-[var(--color-error)]/10 border border-[var(--color-error)]/30 text-[var(--color-error)]'
+                : 'bg-[var(--color-success)]/10 border border-[var(--color-success)]/30 text-[var(--color-success)]'
+            }`}>
+              {message.text}
             </div>
           )}
 

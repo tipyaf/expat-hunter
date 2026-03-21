@@ -13,6 +13,7 @@
     "test": "pnpm --parallel --filter './apps/*' test",
     "test:api": "pnpm --filter @expat-hunter/api test",
     "test:frontend": "pnpm --filter @expat-hunter/frontend test",
+    "test:e2e": "pnpm --filter @expat-hunter/e2e test",
     "db:migrate": "pnpm --filter @expat-hunter/api db:migrate",
     "db:seed": "pnpm --filter @expat-hunter/api db:seed",
     "db:reset": "pnpm --filter @expat-hunter/api db:reset"
