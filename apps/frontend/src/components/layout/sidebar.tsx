@@ -61,7 +61,7 @@ export function Sidebar() {
       <aside
         className={`
           fixed md:static inset-y-0 left-0 z-40
-          flex h-full md:h-screen w-64 shrink-0 flex-col
+          flex h-full md:h-dvh w-64 shrink-0 flex-col
           border-r border-[var(--color-border)] bg-[var(--color-surface-light)]
           transition-transform duration-200 ease-in-out
           ${isOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
