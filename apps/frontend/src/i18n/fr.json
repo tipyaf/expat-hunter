@@ -138,11 +138,34 @@
     "rec_skip": "Ignorer",
     "rec_manual_review": "À vérifier"
   },
+  "emails": {
+    "title": "Emails",
+    "subtitle": "Gérez les emails générés par l'IA pour vos contacts.",
+    "all": "Tous",
+    "noEmails": "Aucun email. Générez des emails pour vos contacts recommandés.",
+    "generateEmails": "Générer des emails",
+    "generating": "Génération en cours...",
+    "generateComplete": "{generated} emails générés, {errors} erreurs",
+    "generateError": "Erreur lors de la génération",
+    "to": "À",
+    "approve": "Approuver",
+    "approveAll": "Tout approuver",
+    "reject": "Supprimer",
+    "regenerate": "Régénérer",
+    "edit": "Modifier",
+    "status_draft": "Brouillon",
+    "status_approved": "Approuvé",
+    "status_sent": "Envoyé",
+    "status_opened": "Ouvert",
+    "status_replied": "Répondu",
+    "status_bounced": "Rejeté"
+  },
   "sidebar": {
     "dashboard": "Dashboard",
     "sourcing": "Sourcing",
     "contacts": "Contacts",
+    "emails": "Emails",
     "profile": "Profil",
-    "logout": "Se d\u00e9connecter"
+    "logout": "Se déconnecter"
   }
 }

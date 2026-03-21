@@ -3,6 +3,7 @@ import type { BelongsTo, HasMany } from '@adonisjs/lucid/types/relations'
 import { randomUUID } from 'node:crypto'
 import { DateTime } from 'luxon'
 import Company from './company.js'
+import EmailMessage from './email_message.js'
 import SourcingRun from './sourcing_run.js'
 import User from './user.js'
 
@@ -79,6 +80,9 @@ export default class Contact extends BaseModel {
 
   @belongsTo(() => SourcingRun)
   declare sourcingRun: BelongsTo<typeof SourcingRun>
+
+  @hasMany(() => EmailMessage)
+  declare emails: HasMany<typeof EmailMessage>
 
   @beforeCreate()
   static assignUuid(contact: Contact) {
