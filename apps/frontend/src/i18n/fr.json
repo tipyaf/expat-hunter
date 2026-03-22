@@ -84,6 +84,8 @@
     "cvAiAnalyzed": "L'IA a mis à jour votre profil avec les données extraites du CV.",
     "cvUploadError": "Erreur lors de l'upload",
     "cvExtractedText": "Texte extrait du CV",
+    "completionGauge": "Profil complété à {pct}%",
+    "completeProfile": "Compléter mon profil",
     "setup": {
       "title": "Configuration du profil",
       "welcome": "Bienvenue {name} ! Configurez votre profil pour commencer.",
@@ -588,5 +590,35 @@
     "testError": "Connexion échouée",
     "noConnection": "Aucune connexion configurée",
     "deleteConnection": "Supprimer la connexion"
+  },
+  "onboarding": {
+    "title": "Bienvenue sur ExpatHunter",
+    "subtitle": "Configurez votre profil en 3 étapes pour des résultats optimaux",
+    "step1Title": "Informations de base",
+    "step2Title": "Votre CV",
+    "step2Skip": "Passer cette étape",
+    "step3Title": "Expérience et compétences",
+    "next": "Suivant",
+    "back": "Retour",
+    "finish": "Terminer",
+    "fullName": "Nom complet",
+    "targetCountries": "Pays cibles",
+    "targetSectors": "Secteurs",
+    "targetRoles": "Postes recherchés",
+    "experienceYears": "Années d'expérience",
+    "skills": "Compétences",
+    "cvUpload": "Télécharger votre CV",
+    "cvParsed": "CV analysé avec succès",
+    "refineTitle": "Affinage IA",
+    "refineSubtitle": "Posez des questions ou affinez votre profil avec l'assistant",
+    "refineSkip": "Terminer sans affinage",
+    "stepOf": "{current} / {total}",
+    "completionGauge": "Profil complété à {pct}%"
+  },
+  "notifications": {
+    "search_completed": "Recherche terminée",
+    "reply_received": "Nouvelle réponse reçue",
+    "email_sent": "Email envoyé",
+    "dismiss": "Fermer"
   }
 }

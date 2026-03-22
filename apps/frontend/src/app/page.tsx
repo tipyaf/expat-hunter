@@ -27,8 +27,8 @@ export default function DashboardPage() {
   const tc = useTranslations('common')
 
   useEffect(() => {
-    if (!isLoading && !profileLoading && user && !profile?.onboardingCompleted) {
-      router.push('/profil/setup')
+    if (!isLoading && !profileLoading && user && profile && !profile.onboardingCompleted) {
+      router.push('/onboarding')
     }
   }, [isLoading, profileLoading, user, profile, router])
 
@@ -40,7 +40,7 @@ export default function DashboardPage() {
     )
   }
 
-  if (!profile?.onboardingCompleted) {
+  if (profile && !profile.onboardingCompleted) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <p className="text-[var(--color-text-muted)]">{tc('redirecting')}</p>

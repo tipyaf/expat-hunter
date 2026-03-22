@@ -21,6 +21,8 @@ const BlockedEntitiesController = () => import('#controllers/blocked_entities_co
 const ChatController = () => import('#controllers/chat_controller')
 const ThreadController = () => import('#controllers/thread_controller')
 const EmailConnectionsController = () => import('#controllers/email_connections_controller')
+const OnboardingController = () => import('#controllers/onboarding_controller')
+const NotificationsController = () => import('#controllers/notifications_controller')
 
 router.get('/', async () => {
   return { name: '@expat-hunter/api', status: 'ok' }
@@ -233,4 +235,16 @@ router
 
 router
   .get('/api/replies/unread-count', [ThreadController, 'unreadCount'])
+  .use(middleware.auth())
+
+router
+  .group(() => {
+    router.post('/', [OnboardingController, 'complete'])
+    router.post('/refine', [OnboardingController, 'refine'])
+  })
+  .prefix('/api/onboarding')
+  .use(middleware.auth())
+
+router
+  .get('/api/notifications/stream', [NotificationsController, 'stream'])
   .use(middleware.auth())

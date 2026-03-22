@@ -24,7 +24,7 @@ export default class ProfileController {
       })
     }
 
-    return response.ok({ data: this.serializeProfile(profile) })
+    return response.ok({ data: this.serializeProfile(profile, user.fullName) })
   }
 
   async update({ auth, request, response }: HttpContext) {
@@ -33,7 +33,7 @@ export default class ProfileController {
 
     const profile = await this.profileService.updateProfile(user, data)
 
-    return response.ok({ data: this.serializeProfile(profile) })
+    return response.ok({ data: this.serializeProfile(profile, user.fullName) })
   }
 
   async uploadCv({ auth, request, response }: HttpContext) {
@@ -116,7 +116,7 @@ export default class ProfileController {
     }
 
     return response.ok({
-      data: this.serializeProfile(profile),
+      data: this.serializeProfile(profile, user.fullName),
       aiExtraction,
       message: aiExtraction
         ? 'CV uploaded, parsed and analyzed by AI'
@@ -130,7 +130,7 @@ export default class ProfileController {
     try {
       const profile = await this.profileService.completeOnboarding(user)
       return response.ok({
-        data: this.serializeProfile(profile),
+        data: this.serializeProfile(profile, user.fullName),
         message: 'Onboarding completed successfully',
       })
     } catch (error) {
@@ -141,6 +141,21 @@ export default class ProfileController {
       }
       throw error
     }
+  }
+
+  private computeCompletionPercentage(profile: {
+    cvText: string | null
+    skills: string[]
+    targetCountries: string[]
+    targetRoles: string[]
+  }, userFullName?: string): number {
+    let pct = 0
+    if (userFullName) pct += 20
+    if (profile.cvText) pct += 20
+    if (profile.skills.length > 0) pct += 20
+    if (profile.targetCountries.length > 0) pct += 20
+    if (profile.targetRoles.length > 0) pct += 20
+    return pct
   }
 
   private serializeProfile(profile: {
@@ -157,7 +172,7 @@ export default class ProfileController {
     onboardingCompleted: boolean
     createdAt: unknown
     updatedAt: unknown
-  }) {
+  }, userFullName?: string) {
     return {
       id: profile.id,
       userId: profile.userId,
@@ -170,6 +185,8 @@ export default class ProfileController {
       targetRoles: profile.targetRoles,
       preferences: profile.preferences,
       onboardingCompleted: profile.onboardingCompleted,
+      isOnboarded: profile.onboardingCompleted,
+      completionPercentage: this.computeCompletionPercentage(profile, userFullName),
       createdAt: profile.createdAt,
       updatedAt: profile.updatedAt,
     }

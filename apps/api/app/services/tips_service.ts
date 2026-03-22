@@ -102,6 +102,34 @@ export default class TipsService {
   }
 
   /**
+   * Generate a contextual tip for the profile page.
+   */
+  getProfileTip(profile: {
+    skills: string[]
+    experienceYears: number
+    targetCountries: string[]
+  }): ContextualTip {
+    if (profile.experienceYears > 8 && profile.targetCountries.includes('NZ')) {
+      return {
+        message: "Avec votre expérience, vous êtes dans le top 20% des profils tech ciblant la NZ.",
+        cta: { label: 'Voir le marché', href: '/recherche' },
+      }
+    }
+
+    if (profile.skills.length < 3) {
+      return {
+        message: 'Ajoutez plus de compétences à votre profil pour améliorer vos chances.',
+        cta: { label: 'Mettre à jour', href: '/profil' },
+      }
+    }
+
+    return {
+      message: 'Un profil complet améliore la pertinence des emails générés.',
+      cta: { label: 'Compléter mon profil', href: '/profil' },
+    }
+  }
+
+  /**
    * Generate a contextual tip for the kanban (suivi) page.
    */
   getKanbanTip(status: string | null): ContextualTip {
