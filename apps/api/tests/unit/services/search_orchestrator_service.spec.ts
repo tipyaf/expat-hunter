@@ -64,7 +64,7 @@ test.group('SearchOrchestratorService - SearchRun model', (group) => {
     assert.equal(run.progressPercent, 0)
 
     // Update through all statuses
-    for (const status of ['scraping', 'analyzing', 'generating', 'completed'] as const) {
+    for (const status of ['scraping', 'enriching', 'analyzing', 'generating', 'completed'] as const) {
       run.status = status
       await run.save()
       assert.equal(run.status, status)

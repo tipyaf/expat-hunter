@@ -1,10 +1,10 @@
 'use client'
 
-import { CheckCircle2, Loader2, Mail, Search, Sparkles, X, XCircle } from 'lucide-react'
+import { CheckCircle2, Loader2, Mail, MailSearch, Search, Sparkles, X, XCircle } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useEffect, useRef, useState } from 'react'
 
-type SearchStatus = 'pending' | 'scraping' | 'analyzing' | 'generating' | 'completed' | 'failed'
+type SearchStatus = 'pending' | 'scraping' | 'enriching' | 'analyzing' | 'generating' | 'completed' | 'failed'
 
 interface Step {
   key: string
@@ -31,6 +31,7 @@ interface SearchProgressModalProps {
 
 const STEP_ICONS = {
   scraping: Search,
+  enriching: MailSearch,
   analyzing: Sparkles,
   generating: Mail,
 } as const
@@ -190,6 +191,12 @@ function useRotatingMessage(status: SearchStatus, currentStep: string | null, t:
       t('progressMsg_scraping14'),
       t('progressMsg_scraping15'),
     ],
+    enriching: [
+      t('progressMsg_enriching1'),
+      t('progressMsg_enriching2'),
+      t('progressMsg_enriching3'),
+      t('progressMsg_enriching4'),
+    ],
     analyzing: [
       t('progressMsg_analyzing1'),
       t('progressMsg_analyzing2'),
@@ -252,6 +259,7 @@ export function SearchProgressModal({
 
   const steps: Step[] = [
     { key: 'scraping', label: t('stepScraping'), description: t('stepScrapingDesc') },
+    { key: 'enriching', label: t('stepEnriching'), description: t('stepEnrichingDesc') },
     { key: 'analyzing', label: t('stepAnalyzing'), description: t('stepAnalyzingDesc') },
     { key: 'generating', label: t('stepGenerating'), description: t('stepGeneratingDesc') },
   ]
