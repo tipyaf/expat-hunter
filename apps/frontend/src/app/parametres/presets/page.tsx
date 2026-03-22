@@ -6,6 +6,7 @@ import { ConfirmModal } from '@/components/ui/confirm-modal'
 import { useAuth } from '@/contexts/auth-context'
 import { usePresets } from '@/hooks/use-presets'
 import type { GenerationPreset, PresetFramework, PresetLength } from '@/hooks/use-presets'
+import { StatusMessage } from '@/components/ui/status-message'
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
 import { Plus, Pencil, Trash2, Star } from 'lucide-react'
@@ -112,12 +113,8 @@ export default function PresetsPage() {
           </div>
 
           {message && (
-            <div className={`mb-4 rounded-lg px-4 py-3 text-sm ${
-              message.type === 'error'
-                ? 'bg-[var(--color-error)]/10 border border-[var(--color-error)]/30 text-[var(--color-error)]'
-                : 'bg-[var(--color-success)]/10 border border-[var(--color-success)]/30 text-[var(--color-success)]'
-            }`}>
-              {message.text}
+            <div className="mb-4">
+              <StatusMessage type={message.type} message={message.text} />
             </div>
           )}
 

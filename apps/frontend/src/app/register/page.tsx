@@ -1,6 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
+import { StatusMessage } from '@/components/ui/status-message'
 import { ApiError, useAuth } from '@/contexts/auth-context'
 import Link from 'next/link'
 import { type FormEvent, useState } from 'react'
@@ -42,8 +43,8 @@ export default function RegisterPage() {
         <p className="text-center text-[var(--color-text-muted)] mb-8">{t('registerTitle')}</p>
 
         {error && (
-          <div className="mb-4 rounded-lg bg-[var(--color-error)]/10 border border-[var(--color-error)]/30 px-4 py-3 text-sm text-[var(--color-error)]">
-            {error}
+          <div className="mb-4">
+            <StatusMessage type="error" message={error} />
           </div>
         )}
 

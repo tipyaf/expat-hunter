@@ -6,6 +6,7 @@ import { SearchProgressModal } from '@/components/ui/search-progress-modal'
 import { useAuth } from '@/contexts/auth-context'
 import { useMarketSnapshot } from '@/hooks/use-market-snapshot'
 import { useSearch, type SearchRun } from '@/hooks/use-search'
+import { StatusMessage } from '@/components/ui/status-message'
 import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
@@ -132,30 +133,26 @@ export default function SearchPage() {
     <div className="flex h-dvh overflow-hidden">
       {/* Toast notification */}
       {toast && (
-        <div className={`fixed top-4 right-4 z-[60] max-w-sm rounded-lg px-4 py-3 shadow-lg border transition-all duration-300 ${
-          toast.type === 'success'
-            ? 'bg-green-50 border-green-200 text-green-800'
-            : 'bg-red-50 border-red-200 text-red-800'
-        }`}>
-          <div className="flex items-start gap-2">
-            <p className="text-sm flex-1">{toast.message}</p>
+        <div className="fixed top-4 right-4 z-[60] max-w-sm shadow-lg transition-all duration-300">
+          <StatusMessage type={toast.type} message={toast.message} />
+          <div className="flex items-center justify-between mt-1 px-1">
+            {toast.type === 'success' && (
+              <button
+                type="button"
+                onClick={() => { setToast(null); setShowModal(true) }}
+                className="text-xs text-primary font-medium hover:underline"
+              >
+                {t('viewEmails')} →
+              </button>
+            )}
             <button
               type="button"
               onClick={() => setToast(null)}
-              className="text-current opacity-50 hover:opacity-100 shrink-0"
+              className="text-xs text-[var(--color-text-muted)] opacity-60 hover:opacity-100 ml-auto"
             >
               ✕
             </button>
           </div>
-          {toast.type === 'success' && (
-            <button
-              type="button"
-              onClick={() => { setToast(null); setShowModal(true) }}
-              className="text-xs text-primary font-medium mt-1 hover:underline"
-            >
-              {t('viewEmails')} →
-            </button>
-          )}
         </div>
       )}
 

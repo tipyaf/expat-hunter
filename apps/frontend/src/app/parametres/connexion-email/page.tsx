@@ -3,6 +3,8 @@
 import { Sidebar } from '@/components/layout/sidebar'
 import { useAuth } from '@/contexts/auth-context'
 import { useEmailConnection, type EmailConnectionPayload } from '@/hooks/use-email-connection'
+import { InfoBanner } from '@/components/ui/info-banner'
+import { StatusMessage } from '@/components/ui/status-message'
 import { useTranslations } from 'next-intl'
 import { useState, useEffect } from 'react'
 
@@ -106,14 +108,13 @@ export default function EmailConnectionPage() {
           ) : (
             <div className="max-w-2xl space-y-6 mt-4">
               {/* Help / guide — visible first */}
-              <div className="rounded-xl border border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30 p-5">
-                <h2 className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-2">💡 {t('helpTitle')}</h2>
-                <div className="space-y-2 text-sm text-blue-700 dark:text-blue-400">
+              <InfoBanner variant="info" title={t('helpTitle')}>
+                <div className="space-y-2">
                   <p>{t('helpGmail')}</p>
                   <p>{t('helpOutlook')}</p>
                   <p>{t('helpGeneral')}</p>
                 </div>
-              </div>
+              </InfoBanner>
 
               {/* Provider presets */}
               <section className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-6">
@@ -243,16 +244,7 @@ export default function EmailConnectionPage() {
 
               {/* Message */}
               {message && (
-                <div
-                  role="alert"
-                  className={`rounded-lg px-4 py-2 text-sm ${
-                    message.type === 'success'
-                      ? 'bg-[var(--color-success)]/10 text-[var(--color-success)]'
-                      : 'bg-[var(--color-error)]/10 text-[var(--color-error)]'
-                  }`}
-                >
-                  {message.text}
-                </div>
+                <StatusMessage type={message.type} message={message.text} />
               )}
 
               {/* Actions */}

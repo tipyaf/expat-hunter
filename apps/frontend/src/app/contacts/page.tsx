@@ -6,6 +6,7 @@ import { ConfidenceScore } from '@/components/ui/confidence-score'
 import { useAuth } from '@/contexts/auth-context'
 import { useAnalysis } from '@/hooks/use-analysis'
 import { CONTACT_STATUSES, useContacts, type ContactStatus } from '@/hooks/use-contacts'
+import { StatusMessage } from '@/components/ui/status-message'
 import { useTranslations } from 'next-intl'
 import { useEffect, useState } from 'react'
 
@@ -113,12 +114,8 @@ export default function ContactsPage() {
 
           {/* Analysis feedback */}
           {analysisMessage && (
-            <div className={`mb-4 rounded-lg px-4 py-3 text-sm ${
-              analysisError
-                ? 'bg-[var(--color-error)]/10 border border-[var(--color-error)]/30 text-[var(--color-error)]'
-                : 'bg-[var(--color-success)]/10 border border-[var(--color-success)]/30 text-[var(--color-success)]'
-            }`}>
-              {analysisMessage}
+            <div className="mb-4">
+              <StatusMessage type={analysisError ? 'error' : 'success'} message={analysisMessage} />
             </div>
           )}
 

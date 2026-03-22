@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { CountrySelect } from '@/components/ui/country-select'
 import { TagInput } from '@/components/ui/tag-input'
 import { ProactiveTip } from '@/components/ui/proactive-tip'
+import { StatusMessage } from '@/components/ui/status-message'
 import { useAuth } from '@/contexts/auth-context'
 import { type UpdateProfileData, useProfile } from '@/hooks/use-profile'
 import { apiClient } from '@/lib/api-client'
@@ -174,14 +175,14 @@ export default function ProfilePage() {
         )}
 
         {message && (
-          <div className="mb-6 rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">
-            {message}
+          <div className="mb-6">
+            <StatusMessage type="success" message={message} />
           </div>
         )}
 
         {error && (
-          <div className="mb-6 rounded-lg bg-[var(--color-error)]/10 border border-[var(--color-error)]/30 px-4 py-3 text-sm text-[var(--color-error)]">
-            {error}
+          <div className="mb-6">
+            <StatusMessage type="error" message={error} />
           </div>
         )}
 

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
 import { useAuth } from '@/contexts/auth-context'
 import { EMAIL_STATUSES, useEmailGeneration, useEmails } from '@/hooks/use-emails'
+import { StatusMessage } from '@/components/ui/status-message'
 import { useTranslations } from 'next-intl'
 import { useEffect, useRef, useState } from 'react'
 import { CheckSquare, Send, Square, X } from 'lucide-react'
@@ -203,12 +204,8 @@ export default function EmailsPage() {
 
           {/* Messages */}
           {message && (
-            <div className={`mb-4 rounded-lg px-4 py-3 text-sm ${
-              message.type === 'error'
-                ? 'bg-[var(--color-error)]/10 border border-[var(--color-error)]/30 text-[var(--color-error)]'
-                : 'bg-[var(--color-success)]/10 border border-[var(--color-success)]/30 text-[var(--color-success)]'
-            }`}>
-              {message.text}
+            <div className="mb-4">
+              <StatusMessage type={message.type} message={message.text} />
             </div>
           )}
 

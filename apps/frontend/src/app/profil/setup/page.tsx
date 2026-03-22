@@ -1,6 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
+import { StatusMessage } from '@/components/ui/status-message'
 import { TagInput } from '@/components/ui/tag-input'
 import { useAuth } from '@/contexts/auth-context'
 import { type UpdateProfileData, useProfile } from '@/hooks/use-profile'
@@ -197,8 +198,8 @@ export default function ProfileSetupPage() {
         </div>
 
         {error && (
-          <div className="mb-6 rounded-lg bg-[var(--color-error)]/10 border border-[var(--color-error)]/30 px-4 py-3 text-sm text-[var(--color-error)]">
-            {error}
+          <div className="mb-6">
+            <StatusMessage type="error" message={error} />
           </div>
         )}
 

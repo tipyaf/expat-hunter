@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/auth-context'
 import { useTheme } from '@/contexts/theme-context'
 import { useSendingSettings } from '@/hooks/use-sending-settings'
 import { apiClient } from '@/lib/api-client'
+import { StatusMessage } from '@/components/ui/status-message'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
@@ -404,16 +405,7 @@ export default function SettingsPage() {
 
             {/* Message + Bouton */}
             {message && (
-              <div
-                role="alert"
-                className={`rounded-lg px-4 py-2 text-sm ${
-                  message.type === 'success'
-                    ? 'bg-[var(--color-success)]/10 text-[var(--color-success)]'
-                    : 'bg-[var(--color-error)]/10 text-[var(--color-error)]'
-                }`}
-              >
-                {message.text}
-              </div>
+              <StatusMessage type={message.type} message={message.text} />
             )}
 
             <button
