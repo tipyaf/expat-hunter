@@ -1,6 +1,10 @@
 'use client'
 
 import { Sidebar } from '@/components/layout/sidebar'
+import { ContactSourceBadge } from '@/components/ui/contact-source-badge'
+import { EmailStatusBadge } from '@/components/ui/email-status-badge'
+import { ScoreBreakdown } from '@/components/ui/score-breakdown'
+import { VisaSponsorBadge } from '@/components/ui/visa-sponsor-badge'
 import { useAuth } from '@/contexts/auth-context'
 import { usePipeline } from '@/hooks/use-pipeline'
 import type { PipelineContact } from '@/hooks/use-pipeline'
@@ -52,6 +56,7 @@ function ContactCard({
       onDragStart={(e) => onDragStart(e, contact.id)}
       className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-light)] p-3 shadow-sm cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow"
     >
+      {/* Name + relevance */}
       <div className="flex items-start justify-between gap-2 mb-1">
         <p className="text-sm font-medium text-[var(--color-text-main)] truncate">
           {contact.fullName}
@@ -62,25 +67,56 @@ function ContactCard({
           </span>
         )}
       </div>
+
+      {/* Role */}
       <p className="text-xs text-[var(--color-text-muted)] truncate">{contact.role}</p>
+
+      {/* Company + visa badge */}
       {contact.company && (
-        <p className="text-xs text-[var(--color-text-muted)] truncate mt-0.5">
-          {contact.company.name}
-          {contact.company.country && ` · ${contact.company.country}`}
-        </p>
+        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+          <p className="text-xs text-[var(--color-text-muted)] truncate">
+            {contact.company.name}
+            {contact.company.country && ` · ${contact.company.country}`}
+          </p>
+          <VisaSponsorBadge
+            status={contact.company.visaSponsorStatus}
+            countries={contact.company.visaSponsorCountries}
+          />
+        </div>
       )}
-      <div className="flex items-center gap-2 mt-2">
-        {contact.email && (
-          <span className="text-[10px] text-[var(--color-text-muted)] truncate max-w-[120px]">
+
+      {/* Email + source + status */}
+      {contact.email && (
+        <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+          <span className="text-[10px] text-[var(--color-text-muted)] truncate max-w-[110px]">
             {contact.email}
           </span>
-        )}
-        {contact.lastEmailStatus && (
+          <ContactSourceBadge source={contact.emailSource} />
+          <EmailStatusBadge
+            status={contact.emailStatus}
+            confidence={contact.emailConfidence}
+          />
+        </div>
+      )}
+
+      {/* Pipeline email status (sent/replied/etc.) */}
+      {contact.lastEmailStatus && (
+        <div className="mt-1.5">
           <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${emailStatusBadge(contact.lastEmailStatus)}`}>
             {t(`email_${contact.lastEmailStatus}`)}
           </span>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Score breakdown (collapsible) */}
+      {contact.scoreBreakdown && (
+        <div className="mt-2 pt-2 border-t border-[var(--color-border)]">
+          <ScoreBreakdown
+            breakdown={contact.scoreBreakdown as Record<string, { score: number; maxScore: number; explanation: string }>}
+            totalScore={contact.relevanceScore}
+          />
+        </div>
+      )}
     </div>
   )
 }

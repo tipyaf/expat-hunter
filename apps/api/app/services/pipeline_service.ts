@@ -12,12 +12,23 @@ export interface PipelineContact {
   fullName: string
   role: string
   email: string | null
+  emailSource: string | null
+  emailConfidence: number | null
+  emailStatus: string | null
   status: string
   relevanceScore: number | null
   relevanceLabel: string | null
   relevanceReason: string | null
   aiRecommendation: string | null
-  company: { id: string; name: string; sector: string | null; country: string } | null
+  scoreBreakdown: Record<string, unknown> | null
+  company: {
+    id: string
+    name: string
+    sector: string | null
+    country: string
+    visaSponsorStatus: string | null
+    visaSponsorCountries: string[] | null
+  } | null
   lastEmailStatus: string | null
   lastEmailDate: string | null
 }
@@ -74,13 +85,24 @@ export default class PipelineService {
       fullName: contact.fullName,
       role: contact.role,
       email: contact.email,
+      emailSource: contact.emailSource,
+      emailConfidence: contact.emailConfidence,
+      emailStatus: contact.emailStatus,
       status: contact.status,
       relevanceScore: contact.relevanceScore,
       relevanceLabel: contact.relevanceLabel,
       relevanceReason: contact.relevanceReason,
       aiRecommendation: contact.aiRecommendation,
+      scoreBreakdown: contact.scoreBreakdown,
       company: contact.company
-        ? { id: contact.company.id, name: contact.company.name, sector: contact.company.sector, country: contact.company.country }
+        ? {
+            id: contact.company.id,
+            name: contact.company.name,
+            sector: contact.company.sector,
+            country: contact.company.country,
+            visaSponsorStatus: contact.company.visaSponsorStatus,
+            visaSponsorCountries: contact.company.visaSponsorCountries,
+          }
         : null,
       lastEmailStatus: lastEmail?.status ?? null,
       lastEmailDate: lastEmail?.createdAt?.toISO() ?? null,
