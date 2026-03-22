@@ -2,6 +2,7 @@ import mail from '@adonisjs/mail/services/main'
 import { DateTime } from 'luxon'
 import EmailMessage from '#models/email_message'
 import Contact from '#models/contact'
+import ContactMovementService from '#services/contact_movement_service'
 
 export interface SendBatchResult {
   batchId: string
@@ -24,6 +25,7 @@ export interface BatchProgress {
 const batchProgressStore = new Map<string, BatchProgress>()
 
 export default class EmailSendingService {
+  private movementService = new ContactMovementService()
   /**
    * Send all approved emails for a user in batch.
    * Returns a batchId for progress tracking.
@@ -96,11 +98,12 @@ export default class EmailSendingService {
         email.sentAt = DateTime.now()
         await email.save()
 
-        // Update contact status to contacted
+        // Update contact status to contacted and record movement
         if (contact && contact.status === 'to_contact') {
           contact.status = 'contacted'
           contact.lastContactedAt = DateTime.now()
           await contact.save()
+          await this.movementService.recordMovement(contact.id, 'to_contact', 'contacted', 'email_sent')
         }
 
         progress.sent++

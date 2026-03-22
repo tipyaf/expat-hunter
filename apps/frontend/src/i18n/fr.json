@@ -217,6 +217,7 @@
     "col_to_contact": "À contacter",
     "col_contacted": "Contacté",
     "col_in_discussion": "En discussion",
+    "col_interview": "Entretien",
     "col_done": "Terminé",
     "relevance_very_relevant": "Très pertinent",
     "relevance_relevant": "Pertinent",
@@ -235,7 +236,19 @@
     "stat_replied": "Répondu",
     "stat_interview": "Entretien",
     "stat_offer": "Offre",
-    "stat_rejected": "Rejeté"
+    "stat_rejected": "Rejeté",
+    "blockTitle": "Bloquer ce contact",
+    "blockScope": "Périmètre du blocage",
+    "blockContact": "Contact uniquement",
+    "blockCompany": "Toute l'entreprise",
+    "blockDuration": "Durée",
+    "block30days": "30 jours",
+    "block90days": "90 jours",
+    "block180days": "180 jours",
+    "blockPermanent": "Indéfiniment",
+    "blockReason": "Raison (optionnel)",
+    "blockReasonPlaceholder": "Ex: Pas de réponse, hors cible...",
+    "blockConfirm": "Bloquer"
   },
   "settings": {
     "title": "Paramètres",
@@ -257,7 +270,9 @@
     "darkModeLight": "Clair",
     "darkModeDark": "Sombre",
     "saveSuccess": "Paramètres sauvegardés",
-    "saveError": "Erreur lors de la sauvegarde"
+    "saveError": "Erreur lors de la sauvegarde",
+    "blockedLink": "Contacts et entreprises bloqués",
+    "blockedDesc": "Gérez les contacts et entreprises que vous avez bloqués"
   },
   "admin": {
     "aiSettingsTitle": "Configuration IA",
@@ -503,5 +518,15 @@
     "updateSuccess": "Preset mis à jour",
     "deleteSuccess": "Preset supprimé",
     "validationError": "Le nom est obligatoire"
+  },
+  "blocked": {
+    "title": "Contacts et entreprises bloqués",
+    "subtitle": "Les contacts et entreprises bloqués sont exclus de votre pipeline et des futurs envois.",
+    "empty": "Aucun blocage actif. Bloquez un contact depuis le kanban.",
+    "type_contact": "Contact",
+    "type_company": "Entreprise",
+    "until": "Jusqu'au",
+    "permanent": "Blocage permanent",
+    "unblock": "Débloquer"
   }
 }

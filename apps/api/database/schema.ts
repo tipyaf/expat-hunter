@@ -8,7 +8,7 @@ import { BaseModel, column } from '@adonisjs/lucid/orm'
 import { DateTime } from 'luxon'
 
 export class AiSettingSchema extends BaseModel {
-  static $columns = ['createdAt', 'featureKey', 'id', 'isEnabled', 'maxTokens', 'model', 'temperature', 'updatedAt'] as const
+  static $columns = ['createdAt', 'featureKey', 'id', 'isEnabled', 'maxTokens', 'model', 'temperature', 'updatedAt', 'value'] as const
   $columns = AiSettingSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -26,6 +26,8 @@ export class AiSettingSchema extends BaseModel {
   declare temperature: number
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
+  @column()
+  declare value: any | null
 }
 
 export class AuthAccessTokenSchema extends BaseModel {
@@ -51,6 +53,27 @@ export class AuthAccessTokenSchema extends BaseModel {
   declare type: string
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
+}
+
+export class BlockedEntitySchema extends BaseModel {
+  static $columns = ['blockedUntil', 'createdAt', 'entityId', 'entityType', 'id', 'reason', 'updatedAt', 'userId'] as const
+  $columns = BlockedEntitySchema.$columns
+  @column.dateTime()
+  declare blockedUntil: DateTime | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare entityId: string
+  @column()
+  declare entityType: string
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare reason: string | null
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare userId: string
 }
 
 export class CandidateProfileSchema extends BaseModel {
@@ -125,6 +148,23 @@ export class CompanySchema extends BaseModel {
   declare visaSponsorStatus: string | null
   @column()
   declare website: string | null
+}
+
+export class ContactMovementSchema extends BaseModel {
+  static $columns = ['contactId', 'createdAt', 'fromStatus', 'id', 'toStatus', 'trigger'] as const
+  $columns = ContactMovementSchema.$columns
+  @column()
+  declare contactId: string
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare fromStatus: string
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare toStatus: string
+  @column()
+  declare trigger: string
 }
 
 export class ContactSchema extends BaseModel {
@@ -215,6 +255,27 @@ export class EmailMessageSchema extends BaseModel {
   declare updatedAt: DateTime
 }
 
+export class EmailTemplateSchema extends BaseModel {
+  static $columns = ['bodyPattern', 'createdAt', 'id', 'isDefault', 'name', 'subjectPattern', 'updatedAt', 'userId'] as const
+  $columns = EmailTemplateSchema.$columns
+  @column()
+  declare bodyPattern: string
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare isDefault: boolean
+  @column()
+  declare name: string
+  @column()
+  declare subjectPattern: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare userId: string
+}
+
 export class ExternalCacheSchema extends BaseModel {
   static $columns = ['createdAt', 'data', 'entityKey', 'entityType', 'expiresAt', 'fetchedAt', 'id', 'source', 'updatedAt'] as const
   $columns = ExternalCacheSchema.$columns
@@ -251,6 +312,33 @@ export class FollowUpSequenceSchema extends BaseModel {
   declare delayDays3: number
   @column({ isPrimary: true })
   declare id: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare userId: string
+}
+
+export class GenerationPresetSchema extends BaseModel {
+  static $columns = ['createdAt', 'customInstructions', 'framework', 'id', 'isDefault', 'language', 'length', 'name', 'tone', 'updatedAt', 'userId'] as const
+  $columns = GenerationPresetSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare customInstructions: string | null
+  @column()
+  declare framework: string
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare isDefault: boolean
+  @column()
+  declare language: string
+  @column()
+  declare length: string
+  @column()
+  declare name: string
+  @column()
+  declare tone: string
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
   @column()
