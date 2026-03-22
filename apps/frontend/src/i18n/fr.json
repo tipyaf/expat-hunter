@@ -56,7 +56,14 @@
     "view": "Voir",
     "action_emails_to_validate": "{count} emails à valider",
     "action_replies_received": "{count} réponses reçues",
-    "action_sourcing_completed": "{count} contacts à analyser"
+    "action_sourcing_completed": "{count} contacts à analyser",
+    "action_searches_in_progress": "{count} recherche(s) en cours",
+    "responseRate": "Taux de réponse",
+    "interviews": "Entretiens",
+    "dashboardReady": "Votre profil est complet. Lancez une recherche pour trouver des contacts.",
+    "dashboardReadyCta": "Lancer une recherche",
+    "welcomeMessage": "Bienvenue sur ExpatHunter ! Complétez votre profil pour que l'IA trouve les contacts les plus pertinents.",
+    "welcomeCta": "Compléter mon profil"
   },
   "profile": {
     "title": "Mon profil",

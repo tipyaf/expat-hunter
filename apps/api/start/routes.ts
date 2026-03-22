@@ -16,6 +16,7 @@ const EnrichmentController = () => import('#controllers/enrichment_controller')
 const TemplatesController = () => import('#controllers/templates_controller')
 const PresetsController = () => import('#controllers/presets_controller')
 const SendingSettingsController = () => import('#controllers/sending_settings_controller')
+const TipsController = () => import('#controllers/tips_controller')
 
 router.get('/', async () => {
   return { name: '@expat-hunter/api', status: 'ok' }
@@ -124,6 +125,10 @@ router
 
 router
   .get('/api/sending-settings', [SendingSettingsController, 'show'])
+  .use(middleware.auth())
+
+router
+  .get('/api/tips/contextual', [TipsController, 'contextual'])
   .use(middleware.auth())
 
 router
