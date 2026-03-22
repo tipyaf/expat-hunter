@@ -18,6 +18,7 @@ const PresetsController = () => import('#controllers/presets_controller')
 const SendingSettingsController = () => import('#controllers/sending_settings_controller')
 const TipsController = () => import('#controllers/tips_controller')
 const BlockedEntitiesController = () => import('#controllers/blocked_entities_controller')
+const ChatController = () => import('#controllers/chat_controller')
 
 router.get('/', async () => {
   return { name: '@expat-hunter/api', status: 'ok' }
@@ -185,6 +186,14 @@ router
   .prefix('/api/admin/ai-settings')
   .use(middleware.auth())
   .use(middleware.admin())
+
+router
+  .group(() => {
+    router.post('/chat', [ChatController, 'chat'])
+    router.get('/chat/:sessionId', [ChatController, 'history'])
+  })
+  .prefix('/api/assistant')
+  .use(middleware.auth())
 
 router
   .post('/api/admin/refresh-visa-registries', [EnrichmentController, 'refreshVisaRegistries'])

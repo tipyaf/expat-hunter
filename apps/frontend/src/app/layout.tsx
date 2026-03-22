@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/contexts/auth-context'
 import { ThemeProvider } from '@/contexts/theme-context'
+import { FloatingChatButton } from '@/components/chat/floating-chat-button'
 import { NextIntlClientProvider } from 'next-intl'
 import { getLocale, getMessages, getTranslations } from 'next-intl/server'
 
@@ -38,6 +39,7 @@ export default async function RootLayout({
                 {tc('skipToContent')}
               </a>
               {children}
+              <FloatingChatButton />
             </AuthProvider>
           </ThemeProvider>
         </NextIntlClientProvider>
