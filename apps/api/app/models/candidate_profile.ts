@@ -45,6 +45,9 @@ export default class CandidateProfile extends BaseModel {
   @column()
   declare onboardingCompleted: boolean
 
+  @column()
+  declare recontactCooldownDays: number
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 

@@ -66,6 +66,12 @@ export default class Contact extends BaseModel {
   @column()
   declare userOverride: boolean
 
+  @column.dateTime()
+  declare lastContactedAt: DateTime | null
+
+  @column.dateTime()
+  declare cooldownUntil: DateTime | null
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 
@@ -83,6 +89,11 @@ export default class Contact extends BaseModel {
 
   @hasMany(() => EmailMessage)
   declare emails: HasMany<typeof EmailMessage>
+
+  get isInCooldown(): boolean {
+    if (!this.cooldownUntil) return false
+    return this.cooldownUntil > DateTime.now()
+  }
 
   @beforeCreate()
   static assignUuid(contact: Contact) {
