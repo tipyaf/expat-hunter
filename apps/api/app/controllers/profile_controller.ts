@@ -169,6 +169,8 @@ export default class ProfileController {
     targetSectors: string[]
     targetRoles: string[]
     preferences: Record<string, unknown> | null
+    followUps: Array<{ delay: number; unit: 'days' | 'weeks' | 'months' }> | null
+    sendingSchedule: { allowedDays: string[]; startHour: number; endHour: number; timezone: string } | null
     onboardingCompleted: boolean
     createdAt: unknown
     updatedAt: unknown
@@ -184,6 +186,8 @@ export default class ProfileController {
       targetSectors: profile.targetSectors,
       targetRoles: profile.targetRoles,
       preferences: profile.preferences,
+      followUps: profile.followUps,
+      sendingSchedule: profile.sendingSchedule,
       onboardingCompleted: profile.onboardingCompleted,
       isOnboarded: profile.onboardingCompleted,
       completionPercentage: this.computeCompletionPercentage(profile, userFullName),

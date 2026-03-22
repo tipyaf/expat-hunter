@@ -1,32 +1,52 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import countries from 'i18n-iso-countries'
+import enLocale from 'i18n-iso-countries/langs/en.json'
+import frLocale from 'i18n-iso-countries/langs/fr.json'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocale } from 'next-intl'
 
-interface Country {
-  code: string
-  labelEn: string
-  labelFr: string
-  flag: string
+// Register locales once at module level
+countries.registerLocale(enLocale)
+countries.registerLocale(frLocale)
+
+/**
+ * Map of project-specific country codes that differ from ISO 3166-1 alpha-2.
+ * The project uses 'UK' throughout (API, DB, scrapers) instead of ISO 'GB'.
+ */
+const PROJECT_TO_ISO: Record<string, string> = {
+  UK: 'GB',
+}
+const ISO_TO_PROJECT: Record<string, string> = {
+  GB: 'UK',
 }
 
-const COUNTRIES: Country[] = [
-  { code: 'NZ', labelEn: 'New Zealand', labelFr: 'Nouvelle-Zélande', flag: '🇳🇿' },
-  { code: 'AU', labelEn: 'Australia', labelFr: 'Australie', flag: '🇦🇺' },
-  { code: 'CA', labelEn: 'Canada', labelFr: 'Canada', flag: '🇨🇦' },
-  { code: 'UK', labelEn: 'United Kingdom', labelFr: 'Royaume-Uni', flag: '🇬🇧' },
-  { code: 'US', labelEn: 'United States', labelFr: 'États-Unis', flag: '🇺🇸' },
-  { code: 'DE', labelEn: 'Germany', labelFr: 'Allemagne', flag: '🇩🇪' },
-  { code: 'FR', labelEn: 'France', labelFr: 'France', flag: '🇫🇷' },
-  { code: 'NL', labelEn: 'Netherlands', labelFr: 'Pays-Bas', flag: '🇳🇱' },
-  { code: 'IE', labelEn: 'Ireland', labelFr: 'Irlande', flag: '🇮🇪' },
-  { code: 'SG', labelEn: 'Singapore', labelFr: 'Singapour', flag: '🇸🇬' },
-  { code: 'JP', labelEn: 'Japan', labelFr: 'Japon', flag: '🇯🇵' },
-  { code: 'CH', labelEn: 'Switzerland', labelFr: 'Suisse', flag: '🇨🇭' },
-  { code: 'SE', labelEn: 'Sweden', labelFr: 'Suède', flag: '🇸🇪' },
-  { code: 'DK', labelEn: 'Denmark', labelFr: 'Danemark', flag: '🇩🇰' },
-  { code: 'NO', labelEn: 'Norway', labelFr: 'Norvège', flag: '🇳🇴' },
-]
+/** Convert a project code to the ISO code used by i18n-iso-countries */
+function toIso(code: string): string {
+  return PROJECT_TO_ISO[code] ?? code
+}
+
+/** Convert an ISO code back to the project code */
+function toProject(isoCode: string): string {
+  return ISO_TO_PROJECT[isoCode] ?? isoCode
+}
+
+/** Derive a flag emoji from an ISO alpha-2 country code */
+function countryCodeToFlag(isoCode: string): string {
+  const code = isoCode.toUpperCase()
+  if (code.length !== 2) return ''
+  const offset = 0x1F1E6 - 65 // 'A' char code
+  return String.fromCodePoint(code.charCodeAt(0) + offset, code.charCodeAt(1) + offset)
+}
+
+interface CountryEntry {
+  /** Project-level code (e.g. 'UK' not 'GB') */
+  code: string
+  /** ISO alpha-2 code used by the library */
+  isoCode: string
+  label: string
+  flag: string
+}
 
 interface CountrySelectProps {
   value: string[]
@@ -40,7 +60,28 @@ export function CountrySelect({ value, onChange, label }: CountrySelectProps) {
   const [search, setSearch] = useState('')
   const containerRef = useRef<HTMLDivElement>(null)
 
-  const getLabel = (c: Country) => (locale === 'fr' ? c.labelFr : c.labelEn)
+  /** Build sorted list of all countries for the current locale */
+  const allCountries: CountryEntry[] = useMemo(() => {
+    const loc = locale === 'fr' ? 'fr' : 'en'
+    const names = countries.getNames(loc, { select: 'official' })
+    return Object.entries(names)
+      .map(([isoCode, name]) => ({
+        code: toProject(isoCode),
+        isoCode,
+        label: name,
+        flag: countryCodeToFlag(isoCode),
+      }))
+      .sort((a, b) => a.label.localeCompare(b.label, loc))
+  }, [locale])
+
+  /** Index by project code for fast lookup */
+  const countryByCode = useMemo(() => {
+    const map = new Map<string, CountryEntry>()
+    for (const c of allCountries) {
+      map.set(c.code, c)
+    }
+    return map
+  }, [allCountries])
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -52,14 +93,18 @@ export function CountrySelect({ value, onChange, label }: CountrySelectProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  const filtered = COUNTRIES.filter((c) => {
-    if (value.includes(c.code)) return false
+  const filtered = useMemo(() => {
+    const selectedSet = new Set(value)
     const q = search.toLowerCase()
-    return (
-      c.code.toLowerCase().includes(q) ||
-      getLabel(c).toLowerCase().includes(q)
-    )
-  })
+    return allCountries.filter((c) => {
+      if (selectedSet.has(c.code)) return false
+      return (
+        c.code.toLowerCase().includes(q) ||
+        c.isoCode.toLowerCase().includes(q) ||
+        c.label.toLowerCase().includes(q)
+      )
+    })
+  }, [allCountries, value, search])
 
   function addCountry(code: string) {
     onChange([...value, code])
@@ -68,10 +113,6 @@ export function CountrySelect({ value, onChange, label }: CountrySelectProps) {
 
   function removeCountry(code: string) {
     onChange(value.filter((c) => c !== code))
-  }
-
-  function getCountry(code: string): Country | undefined {
-    return COUNTRIES.find((c) => c.code === code)
   }
 
   return (
@@ -91,13 +132,13 @@ export function CountrySelect({ value, onChange, label }: CountrySelectProps) {
         tabIndex={0}
       >
         {value.map((code) => {
-          const country = getCountry(code)
+          const country = countryByCode.get(code)
           return (
             <span
               key={code}
               className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-2 py-0.5 text-sm text-primary"
             >
-              {country ? `${country.flag} ${getLabel(country)}` : code}
+              {country ? `${country.flag} ${country.label}` : code}
               <button
                 type="button"
                 onClick={(e) => {
@@ -136,7 +177,7 @@ export function CountrySelect({ value, onChange, label }: CountrySelectProps) {
               className="flex items-center gap-2 w-full px-3 py-2 text-sm text-[var(--color-text-main)] hover:bg-primary/5 transition-colors text-left"
             >
               <span>{country.flag}</span>
-              <span>{getLabel(country)}</span>
+              <span>{country.label}</span>
             </button>
           ))}
         </div>

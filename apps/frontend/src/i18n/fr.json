@@ -262,7 +262,7 @@
     "followUp": "Relance {n}",
     "followUpLimit": "{max} maximum",
     "followUpMinDelay": "min. {min} {unit}",
-    "addFollowUp": "+ Ajouter une relance",
+    "addFollowUp": "Ajouter une relance",
     "removeFollowUp": "Supprimer",
     "delayLabel": "Délai",
     "unitDays": "jour(s)",

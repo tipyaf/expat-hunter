@@ -135,6 +135,192 @@ test.group('POST /api/assistant/chat', (group) => {
       })
     response.assertStatus(422)
   })
+
+  // --- FAQ-specific tests ---
+
+  test('should return FAQ answer for "comment lancer une recherche" without calling AI', async ({
+    client,
+    assert,
+  }) => {
+    const { token } = await createAuthenticatedUser(client)
+    const response = await client
+      .post(`${CHAT_URL}/chat`)
+      .header('Authorization', `Bearer ${token}`)
+      .json({
+        message: 'Comment lancer une recherche ?',
+        sessionId: 'sess_faq_search_001',
+        page: 'recherche',
+      })
+    response.assertStatus(200)
+    const data = response.body().data
+    assert.equal(data.mode, 'support')
+    // FAQ answer must mention "Recherche" (part of the FAQ response)
+    assert.include(data.message, 'Recherche')
+    assert.include(data.message, 'Lancer')
+  })
+
+  test('should return FAQ answer for "comment générer des emails"', async ({
+    client,
+    assert,
+  }) => {
+    const { token } = await createAuthenticatedUser(client)
+    const response = await client
+      .post(`${CHAT_URL}/chat`)
+      .header('Authorization', `Bearer ${token}`)
+      .json({
+        message: 'Comment générer des emails ?',
+        sessionId: 'sess_faq_email_001',
+        page: 'emails',
+      })
+    response.assertStatus(200)
+    const data = response.body().data
+    assert.equal(data.mode, 'support')
+    assert.include(data.message, 'Emails')
+  })
+
+  test('should return FAQ answer for "comment envoyer des emails"', async ({
+    client,
+    assert,
+  }) => {
+    const { token } = await createAuthenticatedUser(client)
+    const response = await client
+      .post(`${CHAT_URL}/chat`)
+      .header('Authorization', `Bearer ${token}`)
+      .json({
+        message: 'Comment envoyer des emails ?',
+        sessionId: 'sess_faq_send_001',
+        page: 'emails',
+      })
+    response.assertStatus(200)
+    const data = response.body().data
+    assert.equal(data.mode, 'support')
+    assert.include(data.message, 'Emails')
+  })
+
+  test('should return FAQ answer for "what is a preset"', async ({ client, assert }) => {
+    const { token } = await createAuthenticatedUser(client)
+    const response = await client
+      .post(`${CHAT_URL}/chat`)
+      .header('Authorization', `Bearer ${token}`)
+      .json({
+        message: 'What is a preset exactly?',
+        sessionId: 'sess_faq_preset_001',
+        page: 'settings',
+      })
+    response.assertStatus(200)
+    const data = response.body().data
+    assert.include(data.message, 'Preset')
+  })
+
+  // --- Response structure tests ---
+
+  test('should return correct response structure with message, mode', async ({
+    client,
+    assert,
+  }) => {
+    const { token } = await createAuthenticatedUser(client)
+    const response = await client
+      .post(`${CHAT_URL}/chat`)
+      .header('Authorization', `Bearer ${token}`)
+      .json({
+        message: 'Comment lancer une recherche ?',
+        sessionId: 'sess_struct_001',
+        page: 'dashboard',
+      })
+    response.assertStatus(200)
+    const body = response.body()
+    assert.exists(body.data)
+    assert.exists(body.data.message)
+    assert.exists(body.data.mode)
+    assert.isString(body.data.message)
+    assert.oneOf(body.data.mode, ['support', 'expert', 'mixed'])
+  })
+
+  test('should detect mixed mode for message with both support and expert keywords', async ({
+    client,
+    assert,
+  }) => {
+    const { token } = await createAuthenticatedUser(client)
+    const response = await client
+      .post(`${CHAT_URL}/chat`)
+      .header('Authorization', `Bearer ${token}`)
+      .json({
+        message: 'Comment fonctionne le visa en NZ ?',
+        sessionId: 'sess_mixed_001',
+        page: 'dashboard',
+        country: 'NZ',
+      })
+    response.assertStatus(200)
+    const data = response.body().data
+    assert.equal(data.mode, 'mixed')
+    assert.exists(data.message)
+    assert.isString(data.message)
+  })
+
+  // --- Optional fields tests ---
+
+  test('should work without optional fields (page, contactId, companyName, country)', async ({
+    client,
+    assert,
+  }) => {
+    const { token } = await createAuthenticatedUser(client)
+    const response = await client
+      .post(`${CHAT_URL}/chat`)
+      .header('Authorization', `Bearer ${token}`)
+      .json({
+        message: 'Comment lancer une recherche ?',
+        sessionId: 'sess_minimal_001',
+      })
+    response.assertStatus(200)
+    const data = response.body().data
+    assert.exists(data.message)
+    assert.exists(data.mode)
+  })
+
+  test('should work with all optional fields provided', async ({ client, assert }) => {
+    const { token } = await createAuthenticatedUser(client)
+    const response = await client
+      .post(`${CHAT_URL}/chat`)
+      .header('Authorization', `Bearer ${token}`)
+      .json({
+        message: 'Tell me about visa sponsorship',
+        sessionId: 'sess_full_001',
+        page: 'contacts',
+        contactId: 'contact-123',
+        companyName: 'Test Corp',
+        country: 'NZ',
+      })
+    response.assertStatus(200)
+    const data = response.body().data
+    assert.exists(data.message)
+    assert.exists(data.mode)
+  })
+
+  // --- Expert mode resilience ---
+
+  test('should return a non-empty response for expert mode even without OpenRouter key', async ({
+    client,
+    assert,
+  }) => {
+    // In test env, OPENROUTER_API_KEY is not set, so expert mode falls back gracefully
+    const { token } = await createAuthenticatedUser(client)
+    const response = await client
+      .post(`${CHAT_URL}/chat`)
+      .header('Authorization', `Bearer ${token}`)
+      .json({
+        message: 'Quels sont les salaires en NZ pour le secteur tech ?',
+        sessionId: 'sess_expert_fallback_001',
+        page: 'recherche',
+        country: 'NZ',
+      })
+    response.assertStatus(200)
+    const data = response.body().data
+    assert.equal(data.mode, 'expert')
+    assert.exists(data.message)
+    assert.isString(data.message)
+    // Should be a non-empty fallback message, not a crash
+    assert.isAbove(data.message.length, 10)
+  })
 })
 
 // ---------------------------------------------------------------------------
@@ -184,5 +370,29 @@ test.group('GET /api/assistant/chat/:sessionId', (group) => {
     assert.isAtLeast(history.length, 2) // user message + assistant response
     assert.equal(history[0].role, 'user')
     assert.equal(history[1].role, 'assistant')
+  })
+
+  test('should include mode in assistant history messages', async ({ client, assert }) => {
+    const { token } = await createAuthenticatedUser(client)
+    const sessionId = 'sess_history_mode_001'
+
+    await client
+      .post(`${CHAT_URL}/chat`)
+      .header('Authorization', `Bearer ${token}`)
+      .json({
+        message: 'Comment lancer une recherche ?',
+        sessionId,
+        page: 'recherche',
+      })
+
+    const response = await client
+      .get(`${CHAT_URL}/chat/${sessionId}`)
+      .header('Authorization', `Bearer ${token}`)
+    response.assertStatus(200)
+    const history = response.body().data
+    const assistantMsg = history.find((m: { role: string }) => m.role === 'assistant')
+    assert.exists(assistantMsg)
+    assert.exists(assistantMsg.mode)
+    assert.oneOf(assistantMsg.mode, ['support', 'expert', 'mixed'])
   })
 })

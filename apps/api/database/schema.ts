@@ -77,7 +77,7 @@ export class BlockedEntitySchema extends BaseModel {
 }
 
 export class CandidateProfileSchema extends BaseModel {
-  static $columns = ['createdAt', 'cvFilePath', 'cvText', 'experienceYears', 'id', 'onboardingCompleted', 'preferences', 'recontactCooldownDays', 'skills', 'targetCountries', 'targetRoles', 'targetSectors', 'updatedAt', 'userId'] as const
+  static $columns = ['createdAt', 'cvFilePath', 'cvText', 'experienceYears', 'followUps', 'id', 'onboardingCompleted', 'preferences', 'recontactCooldownDays', 'sendingSchedule', 'skills', 'targetCountries', 'targetRoles', 'targetSectors', 'updatedAt', 'userId'] as const
   $columns = CandidateProfileSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -87,6 +87,8 @@ export class CandidateProfileSchema extends BaseModel {
   declare cvText: string | null
   @column()
   declare experienceYears: number
+  @column()
+  declare followUps: any | null
   @column({ isPrimary: true })
   declare id: string
   @column()
@@ -95,6 +97,8 @@ export class CandidateProfileSchema extends BaseModel {
   declare preferences: any | null
   @column()
   declare recontactCooldownDays: number
+  @column()
+  declare sendingSchedule: any | null
   @column()
   declare skills: any
   @column()

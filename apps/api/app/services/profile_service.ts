@@ -11,6 +11,13 @@ interface UpdateProfileData {
   preferences?: Record<string, unknown> | null
   cvText?: string | null
   cvFilePath?: string | null
+  followUps?: Array<{ delay: number; unit: 'days' | 'weeks' | 'months' }> | null
+  sendingSchedule?: {
+    allowedDays: string[]
+    startHour: number
+    endHour: number
+    timezone: string
+  } | null
 }
 
 export default class ProfileService {
@@ -56,6 +63,12 @@ export default class ProfileService {
     }
     if (data.cvFilePath !== undefined) {
       profile.cvFilePath = data.cvFilePath
+    }
+    if (data.followUps !== undefined) {
+      profile.followUps = data.followUps
+    }
+    if (data.sendingSchedule !== undefined) {
+      profile.sendingSchedule = data.sendingSchedule
     }
 
     await profile.save()

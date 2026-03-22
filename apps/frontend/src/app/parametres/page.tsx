@@ -27,7 +27,7 @@ interface SendingSchedule {
 type ThemeOption = 'auto' | 'light' | 'dark'
 
 const ALL_DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
-const HOURS = Array.from({ length: 24 }, (_, i) => i)
+const QUARTER_HOURS = Array.from({ length: 96 }, (_, i) => i * 0.25)
 
 const COMMON_TIMEZONES = [
   'Pacific/Auckland',
@@ -267,9 +267,13 @@ export default function SettingsPage() {
                     onChange={(e) => setSchedule((prev) => ({ ...prev, startHour: Number(e.target.value) }))}
                     className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-light)] px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   >
-                    {HOURS.map((h) => (
-                      <option key={h} value={h}>{String(h).padStart(2, '0')}:00</option>
-                    ))}
+                    {QUARTER_HOURS.map((h) => {
+                      const hrs = Math.floor(h)
+                      const mins = Math.round((h - hrs) * 60)
+                      return (
+                        <option key={h} value={h}>{String(hrs).padStart(2, '0')}:{String(mins).padStart(2, '0')}</option>
+                      )
+                    })}
                   </select>
                   <span className="text-sm text-[var(--color-text-muted)]">{t('hoursTo')}</span>
                   <select
@@ -277,9 +281,13 @@ export default function SettingsPage() {
                     onChange={(e) => setSchedule((prev) => ({ ...prev, endHour: Number(e.target.value) }))}
                     className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-light)] px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   >
-                    {HOURS.map((h) => (
-                      <option key={h} value={h}>{String(h).padStart(2, '0')}:00</option>
-                    ))}
+                    {QUARTER_HOURS.map((h) => {
+                      const hrs = Math.floor(h)
+                      const mins = Math.round((h - hrs) * 60)
+                      return (
+                        <option key={h} value={h}>{String(hrs).padStart(2, '0')}:{String(mins).padStart(2, '0')}</option>
+                      )
+                    })}
                   </select>
                 </div>
               </div>
