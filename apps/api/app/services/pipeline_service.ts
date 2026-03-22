@@ -1,4 +1,5 @@
 import Contact from '#models/contact'
+import ContactMovementService from '#services/contact_movement_service'
 
 export interface PipelineColumn {
   key: string
@@ -33,25 +34,43 @@ export interface PipelineContact {
   lastEmailDate: string | null
 }
 
+// 6 columns: found → to_contact → contacted → in_discussion → interview → done
 const PIPELINE_COLUMNS = [
   { key: 'found', statuses: ['identified', 'analyzed'] },
   { key: 'to_contact', statuses: ['to_contact'] },
   { key: 'contacted', statuses: ['contacted'] },
-  { key: 'in_discussion', statuses: ['replied', 'interview'] },
+  { key: 'in_discussion', statuses: ['replied'] },
+  { key: 'interview', statuses: ['interview'] },
   { key: 'done', statuses: ['offer', 'rejected'] },
 ] as const
 
 export default class PipelineService {
+  private movementService = new ContactMovementService()
+
   async getBoard(userId: string): Promise<PipelineColumn[]> {
-    const contacts = await Contact.query()
+    const { contactIds: blockedContactIds, companyIds: blockedCompanyIds } =
+      await this.movementService.getBlockedIds(userId)
+
+    const query = Contact.query()
       .where('userId', userId)
       .preload('company')
       .preload('emails', (q) => q.orderBy('createdAt', 'desc').limit(1))
       .orderBy('updatedAt', 'desc')
       .limit(500)
 
+    if (blockedContactIds.length > 0) {
+      query.whereNotIn('id', blockedContactIds)
+    }
+
+    const contacts = await query
+
+    // Also exclude contacts whose company is blocked
+    const filtered = blockedCompanyIds.length > 0
+      ? contacts.filter((c) => !c.companyId || !blockedCompanyIds.includes(c.companyId))
+      : contacts
+
     return PIPELINE_COLUMNS.map((col) => {
-      const colContacts = contacts
+      const colContacts = filtered
         .filter((c) => (col.statuses as readonly string[]).includes(c.status))
         .map((c) => this.serialize(c))
 

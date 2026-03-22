@@ -74,9 +74,9 @@ export function usePipeline() {
     }
   }, [token])
 
-  const moveContact = useCallback(async (contactId: string, newStatus: string) => {
+  const moveContact = useCallback(async (contactId: string, newStatus: string, trigger: string = 'manual') => {
     if (!token) return
-    await apiClient.patch(`/api/contacts/${contactId}/status`, { status: newStatus }, { token })
+    await apiClient.patch(`/api/contacts/${contactId}/status`, { status: newStatus, trigger }, { token })
 
     setColumns((prev) => {
       const contact = prev.flatMap((c) => c.contacts).find((c) => c.id === contactId)
@@ -100,5 +100,5 @@ export function usePipeline() {
 
   const total = columns.reduce((sum, col) => sum + col.count, 0)
 
-  return { columns, stats, total, isLoading, moveContact, refetch: fetchBoard }
+  return { columns, stats, total, isLoading, moveContact, refresh: fetchBoard, refetch: fetchBoard }
 }

@@ -217,6 +217,7 @@
     "col_to_contact": "To contact",
     "col_contacted": "Contacted",
     "col_in_discussion": "In discussion",
+    "col_interview": "Interview",
     "col_done": "Done",
     "relevance_very_relevant": "Very relevant",
     "relevance_relevant": "Relevant",
@@ -235,7 +236,19 @@
     "stat_replied": "Replied",
     "stat_interview": "Interview",
     "stat_offer": "Offer",
-    "stat_rejected": "Rejected"
+    "stat_rejected": "Rejected",
+    "blockTitle": "Block this contact",
+    "blockScope": "Block scope",
+    "blockContact": "Contact only",
+    "blockCompany": "Entire company",
+    "blockDuration": "Duration",
+    "block30days": "30 days",
+    "block90days": "90 days",
+    "block180days": "180 days",
+    "blockPermanent": "Indefinitely",
+    "blockReason": "Reason (optional)",
+    "blockReasonPlaceholder": "e.g. No response, out of target...",
+    "blockConfirm": "Block"
   },
   "settings": {
     "title": "Settings",
@@ -257,7 +270,9 @@
     "darkModeLight": "Light",
     "darkModeDark": "Dark",
     "saveSuccess": "Settings saved",
-    "saveError": "Error while saving"
+    "saveError": "Error while saving",
+    "blockedLink": "Blocked contacts & companies",
+    "blockedDesc": "Manage contacts and companies you have blocked"
   },
   "admin": {
     "aiSettingsTitle": "AI Configuration",
@@ -503,5 +518,15 @@
     "updateSuccess": "Preset updated",
     "deleteSuccess": "Preset deleted",
     "validationError": "Name is required"
+  },
+  "blocked": {
+    "title": "Blocked contacts & companies",
+    "subtitle": "Blocked contacts and companies are excluded from your pipeline and future sends.",
+    "empty": "No active blocks. Block a contact from the kanban.",
+    "type_contact": "Contact",
+    "type_company": "Company",
+    "until": "Until",
+    "permanent": "Permanent block",
+    "unblock": "Unblock"
   }
 }

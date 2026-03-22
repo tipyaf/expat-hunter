@@ -17,6 +17,7 @@ const TemplatesController = () => import('#controllers/templates_controller')
 const PresetsController = () => import('#controllers/presets_controller')
 const SendingSettingsController = () => import('#controllers/sending_settings_controller')
 const TipsController = () => import('#controllers/tips_controller')
+const BlockedEntitiesController = () => import('#controllers/blocked_entities_controller')
 
 router.get('/', async () => {
   return { name: '@expat-hunter/api', status: 'ok' }
@@ -64,6 +65,7 @@ router
     router.get('/', [ContactsController, 'index'])
     router.get('/:id', [ContactsController, 'show'])
     router.patch('/:id/status', [ContactsController, 'updateStatus'])
+    router.get('/:id/movements', [ContactsController, 'movements'])
     router.put('/:id/override', [ContactsController, 'override'])
     router.post('/:id/enrich-email', [EnrichmentController, 'enrichEmail'])
   })
@@ -129,6 +131,15 @@ router
 
 router
   .get('/api/tips/contextual', [TipsController, 'contextual'])
+  .use(middleware.auth())
+
+router
+  .group(() => {
+    router.get('/', [BlockedEntitiesController, 'index'])
+    router.post('/', [BlockedEntitiesController, 'store'])
+    router.delete('/:id', [BlockedEntitiesController, 'destroy'])
+  })
+  .prefix('/api/blocked')
   .use(middleware.auth())
 
 router
