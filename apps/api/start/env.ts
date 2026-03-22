@@ -55,4 +55,12 @@ export default await Env.create(new URL('../', import.meta.url), {
   |--------------------------------------------------------------------------
   */
   APIFY_TOKEN: Env.schema.string.optional(),
+
+  /*
+  |--------------------------------------------------------------------------
+  | Email enrichment
+  |--------------------------------------------------------------------------
+  */
+  HUNTER_API_KEY: Env.schema.string.optional(),
+  APOLLO_API_KEY: Env.schema.string.optional(),
 })

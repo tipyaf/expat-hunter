@@ -379,5 +379,31 @@
     "welcomeCta": "Complete my profile",
     "dashboardReady": "Your profile is complete. Launch a search to find contacts in your target countries.",
     "dashboardReadyCta": "Launch a search"
+  },
+  "badges": {
+    "source_scraped": "Scraped",
+    "source_scraped_title": "Email found by automatic scraping",
+    "source_hunter": "Hunter",
+    "source_hunter_title": "Email verified via Hunter.io",
+    "source_apollo": "Apollo",
+    "source_apollo_title": "Email found via Apollo.io",
+    "source_inferred": "Inferred",
+    "source_inferred_title": "Email generated from domain pattern",
+    "source_page": "Website",
+    "source_page_title": "Email found on the company's official website",
+    "emailStatus_verified": "Verified",
+    "emailStatus_probable": "Probable",
+    "emailStatus_unknown": "Unknown",
+    "emailStatus_bounced": "Bounced",
+    "confidence": "confidence",
+    "visa_accredited": "Visa ✓",
+    "visa_not_found": "Visa ?",
+    "visa_unknown": "Visa —",
+    "scoreBreakdownLabel": "Expat score",
+    "dim_visa": "Visa",
+    "dim_role": "Role",
+    "dim_hiring": "Hiring",
+    "dim_expatFriendly": "Expat-friendly",
+    "dim_momentum": "Momentum"
   }
 }

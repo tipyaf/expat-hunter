@@ -203,7 +203,7 @@ export default function ContactsPage() {
                             {contact.confidenceScore != null && (
                               <ConfidenceScore
                                 score={contact.confidenceScore}
-                                factors={contact.confidenceFactors}
+                                factors={contact.confidenceFactors ?? undefined}
                               />
                             )}
                             <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium shrink-0 ${statusColor(contact.status)}`}>

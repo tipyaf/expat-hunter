@@ -1,6 +1,7 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import Contact from '#models/contact'
-import ConfidenceScoreService from '#services/confidence_score_service'
+import ExpatScoringService from '#services/expat_scoring_service'
+import type { ExpatScoreResult } from '#services/expat_scoring_service'
 
 const VALID_STATUSES = [
   'identified', 'analyzed', 'to_contact', 'contacted',
@@ -31,8 +32,8 @@ export default class ContactsController {
     }
 
     const contacts = await query.paginate(page, limit)
-    const confidenceService = new ConfidenceScoreService()
-    const scores = await confidenceService.calculateBatch(contacts.all())
+    const scoringService = new ExpatScoringService()
+    const scores = await scoringService.calculateBatch(contacts.all())
 
     return response.ok({
       data: contacts.all().map((c) => this.serialize(c, scores.get(c.id))),
@@ -58,10 +59,10 @@ export default class ContactsController {
       })
     }
 
-    const confidenceService = new ConfidenceScoreService()
-    const confidenceResult = await confidenceService.calculate(contact, contact.company)
+    const scoringService = new ExpatScoringService()
+    const scoreResult = await scoringService.calculate(contact, contact.company)
 
-    return response.ok({ data: this.serialize(contact, confidenceResult) })
+    return response.ok({ data: this.serialize(contact, scoreResult) })
   }
 
   /**
@@ -126,7 +127,7 @@ export default class ContactsController {
     return response.ok({ data: this.serialize(contact) })
   }
 
-  private serialize(contact: Contact, confidence?: { score: number; factors: Array<{ label: string; impact: string; weight: number }> }) {
+  private serialize(contact: Contact, score?: ExpatScoreResult) {
     return {
       id: contact.id,
       userId: contact.userId,
@@ -137,14 +138,23 @@ export default class ContactsController {
       email: contact.email,
       linkedinUrl: contact.linkedinUrl,
       source: contact.source,
+      sourceDetail: contact.sourceDetail,
+      emailSource: contact.emailSource,
+      emailConfidence: contact.emailConfidence,
+      emailStatus: contact.emailStatus,
+      githubUrl: contact.githubUrl,
       status: contact.status,
       relevanceScore: contact.relevanceScore,
       relevanceLabel: contact.relevanceLabel,
       relevanceReason: contact.relevanceReason,
       aiRecommendation: contact.aiRecommendation,
       userOverride: contact.userOverride,
-      confidenceScore: confidence?.score ?? null,
-      confidenceFactors: confidence?.factors ?? null,
+      // Backwards-compatible fields
+      confidenceScore: score?.score ?? null,
+      confidenceFactors: score?.factors ?? null,
+      // New expat scoring
+      scoreBreakdown: score?.breakdown ?? null,
+      scoreVersion: score?.version ?? null,
       company: contact.company
         ? {
             id: contact.company.id,
@@ -152,6 +162,10 @@ export default class ContactsController {
             sector: contact.company.sector,
             country: contact.company.country,
             city: contact.company.city,
+            domain: contact.company.domain,
+            visaSponsorStatus: contact.company.visaSponsorStatus,
+            visaSponsorCountries: contact.company.visaSponsorCountries,
+            hiringIntensity: contact.company.hiringIntensity,
           }
         : null,
       createdAt: contact.createdAt,

@@ -14,16 +14,19 @@ Le plan decoupe le redesign V2 en **9 epics ordonnes**. Le positionnement expert
 **Principe directeur** : chaque epic livre une valeur testable ET un element visible du positionnement expert.
 
 ```
-Epic 1  Navigation V2 + Design System + fondations expert   ----+
-Epic 2  Cache d'intelligence + score de confiance            ----+--> en parallele possible
-Epic 3  Automatisation du flow + snapshot marche             (prereq: Epic 2)
-Epic 4  Emails en masse + templates + conseils email         (prereq: Epic 3)
-Epic 5  Dashboard repense + conseils dashboard               (prereq: Epic 3, 4)
-Epic 6  Kanban intelligent + conseils suivi                  (prereq: Epic 4)
-Epic 7  Chat dual (support + expert)                         (prereq: Epic 2, 5)
-Epic 8  Gestion des reponses et conversations                (prereq: Epic 2, 6, 7)
-Epic 9  Onboarding, profil, expert avance et finitions       (prereq: Epic 1-8)
+Epic 1   Navigation V2 + Design System + fondations expert   ----+
+Epic 2   Cache d'intelligence + score de confiance            ----+--> en parallele possible
+Epic 3   Automatisation du flow + snapshot marche             (prereq: Epic 2)           [DONE]
+Epic 3.5 Sourcing et enrichissement de contacts qualifies     (prereq: Epic 3)           [ADDED]
+Epic 4   Emails en masse + templates + conseils email         (prereq: Epic 3, 3.5)
+Epic 5   Dashboard repense + conseils dashboard               (prereq: Epic 3, 4)
+Epic 6   Kanban intelligent + conseils suivi                  (prereq: Epic 4)
+Epic 7   Chat dual (support + expert)                         (prereq: Epic 2, 5)
+Epic 8   Gestion des reponses et conversations                (prereq: Epic 2, 6, 7)
+Epic 9   Onboarding, profil, expert avance et finitions       (prereq: Epic 1-8)
 ```
+
+> **Note** : Epic 3.5 a ete insere le 2026-03-22 suite a validation PO. Spec detaillee dans `specs/contact-sourcing-strategy.yaml`. Epic 4 depend desormais de 3.5 car la qualite des contacts conditionne directement l'efficacite du funnel email.
 
 ---
 
@@ -136,6 +139,88 @@ Epic 9  Onboarding, profil, expert avance et finitions       (prereq: Epic 1-8)
 - E2E : verifier qu'a la fin, des emails brouillons existent dans "Mes emails"
 - Integration : 2 recherches sur le meme pays — contacts deja contactes exclus
 - Unitaire : la job queue chaine les 3 etapes, continue sur erreur partielle
+
+**Estimation relative** : XL
+
+---
+
+## Epic 3.5 : Sourcing et enrichissement de contacts qualifies
+
+**Features couvertes** : F15.2 (Enrichissement contacts), F14.3 (Scoring expat-contextualise)
+**Prerequis** : Epic 3 (le flow de recherche est en place, les scrapers de base fonctionnent)
+**Priorite MoSCoW** : Must-have
+**Spec detaillee** : `specs/contact-sourcing-strategy.yaml`
+
+**Valeur livree** : ExpatHunter trouve des contacts que Hunter.io et Apollo ne trouvent pas — en combinant extraction intelligente depuis les offres, crawl des pages equipes des entreprises et croisement avec les registres gouvernementaux de sponsors visa. Hunter et Apollo enrichissent les contacts deja identifies (pas l'inverse). Le score de confiance est contextualise pour les expats (visa, culture, hiring intensity). Chaque contact affiche pourquoi il vaut la peine d'etre contacte.
+
+**Proposition de valeur unique vs Hunter direct** :
+- Hunter repond a "quel est l'email de Jean Dupont chez Acme Corp ?"
+- ExpatHunter repond a "qui dois-je contacter chez Acme Corp pour decrocher un poste de dev senior a Auckland en tant que Francais ?"
+- Hunter est une brique dans notre pipeline a l'etape 4, pas un concurrent.
+
+**Backend — Pipeline sourcing en 5 etapes** :
+
+*Etape 1 — Decouverte* :
+- Scrapers existants (Seek, Indeed) completement refactores : extraire le nom, titre, email ET domaine de l'entreprise depuis chaque offre
+- Nouveau : extraction NLP du contact directement dans le texte de l'offre ("Contact John Smith at john@company.com for enquiries")
+- Annuaires sectoriels locaux (par pays, configurable)
+
+*Etape 2 — Enrichissement entreprise* :
+- Service `CompanyEnricher` : a partir du nom + domaine, crawler le site pour trouver la page "About", "Our Team", "Leadership"
+- Extraction des noms + titres + emails des pages equipe via regex + NLP
+- Cibler les hiring managers, CTOs, heads of department (pas les generiques HR@ ou info@)
+
+*Etape 3 — Croisement registres visa gouvernementaux* (differenciateur unique) :
+- Immigration NZ : liste des Accredited Employers (AEWV) — publique et telechargeable
+- Home Office UK : Sponsor Licence Register
+- DOCA Australia : liste des sponsors visa 482
+- Service `VisaSponsorRegistry` : indexer ces listes en base, croisement automatique au sourcing
+- Ajouter flag `is_visa_sponsor: boolean` + `visa_types: string[]` sur Contact
+- Dans le score de confiance : +25 points si l'entreprise est sponsor visa confirme
+
+*Etape 4 — Enrichissement email* :
+- Service `EmailEnricher` en cascade : Hunter.io → Apollo.io → inférence pattern (prenom.nom@domaine)
+- Deduplication : ne pas appeler Hunter/Apollo si email deja trouve a l'etape 2
+- Verification syntaxique + MX record
+- Stocker `email_source: 'scraped' | 'hunter' | 'apollo' | 'inferred'` et `email_confidence: number` sur Contact
+
+*Etape 5 — Scoring expat-contextualise* :
+- Refonte `ConfidenceScoreService` avec 5 sous-scores visibles :
+  - **Visa** (0-25) : `is_visa_sponsor` + types de visa compatibles profil
+  - **Role** (0-30) : pertinence IA du contact vs poste + secteur cible
+  - **Hiring intensity** (0-20) : nb d'offres actives de l'entreprise sur 30 jours
+  - **Expat-friendly** (0-15) : signaux langue (offre en anglais), mentions visa, equipe internationale
+  - **Momentum** (0-10) : levee de fonds recente, expansion, recrutement actif
+- Score global = somme ponderable par l'admin (configurable dans ai_settings)
+- Chaque sous-score expose son "explication" (ex: "Sponsor AEWV confirme — peut recruter sans restriction")
+
+**Backend — Contraintes legales/ethiques** :
+- LinkedIn : jamais scrape directement. Google Search comme proxy uniquement pour trouver les URLs de profils publics, jamais le contenu des profils
+- RGPD : base legale = interet legittime sur donnees professionnelles publiques. Unsubscribe dans chaque email, cooldown 6 mois
+- Job boards : delais 3-8s entre requetes, rotation user-agents, Apify comme fallback officiel
+- Stocker `data_source_url` sur chaque contact pour tracabilite
+
+**Backend — Variables d'environnement requises** :
+- `HUNTER_API_KEY` (abonnement existant)
+- `APOLLO_API_KEY` (optionnel, fallback)
+
+**Frontend** :
+- Fiche contact : affichage des 5 sous-scores avec barres et explications inline
+- Badge "Sponsor visa confirme" (vert) ou "Non-sponsor" (gris) sur chaque contact
+- Badge `email_source` : "Email verifie (Hunter)" vs "Email infere" vs "Email public"
+- Filtres sur la liste contacts : filtrer par sponsor visa, par sous-score minimum, par email_source
+- Page `/parametres/sourcing` : activer/desactiver les sources (Hunter, Apollo, crawl pages equipe), configurer la ponderation des sous-scores (admin uniquement)
+
+**Tests** :
+- Unitaire : `CompanyEnricher` extrait des noms/emails d'une page HTML mock "Our Team"
+- Unitaire : `VisaSponsorRegistry` retourne `true` pour une entreprise connue, `false` pour une inconnue
+- Unitaire : `EmailEnricher` appelle Hunter si pas d'email, Apollo si Hunter echoue, infere le pattern en dernier recours
+- Unitaire : `ConfidenceScoreService` — sous-score Visa = 25 si sponsor confirme, 0 sinon
+- Unitaire : `ConfidenceScoreService` — score global respecte la ponderation configuree
+- Integration : un sourcing complet sur NZ produit au moins X% de contacts avec email verifie
+- Integration : un contact trouve dans le registre AEWV a `is_visa_sponsor = true`
+- E2E : la fiche contact affiche les 5 sous-scores avec leurs explications
+- E2E : filtrer par "Sponsor visa uniquement" reduit la liste aux contacts eligibles
 
 **Estimation relative** : XL
 
