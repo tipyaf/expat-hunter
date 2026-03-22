@@ -528,5 +528,23 @@
     "until": "Jusqu'au",
     "permanent": "Blocage permanent",
     "unblock": "Débloquer"
+  },
+  "chat": {
+    "title": "Assistant ExpatHunter",
+    "placeholder": "Posez votre question...",
+    "send": "Envoyer",
+    "modeSupport": "Support",
+    "modeExpert": "Expert",
+    "modeMixed": "Mixte",
+    "loading": "En cours...",
+    "clearHistory": "Effacer",
+    "suggestionsTitle": "Questions fréquentes",
+    "openChat": "Ouvrir l'assistant",
+    "closeChat": "Fermer l'assistant",
+    "noApiKey": "L'assistant IA n'est pas configuré.",
+    "errorMessage": "Désolé, une erreur est survenue. Veuillez réessayer.",
+    "welcomeMessage": "Bonjour ! Je suis votre assistant ExpatHunter. Posez-moi des questions sur l'app ou sur votre recherche d'emploi à l'étranger.",
+    "actionRegenerate": "Regénérer",
+    "actionChangeTone": "Changer le ton"
   }
 }

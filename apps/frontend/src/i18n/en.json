@@ -528,5 +528,23 @@
     "until": "Until",
     "permanent": "Permanent block",
     "unblock": "Unblock"
+  },
+  "chat": {
+    "title": "ExpatHunter Assistant",
+    "placeholder": "Ask your question...",
+    "send": "Send",
+    "modeSupport": "Support",
+    "modeExpert": "Expert",
+    "modeMixed": "Mixed",
+    "loading": "Loading...",
+    "clearHistory": "Clear",
+    "suggestionsTitle": "Common questions",
+    "openChat": "Open assistant",
+    "closeChat": "Close assistant",
+    "noApiKey": "AI assistant is not configured.",
+    "errorMessage": "Sorry, an error occurred. Please try again.",
+    "welcomeMessage": "Hello! I'm your ExpatHunter assistant. Ask me anything about the app or your job search abroad.",
+    "actionRegenerate": "Regenerate",
+    "actionChangeTone": "Change tone"
   }
 }

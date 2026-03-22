@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { BaseModel, beforeCreate, column } from '@adonisjs/lucid/orm'
 import type { DateTime } from 'luxon'
 
-export type FeatureKey = 'default' | 'cv_extraction' | 'relevance_analysis' | 'email_generation' | 'email_follow_ups' | 'email_follow_up_delay'
+export type FeatureKey = 'default' | 'cv_extraction' | 'relevance_analysis' | 'email_generation' | 'email_follow_ups' | 'email_follow_up_delay' | 'chat_assistant'
 
 export default class AiSetting extends BaseModel {
   static table = 'ai_settings'
