@@ -10,6 +10,8 @@ const EmailsController = () => import('#controllers/emails_controller')
 const PipelineController = () => import('#controllers/pipeline_controller')
 const DashboardController = () => import('#controllers/dashboard_controller')
 const AiSettingsController = () => import('#controllers/ai_settings_controller')
+const SearchController = () => import('#controllers/search_controller')
+const MarketController = () => import('#controllers/market_controller')
 
 router.get('/', async () => {
   return { name: '@expat-hunter/api', status: 'ok' }
@@ -79,6 +81,23 @@ router
     router.post('/:id/regenerate', [EmailsController, 'regenerate'])
   })
   .prefix('/api/emails')
+  .use(middleware.auth())
+
+router
+  .group(() => {
+    router.post('/', [SearchController, 'launch'])
+    router.get('/', [SearchController, 'index'])
+    router.get('/defaults', [SearchController, 'defaults'])
+    router.get('/:id/progress', [SearchController, 'progress'])
+  })
+  .prefix('/api/recherche')
+  .use(middleware.auth())
+
+router
+  .group(() => {
+    router.get('/snapshot', [MarketController, 'snapshot'])
+  })
+  .prefix('/api/market')
   .use(middleware.auth())
 
 router
