@@ -3,9 +3,12 @@
 import { Sidebar } from '@/components/layout/sidebar'
 import { useAuth } from '@/contexts/auth-context'
 import { useTheme } from '@/contexts/theme-context'
+import { useSendingSettings } from '@/hooks/use-sending-settings'
 import { apiClient } from '@/lib/api-client'
+import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
+import { FileText, Sliders, ChevronRight } from 'lucide-react'
 
 interface FollowUpSequence {
   delayDays1: number
@@ -30,6 +33,7 @@ export default function SettingsPage() {
   })
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null)
+  const { settings: sendingSettings } = useSendingSettings()
 
   useEffect(() => {
     if (!token) return
@@ -89,10 +93,17 @@ export default function SettingsPage() {
 
             {/* Séquences de relance */}
             <section className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-6">
-              <h2 className="text-lg font-semibold mb-4">{t('followUpTitle')}</h2>
+              <div className="flex items-start justify-between mb-4">
+                <h2 className="text-lg font-semibold">{t('followUpTitle')}</h2>
+                <span className="text-xs text-[var(--color-text-muted)] mt-1">
+                  {t('followUpLimit', { max: sendingSettings.limits.maxFollowUps })}
+                </span>
+              </div>
               <div className="space-y-3">
-                {[1, 2, 3].map((i) => {
+                {[1, 2, 3].slice(0, sendingSettings.limits.maxFollowUps).map((i) => {
                   const key = `delayDays${i}` as keyof FollowUpSequence
+                  const minDays = sendingSettings.limits.minFollowUpDelay
+                  const unit = sendingSettings.limits.minFollowUpDelayUnit
                   return (
                     <div key={i} className="flex items-center gap-3">
                       <label className="text-sm font-medium w-28">
@@ -101,20 +112,56 @@ export default function SettingsPage() {
                       <span className="text-sm text-[var(--color-text-muted)]">J+</span>
                       <input
                         type="number"
-                        min={1}
-                        max={30}
+                        min={minDays}
+                        max={365}
                         value={followUp[key]}
                         onChange={(e) =>
                           setFollowUp((prev) => ({
                             ...prev,
-                            [key]: Math.max(1, Math.min(30, Number(e.target.value) || 1)),
+                            [key]: Math.max(minDays, Number(e.target.value) || minDays),
                           }))
                         }
                         className="w-16 rounded-lg border border-[var(--color-border)] bg-transparent px-2 py-1 text-sm text-center focus:outline-none focus:ring-2 focus:ring-primary"
                       />
+                      <span className="text-xs text-[var(--color-text-muted)]">
+                        {t('followUpMinDelay', { min: minDays, unit })}
+                      </span>
                     </div>
                   )
                 })}
+              </div>
+            </section>
+
+            {/* Raccourcis templates et presets */}
+            <section className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-6">
+              <h2 className="text-lg font-semibold mb-4">{t('emailCustomization')}</h2>
+              <div className="space-y-2">
+                <Link
+                  href="/parametres/templates"
+                  className="flex items-center justify-between rounded-lg border border-[var(--color-border)] px-4 py-3 hover:bg-[var(--color-bg-light)] transition-colors group"
+                >
+                  <div className="flex items-center gap-3">
+                    <FileText className="w-4 h-4 text-primary" />
+                    <div>
+                      <p className="text-sm font-medium text-[var(--color-text-main)]">{t('templatesLink')}</p>
+                      <p className="text-xs text-[var(--color-text-muted)]">{t('templatesDesc')}</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-[var(--color-text-muted)] group-hover:text-[var(--color-text-main)] transition-colors" />
+                </Link>
+                <Link
+                  href="/parametres/presets"
+                  className="flex items-center justify-between rounded-lg border border-[var(--color-border)] px-4 py-3 hover:bg-[var(--color-bg-light)] transition-colors group"
+                >
+                  <div className="flex items-center gap-3">
+                    <Sliders className="w-4 h-4 text-primary" />
+                    <div>
+                      <p className="text-sm font-medium text-[var(--color-text-main)]">{t('presetsLink')}</p>
+                      <p className="text-xs text-[var(--color-text-muted)]">{t('presetsDesc')}</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-[var(--color-text-muted)] group-hover:text-[var(--color-text-main)] transition-colors" />
+                </Link>
               </div>
             </section>
 

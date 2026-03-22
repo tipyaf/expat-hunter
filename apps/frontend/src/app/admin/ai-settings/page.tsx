@@ -2,6 +2,7 @@
 
 import { Sidebar } from '@/components/layout/sidebar'
 import { useAuth } from '@/contexts/auth-context'
+import { useSendingSettings } from '@/hooks/use-sending-settings'
 import { apiClient } from '@/lib/api-client'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
@@ -30,6 +31,23 @@ export default function AiSettingsPage() {
   const [form, setForm] = useState({ model: '', temperature: 0.3, maxTokens: 1024, isEnabled: true })
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
+  const { settings: sendingSettings, updateAdminLimits } = useSendingSettings()
+  const [emailLimitsForm, setEmailLimitsForm] = useState({ maxFollowUps: 3, minFollowUpDelay: 1, minFollowUpDelayUnit: 'days' as 'days' | 'weeks' | 'months' })
+  const [savingEmailLimits, setSavingEmailLimits] = useState(false)
+  useEffect(() => {
+    setEmailLimitsForm({
+      maxFollowUps: sendingSettings.limits.maxFollowUps,
+      minFollowUpDelay: sendingSettings.limits.minFollowUpDelay,
+      minFollowUpDelayUnit: sendingSettings.limits.minFollowUpDelayUnit,
+    })
+  }, [sendingSettings.limits])
+  const [cacheStats, setCacheStats] = useState<{
+    totalEntries: number
+    expiredEntries: number
+    byType: Record<string, { count: number; avgAgeDays: number }>
+    bySource: Record<string, number>
+  } | null>(null)
+  const [purging, setPurging] = useState(false)
 
   useEffect(() => {
     if (user && !user.isAdmin) router.replace('/')
@@ -40,12 +58,29 @@ export default function AiSettingsPage() {
     try {
       const res = await apiClient.get<{ data: AiSetting[] }>('/api/admin/ai-settings', { token })
       setSettings(res.data)
+      const cacheRes = await apiClient.get<{ data: typeof cacheStats }>('/api/admin/ai-settings/cache/stats', { token })
+      setCacheStats(cacheRes.data)
     } catch {
       // 403 = not admin
     } finally {
       setIsLoading(false)
     }
   }, [token])
+
+  const handlePurgeCache = async () => {
+    if (!token) return
+    setPurging(true)
+    try {
+      await apiClient.post('/api/admin/ai-settings/cache/purge', {}, { token })
+      const cacheRes = await apiClient.get<{ data: typeof cacheStats }>('/api/admin/ai-settings/cache/stats', { token })
+      setCacheStats(cacheRes.data)
+      setMessage(t('cachePurged'))
+    } catch {
+      setMessage(t('settingError'))
+    } finally {
+      setPurging(false)
+    }
+  }
 
   useEffect(() => {
     fetchSettings()
@@ -186,6 +221,101 @@ export default function AiSettingsPage() {
                   </div>
                 )
               })}
+
+              {/* Cache stats section */}
+              {cacheStats && (
+                <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-semibold">{t('cacheTitle')}</h3>
+                    <button
+                      type="button"
+                      onClick={() => void handlePurgeCache()}
+                      disabled={purging}
+                      className="text-sm text-red-600 hover:underline disabled:opacity-50"
+                    >
+                      {purging ? tc('loading') : t('cachePurge')}
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="rounded-lg bg-[var(--color-bg-light)] p-3 text-center">
+                      <p className="text-2xl font-bold text-primary">{cacheStats.totalEntries}</p>
+                      <p className="text-xs text-[var(--color-text-muted)]">{t('cacheTotal')}</p>
+                    </div>
+                    <div className="rounded-lg bg-[var(--color-bg-light)] p-3 text-center">
+                      <p className="text-2xl font-bold text-amber-600">{cacheStats.expiredEntries}</p>
+                      <p className="text-xs text-[var(--color-text-muted)]">{t('cacheExpired')}</p>
+                    </div>
+                  </div>
+                  {Object.keys(cacheStats.byType).length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-[var(--color-text-muted)] uppercase">{t('cacheByType')}</p>
+                      {Object.entries(cacheStats.byType).map(([type, info]) => (
+                        <div key={type} className="flex justify-between text-sm">
+                          <span className="capitalize">{type}</span>
+                          <span className="text-[var(--color-text-muted)]">
+                            {info.count} {t('cacheEntries')} · ~{info.avgAgeDays}j
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Email sending limits */}
+              <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-5">
+                <h3 className="font-semibold mb-4">{t('emailSettingsTitle')}</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4">
+                    <label className="text-sm font-medium w-52">{t('maxFollowUps')}</label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={10}
+                      value={emailLimitsForm.maxFollowUps}
+                      onChange={(e) => setEmailLimitsForm((f) => ({ ...f, maxFollowUps: Number(e.target.value) }))}
+                      className="w-16 rounded-lg border border-[var(--color-border)] bg-transparent px-2 py-1 text-sm text-center"
+                    />
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <label className="text-sm font-medium w-52">{t('minFollowUpDelay')}</label>
+                    <input
+                      type="number"
+                      min={1}
+                      value={emailLimitsForm.minFollowUpDelay}
+                      onChange={(e) => setEmailLimitsForm((f) => ({ ...f, minFollowUpDelay: Number(e.target.value) }))}
+                      className="w-16 rounded-lg border border-[var(--color-border)] bg-transparent px-2 py-1 text-sm text-center"
+                    />
+                    <select
+                      value={emailLimitsForm.minFollowUpDelayUnit}
+                      onChange={(e) => setEmailLimitsForm((f) => ({ ...f, minFollowUpDelayUnit: e.target.value as 'days' | 'weeks' | 'months' }))}
+                      className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-light)] px-2 py-1 text-sm"
+                    >
+                      <option value="days">{t('days')}</option>
+                      <option value="weeks">{t('weeks')}</option>
+                      <option value="months">{t('months')}</option>
+                    </select>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={savingEmailLimits}
+                    onClick={async () => {
+                      setSavingEmailLimits(true)
+                      try {
+                        await updateAdminLimits(emailLimitsForm)
+                        setMessage(t('emailLimitsSaved'))
+                      } catch {
+                        setMessage(tc('error'))
+                      } finally {
+                        setSavingEmailLimits(false)
+                      }
+                    }}
+                    className="rounded-lg bg-primary px-4 py-2 text-sm text-white hover:bg-primary/90 disabled:opacity-50"
+                  >
+                    {savingEmailLimits ? tc('saving') : tc('save')}
+                  </button>
+                </div>
+              </div>
 
               {message && (
                 <div className="rounded-lg bg-primary/10 text-primary px-4 py-2 text-sm">{message}</div>

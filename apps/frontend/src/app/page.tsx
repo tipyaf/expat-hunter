@@ -8,11 +8,13 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import { useTranslations } from 'next-intl'
+import { ProactiveTip } from '@/components/ui/proactive-tip'
+import { Mail, MessageSquare, Search } from 'lucide-react'
 
-const ACTION_ICONS: Record<string, string> = {
-  emails_to_validate: 'M',
-  replies_received: 'R',
-  sourcing_completed: 'S',
+const ACTION_ICONS: Record<string, typeof Mail> = {
+  emails_to_validate: Mail,
+  replies_received: MessageSquare,
+  sourcing_completed: Search,
 }
 
 export default function DashboardPage() {
@@ -22,10 +24,11 @@ export default function DashboardPage() {
   const router = useRouter()
   const t = useTranslations('dashboard')
   const tc = useTranslations('common')
+  const tt = useTranslations('tips')
 
   useEffect(() => {
     if (!isLoading && !profileLoading && user && !profile?.onboardingCompleted) {
-      router.push('/profile/setup')
+      router.push('/profil/setup')
     }
   }, [isLoading, profileLoading, user, profile, router])
 
@@ -54,6 +57,17 @@ export default function DashboardPage() {
           <p className="text-[var(--color-text-muted)]">{t('welcome', { name: user.fullName })}</p>
         </div>
         <div className="flex-1 overflow-y-auto px-4 md:px-8 pb-8">
+          {/* Expert tip */}
+          <div className="mb-6">
+            <ProactiveTip
+              message={stats.contacts === 0 ? tt('welcomeMessage') : tt('dashboardReady')}
+              cta={stats.contacts === 0
+                ? { label: tt('welcomeCta'), href: '/profil' }
+                : { label: tt('dashboardReadyCta'), href: '/recherche' }
+              }
+            />
+          </div>
+
           {/* Actions en attente */}
           <div className="mb-8">
             <h2 className="text-lg font-semibold mb-4">
@@ -68,7 +82,7 @@ export default function DashboardPage() {
             ) : actions.length === 0 ? (
               <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-6 text-center">
                 <p className="text-[var(--color-text-muted)]">{t('noActions')}</p>
-                <Link href="/sourcing" className="text-primary text-sm font-medium hover:underline mt-2 inline-block">
+                <Link href="/recherche" className="text-primary text-sm font-medium hover:underline mt-2 inline-block">
                   {t('startSourcing')}
                 </Link>
               </div>
@@ -80,8 +94,8 @@ export default function DashboardPage() {
                     href={action.href}
                     className="flex items-center gap-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-4 shadow-sm hover:border-primary/30 transition-colors"
                   >
-                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary font-bold">
-                      {ACTION_ICONS[action.type] ?? '?'}
+                    <span className="flex h-10 w-10 items-center justify-center rounded-[var(--radius-md)] bg-primary/10 text-primary">
+                      {(() => { const Icon = ACTION_ICONS[action.type]; return Icon ? <Icon className="h-5 w-5" /> : null })()}
                     </span>
                     <div className="flex-1">
                       <p className="font-medium">

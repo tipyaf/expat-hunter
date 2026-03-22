@@ -14,16 +14,19 @@ Le plan decoupe le redesign V2 en **9 epics ordonnes**. Le positionnement expert
 **Principe directeur** : chaque epic livre une valeur testable ET un element visible du positionnement expert.
 
 ```
-Epic 1  Navigation V2 + Design System + fondations expert   ----+
-Epic 2  Cache d'intelligence + score de confiance            ----+--> en parallele possible
-Epic 3  Automatisation du flow + snapshot marche             (prereq: Epic 2)
-Epic 4  Emails en masse + templates + conseils email         (prereq: Epic 3)
-Epic 5  Dashboard repense + conseils dashboard               (prereq: Epic 3, 4)
-Epic 6  Kanban intelligent + conseils suivi                  (prereq: Epic 4)
-Epic 7  Chat dual (support + expert)                         (prereq: Epic 2, 5)
-Epic 8  Gestion des reponses et conversations                (prereq: Epic 2, 6, 7)
-Epic 9  Onboarding, profil, expert avance et finitions       (prereq: Epic 1-8)
+Epic 1   Navigation V2 + Design System + fondations expert   ----+
+Epic 2   Cache d'intelligence + score de confiance            ----+--> en parallele possible
+Epic 3   Automatisation du flow + snapshot marche             (prereq: Epic 2)           [DONE]
+Epic 3.5 Sourcing et enrichissement de contacts qualifies     (prereq: Epic 3)           [ADDED]
+Epic 4   Emails en masse + templates + conseils email         (prereq: Epic 3, 3.5)
+Epic 5   Dashboard repense + conseils dashboard               (prereq: Epic 3, 4)
+Epic 6   Kanban intelligent + conseils suivi                  (prereq: Epic 4)
+Epic 7   Chat dual (support + expert)                         (prereq: Epic 2, 5)
+Epic 8   Gestion des reponses et conversations                (prereq: Epic 2, 6, 7)
+Epic 9   Onboarding, profil, expert avance et finitions       (prereq: Epic 1-8)
 ```
+
+> **Note** : Epic 3.5 a ete insere le 2026-03-22 suite a validation PO. Spec detaillee dans `specs/contact-sourcing-strategy.yaml`. Epic 4 depend desormais de 3.5 car la qualite des contacts conditionne directement l'efficacite du funnel email.
 
 ---
 
@@ -141,13 +144,95 @@ Epic 9  Onboarding, profil, expert avance et finitions       (prereq: Epic 1-8)
 
 ---
 
+## Epic 3.5 : Sourcing et enrichissement de contacts qualifies
+
+**Features couvertes** : F15.2 (Enrichissement contacts), F14.3 (Scoring expat-contextualise)
+**Prerequis** : Epic 3 (le flow de recherche est en place, les scrapers de base fonctionnent)
+**Priorite MoSCoW** : Must-have
+**Spec detaillee** : `specs/contact-sourcing-strategy.yaml`
+
+**Valeur livree** : ExpatHunter trouve des contacts que Hunter.io et Apollo ne trouvent pas — en combinant extraction intelligente depuis les offres, crawl des pages equipes des entreprises et croisement avec les registres gouvernementaux de sponsors visa. Hunter et Apollo enrichissent les contacts deja identifies (pas l'inverse). Le score de confiance est contextualise pour les expats (visa, culture, hiring intensity). Chaque contact affiche pourquoi il vaut la peine d'etre contacte.
+
+**Proposition de valeur unique vs Hunter direct** :
+- Hunter repond a "quel est l'email de Jean Dupont chez Acme Corp ?"
+- ExpatHunter repond a "qui dois-je contacter chez Acme Corp pour decrocher un poste de dev senior a Auckland en tant que Francais ?"
+- Hunter est une brique dans notre pipeline a l'etape 4, pas un concurrent.
+
+**Backend — Pipeline sourcing en 5 etapes** :
+
+*Etape 1 — Decouverte* :
+- Scrapers existants (Seek, Indeed) completement refactores : extraire le nom, titre, email ET domaine de l'entreprise depuis chaque offre
+- Nouveau : extraction NLP du contact directement dans le texte de l'offre ("Contact John Smith at john@company.com for enquiries")
+- Annuaires sectoriels locaux (par pays, configurable)
+
+*Etape 2 — Enrichissement entreprise* :
+- Service `CompanyEnricher` : a partir du nom + domaine, crawler le site pour trouver la page "About", "Our Team", "Leadership"
+- Extraction des noms + titres + emails des pages equipe via regex + NLP
+- Cibler les hiring managers, CTOs, heads of department (pas les generiques HR@ ou info@)
+
+*Etape 3 — Croisement registres visa gouvernementaux* (differenciateur unique) :
+- Immigration NZ : liste des Accredited Employers (AEWV) — publique et telechargeable
+- Home Office UK : Sponsor Licence Register
+- DOCA Australia : liste des sponsors visa 482
+- Service `VisaSponsorRegistry` : indexer ces listes en base, croisement automatique au sourcing
+- Ajouter flag `is_visa_sponsor: boolean` + `visa_types: string[]` sur Contact
+- Dans le score de confiance : +25 points si l'entreprise est sponsor visa confirme
+
+*Etape 4 — Enrichissement email* :
+- Service `EmailEnricher` en cascade : Hunter.io → Apollo.io → inférence pattern (prenom.nom@domaine)
+- Deduplication : ne pas appeler Hunter/Apollo si email deja trouve a l'etape 2
+- Verification syntaxique + MX record
+- Stocker `email_source: 'scraped' | 'hunter' | 'apollo' | 'inferred'` et `email_confidence: number` sur Contact
+
+*Etape 5 — Scoring expat-contextualise* :
+- Refonte `ConfidenceScoreService` avec 5 sous-scores visibles :
+  - **Visa** (0-25) : `is_visa_sponsor` + types de visa compatibles profil
+  - **Role** (0-30) : pertinence IA du contact vs poste + secteur cible
+  - **Hiring intensity** (0-20) : nb d'offres actives de l'entreprise sur 30 jours
+  - **Expat-friendly** (0-15) : signaux langue (offre en anglais), mentions visa, equipe internationale
+  - **Momentum** (0-10) : levee de fonds recente, expansion, recrutement actif
+- Score global = somme ponderable par l'admin (configurable dans ai_settings)
+- Chaque sous-score expose son "explication" (ex: "Sponsor AEWV confirme — peut recruter sans restriction")
+
+**Backend — Contraintes legales/ethiques** :
+- LinkedIn : jamais scrape directement. Google Search comme proxy uniquement pour trouver les URLs de profils publics, jamais le contenu des profils
+- RGPD : base legale = interet legittime sur donnees professionnelles publiques. Unsubscribe dans chaque email, cooldown 6 mois
+- Job boards : delais 3-8s entre requetes, rotation user-agents, Apify comme fallback officiel
+- Stocker `data_source_url` sur chaque contact pour tracabilite
+
+**Backend — Variables d'environnement requises** :
+- `HUNTER_API_KEY` (abonnement existant)
+- `APOLLO_API_KEY` (optionnel, fallback)
+
+**Frontend** :
+- Fiche contact : affichage des 5 sous-scores avec barres et explications inline
+- Badge "Sponsor visa confirme" (vert) ou "Non-sponsor" (gris) sur chaque contact
+- Badge `email_source` : "Email verifie (Hunter)" vs "Email infere" vs "Email public"
+- Filtres sur la liste contacts : filtrer par sponsor visa, par sous-score minimum, par email_source
+- Page `/parametres/sourcing` : activer/desactiver les sources (Hunter, Apollo, crawl pages equipe), configurer la ponderation des sous-scores (admin uniquement)
+
+**Tests** :
+- Unitaire : `CompanyEnricher` extrait des noms/emails d'une page HTML mock "Our Team"
+- Unitaire : `VisaSponsorRegistry` retourne `true` pour une entreprise connue, `false` pour une inconnue
+- Unitaire : `EmailEnricher` appelle Hunter si pas d'email, Apollo si Hunter echoue, infere le pattern en dernier recours
+- Unitaire : `ConfidenceScoreService` — sous-score Visa = 25 si sponsor confirme, 0 sinon
+- Unitaire : `ConfidenceScoreService` — score global respecte la ponderation configuree
+- Integration : un sourcing complet sur NZ produit au moins X% de contacts avec email verifie
+- Integration : un contact trouve dans le registre AEWV a `is_visa_sponsor = true`
+- E2E : la fiche contact affiche les 5 sous-scores avec leurs explications
+- E2E : filtrer par "Sponsor visa uniquement" reduit la liste aux contacts eligibles
+
+**Estimation relative** : XL
+
+---
+
 ## Epic 4 : Emails en masse + templates + conseils email
 
-**Features couvertes** : F3 (Envoi en masse), F8 (Templates et parametres), F14.2 (micro-conseils page emails)
+**Features couvertes** : F3 (Envoi en masse), F8 (Templates et parametres), F16 (Parametres d'envoi — relances), F14.2 (micro-conseils page emails)
 **Prerequis** : Epic 3 (les emails sont generes par le flow)
 **Priorite MoSCoW** : Must-have
 
-**Valeur livree** : L'utilisateur selectionne et approuve des dizaines d'emails d'un coup, les envoie en 1 clic. Il cree ses templates, choisit le ton et le framework. Les emails sont tries par score de confiance. Des **conseils experts** s'affichent sur la page (timing d'envoi, ton culturel).
+**Valeur livree** : L'utilisateur selectionne et approuve des dizaines d'emails d'un coup, les envoie en 1 clic. Il cree ses templates, choisit le ton et le framework, et configure ses relances dans les limites fixees par l'administrateur. Les emails sont tries par score de confiance. Des **conseils experts** s'affichent sur la page (timing d'envoi, ton culturel).
 
 **Backend** :
 - Endpoint : `POST /api/emails/send-batch` (envoi en masse, arriere-plan avec progression)
@@ -159,6 +244,33 @@ Epic 9  Onboarding, profil, expert avance et finitions       (prereq: Epic 1-8)
 - Enrichir `POST /api/recherche` pour accepter template_id et preset_id
 - Filtres avances sur `GET /api/emails` : par pays, pertinence, statut
 - **Endpoint conseils contextuels** : `GET /api/tips/contextual?page=emails&country=X` — retourne des conseils dynamiques (timing optimal par fuseau, ton recommande par culture). Utilise le cache marche
+
+**Backend — contraintes admin F16 (relances)** :
+
+- **Stockage** : reutiliser la table `ai_settings` existante avec deux nouvelles cles globales :
+  - `email_follow_ups` : stocke `{ max_follow_ups: 3 }` (entier, defaut 3)
+  - `email_follow_up_delay` : stocke `{ min_delay: 1, min_delay_unit: 'days' }` (entier + enum `'days'|'weeks'|'months'`, defaut 1 day)
+  - Justification : la table `ai_settings` est deja le registre des reglages globaux admin ; ajouter deux nouvelles `featureKey` evite toute nouvelle migration. Le champ `model` est repurpose comme champ JSON generique pour ces cles (ou on utilise un champ `value` JSON si on etend la migration — voir note architecte ci-dessous).
+  - **Note architecte** : la table `ai_settings` actuelle n'a pas de champ JSON generique. Option A (zero migration) : serialiser la valeur dans le champ `model` (string) avec JSON.stringify/parse — acceptable car ces deux cles ne sont pas des settings IA. Option B (migration legere) : ajouter une colonne `value` nullable de type JSON a la table `ai_settings`. **Recommandation : Option B**, elle est propre et non destructive.
+
+- **Endpoint admin** : `PATCH /api/admin/settings/emails` — modifie `max_follow_ups`, `min_follow_up_delay`, `min_follow_up_delay_unit`. Accessible uniquement aux admins (middleware existant). Retourne les valeurs mises a jour.
+
+- **Endpoint parametres envoi utilisateur** : `GET /api/sending-settings` — retourne les reglages utilisateur (relances configurees) ET les limites admin en lecture seule :
+  ```json
+  {
+    "follow_ups": [...],
+    "limits": {
+      "max_follow_ups": 3,
+      "min_follow_up_delay": 1,
+      "min_follow_up_delay_unit": "days"
+    }
+  }
+  ```
+
+- **Validation backend** (`SendingSettingsValidator`) :
+  - `follow_ups.length <= limits.max_follow_ups` — sinon 422 avec message "Nombre de relances maximum atteint (X)"
+  - Pour chaque relance, convertir le delai utilisateur en jours et verifier `user_delay_days >= admin_min_delay_days` — sinon 422 avec message "Delai minimum entre relances : X jours"
+  - Conversion : `days * 1`, `weeks * 7`, `months * 30` (approximation suffisante pour la validation)
 
 **Frontend** :
 - Refonte page `/emails` : `EmailPreviewRow` avec checkbox, apercu, badge pertinence, `ConfidenceScore`
@@ -173,6 +285,13 @@ Epic 9  Onboarding, profil, expert avance et finitions       (prereq: Epic 1-8)
 - Preview temps reel d'un email exemple
 - **`ProactiveTip` sur la page emails** : "Meilleur moment pour envoyer en NZ : mardi 9h NZST", "Les recruteurs kiwis preferent un ton decontracte"
 
+**Frontend — SendingSettingsPanel (F16)** :
+- Le composant `SendingSettingsPanel` recoit les limites admin en props : `maxFollowUps`, `minFollowUpDelay`, `minFollowUpDelayUnit`
+- Bouton "+ Ajouter une relance" : desactive (`disabled`) quand `follow_ups.length >= maxFollowUps`, avec tooltip "X relances maximum (defini par l'administrateur)"
+- Label sous le compteur de relances : "X maximum (defini par l'administrateur)" affiche en permanence
+- Champ delai de chaque relance : valeur minimale forcee a `minFollowUpDelay` / `minFollowUpDelayUnit`. Si l'utilisateur saisit une valeur inferieure, champ passe en erreur inline : "Delai minimum : X jours (defini par l'administrateur)"
+- Page admin `/admin/ai-settings` : section "Parametres d'envoi" avec champs `max_follow_ups` (input number) et delai minimum (input number + select `jours|semaines|mois`), sauvegarde via `PATCH /api/admin/settings/emails`
+
 **Tests** :
 - E2E : selectionner 5 emails, Approuver, verifier le changement de statut
 - E2E : Envoyer, confirmer, verifier la barre de progression et le toast
@@ -181,6 +300,14 @@ Epic 9  Onboarding, profil, expert avance et finitions       (prereq: Epic 1-8)
 - E2E : verifier qu'un `ProactiveTip` timing s'affiche sur la page emails
 - E2E : verifier que les emails sont tries par score de confiance par defaut
 - Integration : envoi batch de 10 emails, verifier les statuts et erreurs
+- **Tests F16 — contraintes admin relances** :
+  - Unitaire : `SendingSettingsValidator` rejette si `follow_ups.length > max_follow_ups`
+  - Unitaire : `SendingSettingsValidator` rejette si delai utilisateur < delai admin (toutes combinaisons d'unites)
+  - Unitaire : conversion d'unites correcte (1 semaine = 7 jours, 1 mois = 30 jours)
+  - Integration : `PATCH /api/admin/settings/emails` met a jour les valeurs en base et les retourne
+  - Integration : `GET /api/sending-settings` inclut les limites admin dans la reponse
+  - E2E admin : modifier `max_follow_ups` a 2, verifier que le bouton "+ Ajouter une relance" est desactive apres 2 relances cote utilisateur
+  - E2E admin : modifier le delai minimum a 3 jours, verifier qu'un delai de 2 jours est refuse cote frontend et backend
 
 **Estimation relative** : XL
 
@@ -410,7 +537,7 @@ Epic 9  Onboarding, profil, expert avance et finitions       (prereq: Epic 1-8)
 | 1 | F1 Navigation | Must | S | - | Composant `ProactiveTip` + premier conseil statique |
 | 2 | F15 Cache, F14.3 Score confiance | Must | L | - | `ConfidenceScore` sur les contacts |
 | 3 | F2 Automatisation, F7 Anti-doublon, F14.1 Snapshot | Must | XL | Epic 2 | `MarketSnapshot` sur la page recherche |
-| 4 | F3 Envoi masse, F8 Templates | Must | XL | Epic 3 | Conseils timing + ton culturel sur les emails |
+| 4 | F3 Envoi masse, F8 Templates, F16 Relances | Must | XL | Epic 3 | Conseils timing + ton culturel sur les emails |
 | 5 | F4 Dashboard | Must | M | Epic 3, 4 | Conseils stats comparatives sur le dashboard |
 | 6 | F5 Kanban intelligent | Must | L | Epic 4 | Conseils preparation entretien + encouragement refus |
 | 7 | F14.4 Chat dual | Must | XL | Epic 2, 5 | Chat support + expert accessible partout |

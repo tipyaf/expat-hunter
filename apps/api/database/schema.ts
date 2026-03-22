@@ -54,7 +54,7 @@ export class AuthAccessTokenSchema extends BaseModel {
 }
 
 export class CandidateProfileSchema extends BaseModel {
-  static $columns = ['createdAt', 'cvFilePath', 'cvText', 'experienceYears', 'id', 'onboardingCompleted', 'preferences', 'skills', 'targetCountries', 'targetRoles', 'targetSectors', 'updatedAt', 'userId'] as const
+  static $columns = ['createdAt', 'cvFilePath', 'cvText', 'experienceYears', 'id', 'onboardingCompleted', 'preferences', 'recontactCooldownDays', 'skills', 'targetCountries', 'targetRoles', 'targetSectors', 'updatedAt', 'userId'] as const
   $columns = CandidateProfileSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -71,6 +71,8 @@ export class CandidateProfileSchema extends BaseModel {
   @column()
   declare preferences: any | null
   @column()
+  declare recontactCooldownDays: number
+  @column()
   declare skills: any
   @column()
   declare targetCountries: any
@@ -85,7 +87,7 @@ export class CandidateProfileSchema extends BaseModel {
 }
 
 export class CompanySchema extends BaseModel {
-  static $columns = ['city', 'country', 'createdAt', 'id', 'linkedinUrl', 'name', 'sector', 'signals', 'size', 'source', 'updatedAt', 'website'] as const
+  static $columns = ['city', 'country', 'createdAt', 'domain', 'hiringIntensity', 'id', 'linkedinUrl', 'name', 'sector', 'signals', 'size', 'source', 'teamCrawledAt', 'updatedAt', 'visaRegistryCheckedAt', 'visaSponsorCountries', 'visaSponsorStatus', 'website'] as const
   $columns = CompanySchema.$columns
   @column()
   declare city: string | null
@@ -93,6 +95,10 @@ export class CompanySchema extends BaseModel {
   declare country: string
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
+  @column()
+  declare domain: string | null
+  @column()
+  declare hiringIntensity: number | null
   @column({ isPrimary: true })
   declare id: string
   @column()
@@ -107,27 +113,49 @@ export class CompanySchema extends BaseModel {
   declare size: string | null
   @column()
   declare source: string
+  @column.dateTime()
+  declare teamCrawledAt: DateTime | null
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
+  @column.dateTime()
+  declare visaRegistryCheckedAt: DateTime | null
+  @column()
+  declare visaSponsorCountries: any | null
+  @column()
+  declare visaSponsorStatus: string | null
   @column()
   declare website: string | null
 }
 
 export class ContactSchema extends BaseModel {
-  static $columns = ['aiRecommendation', 'companyId', 'createdAt', 'email', 'fullName', 'id', 'linkedinUrl', 'relevanceLabel', 'relevanceReason', 'relevanceScore', 'role', 'source', 'sourcingRunId', 'status', 'updatedAt', 'userId', 'userOverride'] as const
+  static $columns = ['aiRecommendation', 'companyId', 'cooldownUntil', 'createdAt', 'email', 'emailAlternatives', 'emailConfidence', 'emailSource', 'emailStatus', 'fullName', 'githubUrl', 'id', 'lastContactedAt', 'linkedinUrl', 'relevanceLabel', 'relevanceReason', 'relevanceScore', 'role', 'scoreBreakdown', 'scoreVersion', 'source', 'sourceDetail', 'sourcingRunId', 'status', 'updatedAt', 'userId', 'userOverride'] as const
   $columns = ContactSchema.$columns
   @column()
   declare aiRecommendation: string | null
   @column()
   declare companyId: string
+  @column.dateTime()
+  declare cooldownUntil: DateTime | null
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
   @column()
   declare email: string | null
   @column()
+  declare emailAlternatives: any | null
+  @column()
+  declare emailConfidence: number | null
+  @column()
+  declare emailSource: string | null
+  @column()
+  declare emailStatus: string | null
+  @column()
   declare fullName: string
+  @column()
+  declare githubUrl: string | null
   @column({ isPrimary: true })
   declare id: string
+  @column.dateTime()
+  declare lastContactedAt: DateTime | null
   @column()
   declare linkedinUrl: string | null
   @column()
@@ -139,7 +167,13 @@ export class ContactSchema extends BaseModel {
   @column()
   declare role: string
   @column()
+  declare scoreBreakdown: any | null
+  @column()
+  declare scoreVersion: string | null
+  @column()
   declare source: string
+  @column()
+  declare sourceDetail: string | null
   @column()
   declare sourcingRunId: string | null
   @column()
@@ -181,6 +215,29 @@ export class EmailMessageSchema extends BaseModel {
   declare updatedAt: DateTime
 }
 
+export class ExternalCacheSchema extends BaseModel {
+  static $columns = ['createdAt', 'data', 'entityKey', 'entityType', 'expiresAt', 'fetchedAt', 'id', 'source', 'updatedAt'] as const
+  $columns = ExternalCacheSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare data: any
+  @column()
+  declare entityKey: string
+  @column()
+  declare entityType: string
+  @column.dateTime()
+  declare expiresAt: DateTime
+  @column.dateTime()
+  declare fetchedAt: DateTime
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare source: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+}
+
 export class FollowUpSequenceSchema extends BaseModel {
   static $columns = ['createdAt', 'delayDays1', 'delayDays2', 'delayDays3', 'id', 'updatedAt', 'userId'] as const
   $columns = FollowUpSequenceSchema.$columns
@@ -194,6 +251,45 @@ export class FollowUpSequenceSchema extends BaseModel {
   declare delayDays3: number
   @column({ isPrimary: true })
   declare id: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare userId: string
+}
+
+export class SearchRunSchema extends BaseModel {
+  static $columns = ['completedAt', 'contactsExcludedCooldown', 'contactsFound', 'contactsRelevant', 'country', 'createdAt', 'currentStep', 'emailsGenerated', 'errorMessage', 'id', 'progressPercent', 'sector', 'sourcingRunId', 'startedAt', 'status', 'updatedAt', 'userId'] as const
+  $columns = SearchRunSchema.$columns
+  @column.dateTime()
+  declare completedAt: DateTime | null
+  @column()
+  declare contactsExcludedCooldown: number
+  @column()
+  declare contactsFound: number
+  @column()
+  declare contactsRelevant: number
+  @column()
+  declare country: string
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare currentStep: string | null
+  @column()
+  declare emailsGenerated: number
+  @column()
+  declare errorMessage: string | null
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare progressPercent: number
+  @column()
+  declare sector: string | null
+  @column()
+  declare sourcingRunId: string | null
+  @column.dateTime()
+  declare startedAt: DateTime | null
+  @column()
+  declare status: string
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
   @column()
@@ -271,4 +367,27 @@ export class UserSchema extends BaseModel {
   declare password: string
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
+}
+
+export class VisaSponsorRegistrySchema extends BaseModel {
+  static $columns = ['accreditedSince', 'companyName', 'companyNameNormalized', 'country', 'id', 'indexedAt', 'rawData', 'sourceUrl', 'visaType'] as const
+  $columns = VisaSponsorRegistrySchema.$columns
+  @column.date()
+  declare accreditedSince: DateTime | null
+  @column()
+  declare companyName: string
+  @column()
+  declare companyNameNormalized: string
+  @column()
+  declare country: string
+  @column({ isPrimary: true })
+  declare id: string
+  @column.dateTime()
+  declare indexedAt: DateTime
+  @column()
+  declare rawData: any | null
+  @column()
+  declare sourceUrl: string | null
+  @column()
+  declare visaType: string
 }

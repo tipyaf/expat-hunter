@@ -11,6 +11,8 @@ export interface ScrapeParams {
   maxResults?: number
 }
 
+export type EmailSource = 'scraped' | 'hunter' | 'apollo' | 'inferred' | 'page'
+
 export interface RawContact {
   fullName: string
   role: string
@@ -22,6 +24,11 @@ export interface RawContact {
   companyCity?: string
   companyCountry: string
   source: string
+  // Enrichment fields (optional — backwards compatible)
+  sourceDetail?: string
+  emailSource?: EmailSource
+  emailConfidence?: number
+  githubUrl?: string
 }
 
 const USER_AGENTS = [

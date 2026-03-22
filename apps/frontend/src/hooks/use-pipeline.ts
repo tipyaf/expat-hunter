@@ -9,12 +9,23 @@ export interface PipelineContact {
   fullName: string
   role: string
   email: string | null
+  emailSource: 'scraped' | 'hunter' | 'apollo' | 'inferred' | 'page' | null
+  emailConfidence: number | null
+  emailStatus: 'verified' | 'probable' | 'unknown' | 'bounced' | null
   status: string
   relevanceScore: number | null
   relevanceLabel: string | null
   relevanceReason: string | null
   aiRecommendation: string | null
-  company: { id: string; name: string; sector: string | null; country: string } | null
+  scoreBreakdown: Record<string, { score: number; maxScore: number; explanation: string }> | null
+  company: {
+    id: string
+    name: string
+    sector: string | null
+    country: string
+    visaSponsorStatus: 'accredited' | 'not_found' | 'unknown' | null
+    visaSponsorCountries: string[] | null
+  } | null
   lastEmailStatus: string | null
   lastEmailDate: string | null
 }

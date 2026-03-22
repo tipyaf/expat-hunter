@@ -20,6 +20,8 @@ export interface Contact {
   relevanceReason: string | null
   aiRecommendation: string | null
   userOverride: boolean
+  confidenceScore: number | null
+  confidenceFactors: Array<{ label: string; impact: 'positive' | 'negative' | 'neutral'; weight: number }> | null
   company: {
     id: string
     name: string

@@ -38,6 +38,27 @@ export default class Company extends BaseModel {
   @column()
   declare source: string
 
+  @column()
+  declare domain: string | null
+
+  @column()
+  declare visaSponsorStatus: 'accredited' | 'not_found' | 'unknown' | null
+
+  @column({
+    serialize: (value: string | null) => (value ? JSON.parse(value) : null),
+    prepare: (value: string[] | null) => (value ? JSON.stringify(value) : null),
+  })
+  declare visaSponsorCountries: string[] | null
+
+  @column.dateTime()
+  declare visaRegistryCheckedAt: DateTime | null
+
+  @column.dateTime()
+  declare teamCrawledAt: DateTime | null
+
+  @column()
+  declare hiringIntensity: number | null
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 

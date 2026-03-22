@@ -19,6 +19,8 @@ export type ContactStatus =
 
 export type RelevanceLabel = 'very_relevant' | 'relevant' | 'to_review' | 'not_relevant'
 export type AiRecommendation = 'contact' | 'skip' | 'manual_review'
+export type EmailSource = 'scraped' | 'hunter' | 'apollo' | 'inferred' | 'page'
+export type EmailStatus = 'verified' | 'probable' | 'unknown' | 'bounced'
 
 export default class Contact extends BaseModel {
   @column({ isPrimary: true })
@@ -66,6 +68,42 @@ export default class Contact extends BaseModel {
   @column()
   declare userOverride: boolean
 
+  @column()
+  declare sourceDetail: string | null
+
+  @column()
+  declare emailSource: EmailSource | null
+
+  @column()
+  declare emailConfidence: number | null
+
+  @column()
+  declare emailStatus: EmailStatus | null
+
+  @column({
+    serialize: (value: string | null) => (value ? JSON.parse(value) : null),
+    prepare: (value: string[] | null) => (value ? JSON.stringify(value) : null),
+  })
+  declare emailAlternatives: string[] | null
+
+  @column({
+    serialize: (value: string | null) => (value ? JSON.parse(value) : null),
+    prepare: (value: Record<string, unknown> | null) => (value ? JSON.stringify(value) : null),
+  })
+  declare scoreBreakdown: Record<string, unknown> | null
+
+  @column()
+  declare scoreVersion: string | null
+
+  @column()
+  declare githubUrl: string | null
+
+  @column.dateTime()
+  declare lastContactedAt: DateTime | null
+
+  @column.dateTime()
+  declare cooldownUntil: DateTime | null
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 
@@ -83,6 +121,11 @@ export default class Contact extends BaseModel {
 
   @hasMany(() => EmailMessage)
   declare emails: HasMany<typeof EmailMessage>
+
+  get isInCooldown(): boolean {
+    if (!this.cooldownUntil) return false
+    return this.cooldownUntil > DateTime.now()
+  }
 
   @beforeCreate()
   static assignUuid(contact: Contact) {
