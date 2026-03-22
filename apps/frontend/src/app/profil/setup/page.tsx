@@ -288,7 +288,7 @@ export default function ProfileSetupPage() {
                 <p className="mt-2 text-sm text-primary font-medium">{t('cvUploadSuccess')}</p>
               )}
               {aiMessage && (
-                <p className="mt-2 text-sm text-green-600 font-medium">{aiMessage}</p>
+                <p className="mt-2 text-sm text-[var(--color-success)] font-medium">{aiMessage}</p>
               )}
             </div>
 

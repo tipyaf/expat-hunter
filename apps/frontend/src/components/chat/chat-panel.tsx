@@ -3,6 +3,8 @@
 import type { ChatContext, ChatMessage, ChatMode } from '@/hooks/use-chat'
 import { useTranslations } from 'next-intl'
 import { useEffect, useRef, useState } from 'react'
+import ReactMarkdown from 'react-markdown'
+import type { Components } from 'react-markdown'
 
 interface ChatPanelProps {
   messages: ChatMessage[]
@@ -79,6 +81,20 @@ function LoadingDots() {
       />
     </div>
   )
+}
+
+const markdownComponents: Components = {
+  a: ({ children, href, ...props }) => (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-primary underline hover:text-primary-hover"
+      {...props}
+    >
+      {children}
+    </a>
+  ),
 }
 
 export function ChatPanel({
@@ -210,7 +226,15 @@ export function ChatPanel({
                   : 'bg-[var(--color-surface-light)] text-[var(--color-text-main)] rounded-bl-sm border border-[var(--color-border)]'
               }`}
             >
-              <p className="whitespace-pre-wrap">{msg.content}</p>
+              {msg.role === 'assistant' ? (
+                <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-headings:my-2 prose-pre:my-2 prose-a:text-primary">
+                  <ReactMarkdown components={markdownComponents}>
+                    {msg.content}
+                  </ReactMarkdown>
+                </div>
+              ) : (
+                <p className="whitespace-pre-wrap">{msg.content}</p>
+              )}
               {msg.role === 'assistant' && msg.mode && (
                 <div className="mt-1.5">
                   <ModeBadge mode={msg.mode} />

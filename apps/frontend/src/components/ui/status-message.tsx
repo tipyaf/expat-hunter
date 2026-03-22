@@ -5,18 +5,26 @@ interface StatusMessageProps {
   message: string
 }
 
-const typeStyles: Record<StatusType, string> = {
-  success: 'border-green-200 bg-green-50 text-green-700 dark:border-green-800 dark:bg-green-950/30 dark:text-green-300',
-  error: 'border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950/30 dark:text-red-300',
+const typeIcons: Record<StatusType, string> = {
+  success: '✅',
+  error: '❌',
+}
+
+const typeTextColors: Record<StatusType, string> = {
+  success: 'text-[var(--color-success)]',
+  error: 'text-[var(--color-error)]',
 }
 
 export function StatusMessage({ type, message }: StatusMessageProps) {
   return (
     <div
       role="alert"
-      className={`rounded-lg border px-4 py-3 text-sm ${typeStyles[type]}`}
+      className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-light)] px-4 py-3"
     >
-      {message}
+      <div className="flex items-center gap-2">
+        <span className="shrink-0 text-sm">{typeIcons[type]}</span>
+        <span className={`text-sm ${typeTextColors[type]}`}>{message}</span>
+      </div>
     </div>
   )
 }
