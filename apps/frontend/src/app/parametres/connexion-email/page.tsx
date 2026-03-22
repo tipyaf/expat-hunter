@@ -105,6 +105,16 @@ export default function EmailConnectionPage() {
             <p className="text-sm text-[var(--color-text-muted)] mt-4">{tc('loading')}</p>
           ) : (
             <div className="max-w-2xl space-y-6 mt-4">
+              {/* Help / guide — visible first */}
+              <div className="rounded-xl border border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30 p-5">
+                <h2 className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-2">💡 {t('helpTitle')}</h2>
+                <div className="space-y-2 text-sm text-blue-700 dark:text-blue-400">
+                  <p>{t('helpGmail')}</p>
+                  <p>{t('helpOutlook')}</p>
+                  <p>{t('helpGeneral')}</p>
+                </div>
+              </div>
+
               {/* Provider presets */}
               <section className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-6">
                 <h2 className="text-lg font-semibold mb-4">{t('providerLabel')}</h2>
@@ -244,16 +254,6 @@ export default function EmailConnectionPage() {
                   {message.text}
                 </div>
               )}
-
-              {/* Help section */}
-              <section className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-6">
-                <h2 className="text-lg font-semibold mb-3">{t('helpTitle')}</h2>
-                <div className="space-y-3 text-sm text-[var(--color-text-muted)]">
-                  <p>{t('helpGmail')}</p>
-                  <p>{t('helpOutlook')}</p>
-                  <p>{t('helpGeneral')}</p>
-                </div>
-              </section>
 
               {/* Actions */}
               <div className="flex flex-wrap gap-3">
