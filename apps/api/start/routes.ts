@@ -13,6 +13,9 @@ const AiSettingsController = () => import('#controllers/ai_settings_controller')
 const SearchController = () => import('#controllers/search_controller')
 const MarketController = () => import('#controllers/market_controller')
 const EnrichmentController = () => import('#controllers/enrichment_controller')
+const TemplatesController = () => import('#controllers/templates_controller')
+const PresetsController = () => import('#controllers/presets_controller')
+const SendingSettingsController = () => import('#controllers/sending_settings_controller')
 
 router.get('/', async () => {
   return { name: '@expat-hunter/api', status: 'ok' }
@@ -88,6 +91,8 @@ router
     router.get('/', [EmailsController, 'index'])
     router.post('/generate', [EmailsController, 'generate'])
     router.post('/approve-batch', [EmailsController, 'approveBatch'])
+    router.post('/send-batch', [EmailsController, 'sendBatch'])
+    router.get('/send-batch/:batchId/progress', [EmailsController, 'sendBatchProgress'])
     router.get('/:id', [EmailsController, 'show'])
     router.put('/:id', [EmailsController, 'update'])
     router.post('/:id/approve', [EmailsController, 'approve'])
@@ -95,6 +100,30 @@ router
     router.post('/:id/regenerate', [EmailsController, 'regenerate'])
   })
   .prefix('/api/emails')
+  .use(middleware.auth())
+
+router
+  .group(() => {
+    router.get('/', [TemplatesController, 'index'])
+    router.post('/', [TemplatesController, 'store'])
+    router.put('/:id', [TemplatesController, 'update'])
+    router.delete('/:id', [TemplatesController, 'destroy'])
+  })
+  .prefix('/api/templates')
+  .use(middleware.auth())
+
+router
+  .group(() => {
+    router.get('/', [PresetsController, 'index'])
+    router.post('/', [PresetsController, 'store'])
+    router.put('/:id', [PresetsController, 'update'])
+    router.delete('/:id', [PresetsController, 'destroy'])
+  })
+  .prefix('/api/presets')
+  .use(middleware.auth())
+
+router
+  .get('/api/sending-settings', [SendingSettingsController, 'show'])
   .use(middleware.auth())
 
 router
@@ -143,6 +172,11 @@ router
 
 router
   .post('/api/admin/refresh-visa-registries', [EnrichmentController, 'refreshVisaRegistries'])
+  .use(middleware.auth())
+  .use(middleware.admin())
+
+router
+  .patch('/api/admin/settings/emails', [SendingSettingsController, 'updateAdminLimits'])
   .use(middleware.auth())
   .use(middleware.admin())
 
