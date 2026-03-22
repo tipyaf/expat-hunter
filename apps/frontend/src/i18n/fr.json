@@ -272,7 +272,9 @@
     "saveSuccess": "Paramètres sauvegardés",
     "saveError": "Erreur lors de la sauvegarde",
     "blockedLink": "Contacts et entreprises bloqués",
-    "blockedDesc": "Gérez les contacts et entreprises que vous avez bloqués"
+    "blockedDesc": "Gérez les contacts et entreprises que vous avez bloqués",
+    "connexionEmailLink": "Connexion email",
+    "connexionEmailDesc": "Configurez IMAP/SMTP pour recevoir les réponses dans l'app"
   },
   "admin": {
     "aiSettingsTitle": "Configuration IA",
@@ -546,5 +548,45 @@
     "welcomeMessage": "Bonjour ! Je suis votre assistant ExpatHunter. Posez-moi des questions sur l'app ou sur votre recherche d'emploi à l'étranger.",
     "actionRegenerate": "Regénérer",
     "actionChangeTone": "Changer le ton"
+  },
+  "thread": {
+    "title": "Échanges",
+    "noReplies": "Aucune réponse reçue pour ce contact.",
+    "summary": "Résumé IA",
+    "generateSummary": "Générer le résumé",
+    "suggestReply": "Suggérer une réponse",
+    "sendReply": "Envoyer",
+    "sync": "Synchroniser",
+    "syncing": "Synchronisation...",
+    "unread": "Non lu",
+    "eventInterview": "Entretien",
+    "eventRejection": "Refus",
+    "eventOffer": "Offre",
+    "eventInfoRequest": "Demande d'infos",
+    "eventOther": "Réponse",
+    "suggestedReply": "Réponse suggérée",
+    "editAndSend": "Modifier et envoyer",
+    "askAssistant": "Demander à l'assistant",
+    "tipTitle": "Conseil",
+    "replySent": "Réponse envoyée",
+    "replyError": "Erreur lors de l'envoi"
+  },
+  "emailConnection": {
+    "title": "Connexion email",
+    "subtitle": "Configurez votre connexion IMAP/SMTP pour recevoir les réponses directement dans l'app.",
+    "imapSection": "Réception (IMAP)",
+    "smtpSection": "Envoi (SMTP)",
+    "host": "Serveur",
+    "port": "Port",
+    "user": "Identifiant",
+    "password": "Mot de passe",
+    "test": "Tester la connexion",
+    "save": "Enregistrer",
+    "saved": "Connexion enregistrée",
+    "saveError": "Erreur lors de l'enregistrement",
+    "testSuccess": "Connexion réussie",
+    "testError": "Connexion échouée",
+    "noConnection": "Aucune connexion configurée",
+    "deleteConnection": "Supprimer la connexion"
   }
 }

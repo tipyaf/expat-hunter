@@ -67,6 +67,41 @@ export default class TipsService {
   }
 
   /**
+   * Generate a contextual tip for the thread (email exchanges) page.
+   * Culturally relevant advice for the target country.
+   */
+  getThreadTip(_contactId?: string, country?: string): ContextualTip {
+    if (country === 'NZ') {
+      return {
+        message:
+          "En Nouvelle-Zélande, une relance après 5-7 jours ouvrés est bien perçue. Évitez de relancer trop tôt.",
+      }
+    }
+    if (country === 'AU') {
+      return {
+        message:
+          "En Australie, un ton décontracté et direct est apprécié. Une relance après 5 jours ouvrés est tout à fait appropriée.",
+      }
+    }
+    if (country === 'UK') {
+      return {
+        message:
+          "Au Royaume-Uni, la ponctualité et le professionnalisme sont primordiaux. Une relance après 7 jours ouvrés est recommandée.",
+      }
+    }
+    if (country === 'CA') {
+      return {
+        message:
+          "Au Canada, une relance polie après 5-7 jours ouvrés est bien vue. Mentionnez votre intérêt pour la culture locale.",
+      }
+    }
+    return {
+      message:
+        "Répondez rapidement aux réponses reçues (idéalement sous 24h). Personnalisez votre message en fonction des informations partagées.",
+    }
+  }
+
+  /**
    * Generate a contextual tip for the kanban (suivi) page.
    */
   getKanbanTip(status: string | null): ContextualTip {

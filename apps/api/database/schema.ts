@@ -226,6 +226,39 @@ export class ContactSchema extends BaseModel {
   declare userOverride: boolean
 }
 
+export class EmailConnectionSchema extends BaseModel {
+  static $columns = ['createdAt', 'id', 'imapHost', 'imapPassword', 'imapPort', 'imapUser', 'isActive', 'lastSyncedAt', 'smtpHost', 'smtpPassword', 'smtpPort', 'smtpUser', 'updatedAt', 'userId'] as const
+  $columns = EmailConnectionSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare imapHost: string
+  @column()
+  declare imapPassword: string
+  @column()
+  declare imapPort: number
+  @column()
+  declare imapUser: string
+  @column()
+  declare isActive: boolean
+  @column.dateTime()
+  declare lastSyncedAt: DateTime | null
+  @column()
+  declare smtpHost: string
+  @column()
+  declare smtpPassword: string
+  @column()
+  declare smtpPort: number
+  @column()
+  declare smtpUser: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare userId: string
+}
+
 export class EmailMessageSchema extends BaseModel {
   static $columns = ['body', 'contactId', 'createdAt', 'id', 'openedAt', 'repliedAt', 'scheduledAt', 'sentAt', 'status', 'subject', 'type', 'updatedAt'] as const
   $columns = EmailMessageSchema.$columns
@@ -253,6 +286,39 @@ export class EmailMessageSchema extends BaseModel {
   declare type: string
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
+}
+
+export class EmailReplySchema extends BaseModel {
+  static $columns = ['aiSummary', 'bodyHtml', 'bodyText', 'contactId', 'createdAt', 'detectedEvent', 'emailMessageId', 'fromEmail', 'id', 'isRead', 'receivedAt', 'subject', 'updatedAt', 'userId'] as const
+  $columns = EmailReplySchema.$columns
+  @column()
+  declare aiSummary: string | null
+  @column()
+  declare bodyHtml: string | null
+  @column()
+  declare bodyText: string | null
+  @column()
+  declare contactId: string
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare detectedEvent: string | null
+  @column()
+  declare emailMessageId: string | null
+  @column()
+  declare fromEmail: string
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare isRead: boolean
+  @column.dateTime()
+  declare receivedAt: DateTime
+  @column()
+  declare subject: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare userId: string
 }
 
 export class EmailTemplateSchema extends BaseModel {
