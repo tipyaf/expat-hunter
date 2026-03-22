@@ -34,7 +34,15 @@ interface SeekApifyResult {
   jobLink?: string
   salary?: string
   workTypes?: string
+  description?: string
 }
+
+// NLP patterns to extract named contact from job description text
+const CONTACT_NLP_PATTERNS = [
+  /[Cc]ontact\s+([A-Z][a-z]+\s+[A-Z][a-z]+)\s+(?:at|on|via)\s+([\w.+-]+@[\w.-]+\.[a-z]{2,})/,
+  /[Pp]lease\s+(?:contact|email|reach)\s+([A-Z][a-z]+\s+[A-Z][a-z]+)\s+(?:at|on)\s+([\w.+-]+@[\w.-]+\.[a-z]{2,})/,
+  /([A-Z][a-z]+\s+[A-Z][a-z]+)\s*[–-]\s*(?:[\w\s]+)\s+(?:at|@)\s+([\w.+-]+@[\w.-]+\.[a-z]{2,})/,
+]
 
 export class SeekScraper extends BaseScraper {
   readonly name = 'seek'
@@ -136,23 +144,43 @@ export class SeekScraper extends BaseScraper {
         const sector = this.cleanValue(job.companyProfile?.industry)
         const city = job.joblocationInfo?.location ?? job.joblocationInfo?.suburb ?? undefined
 
-        if (uniqueEmails.length > 0) {
-          // Create a contact for each email found
+        // Try NLP extraction from job description
+        const nlpContact = this.extractContactFromDescription(job.description ?? '')
+
+        if (nlpContact) {
+          contacts.push({
+            fullName: nlpContact.name,
+            role: job.title,
+            email: nlpContact.email,
+            emailSource: 'scraped',
+            emailConfidence: 95,
+            companyName,
+            companyWebsite: website,
+            companySector: sector,
+            companyCity: city,
+            companyCountry: params.country,
+            source: 'seek',
+            sourceDetail: job.jobLink,
+          })
+        } else if (uniqueEmails.length > 0) {
           for (const email of uniqueEmails) {
             contacts.push({
               fullName: 'Hiring Manager',
               role: job.title,
               email,
+              emailSource: 'scraped',
+              emailConfidence: 70,
               companyName,
               companyWebsite: website,
               companySector: sector,
               companyCity: city,
               companyCountry: params.country,
               source: 'seek',
+              sourceDetail: job.jobLink,
             })
           }
         } else {
-          // No email — still create a company contact
+          // No email — create company placeholder for CompanyEnricher to enrich later
           contacts.push({
             fullName: 'Hiring Manager',
             role: job.title,
@@ -162,6 +190,7 @@ export class SeekScraper extends BaseScraper {
             companyCity: city,
             companyCountry: params.country,
             source: 'seek',
+            sourceDetail: job.jobLink,
           })
         }
       }
@@ -171,6 +200,19 @@ export class SeekScraper extends BaseScraper {
       const message = error instanceof Error ? error.message : 'Unknown error'
       throw new Error(`SeekScraper (${this.country}): ${message}`)
     }
+  }
+
+  /** Extract named contact + email from job description text using NLP patterns */
+  private extractContactFromDescription(
+    description: string
+  ): { name: string; email: string } | null {
+    for (const pattern of CONTACT_NLP_PATTERNS) {
+      const match = description.match(pattern)
+      if (match && match[1] && match[2]) {
+        return { name: match[1], email: match[2] }
+      }
+    }
+    return null
   }
 
   /** Clean "N/A" and empty values returned by the Apify actor */

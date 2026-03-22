@@ -8,6 +8,8 @@ import SourcingSource from '#models/sourcing_source'
 import type { RawContact, ScrapeParams } from '../scrapers/base_scraper.js'
 import { scraperRegistry } from '../scrapers/scraper_registry.js'
 import CacheService from './cache_service.js'
+import CompanyEnricher from './company_enricher.js'
+import VisaSponsorRegistryService from './visa_sponsor_registry.js'
 import { DateTime } from 'luxon'
 
 export default class SourcingService {
@@ -75,7 +77,11 @@ export default class SourcingService {
 
       // Deduplicate and persist
       const uniqueContacts = this.deduplicateRawContacts(allContacts)
-      const persistedCount = await this.persistContacts(userId, run.id, uniqueContacts)
+      const { count: persistedCount, companiesWithoutEmail } = await this.persistContacts(
+        userId,
+        run.id,
+        uniqueContacts
+      )
 
       // Update run
       run.contactsFound = persistedCount
@@ -83,6 +89,9 @@ export default class SourcingService {
       run.completedAt = DateTime.now()
       run.errors = Object.keys(errors).length > 0 ? errors : null
       await run.save()
+
+      // Trigger CompanyEnricher async (non-blocking) for companies without email
+      this.triggerCompanyEnrichment(userId, run.id, companiesWithoutEmail).catch(() => {})
     } catch (error) {
       run.status = 'failed'
       run.completedAt = DateTime.now()
@@ -97,17 +106,22 @@ export default class SourcingService {
 
   /**
    * Persist raw contacts: create companies and contacts, skip duplicates.
+   * Returns count of persisted contacts and list of companies without any email.
    */
   private async persistContacts(
     userId: string,
     runId: string,
     rawContacts: RawContact[]
-  ): Promise<number> {
+  ): Promise<{ count: number; companiesWithoutEmail: Company[] }> {
     let count = 0
+    const companiesWithEmail = new Set<string>()
+    const allCompanies = new Map<string, Company>()
+    const enricher = new CompanyEnricher()
+    const visaRegistry = new VisaSponsorRegistryService()
 
     for (const raw of rawContacts) {
       try {
-        // Find or create company (with cache)
+        // Find or create company
         const companyKey = `${raw.companyName}::${raw.companyCountry}`.toLowerCase()
         const company = await Company.firstOrCreate(
           { name: raw.companyName, country: raw.companyCountry },
@@ -121,24 +135,41 @@ export default class SourcingService {
           }
         )
 
-        // Cache company data for enrichment
-        await this.cacheService.getOrFetch(
-          raw.source,
-          'company',
-          companyKey,
-          async () => ({
-            id: company.id,
-            name: company.name,
-            country: company.country,
-            website: company.website,
-            sector: company.sector,
-            city: company.city,
-          })
-        )
+        // Extract and store domain
+        if (!company.domain && raw.companyWebsite) {
+          company.domain = enricher.extractDomain(raw.companyWebsite)
+        }
 
-        // Check for existing contact (dedup by linkedin or email)
+        // Check visa sponsor status if not already checked
+        if (!company.visaRegistryCheckedAt) {
+          const visaCheck = await visaRegistry
+            .checkCompany(raw.companyName, raw.companyCountry)
+            .catch(() => null)
+
+          if (visaCheck) {
+            company.visaSponsorStatus = visaCheck.isAccredited ? 'accredited' : 'not_found'
+            company.visaSponsorCountries = visaCheck.countries.length > 0 ? visaCheck.countries : null
+            company.visaRegistryCheckedAt = DateTime.now()
+          }
+        }
+
+        if (company.$isDirty) await company.save()
+
+        allCompanies.set(companyKey, company)
+        if (raw.email) companiesWithEmail.add(companyKey)
+
+        // Cache company data
+        await this.cacheService.getOrFetch(raw.source, 'company', companyKey, async () => ({
+          id: company.id,
+          name: company.name,
+          country: company.country,
+          website: company.website,
+          sector: company.sector,
+          city: company.city,
+        }))
+
+        // Dedup by linkedin or email
         const existingQuery = Contact.query().where('userId', userId)
-
         if (raw.linkedinUrl) {
           const existing = await existingQuery.clone().where('linkedinUrl', raw.linkedinUrl).first()
           if (existing) continue
@@ -148,7 +179,7 @@ export default class SourcingService {
           if (existing) continue
         }
 
-        // Create contact
+        // Create contact with new enrichment fields
         await Contact.create({
           userId,
           companyId: company.id,
@@ -158,6 +189,11 @@ export default class SourcingService {
           email: raw.email ?? null,
           linkedinUrl: raw.linkedinUrl ?? null,
           source: raw.source,
+          sourceDetail: raw.sourceDetail ?? null,
+          emailSource: raw.emailSource ?? null,
+          emailConfidence: raw.emailConfidence ?? null,
+          emailStatus: raw.email ? 'probable' : null,
+          githubUrl: raw.githubUrl ?? null,
           status: 'identified',
         })
 
@@ -167,7 +203,38 @@ export default class SourcingService {
       }
     }
 
-    return count
+    // Return companies that have no email found yet (candidates for CompanyEnricher)
+    const companiesWithoutEmail = Array.from(allCompanies.entries())
+      .filter(([key]) => !companiesWithEmail.has(key))
+      .map(([, company]) => company)
+      .filter((c) => !c.teamCrawledAt) // Skip already crawled
+
+    return { count, companiesWithoutEmail }
+  }
+
+  /**
+   * Trigger CompanyEnricher for companies without email contacts (non-blocking).
+   * Processes max 3 companies in parallel.
+   */
+  private async triggerCompanyEnrichment(
+    userId: string,
+    runId: string,
+    companies: Company[]
+  ): Promise<void> {
+    const enricher = new CompanyEnricher()
+    const chunks = this.chunk(companies.slice(0, 15), 3)
+
+    for (const chunk of chunks) {
+      await Promise.all(
+        chunk.map((company) => enricher.enrichCompany(company, userId, runId).catch(() => {}))
+      )
+    }
+  }
+
+  private chunk<T>(arr: T[], size: number): T[][] {
+    const chunks: T[][] = []
+    for (let i = 0; i < arr.length; i += size) chunks.push(arr.slice(i, i + size))
+    return chunks
   }
 
   private deduplicateRawContacts(contacts: RawContact[]): RawContact[] {

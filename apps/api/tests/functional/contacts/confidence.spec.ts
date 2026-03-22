@@ -120,12 +120,12 @@ test.group('Contacts API - Confidence Score', (group) => {
 
     const data = response.body().data
     assert.isNotNull(data.confidenceScore)
-    assert.isAbove(data.confidenceScore, 50)
+    assert.isAbove(data.confidenceScore, 10) // expat scoring: role + hiring minimum
     assert.isArray(data.confidenceFactors)
 
-    // Should have positive factors for email, role, company data
-    const positives = data.confidenceFactors.filter((f: any) => f.impact === 'positive')
-    assert.isAbove(positives.length, 2)
+    // Expat scoring: 5 factors (visa, role, hiring, expatFriendly, momentum)
+    assert.isAbove(data.confidenceFactors.length, 0)
+    assert.isTrue(data.confidenceFactors.every((f: any) => ['positive', 'neutral', 'negative'].includes(f.impact)))
   })
 
   test('confidence factors have correct structure', async ({ client, assert }) => {

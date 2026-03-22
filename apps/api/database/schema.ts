@@ -87,7 +87,7 @@ export class CandidateProfileSchema extends BaseModel {
 }
 
 export class CompanySchema extends BaseModel {
-  static $columns = ['city', 'country', 'createdAt', 'id', 'linkedinUrl', 'name', 'sector', 'signals', 'size', 'source', 'updatedAt', 'website'] as const
+  static $columns = ['city', 'country', 'createdAt', 'domain', 'hiringIntensity', 'id', 'linkedinUrl', 'name', 'sector', 'signals', 'size', 'source', 'teamCrawledAt', 'updatedAt', 'visaRegistryCheckedAt', 'visaSponsorCountries', 'visaSponsorStatus', 'website'] as const
   $columns = CompanySchema.$columns
   @column()
   declare city: string | null
@@ -95,6 +95,10 @@ export class CompanySchema extends BaseModel {
   declare country: string
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
+  @column()
+  declare domain: string | null
+  @column()
+  declare hiringIntensity: number | null
   @column({ isPrimary: true })
   declare id: string
   @column()
@@ -109,14 +113,22 @@ export class CompanySchema extends BaseModel {
   declare size: string | null
   @column()
   declare source: string
+  @column.dateTime()
+  declare teamCrawledAt: DateTime | null
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
+  @column.dateTime()
+  declare visaRegistryCheckedAt: DateTime | null
+  @column()
+  declare visaSponsorCountries: any | null
+  @column()
+  declare visaSponsorStatus: string | null
   @column()
   declare website: string | null
 }
 
 export class ContactSchema extends BaseModel {
-  static $columns = ['aiRecommendation', 'companyId', 'cooldownUntil', 'createdAt', 'email', 'fullName', 'id', 'lastContactedAt', 'linkedinUrl', 'relevanceLabel', 'relevanceReason', 'relevanceScore', 'role', 'source', 'sourcingRunId', 'status', 'updatedAt', 'userId', 'userOverride'] as const
+  static $columns = ['aiRecommendation', 'companyId', 'cooldownUntil', 'createdAt', 'email', 'emailAlternatives', 'emailConfidence', 'emailSource', 'emailStatus', 'fullName', 'githubUrl', 'id', 'lastContactedAt', 'linkedinUrl', 'relevanceLabel', 'relevanceReason', 'relevanceScore', 'role', 'scoreBreakdown', 'scoreVersion', 'source', 'sourceDetail', 'sourcingRunId', 'status', 'updatedAt', 'userId', 'userOverride'] as const
   $columns = ContactSchema.$columns
   @column()
   declare aiRecommendation: string | null
@@ -129,7 +141,17 @@ export class ContactSchema extends BaseModel {
   @column()
   declare email: string | null
   @column()
+  declare emailAlternatives: any | null
+  @column()
+  declare emailConfidence: number | null
+  @column()
+  declare emailSource: string | null
+  @column()
+  declare emailStatus: string | null
+  @column()
   declare fullName: string
+  @column()
+  declare githubUrl: string | null
   @column({ isPrimary: true })
   declare id: string
   @column.dateTime()
@@ -145,7 +167,13 @@ export class ContactSchema extends BaseModel {
   @column()
   declare role: string
   @column()
+  declare scoreBreakdown: any | null
+  @column()
+  declare scoreVersion: string | null
+  @column()
   declare source: string
+  @column()
+  declare sourceDetail: string | null
   @column()
   declare sourcingRunId: string | null
   @column()
@@ -339,4 +367,27 @@ export class UserSchema extends BaseModel {
   declare password: string
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
+}
+
+export class VisaSponsorRegistrySchema extends BaseModel {
+  static $columns = ['accreditedSince', 'companyName', 'companyNameNormalized', 'country', 'id', 'indexedAt', 'rawData', 'sourceUrl', 'visaType'] as const
+  $columns = VisaSponsorRegistrySchema.$columns
+  @column.date()
+  declare accreditedSince: DateTime | null
+  @column()
+  declare companyName: string
+  @column()
+  declare companyNameNormalized: string
+  @column()
+  declare country: string
+  @column({ isPrimary: true })
+  declare id: string
+  @column.dateTime()
+  declare indexedAt: DateTime
+  @column()
+  declare rawData: any | null
+  @column()
+  declare sourceUrl: string | null
+  @column()
+  declare visaType: string
 }
