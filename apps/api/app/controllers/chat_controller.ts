@@ -41,20 +41,27 @@ export default class ChatController {
       // Non-critical — expert will work without profile context
     }
 
-    const result = await this.chatService.processMessage(
-      user.id,
-      payload.sessionId,
-      payload.message,
-      {
-        page: payload.page ?? 'other',
-        contactId: payload.contactId,
-        companyName: payload.companyName,
-        country: payload.country,
-      },
-      userProfile
-    )
+    try {
+      const result = await this.chatService.processMessage(
+        user.id,
+        payload.sessionId,
+        payload.message,
+        {
+          page: payload.page ?? 'other',
+          contactId: payload.contactId,
+          companyName: payload.companyName,
+          country: payload.country,
+        },
+        userProfile
+      )
 
-    return response.ok({ data: result })
+      return response.ok({ data: result })
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error in chat service'
+      return response.internalServerError({
+        message: `Chat assistant error: ${message}`,
+      })
+    }
   }
 
   /**

@@ -45,6 +45,17 @@ export default class CandidateProfile extends BaseModel {
   @column()
   declare onboardingCompleted: boolean
 
+  @column(jsonbColumn)
+  declare followUps: Array<{ delay: number; unit: 'days' | 'weeks' | 'months' }> | null
+
+  @column(jsonbColumn)
+  declare sendingSchedule: {
+    allowedDays: string[]
+    startHour: number
+    endHour: number
+    timezone: string
+  } | null
+
   @column()
   declare recontactCooldownDays: number
 

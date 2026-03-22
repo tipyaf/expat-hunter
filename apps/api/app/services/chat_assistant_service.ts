@@ -186,7 +186,12 @@ export default class ChatAssistantService {
     }
 
     // Try AI fallback
-    const client = await OpenRouterClient.forFeature('chat_assistant')
+    let client: OpenRouterClient | null = null
+    try {
+      client = await OpenRouterClient.forFeature('chat_assistant')
+    } catch {
+      // DB or config error — skip AI fallback
+    }
     if (client) {
       try {
         const systemPrompt = `Tu es l'assistant support d'ExpatHunter, une plateforme de recherche d'emploi à l'international.
@@ -225,7 +230,12 @@ Fonctionnalités principales de l'app :
     history: ChatMessage[],
     userProfile?: { cvText?: string; skills?: string[]; experienceYears?: number }
   ): Promise<string> {
-    const client = await OpenRouterClient.forFeature('chat_assistant')
+    let client: OpenRouterClient | null = null
+    try {
+      client = await OpenRouterClient.forFeature('chat_assistant')
+    } catch {
+      // DB or config error — treat as unconfigured
+    }
     if (!client) {
       return "L'assistant IA expert n'est pas configuré. Veuillez contacter l'administrateur pour activer cette fonctionnalité."
     }
@@ -235,21 +245,8 @@ Fonctionnalités principales de l'app :
     // Gather context from cache
     let contextData = ''
 
-    // F14.5: Inject market snapshot data when market keywords detected
-    if (MARKET_KEYWORDS.some((kw) => lower.includes(kw)) && context.country) {
-      try {
-        const marketCache = await this.cacheService.get<Record<string, unknown>>(
-          'market',
-          'market',
-          context.country
-        )
-        if (marketCache) {
-          contextData += `\nDonnées marché (${context.country}): ${JSON.stringify(marketCache.data).slice(0, 500)}`
-        }
-      } catch {
-        // Ignore cache errors
-      }
-    } else if (context.country) {
+    // F14.5: Inject market snapshot data when country is available
+    if (context.country) {
       try {
         const marketCache = await this.cacheService.get<Record<string, unknown>>(
           'market',
@@ -343,10 +340,9 @@ Page actuelle: ${context.page}${context.companyName ? `\nEntreprise: ${context.c
       responseText = await this.getExpertResponse(message, context, history, userProfile)
     } else {
       // mixed: try expert first, fall back to support
-      const client = await OpenRouterClient.forFeature('chat_assistant')
-      if (client) {
-        responseText = await this.getExpertResponse(message, context, history, userProfile)
-      } else {
+      responseText = await this.getExpertResponse(message, context, history, userProfile)
+      // If expert returned the "not configured" message, try support instead
+      if (responseText.includes("n'est pas configuré")) {
         responseText = await this.getSupportResponse(message, history)
       }
     }
