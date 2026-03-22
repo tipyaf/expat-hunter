@@ -8,7 +8,7 @@ import { apiClient } from '@/lib/api-client'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { FileText, Sliders, ChevronRight, Ban } from 'lucide-react'
+import { FileText, Sliders, ChevronRight, Ban, Mail } from 'lucide-react'
 
 interface FollowUpSequence {
   delayDays1: number
@@ -171,6 +171,19 @@ export default function SettingsPage() {
                     <div>
                       <p className="text-sm font-medium text-[var(--color-text-main)]">{t('blockedLink')}</p>
                       <p className="text-xs text-[var(--color-text-muted)]">{t('blockedDesc')}</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-[var(--color-text-muted)] group-hover:text-[var(--color-text-main)] transition-colors" />
+                </Link>
+                <Link
+                  href="/parametres/connexion-email"
+                  className="flex items-center justify-between rounded-lg border border-[var(--color-border)] px-4 py-3 hover:bg-[var(--color-bg-light)] transition-colors group"
+                >
+                  <div className="flex items-center gap-3">
+                    <Mail className="w-4 h-4 text-primary" />
+                    <div>
+                      <p className="text-sm font-medium text-[var(--color-text-main)]">{t('connexionEmailLink')}</p>
+                      <p className="text-xs text-[var(--color-text-muted)]">{t('connexionEmailDesc')}</p>
                     </div>
                   </div>
                   <ChevronRight className="w-4 h-4 text-[var(--color-text-muted)] group-hover:text-[var(--color-text-main)] transition-colors" />

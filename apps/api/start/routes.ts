@@ -19,6 +19,8 @@ const SendingSettingsController = () => import('#controllers/sending_settings_co
 const TipsController = () => import('#controllers/tips_controller')
 const BlockedEntitiesController = () => import('#controllers/blocked_entities_controller')
 const ChatController = () => import('#controllers/chat_controller')
+const ThreadController = () => import('#controllers/thread_controller')
+const EmailConnectionsController = () => import('#controllers/email_connections_controller')
 
 router.get('/', async () => {
   return { name: '@expat-hunter/api', status: 'ok' }
@@ -69,6 +71,11 @@ router
     router.get('/:id/movements', [ContactsController, 'movements'])
     router.put('/:id/override', [ContactsController, 'override'])
     router.post('/:id/enrich-email', [EnrichmentController, 'enrichEmail'])
+    router.get('/:id/thread', [ThreadController, 'thread'])
+    router.get('/:id/summary', [ThreadController, 'summary'])
+    router.post('/:id/reply', [ThreadController, 'reply'])
+    router.post('/:id/reply/generate', [ThreadController, 'generateReply'])
+    router.post('/:id/sync', [ThreadController, 'sync'])
   })
   .prefix('/api/contacts')
   .use(middleware.auth())
@@ -213,3 +220,17 @@ router
   .prefix('/api/admin/users')
   .use(middleware.auth())
   .use(middleware.admin())
+
+router
+  .group(() => {
+    router.get('/', [EmailConnectionsController, 'show'])
+    router.post('/', [EmailConnectionsController, 'store'])
+    router.delete('/', [EmailConnectionsController, 'destroy'])
+    router.post('/test', [EmailConnectionsController, 'test'])
+  })
+  .prefix('/api/email-connections')
+  .use(middleware.auth())
+
+router
+  .get('/api/replies/unread-count', [ThreadController, 'unreadCount'])
+  .use(middleware.auth())

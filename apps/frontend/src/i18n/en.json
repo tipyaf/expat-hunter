@@ -272,7 +272,9 @@
     "saveSuccess": "Settings saved",
     "saveError": "Error while saving",
     "blockedLink": "Blocked contacts & companies",
-    "blockedDesc": "Manage contacts and companies you have blocked"
+    "blockedDesc": "Manage contacts and companies you have blocked",
+    "connexionEmailLink": "Email connection",
+    "connexionEmailDesc": "Configure IMAP/SMTP to receive replies in the app"
   },
   "admin": {
     "aiSettingsTitle": "AI Configuration",
@@ -546,5 +548,45 @@
     "welcomeMessage": "Hello! I'm your ExpatHunter assistant. Ask me anything about the app or your job search abroad.",
     "actionRegenerate": "Regenerate",
     "actionChangeTone": "Change tone"
+  },
+  "thread": {
+    "title": "Exchanges",
+    "noReplies": "No replies received for this contact.",
+    "summary": "AI Summary",
+    "generateSummary": "Generate summary",
+    "suggestReply": "Suggest a reply",
+    "sendReply": "Send",
+    "sync": "Sync",
+    "syncing": "Syncing...",
+    "unread": "Unread",
+    "eventInterview": "Interview",
+    "eventRejection": "Rejection",
+    "eventOffer": "Offer",
+    "eventInfoRequest": "Info request",
+    "eventOther": "Reply",
+    "suggestedReply": "Suggested reply",
+    "editAndSend": "Edit and send",
+    "askAssistant": "Ask assistant",
+    "tipTitle": "Tip",
+    "replySent": "Reply sent",
+    "replyError": "Error sending reply"
+  },
+  "emailConnection": {
+    "title": "Email Connection",
+    "subtitle": "Configure your IMAP/SMTP connection to receive replies directly in the app.",
+    "imapSection": "Receiving (IMAP)",
+    "smtpSection": "Sending (SMTP)",
+    "host": "Server",
+    "port": "Port",
+    "user": "Username",
+    "password": "Password",
+    "test": "Test connection",
+    "save": "Save",
+    "saved": "Connection saved",
+    "saveError": "Error saving connection",
+    "testSuccess": "Connection successful",
+    "testError": "Connection failed",
+    "noConnection": "No connection configured",
+    "deleteConnection": "Delete connection"
   }
 }
