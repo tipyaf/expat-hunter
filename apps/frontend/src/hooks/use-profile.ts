@@ -16,6 +16,8 @@ export interface CandidateProfile {
   targetRoles: string[]
   preferences: Record<string, unknown> | null
   onboardingCompleted: boolean
+  isOnboarded: boolean
+  completionPercentage: number
   createdAt: string
   updatedAt: string
 }

@@ -1,9 +1,11 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import DashboardService from '#services/dashboard_service'
+import ProfileService from '#services/profile_service'
 import TipsService from '#services/tips_service'
 
 export default class TipsController {
   private dashboardService = new DashboardService()
+  private profileService = new ProfileService()
   private tipsService = new TipsService()
 
   async contextual({ auth, request, response }: HttpContext) {
@@ -20,6 +22,16 @@ export default class TipsController {
 
     if (page === 'thread') {
       const tip = this.tipsService.getThreadTip(contactId ?? undefined, country ?? undefined)
+      return response.ok({ data: tip })
+    }
+
+    if (page === 'profile') {
+      const profile = await this.profileService.getOrCreateProfile(user)
+      const tip = this.tipsService.getProfileTip({
+        skills: profile.skills,
+        experienceYears: profile.experienceYears,
+        targetCountries: profile.targetCountries,
+      })
       return response.ok({ data: tip })
     }
 

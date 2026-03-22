@@ -25,6 +25,18 @@ export interface ChatResponse {
 
 const MAX_MESSAGES_PER_SESSION = 50
 
+const VISA_INFO: Record<string, string> = {
+  NZ: 'New Zealand work visas: Skilled Migrant Category, Accredited Employer Work Visa (AEWV), Working Holiday. AEWV requires employer accreditation. Processing: 4-8 weeks.',
+  AU: 'Australia work visas: Employer Nomination Scheme (186), Skilled Nominated (190), Temporary Skill Shortage (482). Requires skills assessment.',
+  UK: 'UK work visas: Skilled Worker visa, requires sponsor license employer. Points-based system. Salary threshold: £26,200/year.',
+  CA: 'Canada: Express Entry (Federal Skilled Worker), Provincial Nominee Programs. CRS score system.',
+  US: 'USA: H-1B (specialty occupation), L-1 (intra-company transfer). Annual H-1B lottery in April.',
+}
+
+const MARKET_KEYWORDS = ['marché', 'market', 'salaire', 'salary', 'tendance', 'trend', 'secteur', 'sector']
+const VISA_KEYWORDS = ['visa', 'immigration', 'sponsor', 'work permit', 'permis de travail', 'résidence']
+const CAREER_KEYWORDS = ['cv', 'carrière', 'career', 'compétence', 'skill', 'positionnement', 'positioning', 'profil']
+
 // In-memory session storage
 const sessions = new Map<string, ChatMessage[]>()
 
@@ -210,17 +222,34 @@ Fonctionnalités principales de l'app :
   private async getExpertResponse(
     message: string,
     context: ChatContext,
-    history: ChatMessage[]
+    history: ChatMessage[],
+    userProfile?: { cvText?: string; skills?: string[]; experienceYears?: number }
   ): Promise<string> {
     const client = await OpenRouterClient.forFeature('chat_assistant')
     if (!client) {
       return "L'assistant IA expert n'est pas configuré. Veuillez contacter l'administrateur pour activer cette fonctionnalité."
     }
 
+    const lower = message.toLowerCase()
+
     // Gather context from cache
     let contextData = ''
 
-    if (context.country) {
+    // F14.5: Inject market snapshot data when market keywords detected
+    if (MARKET_KEYWORDS.some((kw) => lower.includes(kw)) && context.country) {
+      try {
+        const marketCache = await this.cacheService.get<Record<string, unknown>>(
+          'market',
+          'market',
+          context.country
+        )
+        if (marketCache) {
+          contextData += `\nDonnées marché (${context.country}): ${JSON.stringify(marketCache.data).slice(0, 500)}`
+        }
+      } catch {
+        // Ignore cache errors
+      }
+    } else if (context.country) {
       try {
         const marketCache = await this.cacheService.get<Record<string, unknown>>(
           'market',
@@ -250,10 +279,32 @@ Fonctionnalités principales de l'app :
       }
     }
 
+    // F14.6: Inject visa info when visa keywords detected
+    if (VISA_KEYWORDS.some((kw) => lower.includes(kw)) && context.country) {
+      const visaInfo = VISA_INFO[context.country]
+      if (visaInfo) {
+        contextData += `\nInformations visa (${context.country}): ${visaInfo}`
+      }
+    }
+
+    // F14.7: Inject user profile context when career/CV keywords detected
+    let profileContext = ''
+    if (userProfile && CAREER_KEYWORDS.some((kw) => lower.includes(kw))) {
+      if (userProfile.cvText) {
+        profileContext += `\nCV du candidat (extrait): ${userProfile.cvText.slice(0, 800)}`
+      }
+      if (userProfile.skills && userProfile.skills.length > 0) {
+        profileContext += `\nCompétences: ${userProfile.skills.join(', ')}`
+      }
+      if (userProfile.experienceYears !== undefined) {
+        profileContext += `\nAnnées d'expérience: ${userProfile.experienceYears}`
+      }
+    }
+
     const systemPrompt = `Tu es un expert en immigration professionnelle et recrutement international, spécialisé dans les marchés anglophones (Nouvelle-Zélande, Australie, Canada, UK).
 Tu aides les utilisateurs d'ExpatHunter dans leur recherche d'emploi à l'international.
 Réponds en français de manière précise, avec des conseils concrets et actionnables.
-Page actuelle: ${context.page}${context.companyName ? `\nEntreprise: ${context.companyName}` : ''}${context.country ? `\nPays cible: ${context.country}` : ''}${contextData}`
+Page actuelle: ${context.page}${context.companyName ? `\nEntreprise: ${context.companyName}` : ''}${context.country ? `\nPays cible: ${context.country}` : ''}${contextData}${profileContext}`
 
     try {
       const messages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
@@ -266,7 +317,7 @@ Page actuelle: ${context.page}${context.companyName ? `\nEntreprise: ${context.c
       ]
 
       return await client.chat({ messages, temperature: 0.7, maxTokens: 768 })
-    } catch (error) {
+    } catch {
       return "Une erreur est survenue lors de la consultation de l'assistant expert. Veuillez réessayer."
     }
   }
@@ -275,7 +326,8 @@ Page actuelle: ${context.page}${context.companyName ? `\nEntreprise: ${context.c
     userId: string,
     sessionId: string,
     message: string,
-    context: ChatContext
+    context: ChatContext,
+    userProfile?: { cvText?: string; skills?: string[]; experienceYears?: number }
   ): Promise<ChatResponse> {
     const history = this.getHistory(sessionId)
     const mode = detectIntent(message)
@@ -288,12 +340,12 @@ Page actuelle: ${context.page}${context.companyName ? `\nEntreprise: ${context.c
     if (mode === 'support') {
       responseText = await this.getSupportResponse(message, history)
     } else if (mode === 'expert') {
-      responseText = await this.getExpertResponse(message, context, history)
+      responseText = await this.getExpertResponse(message, context, history, userProfile)
     } else {
       // mixed: try expert first, fall back to support
       const client = await OpenRouterClient.forFeature('chat_assistant')
       if (client) {
-        responseText = await this.getExpertResponse(message, context, history)
+        responseText = await this.getExpertResponse(message, context, history, userProfile)
       } else {
         responseText = await this.getSupportResponse(message, history)
       }
