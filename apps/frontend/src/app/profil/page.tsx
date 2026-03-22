@@ -2,6 +2,7 @@
 
 import { Sidebar } from '@/components/layout/sidebar'
 import { Button } from '@/components/ui/button'
+import { CountrySelect } from '@/components/ui/country-select'
 import { TagInput } from '@/components/ui/tag-input'
 import { ProactiveTip } from '@/components/ui/proactive-tip'
 import { useAuth } from '@/contexts/auth-context'
@@ -211,12 +212,10 @@ export default function ProfilePage() {
               />
             </div>
 
-            <TagInput
+            <CountrySelect
               label={t('targetCountriesLabel')}
               value={targetCountries}
               onChange={setTargetCountries}
-              placeholder="NZ, AU, CA..."
-              maxLength={3}
             />
 
             <TagInput

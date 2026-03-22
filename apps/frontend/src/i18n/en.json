@@ -485,7 +485,8 @@
     "createSuccess": "Template created",
     "updateSuccess": "Template updated",
     "deleteSuccess": "Template deleted",
-    "validationError": "Name, subject and body are required"
+    "validationError": "Name, subject and body are required",
+    "usageHint": "Your templates are offered during email generation. The default template is automatically pre-selected."
   },
   "presets": {
     "title": "My generation presets",
@@ -589,7 +590,16 @@
     "testSuccess": "Connection successful",
     "testError": "Connection failed",
     "noConnection": "No connection configured",
-    "deleteConnection": "Delete connection"
+    "deleteConnection": "Delete connection",
+    "providerLabel": "Email provider",
+    "providerGmail": "Gmail",
+    "providerOutlook": "Outlook / Hotmail",
+    "providerYahoo": "Yahoo",
+    "providerCustom": "Custom",
+    "helpTitle": "How to configure?",
+    "helpGmail": "For Gmail: enable IMAP access in Gmail settings (Settings > Forwarding and POP/IMAP). Create an app password from your Google account (Security > App passwords).",
+    "helpOutlook": "For Outlook/Hotmail: use your email address and password. If two-factor authentication is enabled, create an app password.",
+    "helpGeneral": "Contact your email provider if you don't know the IMAP/SMTP settings."
   },
   "onboarding": {
     "title": "Welcome to ExpatHunter",

@@ -1,6 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
+import { CountrySelect } from '@/components/ui/country-select'
 import { TagInput } from '@/components/ui/tag-input'
 import { useAuth } from '@/contexts/auth-context'
 import { apiClient } from '@/lib/api-client'
@@ -283,12 +284,10 @@ export default function OnboardingPage() {
               />
             </div>
 
-            <TagInput
+            <CountrySelect
               label={t('targetCountries')}
               value={targetCountries}
               onChange={setTargetCountries}
-              placeholder="NZ, AU, CA..."
-              maxLength={3}
             />
 
             <TagInput

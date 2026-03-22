@@ -243,7 +243,7 @@ export default function ContactsPage() {
                                 LinkedIn
                               </a>
                             )}
-                            <span>{t('source')}: {contact.source}</span>
+                            {user?.isAdmin && <span>{t('source')}: {contact.source}</span>}
                             {contact.aiRecommendation && (
                               <span className={`font-medium ${
                                 contact.aiRecommendation === 'contact'

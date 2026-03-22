@@ -6,12 +6,21 @@ import { useEmailConnection, type EmailConnectionPayload } from '@/hooks/use-ema
 import { useTranslations } from 'next-intl'
 import { useState, useEffect } from 'react'
 
+const EMAIL_PROVIDERS = [
+  { id: 'gmail', name: 'Gmail', imapHost: 'imap.gmail.com', imapPort: 993, smtpHost: 'smtp.gmail.com', smtpPort: 587 },
+  { id: 'outlook', name: 'Outlook / Hotmail', imapHost: 'outlook.office365.com', imapPort: 993, smtpHost: 'smtp.office365.com', smtpPort: 587 },
+  { id: 'yahoo', name: 'Yahoo', imapHost: 'imap.mail.yahoo.com', imapPort: 993, smtpHost: 'smtp.mail.yahoo.com', smtpPort: 587 },
+  { id: 'custom', name: 'Autre / Custom', imapHost: '', imapPort: 993, smtpHost: '', smtpPort: 587 },
+]
+
 export default function EmailConnectionPage() {
   const { user } = useAuth()
   const t = useTranslations('emailConnection')
   const tc = useTranslations('common')
 
   const { connection, isLoading, isSaving, isTesting, save, remove, testConnection } = useEmailConnection()
+
+  const [selectedProvider, setSelectedProvider] = useState<string>('custom')
 
   const [form, setForm] = useState<EmailConnectionPayload>({
     imapHost: '',
@@ -96,6 +105,36 @@ export default function EmailConnectionPage() {
             <p className="text-sm text-[var(--color-text-muted)] mt-4">{tc('loading')}</p>
           ) : (
             <div className="max-w-2xl space-y-6 mt-4">
+              {/* Provider presets */}
+              <section className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-6">
+                <h2 className="text-lg font-semibold mb-4">{t('providerLabel')}</h2>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {EMAIL_PROVIDERS.map((provider) => (
+                    <button
+                      key={provider.id}
+                      type="button"
+                      onClick={() => {
+                        setSelectedProvider(provider.id)
+                        setForm((prev) => ({
+                          ...prev,
+                          imapHost: provider.imapHost,
+                          imapPort: provider.imapPort,
+                          smtpHost: provider.smtpHost,
+                          smtpPort: provider.smtpPort,
+                        }))
+                      }}
+                      className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors border ${
+                        selectedProvider === provider.id
+                          ? 'bg-primary text-white border-primary'
+                          : 'border-[var(--color-border)] text-[var(--color-text-main)] hover:bg-[var(--color-bg-light)]'
+                      }`}
+                    >
+                      {provider.name}
+                    </button>
+                  ))}
+                </div>
+              </section>
+
               {/* IMAP Section */}
               <section className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-6">
                 <h2 className="text-lg font-semibold mb-4">{t('imapSection')}</h2>
@@ -205,6 +244,16 @@ export default function EmailConnectionPage() {
                   {message.text}
                 </div>
               )}
+
+              {/* Help section */}
+              <section className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-6">
+                <h2 className="text-lg font-semibold mb-3">{t('helpTitle')}</h2>
+                <div className="space-y-3 text-sm text-[var(--color-text-muted)]">
+                  <p>{t('helpGmail')}</p>
+                  <p>{t('helpOutlook')}</p>
+                  <p>{t('helpGeneral')}</p>
+                </div>
+              </section>
 
               {/* Actions */}
               <div className="flex flex-wrap gap-3">

@@ -60,11 +60,14 @@ export function useChat() {
           actions: res.data.actions,
         }
         setMessages((prev) => [...prev, assistantMsg])
-      } catch {
+      } catch (err) {
+        const detail =
+          err instanceof Error ? err.message : 'Unknown error'
+        console.error('[useChat] sendMessage error:', err)
         const errorMsg: ChatMessage = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          content: 'Désolé, une erreur est survenue. Veuillez réessayer.',
+          content: `Désolé, une erreur est survenue: ${detail}`,
           mode: 'support',
         }
         setMessages((prev) => [...prev, errorMsg])
