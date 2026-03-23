@@ -5,6 +5,7 @@
  */
 import { ApifyFallback } from './apify_fallback.js'
 import { GitHubContactFinder } from './github_contact_finder.js'
+import { GoogleLinkedInProxyScraper } from './google_linkedin_proxy_scraper.js'
 import { HunterCompanySearchScraper } from './hunter_company_search_scraper.js'
 import { scraperRegistry } from './scraper_registry.js'
 import { SeekScraper } from './seek_scraper.js'
@@ -20,6 +21,9 @@ scraperRegistry.register(new HunterCompanySearchScraper())
 
 // Global — GitHub (free, 5000 req/h, best for IT sector)
 scraperRegistry.register(new GitHubContactFinder())
+
+// Global — Google/LinkedIn proxy (find LinkedIn profiles legally, 100 req/day)
+scraperRegistry.register(new GoogleLinkedInProxyScraper())
 
 // Global fallback — Google Search via Apify
 scraperRegistry.register(new ApifyFallback())
