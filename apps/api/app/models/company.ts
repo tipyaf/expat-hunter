@@ -59,6 +59,15 @@ export default class Company extends BaseModel {
   @column()
   declare hiringIntensity: number | null
 
+  @column({
+    serialize: (value: string | null) => (value ? JSON.parse(value) : null),
+    prepare: (value: Record<string, unknown> | null) => (value ? JSON.stringify(value) : null),
+  })
+  declare contextData: Record<string, unknown> | null
+
+  @column.dateTime()
+  declare contextEnrichedAt: DateTime | null
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 
