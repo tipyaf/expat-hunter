@@ -35,5 +35,11 @@ coverage/
 # pnpm
 .pnpm-store/
 
+# TypeScript build cache
+*.tsbuildinfo
+
+# Test results
+test-results/
+
 # claude
 /.mcp.json
