@@ -4,6 +4,7 @@ import { Sidebar } from '@/components/layout/sidebar'
 import { MarketSnapshot } from '@/components/ui/market-snapshot'
 import { SearchProgressModal } from '@/components/ui/search-progress-modal'
 import { useAuth } from '@/contexts/auth-context'
+import { useDebounce } from '@/hooks/use-debounce'
 import { useMarketSnapshot } from '@/hooks/use-market-snapshot'
 import { useSearch, type SearchRun } from '@/hooks/use-search'
 import { useTranslations } from 'next-intl'
@@ -41,7 +42,8 @@ export default function SearchPage() {
   const launchButtonRef = useRef<HTMLButtonElement>(null)
   const prevActiveRunStatus = useRef<string | null>(null)
 
-  const { snapshot, isLoading: snapshotLoading } = useMarketSnapshot(country, sector || null)
+  const debouncedSector = useDebounce(sector, 500)
+  const { snapshot, isLoading: snapshotLoading } = useMarketSnapshot(country, debouncedSector || null)
 
   // Pre-fill from profile defaults
   useEffect(() => {
