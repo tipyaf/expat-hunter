@@ -1,6 +1,6 @@
-import dns from 'node:dns/promises'
 import env from '#start/env'
 import CacheService from '#services/cache_service'
+import EmailVerifier from '#services/email_verifier'
 import type { EmailSource } from '#models/contact'
 
 export interface EmailEnrichmentResult {
@@ -17,6 +17,7 @@ interface HunterFinderResponse {
 
 export default class EmailEnricher {
   private cache = new CacheService()
+  private verifier = new EmailVerifier()
   private hunterApiKey = env.get('HUNTER_API_KEY')
 
   async enrich(fullName: string, domain: string): Promise<EmailEnrichmentResult> {
@@ -34,19 +35,25 @@ export default class EmailEnricher {
       }
     }
 
-    // Step 2 — Pattern inference
+    // Step 2 — Pattern inference with verification
     const patterns = this.inferEmailPatterns(firstName, lastName, domain)
-    const mxValid = await this.verifyMx(domain)
+    const mxValid = await this.verifier.checkMx(domain)
 
     if (!mxValid || patterns.length === 0) {
       return { email: null, source: 'inferred', confidence: 0, status: 'unknown', alternatives: [] }
     }
 
+    // Try SMTP verification on the first pattern
+    const bestPattern = patterns[0]
+    const verification = await this.verifier.verify(bestPattern)
+
     return {
-      email: patterns[0],
+      email: bestPattern,
       source: 'inferred',
-      confidence: 40,
-      status: 'probable',
+      confidence: verification.confidence,
+      status: verification.status === 'verified' ? 'verified'
+        : verification.status === 'invalid' ? 'unknown'
+        : 'probable',
       alternatives: patterns.slice(1),
     }
   }
@@ -87,15 +94,6 @@ export default class EmailEnricher {
       `${f[0]}${l}@${domain}`,
       `${f}@${domain}`,
     ]
-  }
-
-  private async verifyMx(domain: string): Promise<boolean> {
-    try {
-      const records = await dns.resolveMx(domain)
-      return records.length > 0
-    } catch {
-      return false
-    }
   }
 
   private parseFullName(fullName: string): { firstName: string; lastName: string } {
