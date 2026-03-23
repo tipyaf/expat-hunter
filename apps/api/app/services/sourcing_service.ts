@@ -107,6 +107,10 @@ export default class SourcingService {
   /**
    * Generic names that should be deduplicated by company + role instead of by name.
    */
+  /**
+   * Generic contact names (not real person names) used for deduplication.
+   * English-only for now — see US for i18n extension.
+   */
   private static readonly GENERIC_NAMES = new Set([
     'hiring manager',
     'contact',
@@ -115,6 +119,25 @@ export default class SourcingService {
     'recruiter',
     'team',
     'hiring',
+    'jobs',
+    'talent',
+    'recruitment',
+    'careers',
+    'hr',
+    'info',
+    'support',
+    'connect',
+    'admin',
+    'office',
+    'reception',
+    'enquiries',
+    'general',
+    'hello',
+    'apply',
+    'people',
+    'human resources',
+    'talent acquisition',
+    'people operations',
   ])
 
   private isGenericName(name: string): boolean {
