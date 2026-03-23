@@ -39,6 +39,11 @@ Recurring failures and lessons learned across sessions. Every agent MUST read th
 **Root cause**: L'agent a travaillé sur le ticket sans le découper en sous-tâches traçables.
 **Rule**: TOUJOURS ajouter des tâches (stories-add-task) dans un ticket Shortcut AVANT de commencer le travail. Chaque étape significative = une tâche. Cocher les tâches au fur et à mesure (stories-update-task isCompleted). Cela permet de savoir exactement où on en est à tout moment, même si la session est interrompue.
 
+### [Workflow] JAMAIS coder sans refinement de l'US d'abord
+**Problem**: sc-82 — bug identifié, story créée, mais l'agent est parti coder immédiatement sans présenter l'US pour refinement. Le framework exige une étape de refinement avant tout développement.
+**Root cause**: L'agent a confondu "créer la story" avec "avoir fait le refinement".
+**Rule**: Créer la story NE SUFFIT PAS. Le workflow est : 1) Créer l'US, 2) Présenter l'US à l'utilisateur pour refinement/validation, 3) Attendre l'accord explicite, 4) SEULEMENT ALORS passer en In Progress et commencer le dev. Ne jamais sauter l'étape de refinement, même pour un bug simple.
+
 ### [Quality] TOUJOURS écrire les TU avant de déclarer terminé
 **Problem**: sc-60 — 4 services modifiés (visa_sponsor_registry, email_enricher, company_enricher, sourcing_service) sans aucun test unitaire. Détecté en review par l'utilisateur.
 **Root cause**: L'agent a implémenté le code et déclaré "done" sans écrire les tests, alors que le framework l'exige (Phase 4: Test).

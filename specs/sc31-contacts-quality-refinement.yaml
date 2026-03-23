@@ -1,0 +1,1323 @@
+# ============================================================================
+# ExpatHunter — sc-31 : Contacts Quality Refinement
+# Spec fonctionnelle complète
+# Auteur: Product Owner
+# Date: 2026-03-23
+# Version: 1.0.0
+# ============================================================================
+#
+# Contexte: Le pipeline actuel retourne 26 contacts pour 1 pertinent, sans email.
+# Le funnel email — coeur de valeur d'ExpatHunter — est bloqué.
+# Cette spec définit le remodelage complet du pipeline de sourcing de contacts.
+#
+# Parent specs:
+#   - specs/expat-hunter.yaml          (spec racine du projet)
+#   - specs/contact-sourcing-strategy.yaml  (stratégie sources)
+#
+# Décisions POC (sc-60):
+#   - Hunter.io = source primaire validée (127 contacts sur 10 entreprises, 100% email)
+#   - Apollo free tier = 403 Forbidden sur people search, non viable
+#   - NZ Immigration API = OK mais rate-limited, fuzzy matching insuffisant
+# ============================================================================
+
+story:
+  id: "sc-31"
+  title: "Contacts Quality Refinement"
+  type: "epic"
+  status: "ready_for_dev"
+  priority: "P0"
+
+  vision: |
+    ExpatHunter exploite le marché caché de l'emploi : contacter des managers
+    opérationnels AVANT qu'un poste soit publié, en les approchant directement
+    avec un message hyper-personnalisé.
+
+    Pour que ce funnel fonctionne, chaque contact produit par le système doit être :
+    1. UNE VRAIE PERSONNE, nommée, dont le rôle est opérationnel (pas RH)
+    2. JOIGNABLE par email direct (vérifié ou à haute probabilité)
+    3. PERTINENT vis-à-vis du profil et du secteur du candidat
+    4. CONTEXTUALISÉ : le candidat doit savoir POURQUOI contacter cette personne
+       et avoir assez d'infos sur l'entreprise pour écrire un message convaincant
+
+    Aujourd'hui: 26 contacts retournés → 1 pertinent → 0 email → 0 message envoyé.
+    Objectif sc-31: 20 contacts produits → 15+ pertinents → 12+ avec email → 10+ messages envoyés.
+
+  success_metrics:
+    - metric: "Taux de pertinence des contacts"
+      current: "~4% (1/26)"
+      target: "≥ 75% (contacts opérationnels réels, rôle correspondant au secteur)"
+    - metric: "Taux de couverture email"
+      current: "~0%"
+      target: "≥ 60% (email verified ou probable)"
+    - metric: "Taux de déclenchement d'envoi"
+      current: "0 email envoyé sans intervention manuelle"
+      target: "≥ 50% des contacts pertinents déclenchent un draft email automatique"
+    - metric: "Qualité du contexte entreprise"
+      current: "Absent (nom entreprise uniquement)"
+      target: "≥ 4 champs contextuels renseignés par entreprise (secteur, taille, stack, signaux)"
+
+# ============================================================================
+# PERSONAS
+# ============================================================================
+
+personas:
+
+  - name: "Alex"
+    role: "Développeur senior en reconversion expatriation"
+    objective: |
+      Trouver un poste d'Engineering Manager ou Lead Developer en Nouvelle-Zélande.
+      Secteur : IT / SaaS. Expérience : 8 ans, stack Node.js + React.
+    frustrations:
+      - "Les offres sur Seek n'acceptent que les résidents NZ"
+      - "Les RH répondent rarement aux candidats étrangers"
+      - "Ne sait pas quelles entreprises sponsorisent des visas"
+      - "Ses emails de prospection sont génériques et ignorés"
+    primary_journey:
+      - "Lance un sourcing sur Seek (secteur IT, Auckland)"
+      - "Consulte la liste des contacts retournés"
+      - "Vérifie quelles entreprises sont accréditées visa"
+      - "Sélectionne 10 contacts pertinents"
+      - "Approuve les emails générés par l'IA"
+      - "Attend les réponses"
+
+  - name: "Sophie"
+    role: "Comptable cherchant un poste en Finance en Australie"
+    objective: |
+      Trouver un CFO ou Finance Manager dans une PME australienne prête à sponsoriser.
+      Secteur : Finance / Accounting. Melbourne ou Sydney.
+    frustrations:
+      - "Ne connaît pas les titres exacts des décideurs en Finance au niveau local (AU)"
+      - "Les outils généralistes (LinkedIn, Hunter) ne comprennent pas son contexte expat"
+    primary_journey:
+      - "Lance un sourcing avec son secteur = Finance"
+      - "Le système identifie automatiquement les titres cibles pour ce secteur"
+      - "Reçoit une liste de CFO, Finance Director, Head of Finance avec email"
+      - "Envoie des emails personnalisés"
+    note: "Sophie représente la promesse de scalabilité multi-secteurs de sc-31"
+
+# ============================================================================
+# ANALYSE DES OPTIONS : DÉCOUVERTE DES TITRES PAR SECTEUR
+# ============================================================================
+
+#
+# Problème: Les titres de managers opérationnels varient par secteur.
+# IT: "Engineering Manager", "CTO", "Head of Engineering"
+# Finance: "CFO", "Finance Director", "Head of Finance", "Controller"
+# Marketing: "CMO", "Head of Growth", "Marketing Director"
+# Ops: "COO", "Operations Director", "Head of Supply Chain"
+#
+# Question: comment construire et maintenir cette taxonomie ?
+#
+
+sector_title_discovery_options:
+
+  option_A:
+    name: "Base statique maintenue manuellement"
+    description: |
+      Un YAML/JSON contenant les titres cibles par secteur, enrichi manuellement
+      au fil des retours utilisateurs et de l'observation des données Hunter.
+    pros:
+      - "Coût zéro"
+      - "Contrôle total, pas de dépendance externe"
+      - "Déterministe, testable"
+      - "MVP rapide"
+    cons:
+      - "Maintenance manuelle nécessaire"
+      - "Ne couvre pas les variantes locales (AU vs NZ vs UK)"
+      - "Risque d'obsolescence sans feedback loop"
+    cost: "0€"
+    dependencies: "aucune"
+    recommended_for: "MVP"
+
+  option_B:
+    name: "LLM à la demande (OpenRouter)"
+    description: |
+      Pour chaque nouveau secteur configuré par l'utilisateur, appel LLM unique :
+      "Quels sont les 10 titres de managers opérationnels en charge du recrutement
+      dans le secteur [X] en [pays] ? Exclure les RH."
+      Le résultat est mis en cache en base (table sector_title_profiles).
+    pros:
+      - "Couverture mondiale et multi-langue"
+      - "S'adapte aux niches et secteurs non anticipés"
+      - "Appel unique par (secteur, pays) = coût faible"
+    cons:
+      - "Latence à la première utilisation (appel LLM)"
+      - "Résultats non déterministes (variation entre appels)"
+      - "Nécessite validation humaine sur les nouveaux secteurs"
+    cost: "~0.001$ par appel (modèle cheap via OpenRouter)"
+    dependencies: "OpenRouter"
+    recommended_for: "Phase 2 (après MVP)"
+
+  option_C:
+    name: "LLM + recherche web (SerpAPI / Exa.ai)"
+    description: |
+      LLM avec accès à la recherche internet pour trouver des descriptions de postes
+      réels dans le secteur cible et en extraire les titres les plus courants.
+    pros:
+      - "Titres ancrés dans la réalité du marché local"
+      - "Peut détecter des titres émergents (ex: 'AI Lead')"
+    cons:
+      - "Coût plus élevé (SerpAPI ~0.01$ par requête)"
+      - "Latence accrue"
+      - "Complexité d'orchestration"
+    cost: "~0.05$ par (secteur, pays)"
+    dependencies: "OpenRouter + SerpAPI ou Exa.ai"
+    recommended_for: "Future — si la base statique + LLM s'avère insuffisante"
+
+  option_D:
+    name: "Inférence depuis les données Hunter"
+    description: |
+      Analyser les contacts déjà retournés par Hunter pour un secteur donné,
+      extraire les titres, les normaliser, et en déduire les patterns les plus fréquents.
+      Feedback loop : plus on cherche dans un secteur, plus la base s'améliore.
+    pros:
+      - "Ancré dans les vraies données"
+      - "S'améliore automatiquement avec l'usage"
+      - "Coût nul (post-traitement)"
+    cons:
+      - "Requiert un volume minimum de données pour être fiable"
+      - "Pas utilisable au MVP (base de données trop petite)"
+    cost: "0€ (post-traitement)"
+    dependencies: "Hunter.io (déjà intégré)"
+    recommended_for: "Phase 3 (quand la base de données est suffisamment grande)"
+
+  recommendation: |
+    ARCHITECTURE RETENUE :
+    - MVP: Option A (base statique) pour IT + 4 secteurs secondaires
+    - Phase 2: Option B (LLM) pour couvrir les secteurs non prévus
+    - Phase 3: Option D (inférence) pour affiner en continu
+
+    La base statique couvre 80% des cas d'usage au MVP sans coût ni dépendance.
+    Le LLM agit en fallback pour les secteurs inconnus.
+    L'inférence Hunter améliore la base à terme.
+
+# ============================================================================
+# ARCHITECTURE FONCTIONNELLE : AGENTS SPÉCIALISÉS PAR SECTEUR
+# ============================================================================
+
+sector_agent_architecture:
+
+  question: "Faut-il des agents spécialisés par secteur ou un agent générique paramétrable ?"
+
+  decision: "Agent générique + profil de secteur"
+
+  rationale: |
+    Un agent spécialisé par secteur (ITAgent, FinanceAgent, MarketingAgent) crée
+    une duplication de logique sans valeur. La logique du pipeline est identique :
+    découvrir l'entreprise → identifier les contacts → enrichir l'email → scorer.
+
+    Ce qui VARIE par secteur :
+    - Les titres cibles (Engineering Manager ≠ Finance Director)
+    - Les sources sectorielles (NZTech pour l'IT, NZFinance pour la Finance)
+    - Les critères de pertinence pour le scoring IA
+    - Les données contextuelles utiles pour le mail (tech stack pour IT, ARR pour Finance)
+
+    Solution : un SectorProfile (YAML/JSON) qui paramètre l'agent générique.
+
+  sector_profile_structure:
+    id: "string — identifiant unique (it, finance, marketing, ops, hr, legal)"
+    label: "string — nom affiché (Information Technology, Finance & Accounting)"
+    target_titles:
+      operational_primary: "string[] — titres recherchés en priorité"
+      operational_secondary: "string[] — titres recherchés si pas assez de primaires"
+      hr_optional: "string[] — titres RH (inclus si hr_enabled = true)"
+    sources:
+      job_boards: "string[] — sources job board pour ce secteur (seek, seek_au, indeed)"
+      sectoral_directories: "string[] — annuaires sectoriels (nztech, techcrunch, etc.)"
+    context_fields_to_collect:
+      - field: "tech_stack"
+        relevant_for_sectors: ["it"]
+        source: "site web entreprise, offres d'emploi"
+      - field: "arr_or_revenue"
+        relevant_for_sectors: ["finance", "ops"]
+        source: "Crunchbase, actualités"
+      - field: "recent_funding"
+        relevant_for_sectors: ["it", "finance", "ops"]
+        source: "Crunchbase, TechCrunch"
+      - field: "team_size"
+        relevant_for_sectors: ["it", "ops", "marketing"]
+        source: "LinkedIn company page, site web"
+      - field: "certifications"
+        relevant_for_sectors: ["finance", "legal"]
+        source: "site web"
+    ai_scoring_hints: "string — prompt additionnel pour l'IA sur ce secteur"
+    initial_sectors_shipped:
+      - "it"
+      - "finance"
+      - "marketing"
+      - "ops"
+      - "construction"
+
+# ============================================================================
+# PIPELINE D'ENRICHISSEMENT COMPLET
+# ============================================================================
+
+enrichment_pipeline:
+
+  description: |
+    Pipeline séquentiel, asynchrone (BullMQ), avec reprise sur erreur.
+    Chaque étape produit des données partielles utilisables même si les suivantes échouent.
+    Objectif: de l'entreprise détectée au contact actionnable en moins de 60 secondes.
+
+  steps:
+
+    step_1:
+      name: "company_discovery"
+      description: "Identifier les entreprises candidates"
+      trigger: "Lancement d'un SourcingRun par l'utilisateur"
+      inputs:
+        - "country (ex: NZ)"
+        - "sector_profile (ex: it)"
+        - "keywords (ex: React, Node.js)"
+        - "hunter_company_search: boolean — activer la recherche Hunter Company"
+      sources_used:
+        seek: |
+          Scraping des offres Seek/Indeed filtrées par secteur et mots-clés.
+          Objectif: extraire nom entreprise + domaine + signaux de recrutement.
+          Input: keywords depuis le profil candidat + sector_profile.target_titles
+        hunter_company_search: |
+          Hunter Company Search API : recherche d'entreprises par secteur et pays.
+          Retourne domaine + score de présence email.
+          Utilisé en COMPLÉMENT du scraping Seek, pas comme remplacement.
+          Note: cette source était manquante avant sc-31 — feedback utilisateur sc-31 point 8.
+        sectoral_directories: |
+          Annuaires sectoriels configurés dans sector_profile.sources.sectoral_directories
+          Ex: NZTech pour l'IT en NZ — liste d'entreprises tech avec domaine direct.
+        visa_registry: |
+          Croisement immédiat avec le registre d'employeurs accrédités (NZ Immigration, UK Home Office).
+          Filtre et booste le score des entreprises accréditées.
+      outputs:
+        - "Liste de Company (nom, domaine, pays, secteur, visa_sponsor_status)"
+        - "Deduplication sur domaine normalisé"
+      success_criteria:
+        - "Toutes les entreprises ont un domaine web identifié (requis pour Hunter step 3)"
+        - "Le champ visa_sponsor_status est renseigné pour 100% des entreprises NZ/AU/UK"
+      known_issue: |
+        Domain discovery est le problème clé identifié en POC (sc-60) :
+        'PHQ' → phq.nz (pas phq.com), 'Halter' → halterhq.com (pas hfrtech.com).
+        Solution: domain_resolver utilisant Hunter Company Enrichment API + Google search
+        comme fallback pour trouver le bon domaine à partir d'un nom d'entreprise.
+
+    step_2:
+      name: "company_enrichment"
+      description: "Enrichir chaque entreprise avec des données contextuelles"
+      trigger: "Après step_1, pour chaque Company sans contexte complet"
+      inputs:
+        - "Company (avec domaine)"
+        - "sector_profile (pour savoir quels champs collecter)"
+      sources_used:
+        company_website: |
+          Crawler le site de l'entreprise :
+          - Page About/Team pour extraire membres de l'équipe
+          - Page Careers pour détecter les postes ouverts (hiring signals)
+          - Page Home/About pour description (secteur, culture, historique)
+          Playwright pour les SPA.
+        hunter_company_enrichment: |
+          Hunter Company Enrichment API : retourne description, taille, secteur,
+          technologies (tech stack), réseaux sociaux.
+          Utilisé pour valider et compléter les données du site web.
+        crunchbase_public: |
+          Scraping public de Crunchbase (pas d'API payante) :
+          - Levée de fonds récente (< 12 mois = signal fort)
+          - Nombre d'employés (taille de l'entreprise)
+          - Date de création (maturité)
+      outputs:
+        - "Company enrichie : description, taille, tech_stack, funding, culture_signals"
+        - "hiring_signals : offres actives, stack réclamée, croissance équipe"
+      context_fields_per_sector:
+        it:
+          - "tech_stack (langages, frameworks, cloud)"
+          - "team_size_engineering (estimation)"
+          - "recent_funding (levée < 12 mois)"
+          - "open_positions_count (nombre d'offres IT actives)"
+          - "github_org (si présent, culture open source)"
+        finance:
+          - "revenue_range (estimé)"
+          - "certifications (CPA, CFA, ISO)"
+          - "recent_funding"
+          - "regulatory_context (NZ FSA, AU ASIC)"
+        marketing:
+          - "marketing_stack (HubSpot, Marketo, etc.)"
+          - "social_presence (followers LinkedIn, IG)"
+          - "recent_campaigns (signaux d'activité)"
+        ops:
+          - "supply_chain_context"
+          - "certifications_quality (ISO 9001)"
+          - "recent_expansion (new markets, new products)"
+
+    step_3:
+      name: "contact_identification"
+      description: |
+        Identifier les managers opérationnels dans chaque entreprise.
+        C'est l'étape LA PLUS IMPORTANTE : trouver LES BONNES PERSONNES.
+      trigger: "Après step_2 (ou en parallèle si step_2 prend du temps)"
+      inputs:
+        - "Company (avec domaine)"
+        - "sector_profile.target_titles"
+        - "hr_enabled (boolean, depuis les préférences utilisateur)"
+      sources_used:
+        hunter_domain_search: |
+          Source PRIMAIRE validée par POC sc-60.
+          Hunter Domain Search retourne jusqu'à 100 contacts par domaine
+          avec : prénom, nom, titre, email, score de confiance.
+          Filtrage sur sector_profile.target_titles (côté ExpatHunter, pas Hunter).
+          Avantage: email inclus directement, pas d'étape d'enrichissement séparée.
+          Quota: 1 recherche/domaine (gratuit: 25/mois, payant: 500/mois à 34$).
+        company_website_team_page: |
+          Scraping de /team, /about, /about-us, /people, /company/team.
+          Source COMPLÉMENTAIRE pour les entreprises peu indexées par Hunter.
+          Playwright pour les SPA.
+          Extraction NLP des blocs (nom, rôle, email, LinkedIn URL).
+        job_listing_contact_extraction: |
+          Extraction du contact mentionné dans les offres d'emploi scrapées.
+          Patterns détectés: "Contact [Name] at [email]", "Managed by [Name]",
+          "Report to [Title]", "hiring manager" + nom dans la signature PDF.
+          Source directe et légale : l'entreprise a publié l'info pour être contactée.
+      filtering:
+        include:
+          - "Titres correspondant à sector_profile.target_titles.operational_primary"
+          - "Titres correspondant à sector_profile.target_titles.operational_secondary"
+          - "Si hr_enabled = true: titres correspondant à sector_profile.target_titles.hr_optional"
+        exclude:
+          - "Titres RH purs si hr_enabled = false (HR Manager, Recruiter, Talent Acquisition, People Partner)"
+          - "Titres admin/support (Office Manager, Admin Assistant, Executive Assistant)"
+          - "Contacts sans nom réel (Hiring Manager, HR Team, Careers Team)"
+          - "Doublons (même personne trouvée sur plusieurs sources)"
+      deduplication:
+        strategy: "fingerprint sur normalize(first_name + last_name + company_domain)"
+        merge_policy: "garder la source avec email vérifié en priorité, sinon la source la plus riche"
+      outputs:
+        - "Contact: prénom, nom, titre, email (si disponible), source, source_confidence"
+        - "Contact.is_hr: boolean (pour affichage conditionnel)"
+        - "Contact.source_detail: URL de l'offre ou de la page team"
+
+    step_4:
+      name: "email_enrichment"
+      description: |
+        Pour les contacts sans email après step_3, tenter de trouver ou inférer l'email.
+        Note: si Hunter a retourné l'email en step_3, cette étape est un no-op pour ce contact.
+      trigger: "Après step_3, pour chaque contact sans email"
+      inputs:
+        - "Contact (nom + domaine entreprise)"
+      cascade:
+        level_1: |
+          Hunter Email Finder : prénom + nom + domaine → email vérifié.
+          Coût: 1 requête par contact (quota distinct du domain search).
+          Retourne: email + score de confiance (0-100).
+        level_2: |
+          Pattern inference : générer les variantes email les plus probables
+          basées sur le pattern détecté sur le domaine (ex: prenom.nom@, p.nom@, prenom@).
+          Le pattern du domaine est détecté depuis les emails Hunter déjà trouvés sur ce domaine.
+        level_3: |
+          MX verification : vérifier que le domaine accepte les emails (DNS MX check).
+          Ne pas envoyer un email deviné si le MX record n'existe pas.
+          Service: Reacher (self-hosted, ~5$/mois) ou vérification DNS directe.
+        level_4: |
+          Fallback — marquer email_status = "unknown" mais conserver le contact
+          si son titre est hautement pertinent. L'utilisateur peut l'enrichir manuellement.
+      outputs:
+        - "Contact.email (renseigné ou null)"
+        - "Contact.email_status: verified | probable | unknown | bounced"
+        - "Contact.email_source: hunter_domain | hunter_finder | inferred | job_page | team_page | manual"
+        - "Contact.email_alternatives: string[] (variantes probables non vérifiées)"
+
+    step_5:
+      name: "ai_scoring_and_context"
+      description: |
+        Scorer chaque contact et générer le contexte nécessaire pour l'email.
+        L'IA doit comprendre POURQUOI ce contact est pertinent pour CE candidat
+        et quelles informations de l'entreprise utiliser pour personnaliser le message.
+      trigger: "Après step_4, pour chaque contact"
+      inputs:
+        - "Contact (avec email)"
+        - "Company (enrichie)"
+        - "CandidateProfile (compétences, expérience, pays cible)"
+        - "sector_profile"
+      scoring_formula:
+        title_relevance:
+          weight: 35
+          description: "Adéquation du titre du contact avec le secteur et le rôle cible"
+          criteria:
+            - "Titre dans target_titles.operational_primary → score max"
+            - "Titre dans target_titles.operational_secondary → score moyen"
+            - "Titre RH si hr_enabled = false → score pénalisé fortement"
+        seniority_match:
+          weight: 25
+          description: "Niveau hiérarchique du contact vs niveau attendu"
+          criteria:
+            - "C-level (CTO, CFO, CEO) dans PME < 50 pers → pertinent (ils recrutent directement)"
+            - "Manager/Director dans entreprise > 50 pers → pertinent"
+            - "Senior IC (Lead, Principal) → secondaire (peut recommander)"
+        company_fit:
+          weight: 25
+          description: "Adéquation entreprise avec le profil candidat"
+          criteria:
+            - "Secteur correspond au secteur cible du candidat"
+            - "Taille entreprise correspond aux préférences candidat"
+            - "Tech stack correspond aux compétences candidat (pour IT)"
+            - "Visa sponsor accrédité → +15 points bonus"
+        hiring_signal_strength:
+          weight: 15
+          description: "Probabilité que l'entreprise recrute maintenant"
+          criteria:
+            - "Offres actives dans le secteur du candidat → fort signal"
+            - "Levée de fonds récente (< 6 mois) → signal fort"
+            - "Croissance de l'équipe détectée → signal moyen"
+            - "Aucun signal → score neutre (pas pénalisé — c'est le marché caché)"
+      ai_prompt_components:
+        - "Profil candidat complet (CV, compétences, expérience)"
+        - "Fiche contact (titre, entreprise, historique LinkedIn si disponible)"
+        - "Contexte entreprise (description, tech stack, signaux de recrutement)"
+        - "Hints sectoriels depuis sector_profile.ai_scoring_hints"
+        - "Contexte visa (entreprise accréditée ou non)"
+      outputs:
+        - "Contact.relevance_score: 0-100"
+        - "Contact.score_breakdown: {title, seniority, company, signal} avec valeurs"
+        - "Contact.ai_recommendation: contact | skip | manual_review"
+        - "Contact.relevance_reason: string (explication IA, 2-3 phrases max)"
+        - "Contact.email_context: objet JSON avec les données clés pour personnaliser l'email"
+
+# ============================================================================
+# DONNÉES CONTEXTUELLES POUR EMAILS IMPACTANTS
+# ============================================================================
+
+email_context_data:
+
+  description: |
+    L'email de prospection doit être HYPER-PERSONNALISÉ pour se démarquer.
+    Le candidat expat a une contrainte visa → il doit montrer une valeur UNIQUE
+    pour justifier qu'on sponsorise un permis de travail.
+
+    Ces données sont collectées en step_2 (company_enrichment) et step_3 (contact_identification)
+    et agrégées dans Contact.email_context pour être utilisées par le générateur d'email (Epic 4/5).
+
+  fields:
+
+    company_context:
+      - field: "company_description"
+        description: "Description courte de l'entreprise (50-100 mots)"
+        source: "site web entreprise, Hunter Company Enrichment"
+        used_for: "Montrer qu'on connaît l'entreprise dans l'email"
+        required: true
+
+      - field: "sector_and_activity"
+        description: "Secteur précis et activité principale"
+        source: "site web, Hunter, Seek listing"
+        used_for: "Ancrer le message dans la réalité de l'entreprise"
+        required: true
+
+      - field: "tech_stack"
+        description: "Technologies utilisées (pour secteur IT)"
+        source: "offres d'emploi, site web, Hunter Company Enrichment"
+        used_for: "Montrer une compétence spécifique à l'entreprise"
+        required_for_sectors: ["it"]
+
+      - field: "recent_news_or_milestone"
+        description: "Actualité récente (levée, lancement produit, expansion)"
+        source: "Crunchbase, Google News, site web"
+        used_for: "Accrocher l'email sur un événement concret"
+        example: "'J'ai vu que vous venez de lever 5M$ en Série A — félicitations...'"
+        required: false
+        high_impact: true
+
+      - field: "open_positions"
+        description: "Postes actuellement ouverts (même indirectement liés)"
+        source: "Seek, site web careers"
+        used_for: "Montrer qu'on est au courant de leurs besoins actuels"
+        required: false
+
+      - field: "company_culture_signals"
+        description: "Indicateurs de culture (remote-friendly, international team, English spoken)"
+        source: "site web, offres d'emploi, page LinkedIn entreprise"
+        used_for: "Montrer que le candidat est adapté culturellement"
+        required: false
+
+      - field: "visa_sponsor_status"
+        description: "Entreprise accréditée sponsor visa (oui/non/inconnu)"
+        source: "Registres gouvernementaux (NZ Immigration, UK Home Office)"
+        used_for: "Adapter le ton selon si le sujet visa doit être abordé directement ou non"
+        required: true
+
+    contact_context:
+      - field: "contact_title_normalized"
+        description: "Titre normalisé du contact (pour adressage respectueux)"
+        source: "Hunter, team page"
+        used_for: "Interpeller correctement la personne"
+        required: true
+
+      - field: "contact_linkedin_url"
+        description: "URL LinkedIn du contact"
+        source: "Hunter, Google search proxy"
+        used_for: "L'IA peut enrichir avec le profil LinkedIn (parcours, posts récents)"
+        required: false
+
+      - field: "contact_recent_activity"
+        description: "Posts LinkedIn récents ou articles publiés"
+        source: "LinkedIn public (via Google search proxy)"
+        used_for: "Référencer une activité récente du contact pour personnaliser"
+        required: false
+        high_impact: true
+        implementation_note: "Phase 2 — complexité élevée, non requis pour MVP"
+
+    candidate_context:
+      - field: "matching_skills"
+        description: "Compétences du candidat qui matchent directement avec le tech_stack ou les offres"
+        source: "CandidateProfile cross-référencé avec company_context"
+        used_for: "Mettre en valeur les compétences les plus pertinentes POUR CETTE entreprise"
+        required: true
+
+      - field: "unique_value_proposition"
+        description: "Ce que le candidat apporte de spécifique (généré par IA)"
+        source: "CandidateProfile + company_context"
+        used_for: "Répondre implicitement à 'pourquoi te sponsoriser ?'"
+        required: true
+
+    cultural_context:
+      - field: "country_communication_style"
+        description: "Style de communication attendu dans le pays cible (direct vs indirect, formel vs informel)"
+        source: "Base statique par pays (NZ: décontracté et direct, JP: très formel, FR: formel)"
+        used_for: "Calibrer le ton de l'email"
+        required: true
+        note: |
+          NZ/AU: ton décontracté, prénom direct, pas de vouvoiement culturel
+          UK: poli et professionnel mais pas guindé
+          DE: formel, précis, valoriser les compétences techniques
+          FR: formel, relater les credentials académiques
+          JP: très formel, introduire un intermédiaire si possible
+
+# ============================================================================
+# HR OPTIONNEL — UX
+# ============================================================================
+
+hr_optional_feature:
+
+  description: |
+    Par défaut, les contacts RH sont filtrés car les managers opérationnels
+    sont plus efficaces pour le marché caché.
+    L'utilisateur peut activer le mode RH via une checkbox dans les settings
+    ou au lancement d'un sourcing.
+
+  rationale: |
+    Certains utilisateurs veulent aussi contacter les RH :
+    - Pour des entreprises très grandes (> 500 pers) où le hiring manager est inatteignable
+    - Pour des secteurs où les RH ont plus de pouvoir (ex: consulting, services)
+    - Pour compléter une approche multi-canal (OM → RH en parallèle)
+
+  ux_design:
+    sourcing_launcher_option:
+      label: "Inclure les contacts RH (Talent Acquisition, HR Manager)"
+      type: "checkbox"
+      default: false
+      position: "Section 'Paramètres avancés' du formulaire de sourcing"
+      help_text: "Par défaut, ExpatHunter cible les managers opérationnels qui ont le pouvoir de recruter directement. Activez cette option pour inclure aussi les équipes RH."
+
+    contact_list_display:
+      - "Badge 'RH' visible sur les cartes de contacts RH"
+      - "Filtre 'Masquer les contacts RH' dans la liste (même si hr_enabled = true au sourcing)"
+      - "Score IA légèrement pénalisé pour les contacts RH (ils ne décident pas du visa)"
+
+    email_generation_adaptation:
+      - "Si le destinataire est RH: email plus conventionnel, axé sur le CV et le poste"
+      - "Si le destinataire est manager opérationnel: email axé sur le problème qu'il résout"
+
+# ============================================================================
+# SCALABILITÉ MULTI-SECTEURS
+# ============================================================================
+
+multi_sector_scalability:
+
+  architecture_principle: |
+    Le pipeline est sector-agnostic. La seule variante par secteur est le SectorProfile.
+    Ajouter un nouveau secteur = créer un nouveau fichier YAML de SectorProfile.
+    Zéro code à modifier.
+
+  sector_profiles_shipped_with_mvp:
+    - id: "it"
+      label: "Information Technology"
+      target_titles:
+        operational_primary:
+          - "Engineering Manager"
+          - "CTO"
+          - "Head of Engineering"
+          - "VP Engineering"
+          - "VP of Engineering"
+          - "Director of Engineering"
+          - "Technical Director"
+          - "Head of Technology"
+        operational_secondary:
+          - "IT Manager"
+          - "Software Manager"
+          - "Lead Software Engineer"
+          - "Tech Lead"
+          - "Principal Engineer"
+          - "Head of Product"
+          - "Product Director"
+          - "CTO & Co-founder"
+        hr_optional:
+          - "Technical Recruiter"
+          - "Engineering Recruiter"
+          - "HR Business Partner"
+      context_fields: ["tech_stack", "team_size_engineering", "recent_funding", "open_positions", "github_org"]
+      ai_scoring_hints: |
+        Prioriser les contacts dans des entreprises avec un stack technique correspondant
+        aux compétences du candidat. Une entreprise qui recrute activement des ingénieurs
+        dans la même stack = signal fort. Les CTO de startups < 50 personnes recrutent
+        souvent directement sans passer par les RH.
+
+    - id: "finance"
+      label: "Finance & Accounting"
+      target_titles:
+        operational_primary:
+          - "CFO"
+          - "Chief Financial Officer"
+          - "Finance Director"
+          - "Head of Finance"
+          - "Financial Controller"
+          - "VP Finance"
+        operational_secondary:
+          - "Finance Manager"
+          - "Senior Finance Manager"
+          - "Head of Accounting"
+          - "Treasury Manager"
+          - "FP&A Manager"
+        hr_optional:
+          - "HR Director"
+          - "Talent Acquisition Manager"
+      context_fields: ["revenue_range", "certifications", "recent_funding", "regulatory_context"]
+      ai_scoring_hints: |
+        Les CFO de PME recrutent directement. Les entreprises en forte croissance
+        (levée récente) ont souvent besoin de structurer leur finance. Les certifications
+        CPA/CA NZ sont un avantage différenciant à valoriser.
+
+    - id: "marketing"
+      label: "Marketing & Growth"
+      target_titles:
+        operational_primary:
+          - "CMO"
+          - "Chief Marketing Officer"
+          - "Head of Marketing"
+          - "Marketing Director"
+          - "VP Marketing"
+          - "Head of Growth"
+        operational_secondary:
+          - "Growth Manager"
+          - "Marketing Manager"
+          - "Digital Marketing Manager"
+          - "Brand Manager"
+          - "Head of Content"
+        hr_optional:
+          - "HR Manager"
+      context_fields: ["marketing_stack", "social_presence", "recent_campaigns"]
+      ai_scoring_hints: |
+        Les startups en hypercroissance post-levée recrutent massivement en marketing.
+        Un CMO dans une entreprise e-commerce ou SaaS B2C = décideur direct.
+
+    - id: "ops"
+      label: "Operations & Supply Chain"
+      target_titles:
+        operational_primary:
+          - "COO"
+          - "Chief Operating Officer"
+          - "Operations Director"
+          - "Head of Operations"
+          - "VP Operations"
+          - "Supply Chain Director"
+        operational_secondary:
+          - "Operations Manager"
+          - "Supply Chain Manager"
+          - "Logistics Manager"
+          - "Head of Procurement"
+        hr_optional:
+          - "HR Director"
+      context_fields: ["supply_chain_context", "certifications_quality", "recent_expansion"]
+      ai_scoring_hints: |
+        Prioriser les entreprises en expansion géographique ou lançant de nouvelles
+        lignes de produits. Les COO de manufacturiers PME recrutent directement.
+
+    - id: "construction"
+      label: "Construction & Engineering"
+      target_titles:
+        operational_primary:
+          - "Project Director"
+          - "Head of Construction"
+          - "Engineering Director"
+          - "Construction Manager"
+          - "Site Director"
+          - "VP Construction"
+        operational_secondary:
+          - "Project Manager"
+          - "Senior Project Manager"
+          - "Head of Projects"
+          - "Civil Engineering Manager"
+        hr_optional:
+          - "HR Manager"
+          - "Recruitment Manager"
+      context_fields: ["project_pipeline", "certifications_industry", "recent_contracts"]
+      ai_scoring_hints: |
+        Les grands projets d'infrastructure (transport, énergie, immobilier commercial)
+        nécessitent des ingénieurs spécialisés difficiles à trouver localement.
+        Une entreprise avec un carnet de commandes connu = forte probabilité de recrutement.
+
+  adding_new_sector:
+    process:
+      - "Créer apps/api/app/data/sector-profiles/[id].yaml avec la structure SectorProfile"
+      - "Aucun code à modifier — le pipeline charge dynamiquement tous les profils au démarrage"
+      - "Tester avec un sourcing manuel sur le nouveau secteur"
+    estimated_effort: "2h par nouveau secteur (rédaction YAML + validation)"
+
+  llm_fallback_for_unknown_sectors:
+    description: |
+      Si un utilisateur configure un secteur non couvert par un SectorProfile existant,
+      le système génère automatiquement un SectorProfile via LLM (OpenRouter, modèle cheap).
+      Le profil généré est sauvegardé en base pour les prochains utilisateurs.
+    trigger: "sector_id non trouvé dans les profiles statiques"
+    prompt_template: |
+      "Tu es un expert en recrutement B2B. Liste les 8 titres de postes les plus courants
+      pour des managers OPÉRATIONNELS (pas RH) dans le secteur '[SECTOR_LABEL]' dans le pays '[COUNTRY]'.
+      Ces managers doivent avoir le pouvoir de décider d'un recrutement.
+      Exclure les titres RH/People/Talent.
+      Format: JSON array de strings."
+    cost_per_call: "~0.001$"
+    caching: "Résultat mis en cache dans la table sector_profiles (validité: 30 jours)"
+
+# ============================================================================
+# USER STORIES — DÉCOUPAGE DE SC-31
+# ============================================================================
+
+#
+# sc-31 couvre un périmètre trop large pour une seule story.
+# Découpage recommandé en 8 sous-stories indépendantes et livrables séquentiellement.
+#
+
+sub_stories:
+
+  - id: "sc-31-1"
+    title: "Domain Resolver : trouver le bon domaine à partir du nom d'entreprise"
+    priority: "P0 — bloquant pour tout le reste"
+    complexity: "M"
+    rationale: |
+      Problème n°1 identifié en POC sc-60 : les domaines incorrects (PHQ→phq.com au lieu de phq.nz)
+      rendent Hunter Domain Search inutilisable. Cette story est le prérequis de tout le pipeline.
+    user_story: |
+      En tant que système de sourcing,
+      je veux résoudre automatiquement le domaine web d'une entreprise à partir de son nom,
+      afin que toutes les étapes suivantes (Hunter, enrichissement) utilisent le bon domaine.
+    acceptance_criteria:
+      - "GIVEN un nom d'entreprise 'Halter', WHEN le resolver est appelé, THEN il retourne 'halterhq.com' (pas 'hfrtech.com')"
+      - "GIVEN un nom 'PHQ', WHEN le resolver est appelé, THEN il retourne 'phq.nz' (pas 'phq.com')"
+      - "GIVEN un nom d'entreprise avec domaine déjà connu (ex: Seek listing contient l'URL), THEN aucun appel externe n'est effectué"
+      - "Le resolver utilise Hunter Company Enrichment API en premier (retourne le domaine si entreprise indexée)"
+      - "Si Hunter échoue, le resolver utilise une recherche Google '[Nom entreprise] site officiel [Pays]' via SerpAPI ou Exa.ai"
+      - "Le domaine résolu est persisté en base (Company.domain) pour éviter les appels redondants"
+      - "Sur 20 entreprises issues de Seek NZ, 16+ ont un domaine correct après résolution"
+    api_endpoints:
+      - method: "POST"
+        path: "/api/companies/resolve-domain"
+        body: "{company_name: string, country: string, hint_url?: string}"
+        response: "{domain: string, confidence: number, source: string}"
+    data_model_changes:
+      - entity: "Company"
+        add_fields:
+          - name: "domain"
+            type: "string"
+            description: "Domaine web résolu et vérifié"
+          - name: "domain_confidence"
+            type: "number"
+            description: "Confiance dans le domaine résolu (0-1)"
+          - name: "domain_source"
+            type: "string"
+            description: "seek_listing | hunter_enrichment | google_search | manual"
+
+  - id: "sc-31-2"
+    title: "SectorProfile : base statique des titres cibles par secteur"
+    priority: "P0 — prérequis du filtrage contacts"
+    complexity: "S"
+    user_story: |
+      En tant que système de scoring,
+      je veux charger un profil de secteur avec les titres cibles,
+      afin de filtrer les contacts Hunter pour ne garder que les managers opérationnels pertinents.
+    acceptance_criteria:
+      - "5 SectorProfiles livrés : it, finance, marketing, ops, construction"
+      - "Chaque profil contient target_titles.operational_primary, target_titles.operational_secondary, target_titles.hr_optional"
+      - "Un service SectorProfileLoader charge dynamiquement tous les profils au démarrage"
+      - "GIVEN secteur 'it', WHEN Hunter retourne un contact 'HR Manager', THEN le contact est filtré (si hr_enabled = false)"
+      - "GIVEN secteur 'it', WHEN Hunter retourne un contact 'Engineering Manager', THEN le contact est conservé"
+      - "GIVEN un secteur inconnu, WHEN SectorProfileLoader est appelé, THEN il génère un profil via LLM et le met en cache"
+      - "Les profils sont modifiables sans redéploiement (hot-reload ou reload via endpoint admin)"
+    api_endpoints:
+      - method: "GET"
+        path: "/api/sector-profiles"
+        description: "Liste tous les profils de secteur disponibles"
+      - method: "GET"
+        path: "/api/sector-profiles/{id}"
+        description: "Détail d'un profil de secteur"
+    data_model_changes:
+      - entity: "SectorProfile"
+        new_entity: true
+        fields:
+          - name: "id"
+            type: "string"
+          - name: "label"
+            type: "string"
+          - name: "target_titles_primary"
+            type: "string[]"
+          - name: "target_titles_secondary"
+            type: "string[]"
+          - name: "hr_titles"
+            type: "string[]"
+          - name: "context_fields"
+            type: "string[]"
+          - name: "ai_scoring_hints"
+            type: "string"
+          - name: "source"
+            type: "enum"
+            values: ["static", "llm_generated"]
+          - name: "generated_at"
+            type: "date"
+
+  - id: "sc-31-3"
+    title: "Hunter Company Search : découverte d'entreprises via Hunter"
+    priority: "P1"
+    complexity: "S"
+    rationale: |
+      Feedback utilisateur sc-31 point 8 : Hunter Company Search doit être utilisé
+      en complément de Seek, pas seulement le Domain Search.
+    user_story: |
+      En tant que candidat expat,
+      je veux qu'ExpatHunter utilise Hunter Company Search pour trouver des entreprises
+      dans mon secteur et mon pays cible,
+      afin de découvrir des entreprises qui ne publient pas d'offres sur Seek (marché caché).
+    acceptance_criteria:
+      - "GIVEN un sourcing IT en NZ, WHEN Hunter Company Search est appelé, THEN des entreprises tech NZ sont retournées avec leur domaine"
+      - "Les entreprises Hunter sont dédupliquées avec celles trouvées via Seek (même domaine = même Company)"
+      - "Les entreprises Hunter sans offre Seek sont marquées source = 'hunter_company_search' (marché caché)"
+      - "L'UI indique clairement si une entreprise vient de Seek (offre connue) ou de Hunter (proactive)"
+      - "Quota Hunter utilisé tracké et exposé dans les settings"
+    api_endpoints:
+      - method: "POST"
+        path: "/api/sourcing/run"
+        description: "Paramètre hunter_company_search: boolean active la recherche Hunter Company"
+    ui_changes:
+      - "Badge 'Marché caché' sur les entreprises sans offre Seek connue"
+      - "Filtre 'Source' dans la liste entreprises : Seek | Hunter | Annuaire | Tous"
+
+  - id: "sc-31-4"
+    title: "Hunter Domain Search + filtrage sectoriel : contact identification"
+    priority: "P0 — coeur du pipeline"
+    complexity: "M"
+    user_story: |
+      En tant que candidat expat en IT,
+      je veux qu'ExpatHunter trouve les Engineering Managers et CTOs des entreprises identifiées,
+      et filtre automatiquement les contacts RH,
+      afin d'obtenir une liste de décideurs opérationnels directement actionnables.
+    acceptance_criteria:
+      - "GIVEN une entreprise avec domaine résolu, WHEN Hunter Domain Search est appelé, THEN les contacts sont retournés avec nom + titre + email"
+      - "GIVEN hr_enabled = false (défaut), WHEN les contacts Hunter sont filtrés, THEN les titres RH purs sont exclus"
+      - "GIVEN hr_enabled = true, WHEN les contacts Hunter sont filtrés, THEN les titres RH sont inclus avec badge 'RH'"
+      - "Le filtrage utilise SectorProfile.target_titles (partial match, case-insensitive)"
+      - "Un contact 'Head of Engineering' est retenu pour le secteur IT"
+      - "Un contact 'Talent Acquisition Specialist' est filtré si hr_enabled = false"
+      - "La déduplication fonctionne : un contact trouvé via Hunter ET via Seek listing n'apparaît qu'une fois"
+      - "Sur un domaine type (ex: xero.com), 10+ contacts opérationnels sont identifiés après filtrage"
+      - "La quota Hunter utilisé est incrémentée de 1 par appel Domain Search"
+    data_model_changes:
+      - entity: "Contact"
+        add_fields:
+          - name: "is_hr"
+            type: "boolean"
+            description: "Contact identifié comme RH (affichage conditionnel)"
+          - name: "source_detail"
+            type: "string"
+            description: "URL d'origine ou endpoint API utilisé"
+          - name: "source_confidence"
+            type: "number"
+            description: "Score de confiance de la source (0-1)"
+
+  - id: "sc-31-5"
+    title: "Email enrichment pipeline (Hunter Finder + inférence + MX)"
+    priority: "P0 — sans email, pas de funnel"
+    complexity: "M"
+    user_story: |
+      En tant que candidat expat,
+      je veux qu'ExpatHunter trouve ou infère l'email direct de chaque contact identifié,
+      afin d'avoir un email actionnable pour envoyer mon message de prospection.
+    acceptance_criteria:
+      - "GIVEN un contact sans email mais avec nom + domaine, WHEN Hunter Email Finder est appelé, THEN l'email est retourné si disponible (email_status = verified)"
+      - "GIVEN un contact pour lequel Hunter n'a pas d'email, WHEN le pattern inference est appliqué, THEN 3 variantes email sont générées (prenom.nom@, p.nom@, prenom@)"
+      - "GIVEN des variantes email, WHEN le MX check est effectué, THEN seules les variantes avec MX record valide sont conservées (email_status = probable)"
+      - "GIVEN un contact sans email après tous les niveaux, THEN email_status = 'unknown' et le contact est conservé si son score est > 60"
+      - "L'email_source est tracé pour chaque contact (hunter_domain | hunter_finder | inferred | manual)"
+      - "Sur 20 contacts nommés avec domaine connu, 12+ obtiennent un email verified ou probable"
+      - "Les quotas Hunter sont tracés séparément pour Domain Search et Email Finder"
+    api_endpoints:
+      - method: "POST"
+        path: "/api/contacts/{id}/enrich-email"
+        description: "Déclenche l'enrichissement email pour un contact"
+      - method: "POST"
+        path: "/api/contacts/enrich-email-batch"
+        description: "Enrichissement email en batch (lance un job BullMQ)"
+    data_model_changes:
+      - entity: "Contact"
+        add_fields:
+          - name: "email_status"
+            type: "enum"
+            values: ["verified", "probable", "unknown", "bounced"]
+          - name: "email_source"
+            type: "string"
+            description: "hunter_domain | hunter_finder | inferred | job_page | team_page | manual"
+          - name: "email_alternatives"
+            type: "string[]"
+            description: "Variantes email probables non vérifiées"
+
+  - id: "sc-31-6"
+    title: "Company enrichment : contexte pour emails impactants"
+    priority: "P1"
+    complexity: "L"
+    user_story: |
+      En tant que candidat expat,
+      je veux qu'ExpatHunter collecte des données contextuelles sur chaque entreprise
+      (tech stack, actualités, culture, signaux de recrutement),
+      afin que mes emails soient hyper-personnalisés et montrent que je connais l'entreprise.
+    acceptance_criteria:
+      - "GIVEN une entreprise IT, WHEN l'enrichissement est déclenché, THEN le tech_stack est extrait depuis les offres d'emploi et le site web"
+      - "GIVEN une entreprise avec une levée de fonds récente sur Crunchbase, WHEN l'enrichissement est déclenché, THEN le champ recent_news est renseigné"
+      - "GIVEN une entreprise NZ, WHEN l'enrichissement est déclenché, THEN le visa_sponsor_status est renseigné via le registre Immigration NZ"
+      - "GIVEN une entreprise avec page /team, WHEN le scraper est déclenché, THEN les contacts de l'équipe sont extraits en complément de Hunter"
+      - "GIVEN une entreprise sans page /team, WHEN le scraper est déclenché, THEN l'absence est logguée sans erreur (graceful degradation)"
+      - "Hunter Company Enrichment API est appelé pour compléter les données manquantes"
+      - "Le champ email_context de chaque contact est populé avec les données pertinentes pour ce secteur"
+      - "Sur 10 entreprises IT Auckland, 7+ ont au moins 4 champs contextuels renseignés"
+    data_model_changes:
+      - entity: "Company"
+        add_fields:
+          - name: "description"
+            type: "string"
+          - name: "tech_stack"
+            type: "string[]"
+          - name: "team_size_range"
+            type: "string"
+            description: "1-10 | 11-50 | 51-200 | 201-500 | 500+"
+          - name: "recent_news"
+            type: "json"
+            description: "{title, date, source, url}"
+          - name: "open_positions_count"
+            type: "number"
+          - name: "culture_signals"
+            type: "string[]"
+            description: "remote-friendly, international-team, english-spoken, etc."
+          - name: "enriched_at"
+            type: "date"
+      - entity: "Contact"
+        add_fields:
+          - name: "email_context"
+            type: "json"
+            description: "Données contextuelles agrégées pour la génération d'email"
+
+  - id: "sc-31-7"
+    title: "AI scoring avec contexte expat et sectoriel"
+    priority: "P1"
+    complexity: "M"
+    user_story: |
+      En tant que candidat expat,
+      je veux qu'ExpatHunter score chaque contact selon ma pertinence pour ce poste
+      ET selon la probabilité que l'entreprise sponsorise mon visa,
+      afin de prioriser mes efforts sur les contacts avec le plus grand potentiel réel.
+    acceptance_criteria:
+      - "GIVEN un contact 'Engineering Manager' dans une entreprise IT accréditée visa avec offres actives, WHEN le scoring est calculé, THEN le score est >= 75"
+      - "GIVEN un contact 'HR Manager' (si hr_enabled = false), WHEN le scoring est calculé, THEN le score est <= 30"
+      - "GIVEN une entreprise non accréditée visa, WHEN le scoring est calculé, THEN le bonus visa (+15) n'est pas appliqué"
+      - "Le score_breakdown est exposé dans l'UI (title_score, seniority_score, company_score, signal_score)"
+      - "L'explication IA (relevance_reason) est en 2-3 phrases max, en français si l'interface est en FR"
+      - "Le scoring tourne en background (BullMQ) — pas de latence UI"
+      - "Le coût IA par contact est < 0.005$ (modèle cheap via OpenRouter)"
+      - "Sur 20 contacts scorés, l'utilisateur valide que 14+ sont correctement classifiés (contact/skip) par rapport à son jugement"
+    api_endpoints:
+      - method: "POST"
+        path: "/api/analysis/run"
+        description: "Lance le scoring IA sur tous les contacts non scorés"
+      - method: "GET"
+        path: "/api/contacts/{id}/analysis"
+        description: "Résultat d'analyse pour un contact"
+    ui_components:
+      - name: "ScoreBreakdown"
+        description: "Détail du score par composante (title/seniority/company/signal) avec barre de progression"
+      - name: "ContactSourceBadge"
+        description: "Badge source du contact (Hunter | Seek | Team Page)"
+
+  - id: "sc-31-8"
+    title: "HR checkbox UX + filtre pipeline"
+    priority: "P2"
+    complexity: "S"
+    user_story: |
+      En tant que candidat expat,
+      je veux pouvoir activer l'inclusion des contacts RH lors d'un sourcing,
+      et les distinguer visuellement dans mon pipeline,
+      afin de choisir si je veux une approche multi-canal (OM + RH en parallèle).
+    acceptance_criteria:
+      - "GIVEN l'interface de lancement d'un sourcing, WHEN l'utilisateur ouvre 'Paramètres avancés', THEN la checkbox 'Inclure les contacts RH' est visible avec un texte explicatif"
+      - "GIVEN hr_enabled = false (défaut), WHEN un sourcing est lancé, THEN aucun contact RH n'apparaît dans les résultats"
+      - "GIVEN hr_enabled = true, WHEN un sourcing est lancé, THEN les contacts RH apparaissent avec un badge 'RH' orange"
+      - "GIVEN la liste des contacts dans le pipeline, WHEN l'utilisateur active le filtre 'Masquer RH', THEN les contacts avec is_hr = true disparaissent"
+      - "La préférence hr_enabled est sauvegardée dans le profil utilisateur (pas perdue entre sessions)"
+    ui_components:
+      - name: "HRToggle"
+        description: "Checkbox dans SourcingLauncher > Paramètres avancés"
+      - name: "HRBadge"
+        description: "Badge 'RH' orange sur les ContactCard avec is_hr = true"
+      - name: "HRFilter"
+        description: "Toggle 'Masquer les contacts RH' dans PipelineFilters"
+    data_model_changes:
+      - entity: "UserPreferences"
+        add_fields:
+          - name: "hr_contacts_enabled"
+            type: "boolean"
+            default: false
+
+# ============================================================================
+# HORS SCOPE EXPLICITE — SC-31
+# ============================================================================
+
+out_of_scope:
+  - item: "Scraping direct de LinkedIn"
+    reason: "Viole les CGU LinkedIn. Risque légal élevé (cf. KASPR 240K€ amende). Non planifié."
+  - item: "Apollo.io en remplacement de Hunter"
+    reason: "Apollo free tier retourne 403 sur people search API. Tier payant ($49+/mo) hors budget MVP."
+  - item: "Enrichissement via profils LinkedIn récents du contact"
+    reason: "Complexité élevée (scraping LinkedIn indirect via Google). Phase 2 uniquement."
+  - item: "Génération d'email (epic 4/5)"
+    reason: "sc-31 produit le Contact.email_context. La génération d'email est une story séparée."
+  - item: "Envoi d'emails (epic 5)"
+    reason: "Hors périmètre de sc-31."
+  - item: "Visa registries pour US (H1B), Canada, NL"
+    reason: "NZ est le seul pays validé en POC. Les autres pays sont prévus post-MVP."
+  - item: "Multi-utilisateurs"
+    reason: "MVP mono-user. L'architecture est prévue pour le multi-user mais non implémenté."
+  - item: "Mobile app"
+    reason: "Nice-to-have long terme."
+  - item: "SectorProfile pour plus de 5 secteurs"
+    reason: "5 secteurs couvrent 80% des cas MVP. Extension via YAML sans code."
+
+# ============================================================================
+# MODÈLE DE DONNÉES — DELTA SC-31
+# ============================================================================
+
+data_model_delta:
+  description: "Champs additionnels par rapport à expat-hunter.yaml — à migrer"
+
+  new_entities:
+    - name: "SectorProfile"
+      description: "Profil de secteur pour le filtrage et le scoring des contacts"
+      fields:
+        - {name: "id", type: "string", required: true, unique: true}
+        - {name: "label", type: "string", required: true}
+        - {name: "target_titles_primary", type: "string[]", required: true}
+        - {name: "target_titles_secondary", type: "string[]", required: true}
+        - {name: "hr_titles", type: "string[]", required: true}
+        - {name: "context_fields", type: "string[]", required: false}
+        - {name: "ai_scoring_hints", type: "string", required: false}
+        - {name: "source", type: "enum", values: ["static", "llm_generated"], required: true}
+        - {name: "generated_at", type: "date", required: false}
+
+    - name: "EnrichmentQuota"
+      description: "Suivi des quotas API d'enrichissement par service"
+      fields:
+        - {name: "id", type: "string", required: true}
+        - {name: "service", type: "string", description: "hunter | apollo | serp_api"}
+        - {name: "user_id", type: "string", required: true}
+        - {name: "calls_used", type: "number", required: true}
+        - {name: "calls_limit", type: "number", required: true}
+        - {name: "reset_at", type: "date", required: true}
+        - {name: "updated_at", type: "date", required: true}
+
+  company_additions:
+    - {name: "domain", type: "string", description: "Domaine web résolu"}
+    - {name: "domain_confidence", type: "number", description: "Confiance dans le domaine (0-1)"}
+    - {name: "domain_source", type: "string", description: "seek_listing | hunter_enrichment | google_search | manual"}
+    - {name: "description", type: "string", description: "Description courte de l'entreprise"}
+    - {name: "tech_stack", type: "string[]", description: "Technologies utilisées"}
+    - {name: "team_size_range", type: "string", description: "1-10 | 11-50 | 51-200 | 201-500 | 500+"}
+    - {name: "recent_news", type: "json", description: "{title, date, source, url}"}
+    - {name: "open_positions_count", type: "number"}
+    - {name: "culture_signals", type: "string[]"}
+    - {name: "visa_sponsor_status", type: "enum", values: ["accredited", "not_found", "unknown"]}
+    - {name: "visa_sponsor_countries", type: "string[]"}
+    - {name: "visa_registry_checked_at", type: "date"}
+    - {name: "enriched_at", type: "date"}
+
+  contact_additions:
+    - {name: "is_hr", type: "boolean", description: "Contact identifié comme RH"}
+    - {name: "source_detail", type: "string", description: "URL d'origine"}
+    - {name: "source_confidence", type: "number", description: "Confiance source (0-1)"}
+    - {name: "email_status", type: "enum", values: ["verified", "probable", "unknown", "bounced"]}
+    - {name: "email_source", type: "string", description: "hunter_domain | hunter_finder | inferred | job_page | team_page | manual"}
+    - {name: "email_alternatives", type: "string[]", description: "Variantes email probables"}
+    - {name: "email_context", type: "json", description: "Données contextuelles pour génération email"}
+    - {name: "score_breakdown", type: "json", description: "{title_score, seniority_score, company_score, signal_score}"}
+
+  user_preferences_additions:
+    - {name: "hr_contacts_enabled", type: "boolean", default: false}
+    - {name: "default_sector", type: "string", description: "Secteur par défaut pour les sourcings"}
+
+# ============================================================================
+# CRITÈRES D'ACCEPTATION GLOBAUX — SC-31
+# ============================================================================
+
+global_acceptance_criteria:
+
+  quality_targets:
+    - criterion: "Taux de contacts avec un vrai nom"
+      current: "~40%"
+      target: "100% — aucun contact générique (Hiring Manager, HR Team) ne passe le filtrage"
+      measurable: true
+
+    - criterion: "Taux de contacts opérationnels (non-RH)"
+      current: "Non mesuré (mélange non contrôlé)"
+      target: ">= 85% des contacts affichés sont opérationnels (si hr_enabled = false)"
+      measurable: true
+
+    - criterion: "Taux de couverture email"
+      current: "~0%"
+      target: ">= 60% des contacts ont un email_status = verified OU probable"
+      measurable: true
+
+    - criterion: "Pertinence des contacts (validation humaine)"
+      current: "~4% (1/26 pertinent)"
+      target: ">= 70% des contacts soumis à l'utilisateur sont jugés 'pertinents' par ce dernier"
+      test: "Test utilisateur sur 20 contacts sélectionnés après scoring"
+
+    - criterion: "Richesse contextuelle"
+      current: "0 champ contextuel (nom entreprise uniquement)"
+      target: ">= 4 champs contextuels par entreprise (description, sector, tech_stack ou équivalent, visa_status)"
+      measurable: true
+
+  pipeline_performance:
+    - criterion: "Durée d'un sourcing complet (20 entreprises)"
+      target: "< 5 minutes pour step_1 + step_3 (identifcation). Step_2 et step_5 peuvent être async."
+    - criterion: "Coût Hunter par sourcing (20 entreprises)"
+      target: "< 25 calls/sourcing (quota free tier = 25/mois — 1 sourcing complet possible en gratuit)"
+    - criterion: "Coût IA par contact scoré"
+      target: "< 0.005$ (modèle cheap OpenRouter — ex: Mistral 7B ou Claude Haiku)"
+
+  regression:
+    - criterion: "Les sourcings existants ne sont pas cassés"
+      target: "Un sourcing Seek NZ IT retourne toujours des résultats après sc-31 (non régression)"
+    - criterion: "Le pipeline dashboard continue d'afficher les contacts existants"
+      target: "Aucune donnée existante perdue lors des migrations"
+
+# ============================================================================
+# SÉQUENÇAGE RECOMMANDÉ
+# ============================================================================
+
+recommended_sequencing:
+
+  sprint_1:
+    stories: ["sc-31-1", "sc-31-2"]
+    goal: "Prérequis techniques : domain resolver + sector profiles. Aucune valeur visible utilisateur mais bloquant pour tout le reste."
+    deliverable: "Service DomainResolver fonctionnel + 5 SectorProfiles chargés"
+
+  sprint_2:
+    stories: ["sc-31-4", "sc-31-5"]
+    goal: "Pipeline contact identification + email — le coeur du produit. Première démonstration end-to-end."
+    deliverable: "Un sourcing Seek NZ IT produit des contacts Engineering Manager avec email"
+    depends_on: ["sc-31-1", "sc-31-2"]
+
+  sprint_3:
+    stories: ["sc-31-3", "sc-31-6"]
+    goal: "Hunter Company Search + enrichissement contexte entreprise. Améliore la qualité des contacts ET la richesse des données pour les emails."
+    deliverable: "Les contacts ont un contexte entreprise exploitable pour la génération d'email"
+    depends_on: ["sc-31-4"]
+
+  sprint_4:
+    stories: ["sc-31-7", "sc-31-8"]
+    goal: "Scoring IA contextuel + UX HR. Finalise le pipeline de bout en bout."
+    deliverable: "Chaque contact a un score, une explication, et l'option HR fonctionne"
+    depends_on: ["sc-31-5", "sc-31-6"]
+
+# ============================================================================
+# RISQUES ET MITIGATIONS
+# ============================================================================
+
+risks:
+
+  - risk: "Hunter quota insuffisant en free tier (25 domain searches/mois)"
+    probability: "high"
+    impact: "high"
+    mitigation: |
+      Stratégie de conservation des quotas :
+      1. Mettre en cache les résultats Hunter par domaine (TTL: 30 jours)
+      2. Ne pas relancer Hunter si les contacts sont déjà en base
+      3. Afficher le quota restant dans les settings
+      4. Passer au plan payant Hunter ($34/mois pour 500 searches) dès que le MVP est validé
+      5. Prioriser les domaines les plus importants (entreprises visa accréditées en premier)
+
+  - risk: "Domain resolver retourne un mauvais domaine (ex: PHQ → phq.com au lieu de phq.nz)"
+    probability: "medium"
+    impact: "high"
+    mitigation: |
+      1. Validation du domaine résolu via HTTP check (le site répond ?)
+      2. Préférence aux domaines locaux : si pays = NZ, prioriser .nz sur .com
+      3. Interface de correction manuelle du domaine dans l'UI entreprise
+      4. Log des domaines incorrects détectés pour améliorer le resolver
+
+  - risk: "NZ Immigration API rate limiting instable (400 après plusieurs appels)"
+    probability: "medium"
+    impact: "medium"
+    mitigation: |
+      1. Implémenter un retry avec backoff exponentiel (1s, 2s, 4s)
+      2. Mettre en cache les résultats par nom entreprise normalisé (TTL: 7 jours)
+      3. Queue dédiée avec rate limiting conservateur (1 appel/seconde max)
+      4. Fuzzy matching amélioré pour les trading names (Datacom → Datacom Limited)
+
+  - risk: "Certaines entreprises ont une politique anti-scraping agressive sur leur page /team"
+    probability: "low"
+    impact: "low"
+    mitigation: |
+      1. Playwright avec delays aléatoires (2-5s entre requêtes)
+      2. La page /team est optionnelle — Hunter reste la source primaire
+      3. Graceful degradation : si scraping échoue, log + continuer sans ce contact
+
+  - risk: "Coût IA trop élevé si modèles trop chers pour le scoring"
+    probability: "low"
+    impact: "medium"
+    mitigation: |
+      1. Utiliser un modèle cheap (Mistral 7B via OpenRouter, ~0.0002$/1k tokens)
+      2. Prompt de scoring concis (< 500 tokens input + 200 tokens output = 0.0002$/contact)
+      3. Scoring en batch (pas de streaming, optimise le coût)
+      4. Cache le score si le contact et le profil candidat n'ont pas changé
+
+# ============================================================================
+# DÉPENDANCES EXTERNES
+# ============================================================================
+
+external_dependencies:
+
+  - service: "Hunter.io"
+    usage: "Domain Search (contacts), Email Finder (enrichissement), Company Enrichment (contexte entreprise)"
+    current_plan: "Free (25 searches/mois)"
+    recommended_plan: "Starter ($34/mois, 500 searches) dès validation MVP"
+    already_integrated: true
+
+  - service: "NZ Immigration API"
+    usage: "Vérification sponsor visa accrédité"
+    cost: "Gratuit"
+    already_integrated: true
+    known_issue: "Rate limiting non documenté — mitigation en place (sc-31-7)"
+
+  - service: "OpenRouter"
+    usage: "Scoring IA et génération SectorProfile via LLM"
+    cost: "~0.0002-0.005$ par contact selon modèle"
+    already_integrated: true
+
+  - service: "SerpAPI ou Exa.ai"
+    usage: "Domain resolver fallback (recherche Google pour trouver le bon domaine)"
+    cost: "SerpAPI: ~0.01$/requête. Exa.ai: plan gratuit puis payant."
+    already_integrated: false
+    required_for: "sc-31-1 (domain resolver) — uniquement si Hunter Company Enrichment est insuffisant"
+    note: "Évaluer d'abord Hunter Company Enrichment seul avant d'ajouter cette dépendance"
+
+  - service: "Reacher (self-hosted)"
+    usage: "Vérification MX email (email_status: probable → verified)"
+    cost: "~5$/mois (VPS)"
+    already_integrated: false
+    required_for: "sc-31-5 (email enrichment) — fallback uniquement"
+    note: "Alternative: vérification DNS directe sans service tiers (moins précise mais gratuite)"
