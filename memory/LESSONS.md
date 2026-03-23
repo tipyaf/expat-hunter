@@ -38,3 +38,8 @@ Recurring failures and lessons learned across sessions. Every agent MUST read th
 **Problem**: Les tickets sc-57/58/59 ont été réalisés sans tâches, impossible de savoir ce qui est fait vs ce qui reste.
 **Root cause**: L'agent a travaillé sur le ticket sans le découper en sous-tâches traçables.
 **Rule**: TOUJOURS ajouter des tâches (stories-add-task) dans un ticket Shortcut AVANT de commencer le travail. Chaque étape significative = une tâche. Cocher les tâches au fur et à mesure (stories-update-task isCompleted). Cela permet de savoir exactement où on en est à tout moment, même si la session est interrompue.
+
+### [Quality] TOUJOURS écrire les TU avant de déclarer terminé
+**Problem**: sc-60 — 4 services modifiés (visa_sponsor_registry, email_enricher, company_enricher, sourcing_service) sans aucun test unitaire. Détecté en review par l'utilisateur.
+**Root cause**: L'agent a implémenté le code et déclaré "done" sans écrire les tests, alors que le framework l'exige (Phase 4: Test).
+**Rule**: TOUTE modification de code DOIT être accompagnée de tests unitaires AVANT de pousser. C'est dans les specs du framework (Phase 4). Ne JAMAIS déclarer terminé sans : 1) TU écrits et passants pour chaque fonction modifiée, 2) e2e vérifié si impact frontend. Les TU ne sont PAS optionnels.
