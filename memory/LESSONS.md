@@ -39,6 +39,16 @@ Recurring failures and lessons learned across sessions. Every agent MUST read th
 **Root cause**: L'agent a travaillé sur le ticket sans le découper en sous-tâches traçables.
 **Rule**: TOUJOURS ajouter des tâches (stories-add-task) dans un ticket Shortcut AVANT de commencer le travail. Chaque étape significative = une tâche. Cocher les tâches au fur et à mesure (stories-update-task isCompleted). Cela permet de savoir exactement où on en est à tout moment, même si la session est interrompue.
 
+### [Shortcut] Règles de création de stories — checklist obligatoire
+**Problem**: sc-88 à sc-94 créées sans team → invisibles dans le kanban. Sous-stories pas liées à sc-31 → non rattachées.
+**Root cause**: `stories-create` appelé sans les paramètres `team` et sans lier au parent.
+**Rule**: À chaque `stories-create`, vérifier OBLIGATOIREMENT :
+1. `team` : toujours passer `ya-bes-team` (ou l'équipe du projet)
+2. `epic` : lier à l'épic si applicable
+3. Sous-stories : appeler `stories-add-subtask` immédiatement après création pour lier au parent
+4. Tâches : appeler `stories-add-task` pour chaque étape AVANT de commencer le dev
+5. Description : inclure vision, scope, critères d'acceptation, références
+
 ### [Workflow] JAMAIS coder sans refinement de l'US d'abord
 **Problem**: sc-82 — bug identifié, story créée, mais l'agent est parti coder immédiatement sans présenter l'US pour refinement. Le framework exige une étape de refinement avant tout développement.
 **Root cause**: L'agent a confondu "créer la story" avec "avoir fait le refinement".
