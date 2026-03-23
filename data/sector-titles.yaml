@@ -1,0 +1,1473 @@
+# ============================================================================
+# ExpatHunter — Base statique des titres de postes cibles par secteur
+# Fichier : data/sector-titles.yaml
+# Usage   : SectorTitleService — source primaire avant fallback LLM
+# Version : 1.0.0
+# Date    : 2026-03-23
+# ============================================================================
+#
+# STRUCTURE PAR SECTEUR :
+#
+#   primary   : Managers opérationnels avec pouvoir de recruter — CIBLÉS EN PRIORITÉ
+#               Critère : décident ou influencent directement les embauches dans leur équipe
+#
+#   secondary : Leads, seniors influents, peuvent initier le recrutement
+#               Ciblés si pas de contacts primaires trouvés chez une entreprise
+#
+#   hr_talent : Postes RH/Talent — inclus si option "include_hr" activée (off par défaut)
+#               Note : dans le contexte ExpatHunter (marché caché), on ÉVITE les RH
+#               car ils reçoivent 100x plus de sollicitations que les managers opérationnels
+#
+#   exclude   : Titres trop génériques, seniors sans lien opérationnel, ou postes
+#               qui n'ont pas de pouvoir d'embauche direct
+#
+# STRUCTURE PAR LANGUE/CULTURE :
+#   en_anglophone : UK, AU, NZ, CA, US — titres en anglais
+#   fr            : France, Belgique, Suisse romande — titres en français
+#   de            : Allemagne, Suisse alémanique, Autriche — titres en allemand
+#
+# NOTES IMPORTANTES :
+# - Pour le MVP NZ, seule la section en_anglophone est utilisée
+# - Les variantes sont listées car Hunter.io cherche par titre exact
+# - Les acronymes (CTO, CFO) sont inclus en plus des formes longues
+# - Les titres "Head of X" sont préférés à "Director of X" dans la culture NZ/AU
+#   (culture moins formelle que UK/US)
+#
+# ============================================================================
+
+version: "1.0.0"
+last_updated: "2026-03-23"
+mvp_country: "NZ"
+
+# ============================================================================
+# SECTEUR 1 : IT / Software / Tech
+# ============================================================================
+
+sectors:
+
+  - key: "it_software_tech"
+    display_name:
+      en: "IT / Software / Tech"
+      fr: "Informatique / Logiciel / Tech"
+      de: "IT / Software / Technologie"
+    aliases:
+      - "technology"
+      - "software"
+      - "saas"
+      - "tech"
+      - "digital"
+      - "startup"
+      - "it services"
+
+    titles:
+      en_anglophone:
+        primary:
+          # C-Level technique avec équipe directe
+          - "CTO"
+          - "Chief Technology Officer"
+          - "VP Engineering"
+          - "VP of Engineering"
+          - "Vice President Engineering"
+          # Managers d'équipes de dev (pouvoir d'embauche direct)
+          - "Engineering Manager"
+          - "Head of Engineering"
+          - "Head of Software Engineering"
+          - "Head of Product Engineering"
+          - "Director of Engineering"
+          - "Software Engineering Manager"
+          # Managers produit avec budget équipe
+          - "Head of Product"
+          - "VP Product"
+          - "Director of Product"
+          - "Product Director"
+          # Managers infrastructure/cloud
+          - "Head of Infrastructure"
+          - "Head of Platform"
+          - "Director of Platform Engineering"
+          - "Head of DevOps"
+          - "Head of Cloud"
+          # Managers data/ML (souvent recrutent leurs propres équipes)
+          - "Head of Data"
+          - "Head of Data Engineering"
+          - "Director of Data Science"
+          - "VP Data"
+          - "Head of Machine Learning"
+          - "Head of AI"
+
+        secondary:
+          - "Lead Software Engineer"
+          - "Principal Engineer"
+          - "Staff Engineer"
+          - "Principal Software Engineer"
+          - "Lead Developer"
+          - "Technical Lead"
+          - "Tech Lead"
+          - "Lead Backend Engineer"
+          - "Lead Frontend Engineer"
+          - "Lead Full Stack Engineer"
+          - "Principal Product Manager"
+          - "Senior Engineering Manager"
+          - "Platform Lead"
+          - "Data Science Lead"
+          - "ML Lead"
+
+        hr_talent:
+          - "Tech Recruiter"
+          - "Technical Recruiter"
+          - "Engineering Recruiter"
+          - "Talent Acquisition"
+          - "Head of Talent"
+          - "Head of People"
+          - "VP People"
+
+        exclude:
+          - "CEO"
+          - "COO"
+          - "CFO"
+          - "General Manager"
+          - "Software Engineer"
+          - "Developer"
+          - "QA Engineer"
+          - "Scrum Master"
+          - "Agile Coach"
+          - "Business Analyst"
+          - "IT Support"
+
+      fr:
+        primary:
+          - "Directeur Technique"
+          - "Directeur des Systèmes d'Information"
+          - "DSI"
+          - "CTO"
+          - "Responsable Engineering"
+          - "Responsable R&D"
+          - "Directeur R&D"
+          - "Head of Engineering"
+          - "Responsable Développement"
+          - "Chef de Projet Technique"
+          - "Directeur Produit"
+          - "VP Engineering"
+          - "Responsable Plateforme"
+          - "Directeur Data"
+          - "Responsable Data Engineering"
+
+        secondary:
+          - "Lead Developer"
+          - "Lead Technique"
+          - "Tech Lead"
+          - "Architecte Logiciel"
+          - "Architecte Technique"
+          - "Principal Engineer"
+          - "Staff Engineer"
+
+        hr_talent:
+          - "Responsable Recrutement Tech"
+          - "Chargé de Recrutement IT"
+          - "Talent Acquisition"
+
+        exclude:
+          - "PDG"
+          - "DG"
+          - "Développeur"
+          - "Ingénieur Logiciel"
+          - "Chef de Projet"
+          - "Analyste"
+
+      de:
+        primary:
+          - "CTO"
+          - "Technischer Direktor"
+          - "Leiter Softwareentwicklung"
+          - "Leiter Entwicklung"
+          - "Head of Engineering"
+          - "VP Engineering"
+          - "Entwicklungsleiter"
+          - "Leiter IT"
+          - "IT-Leiter"
+          - "Leiter Produktentwicklung"
+          - "Leiter Plattform"
+          - "Leiter Data Engineering"
+          - "Leiter Künstliche Intelligenz"
+
+        secondary:
+          - "Lead Developer"
+          - "Lead Software Engineer"
+          - "Technischer Projektleiter"
+          - "Principal Engineer"
+          - "Leitender Entwickler"
+
+        hr_talent:
+          - "IT-Recruiter"
+          - "Tech Recruiter"
+          - "Leiter Personal"
+
+        exclude:
+          - "Geschäftsführer"
+          - "Softwareentwickler"
+          - "Entwickler"
+          - "Projektleiter"
+
+# ============================================================================
+# SECTEUR 2 : Finance / Fintech / Banking
+# ============================================================================
+
+  - key: "finance_fintech_banking"
+    display_name:
+      en: "Finance / Fintech / Banking"
+      fr: "Finance / Fintech / Banque"
+      de: "Finanzen / Fintech / Bankwesen"
+    aliases:
+      - "finance"
+      - "fintech"
+      - "banking"
+      - "financial services"
+      - "accounting"
+      - "investment"
+      - "insurance"
+      - "wealth management"
+
+    titles:
+      en_anglophone:
+        primary:
+          # Dirigeants finance avec équipes
+          - "CFO"
+          - "Chief Financial Officer"
+          - "Finance Director"
+          - "Director of Finance"
+          - "Head of Finance"
+          - "VP Finance"
+          - "Vice President Finance"
+          # Managers comptabilité/contrôle de gestion
+          - "Financial Controller"
+          - "Head of Financial Reporting"
+          - "Head of Accounting"
+          - "Head of FP&A"
+          - "Head of Treasury"
+          # Fintech / tech finance
+          - "Head of Fintech"
+          - "Head of Digital Banking"
+          - "Head of Payments"
+          - "Director of Payments"
+          - "Head of Risk"
+          - "Chief Risk Officer"
+          - "Head of Compliance"
+          # Investment / Wealth
+          - "Head of Investment"
+          - "Portfolio Manager"
+          - "Head of Wealth Management"
+          - "Fund Manager"
+          - "Investment Director"
+
+        secondary:
+          - "Finance Manager"
+          - "Senior Finance Manager"
+          - "Group Finance Manager"
+          - "Senior Financial Analyst"
+          - "Lead Financial Analyst"
+          - "Senior Controller"
+          - "Senior Accountant"
+          - "Treasury Manager"
+          - "Risk Manager"
+          - "Compliance Manager"
+          - "Senior Risk Analyst"
+
+        hr_talent:
+          - "Finance Recruiter"
+          - "Head of People & Culture"
+          - "Talent Acquisition Manager"
+
+        exclude:
+          - "CEO"
+          - "COO"
+          - "Accountant"
+          - "Financial Analyst"
+          - "Bookkeeper"
+          - "Payroll Officer"
+          - "Accounts Payable"
+          - "Accounts Receivable"
+          - "Finance Administrator"
+
+      fr:
+        primary:
+          - "Directeur Financier"
+          - "DAF"
+          - "CFO"
+          - "Directeur Comptable"
+          - "Contrôleur de Gestion"
+          - "Directeur du Contrôle de Gestion"
+          - "Responsable Administratif et Financier"
+          - "RAF"
+          - "Responsable Comptable"
+          - "Responsable Trésorerie"
+          - "Directeur des Risques"
+          - "Responsable Conformité"
+          - "Directeur Fintech"
+          - "Directeur Banque Digitale"
+          - "Responsable Gestion Actifs"
+
+        secondary:
+          - "Responsable Finance"
+          - "Responsable Consolidation"
+          - "Analyste Financier Senior"
+          - "Responsable Budget"
+          - "Gestionnaire de Risques"
+
+        hr_talent:
+          - "Responsable RH Finance"
+          - "Recruteur Finance"
+
+        exclude:
+          - "Comptable"
+          - "Analyste Financier"
+          - "Assistant Comptable"
+          - "Gestionnaire Paie"
+
+      de:
+        primary:
+          - "CFO"
+          - "Finanzvorstand"
+          - "Kaufmännischer Direktor"
+          - "Leiter Finanzen"
+          - "Finanzleiter"
+          - "Leiter Controlling"
+          - "Leiter Rechnungswesen"
+          - "Leiter Treasury"
+          - "Leiter Risikomanagement"
+          - "Leiter Compliance"
+          - "Head of Finance"
+          - "Leiter Fintech"
+          - "Leiter Digital Banking"
+
+        secondary:
+          - "Finance Manager"
+          - "Senior Controller"
+          - "Risikomanager"
+          - "Compliance Manager"
+
+        hr_talent:
+          - "Finance-Recruiter"
+          - "Personalleiter"
+
+        exclude:
+          - "Buchhalter"
+          - "Finanzanalyst"
+          - "Bilanzbuchhalter"
+          - "Lohnbuchhalter"
+
+# ============================================================================
+# SECTEUR 3 : Healthcare / Medtech
+# ============================================================================
+
+  - key: "healthcare_medtech"
+    display_name:
+      en: "Healthcare / Medtech"
+      fr: "Santé / Medtech"
+      de: "Gesundheitswesen / Medizintechnik"
+    aliases:
+      - "healthcare"
+      - "medtech"
+      - "health"
+      - "medical"
+      - "pharma"
+      - "biotech"
+      - "clinical"
+      - "hospital"
+      - "aged care"
+      - "disability services"
+
+    titles:
+      en_anglophone:
+        primary:
+          # Direction clinique / opérationnelle
+          - "Clinical Director"
+          - "Medical Director"
+          - "Director of Nursing"
+          - "Chief Nursing Officer"
+          - "Head of Clinical Operations"
+          - "Head of Healthcare"
+          # Direction tech / produit dans le Medtech
+          - "Head of Product" # dans un éditeur Medtech
+          - "Head of Engineering" # dans un éditeur Medtech
+          - "CTO" # Medtech startup
+          - "Chief Medical Officer"
+          - "CMO"
+          # Opérations hospitalières / cliniques
+          - "Hospital Director"
+          - "General Manager" # dans les cliniques privées NZ/AU c'est le décideur
+          - "Chief Operating Officer" # dans les cliniques privées
+          - "Operations Manager" # cliniques et services de santé
+          # Pharmacie / Biotech / Pharma
+          - "Head of Regulatory Affairs"
+          - "Head of Clinical Development"
+          - "Head of Medical Affairs"
+          - "VP Medical Affairs"
+          - "Director of Clinical Operations"
+          # Aged Care / Disability (NZ/AU spécifique)
+          - "Regional Manager"
+          - "Area Manager"
+          - "Service Manager"
+          - "Head of Care"
+
+        secondary:
+          - "Clinical Manager"
+          - "Nurse Manager"
+          - "Ward Manager"
+          - "Senior Clinical Lead"
+          - "Team Leader Clinical"
+          - "Pharmacy Manager"
+          - "Radiology Manager"
+          - "Allied Health Manager"
+          - "Biomedical Engineer Manager"
+          - "Lead Clinician"
+
+        hr_talent:
+          - "Healthcare Recruiter"
+          - "Clinical Recruiter"
+          - "Talent Manager"
+          - "Head of People"
+
+        exclude:
+          - "Nurse"
+          - "Doctor"
+          - "GP"
+          - "Physiotherapist"
+          - "Radiologist"
+          - "Pharmacist"
+          - "Social Worker"
+          - "Care Worker"
+          - "Administrator"
+          - "Receptionist"
+
+      fr:
+        primary:
+          - "Directeur Médical"
+          - "Directeur de Soins Infirmiers"
+          - "Directeur des Opérations Cliniques"
+          - "Directeur d'Établissement"
+          - "Médecin DIM"
+          - "Responsable des Affaires Réglementaires"
+          - "Responsable R&D Clinique"
+          - "Responsable Affaires Médicales"
+          - "Directeur Technique" # dans les labos
+          - "Directeur Général" # cliniques privées
+
+        secondary:
+          - "Cadre de Santé"
+          - "Responsable Qualité"
+          - "Responsable Pharmacie"
+          - "Chef de Service"
+          - "Responsable Biomedical"
+
+        hr_talent:
+          - "Chargé de Recrutement Médical"
+          - "Responsable RH Santé"
+
+        exclude:
+          - "Infirmier"
+          - "Médecin"
+          - "Aide Soignant"
+          - "Kinésithérapeute"
+          - "Pharmacien"
+
+      de:
+        primary:
+          - "Ärztlicher Direktor"
+          - "Pflegedirektor"
+          - "Klinikdirektor"
+          - "Geschäftsführer" # dans les cliniques privées
+          - "Leiter Klinische Entwicklung"
+          - "Leiter Regulatory Affairs"
+          - "Leiter Medical Affairs"
+          - "Leiter Medizintechnik"
+          - "CTO" # Medtech
+          - "Head of Engineering" # Medtech
+
+        secondary:
+          - "Pflegedienstleitung"
+          - "Stationsleitung"
+          - "Klinischer Manager"
+          - "Apothekenleiter"
+
+        hr_talent:
+          - "Gesundheits-Recruiter"
+          - "Personalleiter Gesundheitswesen"
+
+        exclude:
+          - "Arzt"
+          - "Krankenschwester"
+          - "Pfleger"
+          - "Physiotherapeut"
+
+# ============================================================================
+# SECTEUR 4 : Marketing / Growth / E-commerce
+# ============================================================================
+
+  - key: "marketing_growth_ecommerce"
+    display_name:
+      en: "Marketing / Growth / E-commerce"
+      fr: "Marketing / Croissance / E-commerce"
+      de: "Marketing / Wachstum / E-Commerce"
+    aliases:
+      - "marketing"
+      - "growth"
+      - "ecommerce"
+      - "e-commerce"
+      - "digital marketing"
+      - "performance marketing"
+      - "brand"
+      - "communications"
+      - "content"
+
+    titles:
+      en_anglophone:
+        primary:
+          - "CMO"
+          - "Chief Marketing Officer"
+          - "VP Marketing"
+          - "Vice President Marketing"
+          - "Marketing Director"
+          - "Director of Marketing"
+          - "Head of Marketing"
+          - "Head of Growth"
+          - "Growth Director"
+          - "VP Growth"
+          - "Head of Digital Marketing"
+          - "Director of Digital"
+          - "Head of E-commerce"
+          - "Director of E-commerce"
+          - "Head of Brand"
+          - "Brand Director"
+          - "Head of Communications"
+          - "Head of Content"
+          - "Head of Performance Marketing"
+          - "Head of Acquisition"
+          - "Head of Demand Generation"
+          - "VP Demand Generation"
+
+        secondary:
+          - "Senior Marketing Manager"
+          - "Growth Manager"
+          - "Lead Growth"
+          - "Senior Digital Marketing Manager"
+          - "E-commerce Manager"
+          - "Performance Marketing Manager"
+          - "Acquisition Manager"
+          - "Brand Manager"
+          - "Content Marketing Manager"
+          - "SEO Manager"
+          - "CRM Manager"
+          - "Lead Marketing"
+
+        hr_talent:
+          - "Marketing Recruiter"
+          - "Talent Manager"
+
+        exclude:
+          - "Marketing Coordinator"
+          - "Marketing Assistant"
+          - "Social Media Manager"
+          - "Graphic Designer"
+          - "Copywriter"
+          - "SEO Specialist"
+          - "Campaign Manager" # exécutant
+          - "Account Manager" # agence
+
+      fr:
+        primary:
+          - "Directeur Marketing"
+          - "Directeur Digital"
+          - "CMO"
+          - "Responsable Marketing"
+          - "Directeur de la Croissance"
+          - "Head of Growth"
+          - "Directeur E-commerce"
+          - "Responsable E-commerce"
+          - "Directeur de la Communication"
+          - "Directeur Brand"
+          - "Responsable Acquisition"
+          - "Directeur Performance"
+          - "VP Marketing"
+
+        secondary:
+          - "Responsable Croissance"
+          - "Senior Marketing Manager"
+          - "Responsable SEO"
+          - "Responsable CRM"
+          - "Growth Manager"
+
+        hr_talent:
+          - "Recruteur Marketing"
+          - "Chargé de Recrutement Digital"
+
+        exclude:
+          - "Chef de Projet Marketing"
+          - "Coordinateur Marketing"
+          - "Community Manager"
+          - "Rédacteur"
+          - "Graphiste"
+
+      de:
+        primary:
+          - "CMO"
+          - "Marketingdirektor"
+          - "Leiter Marketing"
+          - "VP Marketing"
+          - "Leiter Wachstum"
+          - "Head of Growth"
+          - "Leiter E-Commerce"
+          - "Leiter Digitales Marketing"
+          - "Leiter Kommunikation"
+          - "Leiter Marke"
+          - "Leiter Performance Marketing"
+          - "Leiter Kundengewinnung"
+
+        secondary:
+          - "Marketing Manager"
+          - "Growth Manager"
+          - "E-Commerce Manager"
+          - "Senior Marketing Manager"
+
+        hr_talent:
+          - "Marketing-Recruiter"
+
+        exclude:
+          - "Marketing-Koordinator"
+          - "Community Manager"
+          - "Texter"
+          - "Grafikdesigner"
+
+# ============================================================================
+# SECTEUR 5 : Operations / Logistics / Supply Chain
+# ============================================================================
+
+  - key: "operations_logistics_supply_chain"
+    display_name:
+      en: "Operations / Logistics / Supply Chain"
+      fr: "Opérations / Logistique / Supply Chain"
+      de: "Betrieb / Logistik / Lieferkette"
+    aliases:
+      - "operations"
+      - "logistics"
+      - "supply chain"
+      - "procurement"
+      - "warehousing"
+      - "distribution"
+      - "transport"
+      - "freight"
+
+    titles:
+      en_anglophone:
+        primary:
+          - "COO"
+          - "Chief Operating Officer"
+          - "Operations Director"
+          - "Director of Operations"
+          - "Head of Operations"
+          - "VP Operations"
+          - "Supply Chain Director"
+          - "Director of Supply Chain"
+          - "Head of Supply Chain"
+          - "VP Supply Chain"
+          - "Logistics Director"
+          - "Director of Logistics"
+          - "Head of Logistics"
+          - "Procurement Director"
+          - "Head of Procurement"
+          - "VP Procurement"
+          - "Head of Distribution"
+          - "Head of Warehousing"
+          - "Head of Fulfilment"
+          - "Transport Manager" # PME NZ/AU
+          - "General Manager Operations" # PME NZ/AU
+
+        secondary:
+          - "Operations Manager"
+          - "Senior Operations Manager"
+          - "Supply Chain Manager"
+          - "Logistics Manager"
+          - "Procurement Manager"
+          - "Distribution Manager"
+          - "Warehouse Manager"
+          - "Fleet Manager"
+          - "Inventory Manager"
+          - "Planning Manager"
+
+        hr_talent:
+          - "Operations Recruiter"
+          - "Head of People"
+
+        exclude:
+          - "Operations Coordinator"
+          - "Logistics Coordinator"
+          - "Driver"
+          - "Warehouse Operator"
+          - "Picker Packer"
+          - "Forklift Operator"
+          - "Dispatcher"
+
+      fr:
+        primary:
+          - "Directeur des Opérations"
+          - "Directeur Supply Chain"
+          - "Directeur Logistique"
+          - "Directeur Achats"
+          - "COO"
+          - "Directeur Général Adjoint Opérations"
+          - "Responsable Supply Chain"
+          - "Responsable Logistique"
+          - "Directeur Distribution"
+          - "Responsable des Achats"
+          - "Head of Operations"
+
+        secondary:
+          - "Responsable Opérations"
+          - "Chef Logistique"
+          - "Responsable Entrepôt"
+          - "Responsable Planning"
+          - "Responsable Transport"
+
+        hr_talent:
+          - "Chargé de Recrutement Logistique"
+
+        exclude:
+          - "Coordinateur Logistique"
+          - "Cariste"
+          - "Préparateur de Commandes"
+
+      de:
+        primary:
+          - "COO"
+          - "Betriebsleiter"
+          - "Leiter Betrieb"
+          - "Leiter Supply Chain"
+          - "Leiter Logistik"
+          - "Leiter Einkauf"
+          - "Leiter Distribution"
+          - "Leiter Lager"
+          - "Head of Operations"
+          - "Leiter Lieferkette"
+          - "Dispositionsleiter"
+
+        secondary:
+          - "Operations Manager"
+          - "Supply Chain Manager"
+          - "Logistikmanager"
+          - "Einkaufsmanager"
+          - "Lagerleiter"
+
+        hr_talent:
+          - "Logistik-Recruiter"
+
+        exclude:
+          - "Lagerist"
+          - "Fahrer"
+          - "Staplerfahrer"
+          - "Koordinator"
+
+# ============================================================================
+# SECTEUR 6 : Construction / Property / Real Estate
+# ============================================================================
+
+  - key: "construction_property_real_estate"
+    display_name:
+      en: "Construction / Property / Real Estate"
+      fr: "Construction / Immobilier"
+      de: "Bauwesen / Immobilien"
+    aliases:
+      - "construction"
+      - "property"
+      - "real estate"
+      - "building"
+      - "architecture"
+      - "civil"
+      - "infrastructure"
+      - "project development"
+      - "property development"
+
+    titles:
+      en_anglophone:
+        primary:
+          # Construction
+          - "Construction Manager"
+          - "Project Director"
+          - "Head of Construction"
+          - "Director of Construction"
+          - "General Manager Construction"
+          - "Regional Manager Construction"
+          - "Operations Manager Construction"
+          - "Head of Project Delivery"
+          # Property Development
+          - "Development Director"
+          - "Head of Development"
+          - "Property Development Manager"
+          - "Head of Property"
+          # Real Estate
+          - "Head of Real Estate"
+          - "Real Estate Director"
+          - "General Manager Property"
+          - "Asset Manager" # grands fonds immobiliers
+          - "Portfolio Manager" # REIT, fonds immo
+          # Architecture / Design
+          - "Director of Architecture"
+          - "Head of Design"
+          - "Architecture Director"
+
+        secondary:
+          - "Senior Project Manager"
+          - "Senior Construction Manager"
+          - "Civil Project Manager"
+          - "Quantity Surveyor Manager"
+          - "Site Manager" # peut recruter son équipe
+          - "Commercial Manager"
+          - "Contracts Manager"
+          - "Development Manager"
+
+        hr_talent:
+          - "Construction Recruiter"
+          - "Head of People"
+
+        exclude:
+          - "Site Supervisor"
+          - "Foreman"
+          - "Carpenter"
+          - "Electrician"
+          - "Plumber"
+          - "Quantity Surveyor" # si pas manager
+          - "Project Coordinator"
+          - "Estimator"
+
+      fr:
+        primary:
+          - "Directeur de Construction"
+          - "Directeur de Projet"
+          - "Directeur du Développement"
+          - "Directeur Immobilier"
+          - "Responsable Construction"
+          - "Responsable Promotion Immobilière"
+          - "Directeur Technique"
+          - "Chef de Projet Senior"
+          - "Directeur Programme"
+          - "Responsable d'Opérations"
+
+        secondary:
+          - "Responsable Projet"
+          - "Chef de Chantier"
+          - "Conducteur de Travaux Principal"
+          - "Responsable Commercial"
+
+        hr_talent:
+          - "Chargé de Recrutement BTP"
+
+        exclude:
+          - "Conducteur de Travaux"
+          - "Chef de Chantier Junior"
+          - "Électricien"
+          - "Plombier"
+          - "Maçon"
+
+      de:
+        primary:
+          - "Bau-Direktor"
+          - "Projektleiter" # quand manager d'une grande équipe
+          - "Leiter Bau"
+          - "Bauleiter" # en charge de plusieurs chantiers
+          - "Leiter Projektentwicklung"
+          - "Immobiliendirektor"
+          - "Leiter Immobilien"
+          - "Geschäftsführer" # dans les PME de construction
+          - "Head of Construction"
+          - "Regionalleiter Bau"
+
+        secondary:
+          - "Senior-Projektleiter"
+          - "Oberbauleiter"
+          - "Kaufmännischer Leiter"
+
+        hr_talent:
+          - "Bau-Recruiter"
+
+        exclude:
+          - "Bauleiter Junior"
+          - "Elektriker"
+          - "Klempner"
+          - "Maurer"
+
+# ============================================================================
+# SECTEUR 7 : Engineering (Mécanique / Industriel)
+# ============================================================================
+
+  - key: "engineering_mechanical_industrial"
+    display_name:
+      en: "Engineering (Mechanical / Industrial)"
+      fr: "Ingénierie (Mécanique / Industrielle)"
+      de: "Ingenieurwesen (Mechanisch / Industriell)"
+    aliases:
+      - "engineering"
+      - "mechanical engineering"
+      - "industrial"
+      - "manufacturing"
+      - "automation"
+      - "robotics"
+      - "aerospace"
+      - "automotive"
+      - "process engineering"
+
+    titles:
+      en_anglophone:
+        primary:
+          - "Chief Engineer"
+          - "Head of Engineering"
+          - "Director of Engineering"
+          - "Engineering Director"
+          - "VP Engineering"
+          - "Head of Manufacturing"
+          - "Manufacturing Director"
+          - "Plant Manager"
+          - "Factory Manager"
+          - "Head of Production"
+          - "Production Director"
+          - "Director of Operations" # dans le manufacturing
+          - "Head of Process Engineering"
+          - "Head of Mechanical Engineering"
+          - "Technical Director"
+          - "Head of R&D"
+          - "R&D Director"
+          - "Head of Design Engineering"
+          - "Head of Automation"
+          - "Head of Maintenance"
+          - "General Manager" # PME industrielles NZ/AU
+
+        secondary:
+          - "Senior Engineer"
+          - "Principal Engineer"
+          - "Lead Engineer"
+          - "Lead Mechanical Engineer"
+          - "Senior Project Engineer"
+          - "Operations Manager"
+          - "Production Manager"
+          - "Maintenance Manager"
+          - "Process Engineering Manager"
+
+        hr_talent:
+          - "Engineering Recruiter"
+          - "Technical Recruiter"
+          - "Head of People"
+
+        exclude:
+          - "Engineer"
+          - "Mechanical Engineer"
+          - "Process Engineer"
+          - "Technician"
+          - "Operator"
+          - "Machinist"
+          - "Fitter"
+          - "Welder"
+
+      fr:
+        primary:
+          - "Directeur Technique"
+          - "Directeur Ingénierie"
+          - "Chef d'Usine"
+          - "Directeur de Production"
+          - "Directeur R&D"
+          - "Responsable Bureau d'Études"
+          - "Responsable Industrialisation"
+          - "Directeur d'Exploitation"
+          - "Directeur de Site"
+          - "Responsable Maintenance"
+          - "Head of Engineering"
+
+        secondary:
+          - "Responsable Ingénierie"
+          - "Ingénieur Principal"
+          - "Chef de Projet Industriel"
+          - "Responsable Production"
+          - "Responsable Process"
+
+        hr_talent:
+          - "Chargé de Recrutement Industrie"
+
+        exclude:
+          - "Ingénieur"
+          - "Technicien"
+          - "Opérateur"
+          - "Agent de Maintenance"
+
+      de:
+        primary:
+          - "Technischer Direktor"
+          - "Leiter Engineering"
+          - "Werksleiter"
+          - "Produktionsleiter"
+          - "Leiter Fertigung"
+          - "Leiter Forschung und Entwicklung"
+          - "F&E-Leiter"
+          - "Konstruktionsleiter"
+          - "Leiter Automatisierung"
+          - "Leiter Instandhaltung"
+          - "Leiter Prozessingenieurwesen"
+          - "Geschäftsführer" # PME industrielles
+
+        secondary:
+          - "Leitender Ingenieur"
+          - "Hauptingenieur"
+          - "Projektingenieur Senior"
+          - "Betriebsleiter"
+
+        hr_talent:
+          - "Technischer Recruiter"
+          - "Ingenieur-Recruiter"
+
+        exclude:
+          - "Ingenieur"
+          - "Techniker"
+          - "Maschinenbauer"
+          - "Bediener"
+
+# ============================================================================
+# SECTEUR 8 : Legal / Compliance
+# ============================================================================
+
+  - key: "legal_compliance"
+    display_name:
+      en: "Legal / Compliance"
+      fr: "Juridique / Conformité"
+      de: "Recht / Compliance"
+    aliases:
+      - "legal"
+      - "compliance"
+      - "law"
+      - "regulatory"
+      - "corporate legal"
+      - "in-house legal"
+
+    titles:
+      en_anglophone:
+        primary:
+          - "General Counsel"
+          - "Chief Legal Officer"
+          - "CLO"
+          - "Head of Legal"
+          - "Legal Director"
+          - "Director of Legal"
+          - "VP Legal"
+          - "Head of Compliance"
+          - "Chief Compliance Officer"
+          - "CCO"
+          - "Head of Risk and Compliance"
+          - "Director of Compliance"
+          - "Head of Regulatory Affairs"
+          - "Head of Corporate Affairs"
+          - "Managing Partner" # cabinets d'avocats
+          - "Partner" # cabinets d'avocats (décident des embauches)
+          - "Head of Employment Law"
+
+        secondary:
+          - "Senior Legal Counsel"
+          - "Senior Lawyer"
+          - "Senior Solicitor"
+          - "Legal Manager"
+          - "Compliance Manager"
+          - "Risk Manager"
+          - "Regulatory Affairs Manager"
+          - "Senior Associate" # cabinets d'avocats
+
+        hr_talent:
+          - "Legal Recruiter"
+          - "Head of People"
+
+        exclude:
+          - "Lawyer"
+          - "Solicitor"
+          - "Paralegal"
+          - "Legal Assistant"
+          - "Legal Secretary"
+          - "Compliance Analyst"
+          - "Compliance Officer" # rôle exécutant
+
+      fr:
+        primary:
+          - "Directeur Juridique"
+          - "General Counsel"
+          - "Responsable Juridique"
+          - "Directeur des Affaires Juridiques"
+          - "Responsable Conformité"
+          - "Directeur Conformité"
+          - "Associé Gérant"
+          - "Associé" # cabinets d'avocats
+          - "Directeur des Affaires Réglementaires"
+
+        secondary:
+          - "Juriste Senior"
+          - "Responsable Réglementaire"
+          - "Chef du Service Juridique"
+          - "Avocat Associé"
+
+        hr_talent:
+          - "Chargé de Recrutement Juridique"
+
+        exclude:
+          - "Juriste"
+          - "Paralégal"
+          - "Assistant Juridique"
+          - "Clerc de Notaire"
+
+      de:
+        primary:
+          - "General Counsel"
+          - "Chefjurist"
+          - "Leiter Recht"
+          - "Leiter Compliance"
+          - "Rechtsdirektor"
+          - "Chief Compliance Officer"
+          - "Leiter Regulatorische Angelegenheiten"
+          - "Geschäftsführender Partner"
+          - "Gesellschafter" # cabinets d'avocats
+
+        secondary:
+          - "Senior-Jurist"
+          - "Compliance-Manager"
+          - "Risikomanager"
+          - "Rechtsanwalt Senior"
+
+        hr_talent:
+          - "Legal-Recruiter"
+
+        exclude:
+          - "Jurist"
+          - "Rechtsanwalt"
+          - "Paralegale"
+          - "Rechtsanwaltsgehilfe"
+
+# ============================================================================
+# SECTEUR 9 : Education / Edtech
+# ============================================================================
+
+  - key: "education_edtech"
+    display_name:
+      en: "Education / Edtech"
+      fr: "Éducation / Edtech"
+      de: "Bildung / Edtech"
+    aliases:
+      - "education"
+      - "edtech"
+      - "elearning"
+      - "e-learning"
+      - "training"
+      - "learning"
+      - "university"
+      - "school"
+      - "vocational"
+
+    titles:
+      en_anglophone:
+        primary:
+          # Edtech / produit
+          - "Head of Product" # éditeurs Edtech
+          - "CTO" # startups Edtech
+          - "Head of Engineering" # éditeurs Edtech
+          - "VP Product" # éditeurs Edtech
+          # Institutions éducatives
+          - "Principal" # NZ/AU : directeur d'école
+          - "Head of School"
+          - "Head of Faculty"
+          - "Dean" # universités
+          - "Head of Department"
+          - "Director of Studies"
+          - "Director of Education"
+          - "Head of Curriculum"
+          # Formation professionnelle
+          - "Training Manager"
+          - "Head of Learning & Development"
+          - "Head of L&D"
+          - "Director of Learning"
+          - "L&D Director"
+          # Opérations institutions privées
+          - "General Manager" # écoles privées NZ/AU
+          - "CEO" # écoles privées (directement décideur embauche)
+          - "Operations Manager" # institutions privées
+
+        secondary:
+          - "Senior Teacher" # NZ: décide parfois des remplaçants
+          - "Deputy Principal"
+          - "Associate Dean"
+          - "Senior Learning Designer"
+          - "Lead Instructional Designer"
+          - "Head Teacher"
+          - "Training Manager"
+
+        hr_talent:
+          - "Education Recruiter"
+          - "Head of People"
+          - "Staff Recruitment Manager"
+
+        exclude:
+          - "Teacher"
+          - "Lecturer"
+          - "Tutor"
+          - "Teaching Assistant"
+          - "Education Assistant"
+          - "Admin Officer"
+
+      fr:
+        primary:
+          - "Directeur d'École"
+          - "Directeur de Formation"
+          - "Directeur Pédagogique"
+          - "Directeur des Études"
+          - "Doyen"
+          - "Responsable Formation"
+          - "Directeur L&D"
+          - "Directeur Edtech"
+          - "CTO" # éditeurs Edtech
+          - "Responsable Produit" # éditeurs Edtech
+          - "Proviseur"
+          - "Chef d'Établissement"
+
+        secondary:
+          - "Responsable Pédagogique"
+          - "Formateur Senior"
+          - "Ingénieur Pédagogique Senior"
+          - "Responsable des Programmes"
+
+        hr_talent:
+          - "Chargé de Recrutement Éducation"
+
+        exclude:
+          - "Professeur"
+          - "Formateur"
+          - "Enseignant"
+          - "Assistant Pédagogique"
+
+      de:
+        primary:
+          - "Schulleiter"
+          - "Bildungsdirektor"
+          - "Leiter Weiterbildung"
+          - "Studiendekan"
+          - "Leiter Bildung"
+          - "Head of Learning"
+          - "CTO" # Edtech
+          - "Bildungstechnologie-Direktor"
+          - "Leiter Lerndesign"
+
+        secondary:
+          - "Stellvertretender Schulleiter"
+          - "Ausbildungsleiter"
+          - "Senior-Lehrdesigner"
+
+        hr_talent:
+          - "Bildungs-Recruiter"
+
+        exclude:
+          - "Lehrer"
+          - "Dozent"
+          - "Tutor"
+          - "Lehrbeauftragter"
+
+# ============================================================================
+# SECTEUR 10 : Hospitality / Tourism
+# ============================================================================
+
+  - key: "hospitality_tourism"
+    display_name:
+      en: "Hospitality / Tourism"
+      fr: "Hôtellerie / Tourisme"
+      de: "Gastgewerbe / Tourismus"
+    aliases:
+      - "hospitality"
+      - "tourism"
+      - "hotel"
+      - "restaurant"
+      - "food and beverage"
+      - "accommodation"
+      - "travel"
+      - "events"
+
+    titles:
+      en_anglophone:
+        primary:
+          # Hôtels
+          - "General Manager" # CLEF : le GM d'hôtel recrute tout son monde
+          - "Hotel Manager"
+          - "Hotel Director"
+          - "Director of Operations"
+          - "Operations Manager"
+          - "Regional Manager"
+          - "Area General Manager"
+          # Restauration / F&B
+          - "Food and Beverage Manager"
+          - "F&B Manager"
+          - "Head of Food & Beverage"
+          - "Restaurant Manager"
+          - "Head Chef" # recrute sa brigade
+          - "Executive Chef"
+          # Tourisme / Voyages
+          - "Director of Tourism"
+          - "Head of Tourism"
+          - "Travel Operations Manager"
+          - "Head of Destination Management"
+          # Events
+          - "Head of Events"
+          - "Events Director"
+          - "Director of Events"
+          # Corporate (chaînes)
+          - "VP Operations"
+          - "Director of Sales" # grande hôtellerie
+
+        secondary:
+          - "Deputy General Manager"
+          - "Assistant General Manager"
+          - "Front Office Manager"
+          - "Rooms Division Manager"
+          - "Revenue Manager"
+          - "Sales Manager"
+          - "Banquet Manager"
+          - "Executive Housekeeper"
+
+        hr_talent:
+          - "Hospitality Recruiter"
+          - "HR Manager" # dans les grandes chaînes
+          - "Head of People"
+
+        exclude:
+          - "Receptionist"
+          - "Concierge"
+          - "Waiter"
+          - "Chef de Partie"
+          - "Housekeeper"
+          - "Barman"
+          - "Tour Guide"
+          - "Travel Agent"
+
+      fr:
+        primary:
+          - "Directeur d'Hôtel"
+          - "Directeur Général" # hôtels
+          - "Directeur de la Restauration"
+          - "Directeur F&B"
+          - "Directeur des Opérations"
+          - "Directeur Régional"
+          - "Chef Exécutif"
+          - "Directeur du Tourisme"
+          - "Directeur des Événements"
+          - "Directeur Commercial"
+
+        secondary:
+          - "Directeur Adjoint"
+          - "Responsable d'Exploitation"
+          - "Directeur de Salle"
+          - "Revenue Manager"
+
+        hr_talent:
+          - "Chargé de Recrutement Hôtellerie"
+
+        exclude:
+          - "Réceptionniste"
+          - "Serveur"
+          - "Commis"
+          - "Bagagiste"
+          - "Gouvernant"
+
+      de:
+        primary:
+          - "Hoteldirektor"
+          - "Generalmanager" # hôtels
+          - "Leiter Gastronomie"
+          - "Leiter Food & Beverage"
+          - "Betriebsleiter Hotel"
+          - "Regionalleiter"
+          - "Küchenchef" # recrute sa brigade
+          - "Leiter Veranstaltungen"
+          - "Leiter Tourismus"
+
+        secondary:
+          - "Stellvertretender Hoteldirektor"
+          - "Front-Office-Manager"
+          - "Revenue-Manager"
+
+        hr_talent:
+          - "Gastgewerbe-Recruiter"
+
+        exclude:
+          - "Rezeptionist"
+          - "Kellner"
+          - "Koch"
+          - "Zimmermädchen"
+          - "Reinigungskraft"
+
+# ============================================================================
+# MÉTADONNÉES DE FILTRAGE
+# ============================================================================
+
+# Titres universellement exclus — peu importe le secteur
+# Ces titres sont si génériques qu'ils polluent les résultats Hunter
+universal_exclude:
+  - "Intern"
+  - "Trainee"
+  - "Graduate"
+  - "Junior"
+  - "Assistant"
+  - "Coordinator"
+  - "Administrator"
+  - "Officer" # sauf quand précédé de "Chief"
+  - "Analyst" # sauf quand précédé de "Senior" ou manager explicite
+  - "Specialist" # idem
+  - "Consultant" # trop vague, ne signifie pas un pouvoir de recrutement
+
+# Signaux positifs dans un titre (augmentent le score de pertinence)
+positive_title_signals:
+  - "Head of"
+  - "Director of"
+  - "VP "
+  - "Vice President"
+  - "Chief "
+  - "Manager" # si combiné avec un scope (Engineering Manager, Finance Manager)
+  - "Lead " # si combiné avec un scope technique
+  - "Principal"
+  - "Partner" # cabinets
+  - "General Manager"
+
+# Signaux négatifs dans un titre
+negative_title_signals:
+  - "HR"
+  - "Human Resources"
+  - "People & Culture"
+  - "Talent"
+  - "Recruiter"
+  - "Recruitment"
+  - "Payroll"
+  - "Admin"
+  - "Support"
+  - "Assistant"
+
+# ============================================================================
+# NOTES D'IMPLÉMENTATION POUR LE SectorTitleService
+# ============================================================================
+#
+# 1. PRIORITÉ DE CIBLAGE Hunter.io :
+#    - Envoyer les titres PRIMARY en priorité (3-5 à la fois max)
+#    - Si résultats < 3 contacts, compléter avec SECONDARY
+#    - Ne jamais envoyer les titres HR/TALENT sauf option explicite utilisateur
+#
+# 2. MATCHING FLOU :
+#    - Hunter.io cherche par titre exact (substring match)
+#    - Inclure les variantes : "CTO" ET "Chief Technology Officer"
+#    - Inclure les variantes locales NZ : "Head of X" plutôt que "Director of X"
+#
+# 3. SECTEURS MULTI-TITRES :
+#    - Ne pas dépasser 10 titres par appel Hunter (risque timeout + limite crédit)
+#    - Faire 2-3 appels avec des lots de titres différents si nécessaire
+#
+# 4. FALLBACK LLM :
+#    - Si le secteur n'est pas dans ce fichier → utiliser le prompt dans
+#      data/sector-titles-prompt.md
+#    - Stocker le résultat en cache DB (sector_title_cache, 30j)
+#    - Ajouter manuellement à ce fichier si le secteur devient récurrent
+#
+# 5. CACHE :
+#    - Ce fichier = source "static" pour SectorTitleService
+#    - generated_by = 'static' dans la table sector_title_cache
+#    - expires_at = null (pas d'expiration pour les entrées statiques)
+#
+# ============================================================================
