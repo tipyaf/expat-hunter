@@ -106,9 +106,9 @@ export default function EmailConnectionPage() {
           ) : (
             <div className="max-w-2xl space-y-6 mt-4">
               {/* Help / guide — visible first */}
-              <div className="rounded-xl border border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30 p-5">
-                <h2 className="text-sm font-semibold text-blue-800 dark:text-blue-300 mb-2">💡 {t('helpTitle')}</h2>
-                <div className="space-y-2 text-sm text-blue-700 dark:text-blue-400">
+              <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-5">
+                <h2 className="text-sm font-semibold text-[var(--color-text-main)] mb-2">💡 {t('helpTitle')}</h2>
+                <div className="space-y-2 text-sm text-[var(--color-text-muted)]">
                   <p>{t('helpGmail')}</p>
                   <p>{t('helpOutlook')}</p>
                   <p>{t('helpGeneral')}</p>

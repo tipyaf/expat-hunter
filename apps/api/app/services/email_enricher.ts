@@ -15,14 +15,9 @@ interface HunterFinderResponse {
   data?: { email: string | null; score: number } | null
 }
 
-interface ApolloPersonResponse {
-  person?: { email: string | null; email_status?: string } | null
-}
-
 export default class EmailEnricher {
   private cache = new CacheService()
   private hunterApiKey = env.get('HUNTER_API_KEY')
-  private apolloApiKey = env.get('APOLLO_API_KEY')
 
   async enrich(fullName: string, domain: string): Promise<EmailEnrichmentResult> {
     const { firstName, lastName } = this.parseFullName(fullName)
@@ -39,15 +34,7 @@ export default class EmailEnricher {
       }
     }
 
-    // Step 2 — Apollo.io
-    if (this.apolloApiKey) {
-      const apolloEmail = await this.tryApollo(fullName, domain)
-      if (apolloEmail) {
-        return { email: apolloEmail, source: 'apollo', confidence: 80, status: 'probable', alternatives: [] }
-      }
-    }
-
-    // Step 3 — Pattern inference
+    // Step 2 — Pattern inference
     const patterns = this.inferEmailPatterns(firstName, lastName, domain)
     const mxValid = await this.verifyMx(domain)
 
@@ -80,35 +67,6 @@ export default class EmailEnricher {
 
           const json = (await res.json()) as HunterFinderResponse
           return { email: json.data?.email ?? null, score: json.data?.score ?? 0 }
-        },
-        14
-      )
-      return result.data.email
-    } catch {
-      return null
-    }
-  }
-
-  private async tryApollo(fullName: string, domain: string): Promise<string | null> {
-    const cacheKey = `apollo::${fullName.toLowerCase()}@${domain}`
-
-    try {
-      const result = await this.cache.getOrFetch<{ email: string | null }>(
-        'apollo',
-        'contact',
-        cacheKey,
-        async () => {
-          const res = await fetch('https://api.apollo.io/v1/people/match', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-api-key': this.apolloApiKey! },
-            body: JSON.stringify({ name: fullName, domain }),
-            signal: AbortSignal.timeout(8000),
-          })
-
-          if (!res.ok) return { email: null }
-
-          const json = (await res.json()) as ApolloPersonResponse
-          return { email: json.person?.email ?? null }
         },
         14
       )

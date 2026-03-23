@@ -1,6 +1,8 @@
 import { parse } from 'node-html-parser'
 import Company from '#models/company'
 import Contact from '#models/contact'
+import CacheService from './cache_service.js'
+import env from '#start/env'
 import { DateTime } from 'luxon'
 
 export interface TeamMember {
@@ -73,8 +75,13 @@ const ROLE_BLACKLIST = [
 const EMAIL_REGEX = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g
 
 export default class CompanyEnricher {
+  private cache = new CacheService()
+  private hunterApiKey = env.get('HUNTER_API_KEY')
+
   /**
-   * Crawl company website for team members and persist them as contacts.
+   * Enrich a company: find team members via Hunter domain search + website crawl.
+   * Hunter domain search is the primary source (high confidence emails).
+   * Website crawl is the fallback for companies not covered by Hunter.
    */
   async enrichCompany(
     company: Company,
@@ -91,16 +98,31 @@ export default class CompanyEnricher {
       company.domain = domain
     }
 
-    const baseUrl = `https://${domain}`
     const crawledUrls: string[] = []
     const errors: string[] = []
     const allMembers: TeamMember[] = []
+
+    // Step 1 — Hunter.io domain search (primary source, high confidence emails)
+    if (this.hunterApiKey) {
+      try {
+        const hunterMembers = await this.hunterDomainSearch(domain)
+        allMembers.push(...hunterMembers.map((m) => ({ ...m, pageUrl: `hunter:${domain}` })))
+      } catch (err) {
+        errors.push(`Hunter: ${err instanceof Error ? err.message : 'Unknown error'}`)
+      }
+    }
+
+    // Step 2 — Website crawl (complementary source, finds contacts Hunter may miss)
+    const baseUrl = `https://${domain}`
 
     // Check robots.txt first
     const robotsAllowed = await this.checkRobots(baseUrl)
     if (!robotsAllowed) {
       errors.push('Crawl disallowed by robots.txt')
-      return { companyId: company.id, teamMembers: [], crawledUrls, errors }
+      // Still return Hunter results even if crawl is blocked
+      if (allMembers.length === 0) {
+        return { companyId: company.id, teamMembers: [], crawledUrls, errors }
+      }
     }
 
     // Try each path, stop after finding 2 pages with members
@@ -146,6 +168,7 @@ export default class CompanyEnricher {
           if (existing) continue
         }
 
+        const isHunterSource = member.pageUrl.startsWith('hunter:')
         await Contact.create({
           userId,
           companyId: company.id,
@@ -153,11 +176,11 @@ export default class CompanyEnricher {
           fullName: member.fullName,
           role: member.role,
           email: member.email ?? null,
-          emailSource: member.email ? 'page' : null,
-          emailConfidence: member.email ? 85 : null,
-          emailStatus: member.email ? 'probable' : null,
+          emailSource: member.email ? (isHunterSource ? 'hunter' : 'page') : null,
+          emailConfidence: member.email ? (isHunterSource ? 90 : 85) : null,
+          emailStatus: member.email ? (isHunterSource ? 'verified' : 'probable') : null,
           sourceDetail: member.pageUrl,
-          source: 'company_team',
+          source: isHunterSource ? 'hunter_domain' : 'company_team',
           status: 'identified',
         })
         persisted++
@@ -303,6 +326,77 @@ export default class CompanyEnricher {
     } catch {
       return true // If can't reach robots.txt, allow
     }
+  }
+
+  /**
+   * Hunter.io domain search — returns up to 20 contacts with verified emails.
+   * Results are cached for 30 days to save API credits (25 free/month).
+   */
+  private async hunterDomainSearch(domain: string): Promise<TeamMember[]> {
+    const cacheKey = `hunter-domain::${domain}`
+
+    const { data } = await this.cache.getOrFetch(
+      'hunter',
+      'company',
+      cacheKey,
+      async () => {
+        const url = `https://api.hunter.io/v2/domain-search?domain=${encodeURIComponent(domain)}&api_key=${this.hunterApiKey}&limit=20`
+        const res = await fetch(url, { signal: AbortSignal.timeout(15_000) })
+
+        if (!res.ok) throw new Error(`Hunter ${res.status}`)
+
+        const json = (await res.json()) as {
+          data?: {
+            emails?: Array<{
+              value?: string
+              first_name?: string
+              last_name?: string
+              position?: string
+              confidence?: number
+              department?: string
+            }>
+          }
+        }
+
+        const contacts = (json.data?.emails ?? []).map((e) => ({
+          fullName: `${e.first_name ?? ''} ${e.last_name ?? ''}`.trim(),
+          role: e.position ?? 'Unknown',
+          email: e.value ?? null,
+          confidence: e.confidence ?? 0,
+          department: e.department ?? null,
+        }))
+
+        return { contacts } as Record<string, unknown>
+      },
+      30
+    )
+
+    const cached = data as { contacts: Array<{ fullName: string; role: string; email: string | null; confidence: number; department: string | null }> }
+
+    return (cached.contacts ?? [])
+      .filter((c) => c.fullName && c.fullName.length > 2)
+      .sort((a, b) => this.roleScore(b.role) - this.roleScore(a.role))
+      .map((c) => ({
+        fullName: c.fullName,
+        role: c.role,
+        email: c.email ?? undefined,
+        pageUrl: `hunter:${domain}`,
+      }))
+  }
+
+  /**
+   * Score a role for relevance to hiring decisions.
+   * Higher = more likely to be a hiring decision maker.
+   */
+  private roleScore(position: string): number {
+    const lower = (position ?? '').toLowerCase()
+    const hiring = ['talent', 'recruit', 'people', 'hr', 'human resources', 'hiring']
+    const decision = ['cto', 'ceo', 'founder', 'vp', 'vice president', 'director', 'head of', 'chief', 'lead', 'manager', 'principal', 'senior']
+    let score = 0
+    if (hiring.some((k) => lower.includes(k))) score += 20
+    if (decision.some((k) => lower.includes(k))) score += 10
+    if (position) score += 1
+    return score
   }
 
   extractDomain(website: string): string {

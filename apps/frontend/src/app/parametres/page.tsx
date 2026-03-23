@@ -6,8 +6,10 @@ import { useTheme } from '@/contexts/theme-context'
 import { useSendingSettings } from '@/hooks/use-sending-settings'
 import { apiClient } from '@/lib/api-client'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
+import { setLocaleAction } from '@/app/actions/locale'
 import { FileText, Sliders, ChevronRight, Ban, Mail, Plus, Trash2 } from 'lucide-react'
 
 type DelayUnit = 'days' | 'weeks' | 'months'
@@ -49,6 +51,7 @@ const COMMON_TIMEZONES = [
 export default function SettingsPage() {
   const { user, token } = useAuth()
   const { theme, setTheme } = useTheme()
+  const router = useRouter()
   const t = useTranslations('settings')
   const ta = useTranslations('auth')
   const tc = useTranslations('common')
@@ -120,7 +123,9 @@ export default function SettingsPage() {
         { locale, followUps, sendingSchedule: schedule },
         { token }
       )
+      await setLocaleAction(locale)
       setMessage({ text: t('saveSuccess'), type: 'success' })
+      router.refresh()
     } catch {
       setMessage({ text: t('saveError'), type: 'error' })
     } finally {

@@ -270,15 +270,15 @@ export default function PipelinePage() {
           </div>
         )}
 
-        <div className="flex-1 overflow-x-auto overflow-y-hidden px-4 md:px-8 pb-8">
+        <div className="flex-1 overflow-x-auto overflow-y-hidden px-4 md:px-8 pb-8 min-h-0">
           {isLoading ? (
             <p className="text-sm text-[var(--color-text-muted)] pt-4">{tc('loading')}</p>
           ) : (
-            <div className="grid grid-cols-6 gap-4 h-full pt-4 min-w-[1200px]">
+            <div className="grid grid-cols-6 gap-4 h-full pt-4 min-w-[1200px] min-h-0">
               {columns.map((col) => (
                 <div
                   key={col.key}
-                  className={`flex flex-col min-w-0 rounded-xl border border-[var(--color-border)] border-t-4 ${COLUMN_COLORS[col.key] ?? 'border-t-gray-300'} bg-[var(--color-surface-light)] ${
+                  className={`flex flex-col min-w-0 min-h-0 rounded-xl border border-[var(--color-border)] border-t-4 ${COLUMN_COLORS[col.key] ?? 'border-t-gray-300'} bg-[var(--color-surface-light)] ${
                     dragOverCol === col.key ? 'ring-2 ring-primary/30' : ''
                   }`}
                   onDragOver={(e) => handleDragOver(e, col.key)}

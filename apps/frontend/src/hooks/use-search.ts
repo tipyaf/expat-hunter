@@ -8,7 +8,7 @@ export interface SearchRun {
   id: string
   country: string
   sector: string | null
-  status: 'pending' | 'scraping' | 'analyzing' | 'generating' | 'completed' | 'failed'
+  status: 'pending' | 'scraping' | 'enriching' | 'analyzing' | 'generating' | 'completed' | 'failed'
   progressPercent: number
   currentStep: string | null
   contactsFound: number
