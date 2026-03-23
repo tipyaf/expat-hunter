@@ -28,3 +28,13 @@ Recurring failures and lessons learned across sessions. Every agent MUST read th
 **Problem**: sc-28 chat markdown used `prose` class which overrides text color with its own value, ignoring the parent's `text-[var(--color-text-main)]`. Text was unreadable in light mode.
 **Root cause**: `prose` applies its own color scheme that takes precedence over inherited CSS variables.
 **Rule**: When using `prose` for markdown rendering, ALWAYS force design system colors via `text-[var(--color-text-main)]`, `prose-strong:text-[var(--color-text-main)]`, `prose-headings:text-[var(--color-text-main)]`. Never rely on prose default colors.
+
+### [Workflow] Shortcut story state not updated during work
+**Problem**: sc-57, sc-58, sc-59 were never moved to "In Progress" before starting the research work. They went directly from "To Do" to "Done".
+**Root cause**: Agent started working without updating the story state first.
+**Rule**: ALWAYS update Shortcut story state in real-time at each transition: To Do → In Progress (500000008, start dev) → In Review (500000009, start review/validation) → Done (500000010, validated). Never skip a state.
+
+### [Workflow] Segmenter les tickets en tâches (checklist)
+**Problem**: Les tickets sc-57/58/59 ont été réalisés sans tâches, impossible de savoir ce qui est fait vs ce qui reste.
+**Root cause**: L'agent a travaillé sur le ticket sans le découper en sous-tâches traçables.
+**Rule**: TOUJOURS ajouter des tâches (stories-add-task) dans un ticket Shortcut AVANT de commencer le travail. Chaque étape significative = une tâche. Cocher les tâches au fur et à mesure (stories-update-task isCompleted). Cela permet de savoir exactement où on en est à tout moment, même si la session est interrompue.

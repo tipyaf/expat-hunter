@@ -121,6 +121,21 @@ export default class VisaSponsorRegistryService {
       signal: AbortSignal.timeout(15_000),
     })
 
+    // NZ API returns HTTP 400 with "No Results" when company is not found — not a real error
+    if (res.status === 400) {
+      const body = (await res.json().catch(() => null)) as { Title?: string } | null
+      if (body?.Title === 'No Results') {
+        return {
+          isAccredited: false,
+          countries: [],
+          visaTypes: [],
+          confidence: 0,
+          source: 'immigration.govt.nz',
+        }
+      }
+      throw new Error(`NZ Immigration API 400: ${JSON.stringify(body)}`)
+    }
+
     if (!res.ok) {
       throw new Error(`NZ Immigration API returned ${res.status}`)
     }
@@ -486,6 +501,8 @@ export default class VisaSponsorRegistryService {
             signal: AbortSignal.timeout(20_000),
           })
 
+          // NZ API returns 400 for "No Results" — treat as end of results for this prefix
+          if (res.status === 400) break
           if (!res.ok) break
 
           const json = (await res.json()) as {
@@ -747,13 +764,30 @@ export default class VisaSponsorRegistryService {
   }
 
   /**
-   * Levenshtein distance normalized by max string length.
+   * Smart fuzzy matching combining substring containment, token overlap, and Levenshtein.
    * Returns 0 (no match) to 1 (exact match).
+   *
+   * Handles cases like "datacom" vs "datacom connect" (substring → 0.95)
+   * or "vista group" vs "vista group nz" (token overlap → 0.90).
    */
   fuzzyMatch(a: string, b: string): number {
     if (a === b) return 1
     if (!a || !b) return 0
 
+    // Substring containment: if search term is fully contained in result, high score
+    if (b.includes(a)) return 0.9 + 0.1 * (a.length / b.length)
+    if (a.includes(b)) return 0.9 + 0.1 * (b.length / a.length)
+
+    // Token overlap: check if all words of the shorter are in the longer
+    const aWords = a.split(/\s+/)
+    const bWords = b.split(/\s+/)
+    const [shorter, longer] = aWords.length <= bWords.length ? [aWords, bWords] : [bWords, aWords]
+    const matchedTokens = shorter.filter((w) => longer.some((lw) => lw === w || lw.startsWith(w)))
+    if (matchedTokens.length === shorter.length && shorter.length > 0) {
+      return 0.85 + 0.1 * (shorter.length / longer.length)
+    }
+
+    // Fallback to Levenshtein
     const maxLen = Math.max(a.length, b.length)
     if (maxLen === 0) return 1
 

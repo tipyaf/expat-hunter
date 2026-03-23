@@ -34,3 +34,6 @@ coverage/
 
 # pnpm
 .pnpm-store/
+
+# claude
+/.mcp.json
