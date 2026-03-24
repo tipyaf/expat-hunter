@@ -1,11 +1,13 @@
 # Mémoire du projet : ExpatHunter
 
+> Last updated by **user** — 2026-03-24
+
 ## Metadata
 - **Projet**: expat-hunter
 - **Démarré le**: 2026-03-17
-- **Phase courante**: Phase 3 — Implement (Épique 1 Auth terminée)
-- **Dernière mise à jour**: 2026-03-20
-- **Prochaine épique**: Épique 2 — Profil candidat
+- **Phase courante**: Phase 2 — Construction (features pending refinement)
+- **Dernière mise à jour**: 2026-03-24
+- **Framework version**: 2.1.0
 - **Repo GitHub**: https://github.com/tipyaf/expat-hunter (public)
 - **Branches**: main (protégée, défaut), develop (protégée, base dev), feature/* → PR vers develop
 
@@ -14,31 +16,48 @@
 - **Type**: fullstack TypeScript
 - **Stack**: AdonisJS + Lucid, Next.js (React), Tailwind CSS, PostgreSQL, OpenRouter, Playwright (scraping), Shortcut.com (gestion projet)
 
+## Feature Status
+
+| Feature | Priority | Status | Story file | Cycles |
+|---------|----------|--------|------------|--------|
+| candidate-profile | must-have | pending | — | 0 |
+| contact-sourcing | must-have | pending | — | 0 |
+| ai-relevance-analysis | must-have | pending | — | 0 |
+| personalized-emailing | must-have | pending | — | 0 |
+| pipeline-dashboard | must-have | pending | — | 0 |
+| signal-detection | should-have | pending | — | 0 |
+| multi-country | should-have | pending | — | 0 |
+| linkedin-messaging | nice-to-have | pending | — | 0 |
+| multi-users | nice-to-have | pending | — | 0 |
+| expat-assistance | nice-to-have | pending | — | 0 |
+| interview-prep | nice-to-have | pending | — | 0 |
+| mobile-app | nice-to-have | pending | — | 0 |
+| analytics | nice-to-have | pending | — | 0 |
+
+**Summary**: 13 features total — 0 refined, 0 validated, 0 escalated — next: `/refine` candidate-profile
+
 ## Décisions prises
 
 ### Architecture
-| # | Décision | Raison | Phase |
-|---|----------|--------|-------|
-| 1 | Connecteurs pluggables par source/pays | Scalabilité multi-pays | 0 |
-| 2 | OpenRouter comme provider IA | Modèles interchangeables, low-cost | 0 |
-| 3 | Scraping maison + Apify fallback | Réduire dépendances externes, maîtriser coûts | 0 |
-| 4 | Mono-user MVP, architecturé multi-user | Livrer vite, scaler ensuite | 0 |
-| 5 | Pas de n8n, tout dans le SaaS | Centraliser, simplifier | 0 |
-| 6 | Fullstack TypeScript (Node.js + Next.js) — Python écarté | Un seul runtime, types partagés, moins de RAM, stack de confort | 1 |
-| 10 | Next.js + Tailwind CSS pour le frontend | React plus mature web, drag&drop kanban, SEO optionnel, bundle léger | 1 |
-| 11 | AdonisJS comme backend framework | Batteries-included (auth, mail, queue, i18n, validation), 0 briques à câbler | 1 |
-| 12 | Lucid comme ORM (natif AdonisJS) | Cohérent avec l'écosystème, migrations, seeds intégrés | 1 |
-| 13 | Biome pour linting/formatting | Remplace ESLint + Prettier, ultra rapide | 1 |
-| 14 | Vitest pour les tests | Rapide, compatible TypeScript natif | 1 |
-| 15 | pnpm comme package manager | Rapide, économe en disque, workspace natif | 1 |
-| 7 | Shortcut.com comme outil de gestion de projet (via MCP) | Suivi des tickets, refinement | 0 |
-| 8 | Agent refinement avant chaque feature | Détailler/découper avant d'implémenter | 0 |
-| 9 | Shortcut.com bidirectionnel (créer, refiner, déplacer tickets) | Vision temps réel sur l'avancement | 0 |
-| 16 | REST API (pas tRPC/GraphQL) | Testable indépendamment, réutilisable mobile, pas de couplage | 1 |
-| 17 | Scrapers pluggables (Strategy + Registry) | Ajouter un pays/source = 1 classe + 1 ligne | 1 |
-| 18 | Background jobs BullMQ (@adonisjs/queue) | Scraping + IA + email en async, retry automatique | 1 |
-| 19 | pnpm workspaces simples (pas Turborepo/Nx) | Suffisant pour 3 packages, zero config | 1 |
-| 20 | Japa (backend) + Vitest (frontend) | Natif AdonisJS côté API, rapide côté frontend | 1 |
+| # | Décision | Alternatives considered | Raison | Phase |
+|---|----------|------------------------|--------|-------|
+| 1 | Connecteurs pluggables par source/pays | Scraping monolithique | Scalabilité multi-pays | 0 |
+| 2 | OpenRouter comme provider IA | OpenAI direct, Ollama | Modèles interchangeables, low-cost | 0 |
+| 3 | Scraping maison + Apify fallback | Apify only, Scrapy | Réduire dépendances externes, maîtriser coûts | 0 |
+| 4 | Mono-user MVP, architecturé multi-user | Multi-user from start | Livrer vite, scaler ensuite | 0 |
+| 5 | Pas de n8n, tout dans le SaaS | n8n orchestration | Centraliser, simplifier | 0 |
+| 6 | Fullstack TypeScript (Node.js + Next.js) | Python + FastAPI | Un seul runtime, types partagés, moins de RAM, stack de confort | 1 |
+| 10 | Next.js + Tailwind CSS pour le frontend | Remix, SvelteKit | React plus mature web, drag&drop kanban, SEO optionnel, bundle léger | 1 |
+| 11 | AdonisJS comme backend framework | NestJS, Hono, Fastify | Batteries-included (auth, mail, queue, i18n, validation), 0 briques à câbler | 1 |
+| 12 | Lucid comme ORM (natif AdonisJS) | Prisma, Drizzle | Cohérent avec l'écosystème, migrations, seeds intégrés | 1 |
+| 13 | Biome pour linting/formatting | ESLint + Prettier | Ultra rapide, remplace deux outils | 1 |
+| 14 | Vitest pour les tests | Jest | Rapide, compatible TypeScript natif | 1 |
+| 15 | pnpm comme package manager | npm, yarn, bun | Rapide, économe en disque, workspace natif | 1 |
+| 16 | REST API (pas tRPC/GraphQL) | tRPC, GraphQL | Testable indépendamment, réutilisable mobile, pas de couplage | 1 |
+| 17 | Scrapers pluggables (Strategy + Registry) | Hardcoded scrapers | Ajouter un pays/source = 1 classe + 1 ligne | 1 |
+| 18 | Background jobs BullMQ (@adonisjs/queue) | Cron, Bull | Scraping + IA + email en async, retry automatique | 1 |
+| 19 | pnpm workspaces simples (pas Turborepo/Nx) | Turborepo, Nx | Suffisant pour 3 packages, zero config | 1 |
+| 20 | Japa (backend) + Vitest (frontend) | Jest everywhere | Natif AdonisJS côté API, rapide côté frontend | 1 |
 
 ### Fonctionnel
 | # | Décision | Raison | Phase |
@@ -68,38 +87,30 @@
 
 ## Historique des phases
 
-### Phase 0 — Cadrage (PO)
-- **Statut**: [x] Validée
-- **Résumé**: Spec YAML complète générée avec 5 features must-have, 2 should-have, 6 nice-to-have. Modèle de données avec 6 entités.
+### Phase 0 — Conception
+- **Statut**: ✅ Validée
+- **Artefacts**: `specs/expat-hunter.yaml`, `specs/expat-hunter-ux.md`, `specs/expat-hunter-architecture.md`
+- **Résumé**: Spec YAML complète (5 must-have, 2 should-have, 6 nice-to-have, 6 entités). Design complet (sitemap, 5 flows, design system, 10 composants, 5 layouts). Architecture layered monorepo pnpm, 8 entités Lucid, 9 épiques, 7 ADRs. Stack profiles AdonisJS + Next.js.
+- **Missing v2.1.0 artefacts**: constitution.md, clarifications.md (phases did not exist at v2.0.0)
 
-### Phase 0.5 — Design (UX/UI)
-- **Statut**: [x] Validée
-- **Résumé**: Design complet produit (sitemap, 5 user flows, design system, 10 composants, 5 layouts de pages). Décisions : sidebar fixe, dashboard actions en attente, wizard + CV + IA conversationnelle, sourcing assisté IA, validation emails hybride, pipeline 5 colonnes, badges pertinence couleur + explication, tonalité moderne/chaleureuse (teal/orange), dark mode préférences système + toggle.
-- **Fichier**: `specs/expat-hunter-ux.md`
+### Phase 1 — Scaffold
+- **Statut**: ✅ Validée
+- **Résumé**: Monorepo pnpm créé. AdonisJS 7 scaffoldé (core, lucid, auth, mail, i18n, cors, shield, drive). Next.js 14 (App Router) + Tailwind CSS v4. Package shared (types + constantes). Docker-compose (PostgreSQL 16 + Redis 7). Biome, .env.example.
+- **Note**: AdonisJS v7 (pas v6 comme prévu initialement)
 
-### Phase 1 — Plan (Architect)
-- **Statut**: [x] Validée
-- **Résumé**: Architecture complète produite. Layered architecture, monorepo pnpm (apps/api + apps/frontend + packages/shared). 8 entités Lucid détaillées (User, CandidateProfile, Company, Contact, EmailMessage, SourcingRun, SourcingSource, FollowUpSequence). 9 épiques d'implémentation ordonnées. 7 ADRs (TypeScript fullstack, AdonisJS, Next.js App Router, REST API, scrapers pluggables, BullMQ jobs, pnpm workspaces). Stack profiles créés pour AdonisJS et Next.js.
-- **Fichier**: `specs/expat-hunter-architecture.md`
-- **Stack profiles**: `stacks/typescript-adonisjs.md`, `stacks/typescript-nextjs.md`
+### Phase 2 — Construction
+- **Statut**: 🔄 En cours — all features pending refinement
+- **Features**: 5 must-have (0/5 refined), 2 should-have, 6 nice-to-have
+- **Next**: `/refine` candidate-profile
 
-### Phase 2 — Scaffold (Developer)
-- **Statut**: [x] Validée
-- **Résumé**: Monorepo pnpm créé via init-project.sh (framework en git submodule). AdonisJS 7 (core, lucid, auth access_tokens, mail, i18n, cors, shield, drive) scaffoldé avec User model UUID, env validation, configs complètes. Next.js 14 (App Router) + Tailwind CSS v4 avec design system tokens, sidebar, login, dashboard placeholder. Package shared avec tous les types (User, CandidateProfile, Company, Contact, EmailMessage, SourcingRun) + constantes (pipeline, relevance, countries). Docker-compose (PostgreSQL 16 + Redis 7), Biome, .env.example.
-- **Repo**: `/Volumes/Samsung_T5/dev/expat-hunter/`
-- **Note**: AdonisJS v7 (pas v6 comme prévu initialement — les packages nécessitaient v7)
+### Phase 3 — Review
+- **Statut**: ⬜ Non démarré
 
-### Phase 3 — Implement (Developer)
-- **Statut**: [ ] Non démarré
+### Phase 4 — Deploy
+- **Statut**: ⬜ Non démarré
 
-### Phase 4 — Test (Tester)
-- **Statut**: [ ] Non démarré
-
-### Phase 5 — Review (Reviewer)
-- **Statut**: [ ] Non démarré
-
-### Phase 6 — Deploy (DevOps)
-- **Statut**: [ ] Non démarré
+### Phase 5 — Release
+- **Statut**: ⬜ Non démarré
 
 ## Problèmes rencontrés
 | # | Problème | Solution | Phase |
@@ -125,11 +136,15 @@
 | Fichier | Rôle |
 |---------|------|
 | `specs/expat-hunter.yaml` | Spec complète du projet |
-| `specs/expat-hunter-ux.md` | Design UX/UI complet (Phase 0.5) |
-| `specs/expat-hunter-architecture.md` | Plan d'architecture complet (Phase 1) |
+| `specs/expat-hunter-ux.md` | Design UX/UI complet |
+| `specs/expat-hunter-architecture.md` | Plan d'architecture complet |
+| `specs/feature-tracker.yaml` | État de chaque feature (v2.1.0) |
+| `specs/stories/` | Story files — build contracts (v2.1.0) |
 | `stacks/typescript-adonisjs.md` | Stack profile backend AdonisJS |
 | `stacks/typescript-nextjs.md` | Stack profile frontend Next.js |
 | `memory/expat-hunter.md` | Ce fichier — état du projet |
+| `memory/LESSONS.md` | Erreurs passées, lues par tous les agents |
+| `memory/SYNC.md` | Version du framework |
 
 ## Notes libres
 - Budget strict : 30$/mois max
@@ -137,5 +152,5 @@
 - L'utilisateur a un pipeline existant LinkedIn + Hunter.io + n8n qui ne donne pas de résultats probants (mauvais ciblage + messages génériques)
 - Sources par pays (configurables). Exemple NZ : Seek, Matchstiq, Zeil, built.com. Global : LinkedIn, Hunter.io
 - L'outil n'est PAS limité à la NZ — chaque utilisateur choisit son pays cible, les sources s'adaptent
-- **Framework en anglais** pour les prochains projets (garder français pour ExpatHunter)
-- **Réutilisation du framework** : script init-project.sh recommandé, puis migration vers git submodule quand le repo est prêt
+- **Framework v2.1.0**: Enforcement layer actif — feature-tracker + story files + verify: commands
+- **Migration note**: constitution.md et clarifications.md n'existaient pas en v2.0.0 — à créer lors du prochain `/refine` si nécessaire
