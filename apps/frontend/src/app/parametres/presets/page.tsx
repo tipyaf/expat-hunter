@@ -271,7 +271,7 @@ export default function PresetsPage() {
           {/* Presets list */}
           {isLoading ? (
             <p className="text-sm text-[var(--color-text-muted)]">{tc('loading')}</p>
-          ) : presets.length === 0 ? (
+          ) : presets.length === 0 && !showForm ? (
             <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-8 text-center">
               <p className="text-[var(--color-text-muted)]">{t('empty')}</p>
               <Button className="mt-4" onClick={openCreate}>
