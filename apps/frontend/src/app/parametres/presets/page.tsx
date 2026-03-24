@@ -18,7 +18,7 @@ const EMPTY_FORM = {
   name: '',
   length: 'medium' as PresetLength,
   framework: 'direct' as PresetFramework,
-  tone: 'professional',
+  tone: ['professional'] as string[],
   language: 'fr',
   customInstructions: '',
   isDefault: false,
@@ -53,11 +53,15 @@ export default function PresetsPage() {
 
   const openEdit = (preset: GenerationPreset) => {
     setEditing(preset)
+    // Support both old single-tone and new multi-tone format
+    const toneArr = preset.tone.includes(',')
+      ? preset.tone.split(',').map((t) => t.trim())
+      : [preset.tone]
     setForm({
       name: preset.name,
       length: preset.length,
       framework: preset.framework,
-      tone: preset.tone,
+      tone: toneArr,
       language: preset.language,
       customInstructions: preset.customInstructions ?? '',
       isDefault: preset.isDefault,
@@ -72,7 +76,7 @@ export default function PresetsPage() {
     }
     setSaving(true)
     try {
-      const data = { ...form, customInstructions: form.customInstructions || null }
+      const data = { ...form, tone: form.tone.join(', '), customInstructions: form.customInstructions || null }
       if (editing) {
         await update(editing.id, data)
         setMessage({ text: t('updateSuccess'), type: 'success' })
@@ -105,10 +109,12 @@ export default function PresetsPage() {
               <h1 className="text-2xl font-bold text-[var(--color-text-main)]">{t('title')}</h1>
               <p className="text-sm text-[var(--color-text-muted)] mt-1">{t('subtitle')}</p>
             </div>
-            <Button onClick={openCreate}>
-              <Plus className="w-4 h-4 mr-1" />
-              {t('new')}
-            </Button>
+            {!showForm && (
+              <Button onClick={openCreate}>
+                <Plus className="w-4 h-4 mr-1" />
+                {t('new')}
+              </Button>
+            )}
           </div>
 
           {message && (
@@ -200,20 +206,29 @@ export default function PresetsPage() {
                 <div>
                   <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1">{t('fieldTone')}</label>
                   <div className="flex flex-wrap gap-1">
-                    {TONES.map((tone) => (
-                      <button
-                        key={tone}
-                        type="button"
-                        onClick={() => setForm((f) => ({ ...f, tone }))}
-                        className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                          form.tone === tone
-                            ? 'bg-primary text-white'
-                            : 'border border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-light)]'
-                        }`}
-                      >
-                        {t(`tone_${tone}`)}
-                      </button>
-                    ))}
+                    {TONES.map((tone) => {
+                      const isSelected = form.tone.includes(tone)
+                      return (
+                        <button
+                          key={tone}
+                          type="button"
+                          onClick={() => setForm((f) => {
+                            const tones = f.tone.includes(tone)
+                              ? f.tone.filter((t) => t !== tone)
+                              : [...f.tone, tone]
+                            // Keep at least one tone selected
+                            return { ...f, tone: tones.length > 0 ? tones : [tone] }
+                          })}
+                          className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                            isSelected
+                              ? 'bg-primary text-white'
+                              : 'border border-[var(--color-border)] text-[var(--color-text-muted)] hover:bg-[var(--color-bg-light)]'
+                          }`}
+                        >
+                          {t(`tone_${tone}`)}
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
 
@@ -286,9 +301,11 @@ export default function PresetsPage() {
                         <span className="rounded-full bg-[var(--color-border)] px-2 py-0.5 text-[10px] text-[var(--color-text-muted)]">
                           {preset.framework.toUpperCase()}
                         </span>
-                        <span className="rounded-full bg-[var(--color-border)] px-2 py-0.5 text-[10px] text-[var(--color-text-muted)]">
-                          {t(`tone_${preset.tone}`)}
-                        </span>
+                        {(preset.tone.includes(',') ? preset.tone.split(',').map((t) => t.trim()) : [preset.tone]).map((tone) => (
+                          <span key={tone} className="rounded-full bg-[var(--color-border)] px-2 py-0.5 text-[10px] text-[var(--color-text-muted)]">
+                            {t(`tone_${tone}`)}
+                          </span>
+                        ))}
                         <span className="rounded-full bg-[var(--color-border)] px-2 py-0.5 text-[10px] text-[var(--color-text-muted)]">
                           {preset.language === 'fr' ? '🇫🇷 Français' : '🇬🇧 English'}
                         </span>
