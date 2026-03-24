@@ -14,11 +14,13 @@ import Company from '#models/company'
 import Contact from '#models/contact'
 import SourcingRun from '#models/sourcing_run'
 import ContextEnrichmentService from '#services/context_enrichment_service'
+import EmailEnricher from '#services/email_enricher'
 import EmailVerifier from '#services/email_verifier'
 import ExpatScoringService from '#services/expat_scoring_service'
 import SourcingService from '#services/sourcing_service'
 import { sectorRegistry } from '#services/sector_registry'
 import SectorTitleService from '#services/sector_title_service'
+import { HunterCompanySearchScraper } from '../scrapers/hunter_company_search_scraper.js'
 import { DateTime } from 'luxon'
 
 export interface OrchestratorResult {
@@ -40,6 +42,8 @@ const ACTIVE_RUNS = new Set<string>()
 
 export default class SourcingOrchestrator {
   private sourcingService = new SourcingService()
+  private hunterScraper = new HunterCompanySearchScraper()
+  private emailEnricher = new EmailEnricher()
   private contextService = new ContextEnrichmentService()
   private emailVerifier = new EmailVerifier()
   private scoringService = new ExpatScoringService()
@@ -71,12 +75,23 @@ export default class SourcingOrchestrator {
         throw new Error('Phase 1 failed — no run created')
       }
 
-      // Load contacts and companies for remaining phases
-      const contacts = await Contact.query()
+      // Load companies discovered in Phase 1
+      const phase1Contacts = await Contact.query()
         .where('sourcingRunId', run.id)
         .preload('company')
 
-      const companies = await this.getUniqueCompanies(contacts)
+      const companies = await this.getUniqueCompanies(phase1Contacts)
+
+      // Phase 1b — Hunter domain search on each company to find NAMED contacts
+      // Seek gives us companies (who's hiring), Hunter gives us people at those companies
+      await this.executePhase('hunter_contacts', phases, () =>
+        this.findNamedContacts(companies, run.id, userId, country)
+      )
+
+      // Reload all contacts (now includes Hunter contacts)
+      const contacts = await Contact.query()
+        .where('sourcingRunId', run.id)
+        .preload('company')
 
       // Phase 2 — Context enrichment (non-blocking per company)
       await this.executePhase('context_enrichment', phases, () =>
@@ -126,6 +141,64 @@ export default class SourcingOrchestrator {
   }
 
   // ─── Phase implementations ────────────────────────────────────────────────
+
+  /**
+   * Phase 1b — For each company found by Seek, run Hunter domain search
+   * to find real named contacts (not "Hiring Manager").
+   * Also enrich email for contacts that have a name but no email.
+   */
+  private async findNamedContacts(
+    companies: Company[],
+    runId: string,
+    userId: string,
+    country: string
+  ): Promise<number> {
+    let added = 0
+
+    for (const company of companies) {
+      if (!company.domain) continue
+
+      try {
+        // Get named contacts from Hunter
+        const hunterContacts = await this.hunterScraper.searchDomain(company.domain, country)
+
+        for (const raw of hunterContacts) {
+          // Skip generic names
+          const name = raw.fullName.toLowerCase().trim()
+          if (!name || name === 'hiring manager' || name === 'contact' || name === 'unknown') continue
+
+          // Skip if already exists (by email)
+          if (raw.email) {
+            const existing = await Contact.query()
+              .where('userId', userId)
+              .where('email', raw.email)
+              .first()
+            if (existing) continue
+          }
+
+          await Contact.create({
+            userId,
+            companyId: company.id,
+            sourcingRunId: runId,
+            fullName: raw.fullName,
+            role: raw.role ?? 'Unknown',
+            email: raw.email ?? null,
+            source: raw.source,
+            sourceDetail: raw.sourceDetail ?? null,
+            emailSource: raw.emailSource ?? null,
+            emailConfidence: raw.emailConfidence ?? null,
+            emailStatus: raw.email ? 'probable' : null,
+            status: 'identified',
+          })
+          added++
+        }
+      } catch {
+        // Phase isolation — skip failed companies
+      }
+    }
+
+    return added
+  }
 
   private async enrichCompanies(companies: Company[]): Promise<number> {
     let enriched = 0
