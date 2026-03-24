@@ -15,12 +15,33 @@ import SourcingService from './sourcing_service.js'
 import AnalysisService from './analysis_service.js'
 import EmailGenerationService from './email_generation_service.js'
 import EmailEnricher from './email_enricher.js'
+import EmailVerifier from './email_verifier.js'
+import ExpatScoringService from './expat_scoring_service.js'
+import { HunterCompanySearchScraper } from '../scrapers/hunter_company_search_scraper.js'
 
 interface SearchParams {
   country: string
   sector?: string
   sourceNames?: string[]
 }
+
+/**
+ * Job board and recruitment agency domains to EXCLUDE from Hunter search.
+ * These are NOT real employers — they are job listing aggregators.
+ * Hunter returns their employees (HR people), not NZ hiring managers.
+ */
+const JOB_BOARD_DOMAINS = new Set([
+  'seek.co.nz', 'seek.com.au', 'indeed.com', 'nz.indeed.com', 'au.indeed.com',
+  'linkedin.com', 'glassdoor.com', 'glassdoor.co.nz',
+  'trademe.co.nz', 'jobs.govt.nz',
+  'builtin.com', 'adecco.com', 'hays.net.nz', 'hays.com.au',
+  'welovesalt.com', 'robertwalters.co.nz', 'roberthalf.co.nz',
+  'michaelpage.co.nz', 'randstad.co.nz', 'manpower.com',
+  'monster.com', 'ziprecruiter.com', 'adzuna.co.nz',
+  'jora.com', 'careerjet.co.nz', 'simplyhired.co.nz',
+  'workingin-newzealand.com', 'newzealandnow.govt.nz',
+  'immigration.govt.nz', 'careers.govt.nz',
+])
 
 interface SearchResult {
   searchRunId: string
@@ -75,7 +96,16 @@ export default class SearchOrchestratorService {
 
       searchRun.sourcingRunId = sourcingRun.id
       searchRun.contactsFound = sourcingRun.contactsFound
+      await this.updateStatus(searchRun, 'scraping', 25)
+
+      // Step 1b: Hunter domain search — find NAMED contacts at discovered companies
+      // Seek gives us companies (who's hiring), Hunter gives us people at those companies
+      await this.updateStatus(searchRun, 'scraping', 27)
+      const hunterAdded = await this.findNamedContactsViaHunter(userId, sourcingRun.id)
+      searchRun.contactsFound += hunterAdded
       await this.updateStatus(searchRun, 'scraping', 33)
+
+      logger.info('Step 1b: Hunter added %d named contacts', hunterAdded)
 
       // Exclude contacts in cooldown
       const cooldownExcluded = await this.markCooldownContacts(userId, sourcingRun.id)
@@ -84,6 +114,10 @@ export default class SearchOrchestratorService {
       // Step 2: Email Enrichment (33-50%)
       await this.updateStatus(searchRun, 'enriching', 35)
       await this.enrichContactEmails(userId, sourcingRun.id)
+      await this.updateStatus(searchRun, 'enriching', 45)
+
+      // Step 2b: Email Verification (45-50%)
+      await this.verifyContactEmails(userId, sourcingRun.id)
       await this.updateStatus(searchRun, 'enriching', 50)
 
       // Step 3: Analysis (50-75%)
@@ -182,6 +216,109 @@ export default class SearchOrchestratorService {
       country: profile.targetCountries?.[0] ?? null,
       sector: profile.targetSectors?.[0] ?? null,
     }
+  }
+
+  /**
+   * Step 1b: For each company found by Seek, run Hunter domain search
+   * to find real named contacts with emails. These replace the generic
+   * "Hiring Manager" contacts from Seek.
+   */
+  private async findNamedContactsViaHunter(userId: string, sourcingRunId: string): Promise<number> {
+    const hunterScraper = new HunterCompanySearchScraper()
+    let added = 0
+
+    // Get all companies from this run
+    const companies = await Contact.query()
+      .where('sourcingRunId', sourcingRunId)
+      .preload('company')
+      .select('companyId')
+      .groupBy('companyId')
+
+    const seenCompanyIds = new Set<string>()
+
+    for (const contact of companies) {
+      const company = contact.company
+      if (!company?.domain || seenCompanyIds.has(company.id)) continue
+      seenCompanyIds.add(company.id)
+
+      // Skip job boards and recruitment agencies
+      if (JOB_BOARD_DOMAINS.has(company.domain)) {
+        logger.info('Skipping job board domain: %s', company.domain)
+        continue
+      }
+
+      try {
+        const hunterContacts = await hunterScraper.searchDomain(company.domain, company.country)
+
+        for (const raw of hunterContacts) {
+          const name = raw.fullName.toLowerCase().trim()
+          if (!name || name === 'hiring manager' || name === 'contact' || name === 'unknown') continue
+          if (!raw.email) continue
+
+          // Skip if email already exists for this user
+          const existing = await Contact.query()
+            .where('userId', userId)
+            .where('email', raw.email)
+            .first()
+          if (existing) continue
+
+          await Contact.create({
+            userId,
+            companyId: company.id,
+            sourcingRunId,
+            fullName: raw.fullName,
+            role: raw.role ?? 'Unknown',
+            email: raw.email,
+            source: raw.source,
+            sourceDetail: raw.sourceDetail ?? null,
+            emailSource: 'hunter',
+            emailConfidence: raw.emailConfidence ?? 90,
+            emailStatus: 'probable',
+            status: 'identified',
+          })
+          added++
+        }
+      } catch (error) {
+        logger.warn('Hunter search failed for %s: %s', company.domain, error instanceof Error ? error.message : 'Unknown')
+      }
+    }
+
+    return added
+  }
+
+  /**
+   * Step 2b: Verify emails using SMTP handshake for contacts that have emails.
+   */
+  private async verifyContactEmails(userId: string, sourcingRunId: string): Promise<void> {
+    const verifier = new EmailVerifier()
+
+    const contactsWithEmail = await Contact.query()
+      .where('userId', userId)
+      .where('sourcingRunId', sourcingRunId)
+      .whereNotNull('email')
+      .where((q) => {
+        q.whereNull('emailVerifyMethod').orWhere('emailStatus', 'probable')
+      })
+      .limit(30)
+
+    let verified = 0
+    for (const contact of contactsWithEmail) {
+      try {
+        const result = await verifier.verify(contact.email!)
+        contact.emailStatus = result.status === 'verified' ? 'verified'
+          : result.status === 'invalid' ? 'bounced'
+          : 'probable'
+        contact.emailConfidence = result.confidence
+        contact.emailVerifiedAt = DateTime.now()
+        contact.emailVerifyMethod = result.method
+        await contact.save()
+        if (result.status === 'verified') verified++
+      } catch {
+        // Skip failed verifications
+      }
+    }
+
+    logger.info('Email verification: %d/%d verified', verified, contactsWithEmail.length)
   }
 
   /**
