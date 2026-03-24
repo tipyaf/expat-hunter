@@ -55,7 +55,13 @@
     "passwordResetSuccess": "Your password has been reset. You can now sign in.",
     "resetFailed": "Invalid or expired link. Please request a new one.",
     "invalidResetLink": "This reset link is invalid.",
-    "requestNewLink": "Request a new link"
+    "requestNewLink": "Request a new link",
+    "verifyingEmail": "Verifying your email...",
+    "emailVerified": "Your email has been verified successfully!",
+    "verificationFailed": "This verification link is invalid or has expired.",
+    "emailNotVerified": "Your email is not yet verified.",
+    "resendVerification": "Resend verification email",
+    "verificationSent": "Verification email sent!"
   },
   "dashboard": {
     "title": "Dashboard",

@@ -55,7 +55,13 @@
     "passwordResetSuccess": "Votre mot de passe a été réinitialisé. Vous pouvez maintenant vous connecter.",
     "resetFailed": "Lien invalide ou expiré. Veuillez demander un nouveau lien.",
     "invalidResetLink": "Ce lien de réinitialisation est invalide.",
-    "requestNewLink": "Demander un nouveau lien"
+    "requestNewLink": "Demander un nouveau lien",
+    "verifyingEmail": "Vérification de votre email...",
+    "emailVerified": "Votre email a été vérifié avec succès !",
+    "verificationFailed": "Le lien de vérification est invalide ou a expiré.",
+    "emailNotVerified": "Votre email n'est pas encore vérifié.",
+    "resendVerification": "Renvoyer l'email de vérification",
+    "verificationSent": "Email de vérification envoyé !"
   },
   "dashboard": {
     "title": "Tableau de bord",

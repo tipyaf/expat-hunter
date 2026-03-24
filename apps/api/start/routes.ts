@@ -40,6 +40,8 @@ router
     router.get('me', [AuthController, 'me']).use(middleware.auth())
     router.post('forgot-password', [AuthController, 'forgotPassword'])
     router.post('reset-password', [AuthController, 'resetPassword'])
+    router.post('verify-email', [AuthController, 'verifyEmail'])
+    router.post('resend-verification', [AuthController, 'resendVerification']).use(middleware.auth())
   })
   .prefix('/api/auth')
 
