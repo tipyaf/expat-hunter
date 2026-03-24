@@ -41,12 +41,13 @@ export default class AnalysisService {
       .where('userId', userId)
       .first()
 
-    if (!profile) {
-      logger.warn('AnalysisService: No candidate profile found for user %s', userId)
-      return { analyzed: 0, errors: 0, skipped: 0, contactIds: [] }
-    }
+    const candidate = profile
+      ? this.buildCandidateData(profile)
+      : this.buildDefaultCandidateData(options?.sourcingRunId)
 
-    const candidate = this.buildCandidateData(profile)
+    if (!profile) {
+      logger.info('AnalysisService: No candidate profile, using default analysis for user %s', userId)
+    }
     const batchSize = options?.batchSize ?? 20
 
     const query = Contact.query()
@@ -157,6 +158,21 @@ export default class AnalysisService {
       targetCountries: profile.targetCountries ?? [],
       targetSectors: profile.targetSectors ?? [],
       targetRoles: profile.targetRoles ?? [],
+      cvSummary: null,
+    }
+  }
+
+  /**
+   * Build default candidate data when no profile exists.
+   * Uses generic criteria to still score contacts meaningfully.
+   */
+  private buildDefaultCandidateData(_sourcingRunId?: string): CandidateForAnalysis {
+    return {
+      skills: ['technology', 'software', 'engineering'],
+      experienceYears: 5,
+      targetCountries: ['NZ', 'AU', 'UK'],
+      targetSectors: ['technology', 'it', 'software'],
+      targetRoles: ['developer', 'engineer', 'manager'],
       cvSummary: null,
     }
   }
