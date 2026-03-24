@@ -23,6 +23,7 @@ interface SearchParams {
   country: string
   sector?: string
   sourceNames?: string[]
+  city?: string
 }
 
 /**
@@ -91,7 +92,8 @@ export default class SearchOrchestratorService {
         userId,
         params.country,
         params.sector,
-        params.sourceNames
+        params.sourceNames,
+        params.city
       )
 
       searchRun.sourcingRunId = sourcingRun.id
