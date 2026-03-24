@@ -3,10 +3,22 @@ import User from '#models/user'
 import { loginValidator, registerValidator } from '#validators/auth_validator'
 import PasswordResetService from '#services/password_reset_service'
 import EmailVerificationService from '#services/email_verification_service'
+// @ts-expect-error — no type declarations for this package
+import disposableDomains from 'disposable-email-domains'
+
+const DISPOSABLE_DOMAINS = new Set(disposableDomains as string[])
 
 export default class AuthController {
   async register({ request, response }: HttpContext) {
     const data = await request.validateUsing(registerValidator)
+
+    // Block disposable email addresses
+    const emailDomain = data.email.split('@')[1]?.toLowerCase()
+    if (emailDomain && DISPOSABLE_DOMAINS.has(emailDomain)) {
+      return response.badRequest({
+        error: { code: 'DISPOSABLE_EMAIL', message: 'Disposable email addresses are not allowed. Please use a permanent email.' },
+      })
+    }
 
     const existing = await User.findBy('email', data.email)
     if (existing) {
