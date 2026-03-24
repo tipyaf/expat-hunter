@@ -54,6 +54,11 @@ Recurring failures and lessons learned across sessions. Every agent MUST read th
 **Root cause**: L'agent a confondu "créer la story" avec "avoir fait le refinement".
 **Rule**: Créer la story NE SUFFIT PAS. Le workflow est : 1) Créer l'US, 2) Présenter l'US à l'utilisateur pour refinement/validation, 3) Attendre l'accord explicite, 4) SEULEMENT ALORS passer en In Progress et commencer le dev. Ne jamais sauter l'étape de refinement, même pour un bug simple.
 
+### [Quality] Les TU ne suffisent pas — tester le FLUX END-TO-END
+**Problem**: sc-88 à sc-94 — 64 TU passants mais l'orchestrateur n'était pas câblé dans le contrôleur. Le flux réel retournait des "Hiring Manager" sans nom ni email. Validé Done sans tester un vrai parcours utilisateur.
+**Root cause**: L'agent a validé chaque service isolément (TU) sans jamais tester l'intégration complète : "je lance une recherche → j'obtiens des contacts nommés avec des emails".
+**Rule**: Après avoir écrit les TU, TOUJOURS tester le flux complet : appeler l'API ou naviguer dans l'app comme un utilisateur et vérifier que le résultat est utile. Un service branché nulle part est un service qui n'existe pas.
+
 ### [Quality] TOUJOURS écrire les TU avant de déclarer terminé
 **Problem**: sc-60 — 4 services modifiés (visa_sponsor_registry, email_enricher, company_enricher, sourcing_service) sans aucun test unitaire. Détecté en review par l'utilisateur.
 **Root cause**: L'agent a implémenté le code et déclaré "done" sans écrire les tests, alors que le framework l'exige (Phase 4: Test).
