@@ -85,7 +85,13 @@ export default function LoginPage() {
           </Button>
         </form>
 
-        <p className="mt-6 text-center text-sm text-[var(--color-text-muted)]">
+        <p className="mt-4 text-center">
+          <Link href="/forgot-password" className="text-sm text-primary hover:underline">
+            {t('forgotPassword')}
+          </Link>
+        </p>
+
+        <p className="mt-4 text-center text-sm text-[var(--color-text-muted)]">
           {t('noAccount')}{' '}
           <Link href="/register" className="text-primary font-medium hover:underline">
             {t('createAccount')}
