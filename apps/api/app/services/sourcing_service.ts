@@ -21,7 +21,8 @@ export default class SourcingService {
     userId: string,
     country: string,
     sector?: string,
-    sourceNames?: string[]
+    sourceNames?: string[],
+    city?: string
   ): Promise<SourcingRun> {
     // Get enabled sources for this country
     const availableSources = await SourcingSource.query()
@@ -53,6 +54,7 @@ export default class SourcingService {
       const params: ScrapeParams = {
         country,
         sector: sector ?? undefined,
+        city: city ?? undefined,
         maxResults: 20,
       }
 

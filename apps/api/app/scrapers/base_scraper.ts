@@ -7,6 +7,7 @@
 export interface ScrapeParams {
   country: string
   sector?: string
+  city?: string
   keywords?: string[]
   maxResults?: number
 }

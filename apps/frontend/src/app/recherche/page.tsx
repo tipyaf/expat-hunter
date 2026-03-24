@@ -36,6 +36,7 @@ export default function SearchPage() {
 
   const [country, setCountry] = useState('NZ')
   const [sector, setSector] = useState('')
+  const [city, setCity] = useState('')
   const [isLaunching, setIsLaunching] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
@@ -119,7 +120,7 @@ export default function SearchPage() {
     setIsLaunching(true)
     setShowModal(true)
     try {
-      await launchSearch(country, sector || undefined)
+      await launchSearch(country, sector || undefined, undefined, city || undefined)
     } catch (err) {
       // Error is visible in the modal via activeRun.status === 'failed'
       console.error('Search launch error:', err)
@@ -193,7 +194,7 @@ export default function SearchPage() {
           {/* Launch form */}
           <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-6 shadow-sm">
             <h2 className="text-lg font-semibold mb-4">{t('launchTitle')}</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
               <div>
                 <label htmlFor="country" className="block text-sm font-medium mb-1">
                   {t('countryLabel')}
@@ -221,6 +222,19 @@ export default function SearchPage() {
                   value={sector}
                   onChange={(e) => setSector(e.target.value)}
                   placeholder={t('sectorPlaceholder')}
+                  className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label htmlFor="city" className="block text-sm font-medium mb-1">
+                  {t('cityLabel')}
+                </label>
+                <input
+                  id="city"
+                  type="text"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  placeholder={t('cityPlaceholder')}
                   className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm"
                 />
               </div>
