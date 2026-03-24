@@ -37,6 +37,7 @@ export default function SearchPage() {
   const [country, setCountry] = useState('NZ')
   const [sector, setSector] = useState('')
   const [city, setCity] = useState('')
+  const [includeHr, setIncludeHr] = useState(false)
   const [isLaunching, setIsLaunching] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
@@ -120,7 +121,7 @@ export default function SearchPage() {
     setIsLaunching(true)
     setShowModal(true)
     try {
-      await launchSearch(country, sector || undefined, undefined, city || undefined)
+      await launchSearch(country, sector || undefined, undefined, city || undefined, includeHr)
     } catch (err) {
       // Error is visible in the modal via activeRun.status === 'failed'
       console.error('Search launch error:', err)
@@ -250,6 +251,16 @@ export default function SearchPage() {
                 </button>
               </div>
             </div>
+            <label htmlFor="includeHr" className="flex items-center gap-2 mt-2 cursor-pointer">
+              <input
+                id="includeHr"
+                type="checkbox"
+                checked={includeHr}
+                onChange={(e) => setIncludeHr(e.target.checked)}
+                className="h-4 w-4 rounded border-[var(--color-border)] text-primary focus:ring-primary"
+              />
+              <span className="text-sm text-[var(--color-text-muted)]">{t('includeHrLabel')}</span>
+            </label>
           </div>
 
           {/* Runs history */}

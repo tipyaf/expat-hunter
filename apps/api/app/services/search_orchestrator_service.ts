@@ -24,6 +24,7 @@ interface SearchParams {
   sector?: string
   sourceNames?: string[]
   city?: string
+  includeHr?: boolean
 }
 
 /**
@@ -103,7 +104,7 @@ export default class SearchOrchestratorService {
       // Step 1b: Hunter domain search — find NAMED contacts at discovered companies
       // Seek gives us companies (who's hiring), Hunter gives us people at those companies
       await this.updateStatus(searchRun, 'scraping', 27)
-      const hunterAdded = await this.findNamedContactsViaHunter(userId, sourcingRun.id)
+      const hunterAdded = await this.findNamedContactsViaHunter(userId, sourcingRun.id, params.includeHr ?? false)
       searchRun.contactsFound += hunterAdded
       await this.updateStatus(searchRun, 'scraping', 33)
 
@@ -225,7 +226,7 @@ export default class SearchOrchestratorService {
    * to find real named contacts with emails. These replace the generic
    * "Hiring Manager" contacts from Seek.
    */
-  private async findNamedContactsViaHunter(userId: string, sourcingRunId: string): Promise<number> {
+  private async findNamedContactsViaHunter(userId: string, sourcingRunId: string, includeHr: boolean): Promise<number> {
     const hunterScraper = new HunterCompanySearchScraper()
     let added = 0
 
@@ -256,6 +257,13 @@ export default class SearchOrchestratorService {
           const name = raw.fullName.toLowerCase().trim()
           if (!name || name === 'hiring manager' || name === 'contact' || name === 'unknown') continue
           if (!raw.email) continue
+
+          // Filter out HR/recruiter roles unless includeHr is true
+          if (!includeHr && raw.role) {
+            const roleLower = raw.role.toLowerCase()
+            const hrKeywords = ['recruiter', 'recruitment', 'talent acquisition', 'human resources', 'hr manager', 'hr director', 'people operations', 'hiring manager']
+            if (hrKeywords.some((kw) => roleLower.includes(kw))) continue
+          }
 
           // Skip if email already exists for this user
           const existing = await Contact.query()

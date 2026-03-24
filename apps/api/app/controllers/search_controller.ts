@@ -11,7 +11,7 @@ export default class SearchController {
    */
   async launch({ auth, request, response }: HttpContext) {
     const user = auth.getUserOrFail()
-    const { country, sector, sources, city } = request.only(['country', 'sector', 'sources', 'city'])
+    const { country, sector, sources, city, includeHr } = request.only(['country', 'sector', 'sources', 'city', 'includeHr'])
 
     if (!country || typeof country !== 'string' || country.length < 2) {
       return response.badRequest({
@@ -27,6 +27,7 @@ export default class SearchController {
       sector: sector ?? undefined,
       sourceNames: Array.isArray(sources) ? sources : undefined,
       city: city ?? undefined,
+      includeHr: includeHr === true,
     })
 
     return response.ok({

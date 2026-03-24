@@ -148,6 +148,7 @@
     "sectorPlaceholder": "Ex: technology, finance, healthcare...",
     "cityLabel": "Ville",
     "cityPlaceholder": "Ex: Auckland, Wellington...",
+    "includeHrLabel": "Inclure les contacts RH / recruteurs",
     "launchButton": "Lancer",
     "launching": "Sourcing en cours...",
     "historyTitle": "Historique des runs",
