@@ -2,6 +2,7 @@ import type { HttpContext } from '@adonisjs/core/http'
 import User from '#models/user'
 import { loginValidator, registerValidator } from '#validators/auth_validator'
 import PasswordResetService from '#services/password_reset_service'
+import EmailVerificationService from '#services/email_verification_service'
 
 export default class AuthController {
   async register({ request, response }: HttpContext) {
@@ -21,6 +22,10 @@ export default class AuthController {
 
     const token = await User.accessTokens.create(user)
 
+    // Send verification email (non-blocking)
+    const verificationService = new EmailVerificationService()
+    verificationService.sendVerification(user).catch(() => {})
+
     return response.created({
       user: {
         id: user.id,
@@ -28,6 +33,7 @@ export default class AuthController {
         fullName: user.fullName,
         locale: user.locale,
         isAdmin: user.isAdmin ?? false,
+        emailVerified: false,
       },
       token: token.value?.release(),
     })
@@ -46,6 +52,7 @@ export default class AuthController {
         fullName: user.fullName,
         locale: user.locale,
         isAdmin: user.isAdmin ?? false,
+        emailVerified: user.isEmailVerified,
       },
       token: token.value?.release(),
     }
@@ -67,8 +74,38 @@ export default class AuthController {
       fullName: user.fullName,
       locale: user.locale,
       isAdmin: user.isAdmin ?? false,
+      emailVerified: user.isEmailVerified,
       createdAt: user.createdAt,
     }
+  }
+
+  async verifyEmail({ request, response }: HttpContext) {
+    const { token } = request.only(['token'])
+    if (!token || typeof token !== 'string') {
+      return response.badRequest({ error: { code: 'TOKEN_REQUIRED', message: 'Verification token is required' } })
+    }
+
+    const service = new EmailVerificationService()
+    const success = await service.verify(token)
+
+    if (!success) {
+      return response.badRequest({ error: { code: 'TOKEN_INVALID', message: 'Invalid or expired verification token' } })
+    }
+
+    return response.ok({ message: 'Email verified successfully' })
+  }
+
+  async resendVerification({ auth, response }: HttpContext) {
+    const user = auth.getUserOrFail()
+
+    if (user.isEmailVerified) {
+      return response.ok({ message: 'Email is already verified' })
+    }
+
+    const service = new EmailVerificationService()
+    await service.resend(user.id)
+
+    return response.ok({ message: 'Verification email sent' })
   }
 
   async forgotPassword({ request, response }: HttpContext) {
