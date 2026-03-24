@@ -329,19 +329,6 @@ export function SearchProgressModal({
         {/* Step indicator */}
         <StepIndicator steps={steps} currentStep={currentStep} status={status} />
 
-        {/* Progress bar */}
-        <div className="mt-5">
-          <div className="w-full h-2 bg-[var(--color-border)] rounded-full overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all duration-700 ease-out ${
-                status === 'failed' ? 'bg-red-500' : status === 'completed' ? 'bg-green-500' : 'bg-primary'
-              }`}
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
-          <p className="text-center text-xs text-[var(--color-text-muted)] mt-1">{progressPercent}%</p>
-        </div>
-
         <div className="border-t border-[var(--color-border)] my-5" />
 
         {/* Live info area */}
