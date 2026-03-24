@@ -61,7 +61,8 @@
     "verificationFailed": "Le lien de vérification est invalide ou a expiré.",
     "emailNotVerified": "Votre email n'est pas encore vérifié.",
     "resendVerification": "Renvoyer l'email de vérification",
-    "verificationSent": "Email de vérification envoyé !"
+    "verificationSent": "Email de vérification envoyé !",
+    "disposableEmail": "Les adresses email jetables ne sont pas autorisées. Veuillez utiliser un email permanent."
   },
   "dashboard": {
     "title": "Tableau de bord",

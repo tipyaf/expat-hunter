@@ -46,6 +46,7 @@
     "@poppinss/ts-exec": "^1.4.4",
     "@vinejs/vine": "^4.3.0",
     "bcrypt": "^6.0.0",
+    "disposable-email-domains": "^1.0.62",
     "hot-hook": "^1.0.0",
     "luxon": "^3.7.2",
     "node-html-parser": "^7.1.0",

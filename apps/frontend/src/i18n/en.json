@@ -61,7 +61,8 @@
     "verificationFailed": "This verification link is invalid or has expired.",
     "emailNotVerified": "Your email is not yet verified.",
     "resendVerification": "Resend verification email",
-    "verificationSent": "Verification email sent!"
+    "verificationSent": "Verification email sent!",
+    "disposableEmail": "Disposable email addresses are not allowed. Please use a permanent email."
   },
   "dashboard": {
     "title": "Dashboard",
