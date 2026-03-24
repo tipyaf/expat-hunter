@@ -1,6 +1,7 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import User from '#models/user'
 import { loginValidator, registerValidator } from '#validators/auth_validator'
+import PasswordResetService from '#services/password_reset_service'
 
 export default class AuthController {
   async register({ request, response }: HttpContext) {
@@ -68,5 +69,38 @@ export default class AuthController {
       isAdmin: user.isAdmin ?? false,
       createdAt: user.createdAt,
     }
+  }
+
+  async forgotPassword({ request, response }: HttpContext) {
+    const { email } = request.only(['email'])
+    if (!email || typeof email !== 'string') {
+      return response.badRequest({ error: { code: 'EMAIL_REQUIRED', message: 'Email is required' } })
+    }
+
+    const service = new PasswordResetService()
+    await service.requestReset(email)
+
+    // Always return success to prevent email enumeration
+    return response.ok({ message: 'If an account with this email exists, a reset link has been sent.' })
+  }
+
+  async resetPassword({ request, response }: HttpContext) {
+    const { token, password } = request.only(['token', 'password'])
+
+    if (!token || typeof token !== 'string') {
+      return response.badRequest({ error: { code: 'TOKEN_REQUIRED', message: 'Reset token is required' } })
+    }
+    if (!password || typeof password !== 'string' || password.length < 8) {
+      return response.badRequest({ error: { code: 'PASSWORD_INVALID', message: 'Password must be at least 8 characters' } })
+    }
+
+    const service = new PasswordResetService()
+    const success = await service.resetPassword(token, password)
+
+    if (!success) {
+      return response.badRequest({ error: { code: 'TOKEN_INVALID', message: 'Invalid or expired reset token' } })
+    }
+
+    return response.ok({ message: 'Password has been reset successfully' })
   }
 }

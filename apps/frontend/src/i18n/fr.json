@@ -40,7 +40,22 @@
     "register": "Créer mon compte",
     "hasAccount": "Déjà un compte ?",
     "login": "Se connecter",
-    "emailConflict": "Cet email est déjà utilisé"
+    "emailConflict": "Cet email est déjà utilisé",
+    "forgotPassword": "Mot de passe oublié ?",
+    "forgotPasswordTitle": "Réinitialiser votre mot de passe",
+    "sendResetLink": "Envoyer le lien",
+    "resetEmailSent": "Si un compte existe avec cet email, un lien de réinitialisation a été envoyé.",
+    "backToLogin": "Retour à la connexion",
+    "resetPasswordTitle": "Nouveau mot de passe",
+    "newPasswordLabel": "Nouveau mot de passe",
+    "confirmPasswordLabel": "Confirmer le mot de passe",
+    "resetPasswordButton": "Réinitialiser",
+    "passwordMismatch": "Les mots de passe ne correspondent pas",
+    "passwordTooShort": "Le mot de passe doit contenir au moins 8 caractères",
+    "passwordResetSuccess": "Votre mot de passe a été réinitialisé. Vous pouvez maintenant vous connecter.",
+    "resetFailed": "Lien invalide ou expiré. Veuillez demander un nouveau lien.",
+    "invalidResetLink": "Ce lien de réinitialisation est invalide.",
+    "requestNewLink": "Demander un nouveau lien"
   },
   "dashboard": {
     "title": "Tableau de bord",
