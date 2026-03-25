@@ -192,6 +192,8 @@ export default class SourcingService {
             company.visaSponsorStatus = visaCheck.status
             company.visaSponsorCountries = visaCheck.countries.length > 0 ? visaCheck.countries : null
             company.visaRegistryCheckedAt = DateTime.now()
+            const parsedExpiry = visaCheck.expiresAt ? DateTime.fromISO(visaCheck.expiresAt) : null
+            company.visaSponsorExpiresAt = parsedExpiry?.isValid ? parsedExpiry : null
           }
         }
 
