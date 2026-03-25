@@ -97,6 +97,16 @@ Utiliser `stories-update labels:[{name: "scope:building"}]` à chaque transition
 **Root cause**: L'agent a pris un screenshot sans vérifier si la page était accessible (authentification requise).
 **Rule**: TOUJOURS se connecter via le preview AVANT de tenter de visiter une page protégée. Séquence obligatoire : 1) Naviguer vers /login, 2) Remplir email + password (profile-unit@example.com / password123 pour les tests), 3) Cliquer submit, 4) THEN naviguer vers la page cible. Ne jamais déclarer une UI validée sans screenshot de la page réelle après connexion.
 
+### [Workflow] Toujours fermer le ticket Shortcut après le merge
+**Problem**: sc-30 — PR mergée, story laissée en "In Review". Détecté à la session suivante.
+**Root cause**: La transition Shortcut "In Review → Done" n'était pas dans les verify: commands du story file. La session s'est terminée en plein merge conflict, l'étape de clôture n'a jamais été exécutée.
+**Rule**: Le story template inclut désormais un `AC-BP-[FEATURE]-DONE` (closing_ac) qui vérifie que le PR est mergé. Le validator DOIT passer cet AC en dernier et appeler `stories-update` (workflow_state_id: 500000010) immédiatement après. Sans ça, la story n'est pas "done".
+
+### [Build] Ne jamais éditer manuellement un fichier auto-généré
+**Problem**: sc-205 — la story demandait de modifier `database/schema.ts` manuellement. Ce fichier porte la mention "DO NOT EDIT manually" et est régénéré automatiquement à chaque `migration:run`. Notre modification a été écrasée par le `--dry-run`.
+**Root cause**: Le refinement agent avait listé `schema.ts` dans le scope `files_to_modify` sans savoir qu'il était auto-généré.
+**Rule**: Avant d'inclure un fichier dans le scope d'une story, TOUJOURS vérifier s'il porte une mention "auto-generated / DO NOT EDIT". Si oui : NE PAS l'inclure dans `files_to_modify`. À la place : créer la migration correspondante → lancer `migration:run` → le fichier se régénère automatiquement avec les bonnes informations. Même règle pour tout fichier généré (OpenAPI, GraphQL schema, etc.).
+
 ### [Quality] TOUJOURS écrire les TU avant de déclarer terminé
 **Problem**: sc-60 — 4 services modifiés (visa_sponsor_registry, email_enricher, company_enricher, sourcing_service) sans aucun test unitaire. Détecté en review par l'utilisateur.
 **Root cause**: L'agent a implémenté le code et déclaré "done" sans écrire les tests, alors que le framework l'exige (Phase 4: Test).

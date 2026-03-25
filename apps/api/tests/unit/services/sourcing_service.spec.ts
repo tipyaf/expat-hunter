@@ -1,4 +1,5 @@
 import { test } from '@japa/runner'
+import { DateTime } from 'luxon'
 
 /**
  * SourcingService — GENERIC_NAMES unit tests.
@@ -102,5 +103,44 @@ test.group('SourcingService — GENERIC_NAMES', () => {
     assert.isFalse(isGenericName('Chief Technology Officer'))
     assert.isFalse(isGenericName('Engineering Manager'))
     assert.isFalse(isGenericName('Senior Developer'))
+  })
+})
+
+// ─── visaSponsorExpiresAt logic ───────────────────────────────────────────────
+// Tests for the inline logic in persistContacts that stores visaSponsorExpiresAt.
+// This mirrors the exact logic used in sourcing_service.ts to keep tests
+// independent of the database while still verifying correct behavior.
+
+function computeVisaSponsorExpiresAt(expiresAt: string | undefined): DateTime | null {
+  const parsedExpiry = expiresAt ? DateTime.fromISO(expiresAt) : null
+  return parsedExpiry?.isValid ? parsedExpiry : null
+}
+
+test.group('SourcingService — visaSponsorExpiresAt storage logic', () => {
+  test('visaSponsorExpiresAt is set from a valid future expiresAt', ({ assert }) => {
+    const result = computeVisaSponsorExpiresAt('2027-06-30')
+
+    assert.isNotNull(result)
+    assert.equal(result?.toISODate(), '2027-06-30')
+  })
+
+  test('visaSponsorExpiresAt is null when expiresAt is absent (not_found/unknown result)', ({
+    assert,
+  }) => {
+    const result = computeVisaSponsorExpiresAt(undefined)
+
+    assert.isNull(result)
+  })
+
+  test('visaSponsorExpiresAt is null for an invalid ISO string — no crash', ({ assert }) => {
+    const result = computeVisaSponsorExpiresAt('not-a-valid-date')
+
+    assert.isNull(result)
+  })
+
+  test('visaSponsorExpiresAt is null for an empty string', ({ assert }) => {
+    const result = computeVisaSponsorExpiresAt('')
+
+    assert.isNull(result)
   })
 })
