@@ -38,7 +38,12 @@
     "register": "Créer mon compte",
     "hasAccount": "Déjà un compte ?",
     "login": "Se connecter",
-    "emailConflict": "Cet email est déjà utilisé"
+    "emailConflict": "Cet email est déjà utilisé",
+    "forgotPassword": "Mot de passe oublié ?",
+    "forgotPasswordTitle": "Réinitialiser votre mot de passe",
+    "resetEmailSent": "Un lien de réinitialisation a été envoyé à votre email.",
+    "backToLogin": "Retour à la connexion",
+    "sendResetLink": "Envoyer le lien"
   },
   "dashboard": {
     "title": "Tableau de bord",
@@ -426,5 +431,18 @@
     "dim_hiring": "Recrutement",
     "dim_expatFriendly": "Expat-friendly",
     "dim_momentum": "Momentum"
+  },
+  "chat": {
+    "title": "Assistant ExpatHunter",
+    "modeSupport": "Support",
+    "modeExpert": "Expert",
+    "modeMixed": "Mixte",
+    "clearHistory": "Effacer",
+    "closeChat": "Fermer le chat",
+    "welcomeMessage": "Bonjour ! Je peux vous aider dans votre recherche d'emploi, vos questions de visa et vos campagnes email.",
+    "suggestionsTitle": "Suggestions",
+    "placeholder": "Posez une question…",
+    "send": "Envoyer",
+    "openChat": "Ouvrir le chat"
   }
 }
