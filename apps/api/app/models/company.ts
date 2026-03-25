@@ -54,6 +54,9 @@ export default class Company extends BaseModel {
   declare visaRegistryCheckedAt: DateTime | null
 
   @column.dateTime()
+  declare visaSponsorExpiresAt: DateTime | null
+
+  @column.dateTime()
   declare teamCrawledAt: DateTime | null
 
   @column()

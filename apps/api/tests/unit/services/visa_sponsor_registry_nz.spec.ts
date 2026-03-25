@@ -208,6 +208,86 @@ test.group('VisaSponsorRegistryService — NZ Playwright scraping (unit)', () =>
     assert.equal(result.status, 'accredited')
     assert.equal(result.matchedName, 'Spark New Zealand')
   })
+
+  test('accredited result includes expiresAt from expiryDateOfAccreditation', ({ assert }) => {
+    const futureDate = '2027-06-30'
+    const { body, statusCode } = buildNzApiBody([
+      { employerName: 'Spark New Zealand', expiryDateOfAccreditation: futureDate },
+    ])
+    const service = new VisaSponsorRegistryService()
+
+    const result = (service as any).parseNzApiResponse(body, statusCode, 'spark new zealand')
+
+    assert.equal(result.status, 'accredited')
+    assert.equal(result.expiresAt, futureDate)
+  })
+
+  test('checkNZ passes dynamic TTL function to getOrFetch based on expiresAt', async ({
+    assert,
+  }) => {
+    const futureDate = '2027-06-30'
+    const { body, statusCode } = buildNzApiBody([
+      { employerName: 'Spark New Zealand', expiryDateOfAccreditation: futureDate },
+    ])
+    const service = new VisaSponsorRegistryService()
+    ;(service as any).playwrightClient = mockPlaywrightClient({
+      networkBody: body,
+      networkStatusCode: statusCode,
+    })
+    ;(service as any).nzWaitAfterClickMs = 0
+
+    let capturedTtl: number | ((data: unknown) => number) | undefined
+    ;(service as any).cacheService = {
+      getOrFetch: async (
+        _s: string,
+        _t: string,
+        _k: string,
+        fn: () => Promise<unknown>,
+        ttlDays?: number | ((data: unknown) => number)
+      ) => {
+        capturedTtl = ttlDays
+        return { data: await fn(), fromCache: false }
+      },
+    }
+
+    await service.checkNZ('Spark New Zealand')
+
+    assert.isFunction(capturedTtl, 'TTL should be a function for dynamic computation')
+    // Call the TTL function with a result that has the future expiresAt
+    const ttlValue = (capturedTtl as (data: unknown) => number)({ expiresAt: futureDate })
+    assert.isAbove(ttlValue, 1, 'Dynamic TTL should exceed 1 day for a future expiry date')
+  })
+
+  test('dynamic TTL falls back to 30 days when expiresAt is absent', async ({ assert }) => {
+    const { body, statusCode } = buildNzApiBody([{ employerName: 'Datacom Systems Limited' }])
+    const service = new VisaSponsorRegistryService()
+    ;(service as any).playwrightClient = mockPlaywrightClient({
+      networkBody: body,
+      networkStatusCode: statusCode,
+    })
+    ;(service as any).nzWaitAfterClickMs = 0
+
+    let capturedTtl: number | ((data: unknown) => number) | undefined
+    ;(service as any).cacheService = {
+      getOrFetch: async (
+        _s: string,
+        _t: string,
+        _k: string,
+        fn: () => Promise<unknown>,
+        ttlDays?: number | ((data: unknown) => number)
+      ) => {
+        capturedTtl = ttlDays
+        return { data: await fn(), fromCache: false }
+      },
+    }
+
+    await service.checkNZ('Datacom')
+
+    assert.isFunction(capturedTtl)
+    // No expiresAt → fallback 30 days
+    const ttlValue = (capturedTtl as (data: unknown) => number)({ status: 'accredited' })
+    assert.equal(ttlValue, 30)
+  })
 })
 
 // ─── Integration test against the real site ──────────────────────────────────

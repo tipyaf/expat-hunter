@@ -12,6 +12,8 @@ export interface VisaCheckResult {
   matchedName?: string
   confidence: number // 0-1
   source?: string
+  /** ISO date string — accreditation expiry from the government API (NZ only for now) */
+  expiresAt?: string
 }
 
 export interface VisaSponsorRecord {
@@ -44,6 +46,21 @@ const NZ_SEARCH_BUTTON_SELECTOR =
   'div.list-search__actions > button.btn.list-search__action.list-search__action--search'
 const NZ_API_NETWORK_PATTERN = '**/list-api/getAPIResults/'
 const NZ_WAIT_AFTER_CLICK_MS = 3_000
+/** Fallback cache TTL for NZ visa checks when no expiry date is available */
+const NZ_CACHE_TTL_DAYS = 30
+
+/**
+ * Compute the cache TTL for a NZ visa check result.
+ * If the result contains a valid future expiry date, use it as the TTL.
+ * Falls back to NZ_CACHE_TTL_DAYS (30 days) for unknown/not_found or missing expiry.
+ */
+function computeNzCacheTtl(expiresAt: string | undefined): number {
+  if (!expiresAt) return NZ_CACHE_TTL_DAYS
+  const expiry = DateTime.fromISO(expiresAt)
+  if (!expiry.isValid) return NZ_CACHE_TTL_DAYS
+  const daysUntil = expiry.diff(DateTime.now(), 'days').days
+  return Math.max(1, Math.ceil(daysUntil))
+}
 
 const US_DOL_LCA_URL =
   'https://www.dol.gov/sites/dolgov/files/ETA/oflc/pdfs/LCA_Disclosure_Data_FY2025_Q4.xlsx'
@@ -94,11 +111,9 @@ export default class VisaSponsorRegistryService {
         'immigration-nz',
         'visa',
         cacheKey,
-        async () => {
-          const result = await this.scrapeNzPage(companyName)
-          return result as unknown as Record<string, unknown>
-        },
-        30
+        async () => (await this.scrapeNzPage(companyName)) as unknown as Record<string, unknown>,
+        // Dynamic TTL: daysUntil accreditation expiry — Math.max(1, Math.ceil(daysUntil))
+        (raw) => computeNzCacheTtl((raw as unknown as VisaCheckResult).expiresAt)
       )
 
       return data as unknown as VisaCheckResult
@@ -254,6 +269,7 @@ export default class VisaSponsorRegistryService {
       matchedName,
       confidence: bestScore,
       source: 'immigration.govt.nz',
+      expiresAt: expiryDate || undefined,
     }
   }
 

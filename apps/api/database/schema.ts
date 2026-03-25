@@ -114,7 +114,7 @@ export class CandidateProfileSchema extends BaseModel {
 }
 
 export class CompanySchema extends BaseModel {
-  static $columns = ['city', 'contextData', 'contextEnrichedAt', 'country', 'createdAt', 'domain', 'hiringIntensity', 'id', 'linkedinUrl', 'name', 'sector', 'signals', 'size', 'source', 'teamCrawledAt', 'updatedAt', 'visaRegistryCheckedAt', 'visaSponsorCountries', 'visaSponsorStatus', 'website'] as const
+  static $columns = ['city', 'contextData', 'contextEnrichedAt', 'country', 'createdAt', 'domain', 'hiringIntensity', 'id', 'linkedinUrl', 'name', 'sector', 'signals', 'size', 'source', 'teamCrawledAt', 'updatedAt', 'visaRegistryCheckedAt', 'visaSponsorCountries', 'visaSponsorExpiresAt', 'visaSponsorStatus', 'website'] as const
   $columns = CompanySchema.$columns
   @column()
   declare city: string | null
@@ -152,6 +152,8 @@ export class CompanySchema extends BaseModel {
   declare visaRegistryCheckedAt: DateTime | null
   @column()
   declare visaSponsorCountries: any | null
+  @column.dateTime()
+  declare visaSponsorExpiresAt: DateTime | null
   @column()
   declare visaSponsorStatus: string | null
   @column()
