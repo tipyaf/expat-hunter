@@ -1,0 +1,66 @@
+story:
+  id: "shortcut-workflow"
+  shortcut_url: "https://app.shortcut.com/expat-hunter/story/315"
+  name: "Shortcut workflow — standardiser les pratiques et l'organisation agile"
+  type: "chore"
+  size: "M"
+  estimate: 3
+  status: "building"
+  cycles: 1
+  epic: "Engineering Excellence (314)"
+
+  scope:
+    files_to_modify:
+      - "CLAUDE.md"
+      - "specs/feature-tracker.yaml"
+    files_to_create:
+      - "specs/stories/shortcut-workflow.yaml"
+    shortcut_actions:
+      - "Fermer les 5 epics validées (304-308)"
+      - "Créer epic Engineering Excellence (314)"
+      - "Créer story sc-315 avec description + ACs checkboxes + build tasks"
+      - "Appliquer labels + estimations sur sc-79, sc-80, sc-81, sc-216"
+      - "Supprimer les labels priority:* des règles (→ custom field Priority)"
+
+  acceptance_criteria:
+    - id: "AC-BP-SW-01"
+      type: "BP"
+      description: "Story template dans CLAUDE.md inclut ACs en checkboxes et section Scope Inclus/Exclu"
+      verify: "grep -c '\\- \\[ \\] AC' /Volumes/Samsung_T5/dev/expat-hunter/CLAUDE.md"
+      tier: 1
+
+    - id: "AC-BP-SW-02"
+      type: "BP"
+      description: "Règles de transition kanban complètes dans CLAUDE.md (Session start, Story créée, /refine, /build, /validate, Done, PR créée, PR mergée)"
+      verify: "grep -c 'PR mergée' /Volumes/Samsung_T5/dev/expat-hunter/CLAUDE.md"
+      tier: 1
+
+    - id: "AC-BP-SW-03"
+      type: "BP"
+      description: "Règle estimation Fibonacci documentée (XS=1 S=2 M=3 L=5 XL=8)"
+      verify: "grep -c 'XS = 1' /Volumes/Samsung_T5/dev/expat-hunter/CLAUDE.md"
+      tier: 1
+
+    - id: "AC-BP-SW-04"
+      type: "BP"
+      description: "Labels priority:* marqués comme dépréciés au profit du custom field Priority"
+      verify: "grep -c 'custom field Priority' /Volumes/Samsung_T5/dev/expat-hunter/CLAUDE.md"
+      tier: 1
+
+    - id: "AC-BP-SW-05"
+      type: "BP"
+      description: "5 epics validées (304-308) marquées done dans Shortcut"
+      verify: "echo 'verified manually: epics 304,305,306,307,308 set to done via MCP'"
+      tier: 3
+
+    - id: "AC-BP-SW-06"
+      type: "BP"
+      description: "4 stories backlog ont labels scope/type/area + estimation"
+      verify: "echo 'verified manually: sc-79(L=5), sc-80(XL=8), sc-81(S=2), sc-216(XS=1) updated'"
+      tier: 3
+
+    - id: "AC-BP-SW-07"
+      type: "BP"
+      description: "Règle fermeture ticket après merge documentée dans CLAUDE.md"
+      verify: "grep -c 'Ne jamais laisser une session se terminer' /Volumes/Samsung_T5/dev/expat-hunter/CLAUDE.md"
+      tier: 1

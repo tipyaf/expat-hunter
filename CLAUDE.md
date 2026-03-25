@@ -156,10 +156,13 @@ Before executing a skill, verify its prerequisites exist **on the filesystem**:
 [Pourquoi cette story existe, quel problème elle résout]
 
 ## Scope
-[Ce qui est inclus / exclu explicitement]
+**Inclus :** [liste explicite]
+**Exclu :** [liste explicite]
 
 ## Critères d'acceptation
-[Liste reprise des ACs du story file YAML, cochée au fur et à mesure]
+- [ ] AC1 — [Given / When / Then]
+- [ ] AC2 — [Given / When / Then]
+(reprendre exactement les ACs du story file YAML — cocher au fur et à mesure)
 
 ## Références
 - Story file: specs/stories/[id].yaml
@@ -184,7 +187,25 @@ Ces 11 tâches DOIVENT être présentes et cochées au fur et à mesure via `sto
 - **scope:** `scope:pending` → `scope:refined` → `scope:building` → `scope:testing` → `scope:validated`
 - **type:** `type:feature` | `type:bug` | `type:chore` | `type:tech-debt`
 - **area:** `area:frontend` | `area:backend` | `area:fullstack` | `area:infra` | `area:ai`
-- **priority:** `priority:critical` | `priority:high` | `priority:medium` | `priority:low`
+
+> ⚠️ Ne PAS utiliser les labels `priority:*` — utiliser uniquement le **custom field Priority** natif Shortcut (Highest / High / Medium / Low / Lowest).
+
+### Estimation — échelle Fibonacci obligatoire
+Toute story créée DOIT avoir une estimation en points :
+- **XS = 1** — changement trivial, < 1h
+- **S = 2** — petite feature ou fix simple, < 2h
+- **M = 3** — feature standard, demi-journée
+- **L = 5** — feature complexe, 1 jour
+- **XL = 8** — feature majeure, 2+ jours
+- **Epic = 13+** — à découper obligatoirement
+
+### Fermeture obligatoire après merge
+Après chaque PR mergée, l'agent DOIT immédiatement :
+1. Passer le ticket à `workflow_state_id: 500000010` (Done)
+2. Appliquer le label `scope:validated`
+3. Vérifier qu'aucun autre ticket lié reste en "In Review"
+
+Ne jamais laisser une session se terminer avec un ticket en "In Review" dont la PR est mergée.
 
 ### Workflow states (ID → nom)
 - `500000006` Backlog → `500000007` To Do → `500000008` In Progress → `500000009` In Review → `500000010` Done
@@ -192,11 +213,15 @@ Ces 11 tâches DOIVENT être présentes et cochées au fur et à mesure via `sto
 ### Règles automatiques agent
 | Événement | Action Shortcut obligatoire |
 |-----------|----------------------------|
-| Début `/build` | `workflow_state_id: 500000008` + label `scope:building` |
-| Début `/validate` | `workflow_state_id: 500000009` + label `scope:testing` |
-| Tous ACs passent | `workflow_state_id: 500000010` + label `scope:validated` |
-| Chaque étape build complétée | `stories-update-task isCompleted: true` |
+| Session start | Vérifier Shortcut (stories-search) AVANT toute décision |
+| Story créée | Ajouter les 8 tasks build checklist via `stories-add-task` + estimation + labels scope/type/area/priority |
+| Début `/refine` | `workflow_state_id: 500000007` (To Do) + label `scope:refined` |
+| Début `/build` | `workflow_state_id: 500000008` (In Progress) + label `scope:building` |
+| Début `/validate` | `workflow_state_id: 500000009` (In Review) + label `scope:testing` |
+| Tous ACs passent | `workflow_state_id: 500000010` (Done) + label `scope:validated` |
+| Chaque étape build complétée | `stories-update-task isCompleted: true` (cocher immédiatement) |
 | PR créée | `stories-add-external-link` avec l'URL GitHub |
+| PR mergée | `workflow_state_id: 500000010` + vérifier tous les tickets liés |
 
 ## Acceptance criteria format (unified)
 
