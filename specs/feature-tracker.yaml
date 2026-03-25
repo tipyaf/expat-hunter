@@ -28,7 +28,7 @@ features:
     name: "Candidate Profile"
     priority: "must-have"
     status: "pending"
-    cycles: 0
+    cycles: 1
     story_file: ""
     depends_on: []
     started_at: ""
@@ -39,7 +39,7 @@ features:
     name: "Contact Sourcing"
     priority: "must-have"
     status: "pending"
-    cycles: 0
+    cycles: 1
     story_file: ""
     depends_on: ["candidate-profile"]
     started_at: ""
@@ -50,7 +50,7 @@ features:
     name: "AI Relevance Analysis"
     priority: "must-have"
     status: "pending"
-    cycles: 0
+    cycles: 1
     story_file: ""
     depends_on: ["candidate-profile", "contact-sourcing"]
     started_at: ""
@@ -61,7 +61,7 @@ features:
     name: "Personalized Emailing"
     priority: "must-have"
     status: "pending"
-    cycles: 0
+    cycles: 1
     story_file: ""
     depends_on: ["ai-relevance-analysis"]
     started_at: ""
@@ -72,7 +72,7 @@ features:
     name: "Pipeline Dashboard"
     priority: "must-have"
     status: "pending"
-    cycles: 0
+    cycles: 1
     story_file: ""
     depends_on: ["contact-sourcing"]
     started_at: ""
@@ -85,7 +85,7 @@ features:
     name: "Signal Detection"
     priority: "should-have"
     status: "pending"
-    cycles: 0
+    cycles: 1
     story_file: ""
     depends_on: ["contact-sourcing"]
     started_at: ""
@@ -96,7 +96,7 @@ features:
     name: "Multi-Country Support"
     priority: "should-have"
     status: "pending"
-    cycles: 0
+    cycles: 1
     story_file: ""
     depends_on: ["contact-sourcing"]
     started_at: ""
@@ -109,7 +109,7 @@ features:
     name: "LinkedIn Messaging"
     priority: "nice-to-have"
     status: "pending"
-    cycles: 0
+    cycles: 1
     story_file: ""
     depends_on: ["contact-sourcing"]
     started_at: ""
@@ -120,7 +120,7 @@ features:
     name: "Multi-Users"
     priority: "nice-to-have"
     status: "pending"
-    cycles: 0
+    cycles: 1
     story_file: ""
     depends_on: []
     started_at: ""
@@ -131,7 +131,7 @@ features:
     name: "Expat Assistance"
     priority: "nice-to-have"
     status: "pending"
-    cycles: 0
+    cycles: 1
     story_file: ""
     depends_on: []
     started_at: ""
@@ -142,7 +142,7 @@ features:
     name: "Interview Preparation"
     priority: "nice-to-have"
     status: "pending"
-    cycles: 0
+    cycles: 1
     story_file: ""
     depends_on: ["candidate-profile"]
     started_at: ""
@@ -153,7 +153,7 @@ features:
     name: "Mobile App"
     priority: "nice-to-have"
     status: "pending"
-    cycles: 0
+    cycles: 1
     story_file: ""
     depends_on: ["pipeline-dashboard"]
     started_at: ""
@@ -164,7 +164,7 @@ features:
     name: "Analytics Dashboard"
     priority: "nice-to-have"
     status: "pending"
-    cycles: 0
+    cycles: 1
     story_file: ""
     depends_on: ["personalized-emailing"]
     started_at: ""
@@ -176,8 +176,8 @@ features:
   - id: "sc-30"
     name: "Fix visa check NZ — Playwright-based scraping via external server"
     priority: "should-have"
-    status: "refined"
-    cycles: 0
+    status: "validated"
+    cycles: 1
     story_file: "specs/stories/sc-30.yaml"
     depends_on: []
     started_at: ""

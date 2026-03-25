@@ -9,26 +9,26 @@ import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 import { ProactiveTip } from '@/components/ui/proactive-tip'
-import { Mail, MessageSquare, Search, TrendingUp, Users, Award } from 'lucide-react'
+import { Mail, MessageSquare, Search } from 'lucide-react'
 
 const ACTION_ICONS: Record<string, typeof Mail> = {
   emails_to_validate: Mail,
   replies_received: MessageSquare,
-  sourcing_completed: Users,
-  searches_in_progress: Search,
+  sourcing_completed: Search,
 }
 
 export default function DashboardPage() {
   const { user, isLoading } = useAuth()
   const { profile, isLoading: profileLoading } = useProfile()
-  const { actions, stats, tip, isLoading: dashLoading } = useDashboard()
+  const { actions, stats, isLoading: dashLoading } = useDashboard()
   const router = useRouter()
   const t = useTranslations('dashboard')
   const tc = useTranslations('common')
+  const tt = useTranslations('tips')
 
   useEffect(() => {
-    if (!isLoading && !profileLoading && user && profile && !profile.onboardingCompleted) {
-      router.push('/onboarding')
+    if (!isLoading && !profileLoading && user && !profile?.onboardingCompleted) {
+      router.push('/profil/setup')
     }
   }, [isLoading, profileLoading, user, profile, router])
 
@@ -40,7 +40,7 @@ export default function DashboardPage() {
     )
   }
 
-  if (profile && !profile.onboardingCompleted) {
+  if (!profile?.onboardingCompleted) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <p className="text-[var(--color-text-muted)]">{tc('redirecting')}</p>
@@ -57,15 +57,16 @@ export default function DashboardPage() {
           <p className="text-[var(--color-text-muted)]">{t('welcome', { name: user.fullName })}</p>
         </div>
         <div className="flex-1 overflow-y-auto px-4 md:px-8 pb-8">
-          {/* Expert tip — contextual from API */}
-          {!dashLoading && (
-            <div className="mb-6">
-              <ProactiveTip
-                message={tip?.message ?? t('dashboardReady')}
-                cta={tip?.cta ?? { label: t('dashboardReadyCta'), href: '/recherche' }}
-              />
-            </div>
-          )}
+          {/* Expert tip */}
+          <div className="mb-6">
+            <ProactiveTip
+              message={stats.contacts === 0 ? tt('welcomeMessage') : tt('dashboardReady')}
+              cta={stats.contacts === 0
+                ? { label: tt('welcomeCta'), href: '/profil' }
+                : { label: tt('dashboardReadyCta'), href: '/recherche' }
+              }
+            />
+          </div>
 
           {/* Actions en attente */}
           <div className="mb-8">
@@ -111,44 +112,18 @@ export default function DashboardPage() {
           {/* Statistiques rapides */}
           <div>
             <h2 className="text-lg font-semibold mb-4">{t('quickStats')}</h2>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-              <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-4 shadow-sm">
-                <div className="flex items-center gap-2 mb-1">
-                  <Users className="w-4 h-4 text-primary" />
-                  <h3 className="text-xs font-medium text-[var(--color-text-muted)]">{t('contacts')}</h3>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-6 shadow-sm">
+                <h3 className="text-sm font-medium text-[var(--color-text-muted)] mb-1">{t('contacts')}</h3>
                 <p className="text-2xl font-bold">{stats.contacts}</p>
               </div>
-              <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-4 shadow-sm">
-                <div className="flex items-center gap-2 mb-1">
-                  <Mail className="w-4 h-4 text-primary" />
-                  <h3 className="text-xs font-medium text-[var(--color-text-muted)]">{t('emailsSent')}</h3>
-                </div>
+              <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-6 shadow-sm">
+                <h3 className="text-sm font-medium text-[var(--color-text-muted)] mb-1">{t('emailsSent')}</h3>
                 <p className="text-2xl font-bold">{stats.emailsSent}</p>
               </div>
-              <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-4 shadow-sm">
-                <div className="flex items-center gap-2 mb-1">
-                  <MessageSquare className="w-4 h-4 text-primary" />
-                  <h3 className="text-xs font-medium text-[var(--color-text-muted)]">{t('repliesReceived')}</h3>
-                </div>
+              <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-6 shadow-sm">
+                <h3 className="text-sm font-medium text-[var(--color-text-muted)] mb-1">{t('repliesReceived')}</h3>
                 <p className="text-2xl font-bold">{stats.replies}</p>
-              </div>
-              <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-4 shadow-sm">
-                <div className="flex items-center gap-2 mb-1">
-                  <TrendingUp className="w-4 h-4 text-emerald-500" />
-                  <h3 className="text-xs font-medium text-[var(--color-text-muted)]">{t('responseRate')}</h3>
-                </div>
-                <p className="text-2xl font-bold">
-                  {stats.responseRate}
-                  <span className="text-sm font-normal text-[var(--color-text-muted)] ml-0.5">%</span>
-                </p>
-              </div>
-              <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-4 shadow-sm">
-                <div className="flex items-center gap-2 mb-1">
-                  <Award className="w-4 h-4 text-yellow-500" />
-                  <h3 className="text-xs font-medium text-[var(--color-text-muted)]">{t('interviews')}</h3>
-                </div>
-                <p className="text-2xl font-bold">{stats.interviews}</p>
               </div>
             </div>
           </div>

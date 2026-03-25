@@ -5,15 +5,11 @@ import { ContactSourceBadge } from '@/components/ui/contact-source-badge'
 import { EmailStatusBadge } from '@/components/ui/email-status-badge'
 import { ScoreBreakdown } from '@/components/ui/score-breakdown'
 import { VisaSponsorBadge } from '@/components/ui/visa-sponsor-badge'
-import { ProactiveTip } from '@/components/ui/proactive-tip'
-import { ConfirmModal } from '@/components/ui/confirm-modal'
 import { useAuth } from '@/contexts/auth-context'
 import { usePipeline } from '@/hooks/use-pipeline'
 import type { PipelineContact } from '@/hooks/use-pipeline'
-import { apiClient } from '@/lib/api-client'
 import { useTranslations } from 'next-intl'
-import { useRef, useState, useCallback } from 'react'
-import { Ban } from 'lucide-react'
+import { useRef, useState } from 'react'
 
 function relevanceBadge(label: string | null) {
   switch (label) {
@@ -42,7 +38,6 @@ const COLUMN_COLORS: Record<string, string> = {
   to_contact: 'border-t-blue-500',
   contacted: 'border-t-indigo-500',
   in_discussion: 'border-t-purple-500',
-  interview: 'border-t-yellow-500',
   done: 'border-t-green-500',
 }
 
@@ -50,39 +45,27 @@ function ContactCard({
   contact,
   t,
   onDragStart,
-  onBlock,
 }: {
   contact: PipelineContact
   t: (key: string) => string
   onDragStart: (e: React.DragEvent, contactId: string) => void
-  onBlock: (contact: PipelineContact) => void
 }) {
   return (
     <div
       draggable
       onDragStart={(e) => onDragStart(e, contact.id)}
-      className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-light)] p-3 shadow-sm cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow group"
+      className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-light)] p-3 shadow-sm cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow"
     >
-      {/* Name + relevance + block */}
+      {/* Name + relevance */}
       <div className="flex items-start justify-between gap-2 mb-1">
-        <p className="text-sm font-medium text-[var(--color-text-main)] truncate flex-1">
+        <p className="text-sm font-medium text-[var(--color-text-main)] truncate">
           {contact.fullName}
         </p>
-        <div className="flex items-center gap-1 shrink-0">
-          {contact.relevanceLabel && (
-            <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${relevanceBadge(contact.relevanceLabel)}`}>
-              {t(`relevance_${contact.relevanceLabel}`)}
-            </span>
-          )}
-          <button
-            type="button"
-            onClick={() => onBlock(contact)}
-            title={t('blockContact')}
-            className="opacity-0 group-hover:opacity-100 transition-opacity rounded p-0.5 text-[var(--color-text-muted)] hover:text-red-500"
-          >
-            <Ban className="w-3 h-3" />
-          </button>
-        </div>
+        {contact.relevanceLabel && (
+          <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${relevanceBadge(contact.relevanceLabel)}`}>
+            {t(`relevance_${contact.relevanceLabel}`)}
+          </span>
+        )}
       </div>
 
       {/* Role */}
@@ -138,44 +121,13 @@ function ContactCard({
   )
 }
 
-interface BlockTarget {
-  contact: PipelineContact
-  scope: 'contact' | 'company'
-  durationDays: number | null
-  reason: string
-}
-
 export default function PipelinePage() {
-  const { user, isLoading: authLoading, token } = useAuth()
+  const { user, isLoading: authLoading } = useAuth()
   const t = useTranslations('pipeline')
   const tc = useTranslations('common')
-  const { columns, stats, total, isLoading, moveContact, refresh } = usePipeline()
+  const { columns, stats, total, isLoading, moveContact } = usePipeline()
   const [dragOverCol, setDragOverCol] = useState<string | null>(null)
   const dragContactId = useRef<string | null>(null)
-  const [blockTarget, setBlockTarget] = useState<PipelineContact | null>(null)
-  const [blockForm, setBlockForm] = useState<{ scope: 'contact' | 'company'; durationDays: string; reason: string }>({
-    scope: 'contact',
-    durationDays: '90',
-    reason: '',
-  })
-  const [blocking, setBlocking] = useState(false)
-
-  // Contextual tip for kanban
-  const [tip, setTip] = useState<{ message: string; cta?: { label: string; href: string } } | null>(null)
-  const tipFetchedForCol = useRef<string | null>(null)
-  const fetchTip = useCallback(async (colKey: string) => {
-    if (!token || tipFetchedForCol.current === colKey) return
-    tipFetchedForCol.current = colKey
-    try {
-      const res = await apiClient.get<{ data: { message: string; cta?: { label: string; href: string } } }>(
-        `/api/tips/contextual?page=kanban&status=${colKey}`,
-        { token }
-      )
-      setTip(res.data)
-    } catch {
-      // silently fail
-    }
-  }, [token])
 
   if (authLoading || !user) {
     return (
@@ -192,7 +144,6 @@ export default function PipelinePage() {
   const handleDragOver = (e: React.DragEvent, colKey: string) => {
     e.preventDefault()
     setDragOverCol(colKey)
-    void fetchTip(colKey)
   }
 
   const handleDragLeave = () => {
@@ -210,26 +161,7 @@ export default function PipelinePage() {
     const contact = columns.flatMap((c) => c.contacts).find((c) => c.id === contactId)
     if (!contact || col.statuses.includes(contact.status)) return
 
-    void moveContact(contactId, targetStatus, 'drag_drop')
-  }
-
-  const handleBlock = async () => {
-    if (!token || !blockTarget) return
-    setBlocking(true)
-    try {
-      await apiClient.post('/api/blocked', {
-        entityType: blockForm.scope,
-        entityId: blockForm.scope === 'company' ? (blockTarget.company?.id ?? blockTarget.id) : blockTarget.id,
-        reason: blockForm.reason || null,
-        durationDays: blockForm.durationDays ? Number(blockForm.durationDays) : null,
-      }, { token })
-      setBlockTarget(null)
-      refresh()
-    } catch {
-      // silently fail
-    } finally {
-      setBlocking(false)
-    }
+    void moveContact(contactId, targetStatus)
   }
 
   return (
@@ -263,22 +195,15 @@ export default function PipelinePage() {
           )}
         </div>
 
-        {/* Contextual ProactiveTip */}
-        {tip && (
-          <div className="px-4 md:px-8 py-2">
-            <ProactiveTip message={tip.message} cta={tip.cta} />
-          </div>
-        )}
-
-        <div className="flex-1 overflow-x-auto overflow-y-hidden px-4 md:px-8 pb-8 min-h-0">
+        <div className="flex-1 overflow-x-auto overflow-y-hidden px-4 md:px-8 pb-8">
           {isLoading ? (
             <p className="text-sm text-[var(--color-text-muted)] pt-4">{tc('loading')}</p>
           ) : (
-            <div className="grid grid-cols-6 gap-4 h-full pt-4 min-w-[1200px] min-h-0">
+            <div className="flex gap-4 h-full pt-4">
               {columns.map((col) => (
                 <div
                   key={col.key}
-                  className={`flex flex-col min-w-0 min-h-0 rounded-xl border border-[var(--color-border)] border-t-4 ${COLUMN_COLORS[col.key] ?? 'border-t-gray-300'} bg-[var(--color-surface-light)] ${
+                  className={`flex flex-col w-72 shrink-0 rounded-xl border border-[var(--color-border)] border-t-4 ${COLUMN_COLORS[col.key] ?? 'border-t-gray-300'} bg-[var(--color-surface-light)] ${
                     dragOverCol === col.key ? 'ring-2 ring-primary/30' : ''
                   }`}
                   onDragOver={(e) => handleDragOver(e, col.key)}
@@ -307,7 +232,6 @@ export default function PipelinePage() {
                           contact={contact}
                           t={t}
                           onDragStart={handleDragStart}
-                          onBlock={setBlockTarget}
                         />
                       ))
                     )}
@@ -318,86 +242,6 @@ export default function PipelinePage() {
           )}
         </div>
       </main>
-
-      {/* Block modal */}
-      {blockTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-sm rounded-xl bg-[var(--color-surface-light)] p-6 shadow-xl">
-            <h2 className="text-base font-semibold text-[var(--color-text-main)] mb-4">{t('blockTitle')}</h2>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1">{t('blockScope')}</label>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setBlockForm((f) => ({ ...f, scope: 'contact' }))}
-                    className={`flex-1 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                      blockForm.scope === 'contact'
-                        ? 'bg-primary text-white'
-                        : 'border border-[var(--color-border)] text-[var(--color-text-muted)]'
-                    }`}
-                  >
-                    {t('blockContact')}
-                  </button>
-                  {blockTarget.company && (
-                    <button
-                      type="button"
-                      onClick={() => setBlockForm((f) => ({ ...f, scope: 'company' }))}
-                      className={`flex-1 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                        blockForm.scope === 'company'
-                          ? 'bg-primary text-white'
-                          : 'border border-[var(--color-border)] text-[var(--color-text-muted)]'
-                      }`}
-                    >
-                      {t('blockCompany')}
-                    </button>
-                  )}
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1">{t('blockDuration')}</label>
-                <select
-                  value={blockForm.durationDays}
-                  onChange={(e) => setBlockForm((f) => ({ ...f, durationDays: e.target.value }))}
-                  className="w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-light)] px-3 py-1.5 text-sm"
-                >
-                  <option value="30">{t('block30days')}</option>
-                  <option value="90">{t('block90days')}</option>
-                  <option value="180">{t('block180days')}</option>
-                  <option value="">{t('blockPermanent')}</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-[var(--color-text-muted)] mb-1">{t('blockReason')}</label>
-                <input
-                  type="text"
-                  value={blockForm.reason}
-                  onChange={(e) => setBlockForm((f) => ({ ...f, reason: e.target.value }))}
-                  placeholder={t('blockReasonPlaceholder')}
-                  className="w-full rounded-lg border border-[var(--color-border)] bg-transparent px-3 py-1.5 text-sm"
-                />
-              </div>
-            </div>
-            <div className="flex gap-2 mt-5">
-              <button
-                type="button"
-                onClick={() => void handleBlock()}
-                disabled={blocking}
-                className="flex-1 rounded-lg bg-red-600 text-white px-4 py-2 text-sm font-medium hover:bg-red-700 disabled:opacity-50"
-              >
-                {blocking ? tc('saving') : t('blockConfirm')}
-              </button>
-              <button
-                type="button"
-                onClick={() => setBlockTarget(null)}
-                className="rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm font-medium text-[var(--color-text-muted)]"
-              >
-                {tc('cancel')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

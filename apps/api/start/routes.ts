@@ -201,6 +201,11 @@ router
   .use(middleware.admin())
 
 router
+  .post('/api/admin/refresh-visa-registries', [EnrichmentController, 'refreshVisaRegistries'])
+  .use(middleware.auth())
+  .use(middleware.admin())
+
+router
   .group(() => {
     router.post('/chat', [ChatController, 'chat'])
     router.get('/chat/:sessionId', [ChatController, 'history'])

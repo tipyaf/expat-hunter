@@ -79,7 +79,7 @@ export default class SourcingService {
 
       // Deduplicate and persist
       const uniqueContacts = this.deduplicateRawContacts(allContacts)
-      const { count: persistedCount, newCompanies } = await this.persistContacts(
+      const { count: persistedCount, companiesWithoutEmail } = await this.persistContacts(
         userId,
         run.id,
         uniqueContacts
@@ -92,8 +92,8 @@ export default class SourcingService {
       run.errors = Object.keys(errors).length > 0 ? errors : null
       await run.save()
 
-      // Trigger CompanyEnricher async (non-blocking) for ALL new companies
-      this.triggerCompanyEnrichment(userId, run.id, newCompanies).catch(() => {})
+      // Trigger CompanyEnricher async (non-blocking) for companies without email
+      this.triggerCompanyEnrichment(userId, run.id, companiesWithoutEmail).catch(() => {})
     } catch (error) {
       run.status = 'failed'
       run.completedAt = DateTime.now()
@@ -148,14 +148,15 @@ export default class SourcingService {
 
   /**
    * Persist raw contacts: create companies and contacts, skip duplicates.
-   * Returns count of persisted contacts and list of all new companies (for CompanyEnricher).
+   * Returns count of persisted contacts and list of companies without any email.
    */
   private async persistContacts(
     userId: string,
     runId: string,
     rawContacts: RawContact[]
-  ): Promise<{ count: number; newCompanies: Company[] }> {
+  ): Promise<{ count: number; companiesWithoutEmail: Company[] }> {
     let count = 0
+    const companiesWithEmail = new Set<string>()
     const allCompanies = new Map<string, Company>()
     const enricher = new CompanyEnricher()
     const visaRegistry = new VisaSponsorRegistryService()
@@ -197,6 +198,7 @@ export default class SourcingService {
         if (company.$isDirty) await company.save()
 
         allCompanies.set(companyKey, company)
+        if (raw.email) companiesWithEmail.add(companyKey)
 
         // Cache company data
         await this.cacheService.getOrFetch(raw.source, 'company', companyKey, async () => ({
@@ -217,17 +219,6 @@ export default class SourcingService {
         if (raw.email) {
           const existing = await existingQuery.clone().where('email', raw.email).first()
           if (existing) continue
-        }
-
-        // Dedup generic names by company + role
-        if (this.isGenericName(raw.fullName)) {
-          const existingGeneric = await Contact.query()
-            .where('userId', userId)
-            .where('companyId', company.id)
-            .where('role', raw.role)
-            .whereIn('fullName', Array.from(SourcingService.GENERIC_NAMES))
-            .first()
-          if (existingGeneric) continue
         }
 
         // Create contact with new enrichment fields
@@ -254,17 +245,18 @@ export default class SourcingService {
       }
     }
 
-    // Return ALL new companies not yet crawled (for CompanyEnricher)
-    const newCompanies = Array.from(allCompanies.values())
-      .filter((c) => !c.teamCrawledAt)
+    // Return companies that have no email found yet (candidates for CompanyEnricher)
+    const companiesWithoutEmail = Array.from(allCompanies.entries())
+      .filter(([key]) => !companiesWithEmail.has(key))
+      .map(([, company]) => company)
+      .filter((c) => !c.teamCrawledAt) // Skip already crawled
 
-    return { count, newCompanies }
+    return { count, companiesWithoutEmail }
   }
 
   /**
-   * Trigger CompanyEnricher for all new companies (non-blocking).
-   * Extracts team members from /team, /about pages to find more contacts.
-   * Processes max 15 companies, 3 in parallel.
+   * Trigger CompanyEnricher for companies without email contacts (non-blocking).
+   * Processes max 3 companies in parallel.
    */
   private async triggerCompanyEnrichment(
     userId: string,
