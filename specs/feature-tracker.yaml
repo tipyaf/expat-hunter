@@ -209,10 +209,10 @@ features:
   - id: "sc-205"
     name: "Smart visa cache — store expiryDateOfAccreditation and re-scrape only when expired"
     priority: "should-have"
-    status: "refined"
-    cycles: 0
+    status: "validated"
+    cycles: 1
     story_file: "specs/stories/sc-205.yaml"
     depends_on: ["sc-30"]
-    started_at: ""
-    validated_at: ""
-    notes: "Dynamic TTL = days until expiresAt (fallback 30). Add visaSponsorExpiresAt to Company. Migration 29."
+    started_at: "2026-03-25"
+    validated_at: "2026-03-25"
+    notes: "Dynamic TTL = days until expiresAt (fallback 30). Add visaSponsorExpiresAt to Company. Migration 29. PR #64 validated — all 11 ACs PASS."
