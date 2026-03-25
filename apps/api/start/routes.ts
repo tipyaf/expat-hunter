@@ -214,11 +214,6 @@ router
   .use(middleware.auth())
 
 router
-  .post('/api/admin/refresh-visa-registries', [EnrichmentController, 'refreshVisaRegistries'])
-  .use(middleware.auth())
-  .use(middleware.admin())
-
-router
   .patch('/api/admin/settings/emails', [SendingSettingsController, 'updateAdminLimits'])
   .use(middleware.auth())
   .use(middleware.admin())
