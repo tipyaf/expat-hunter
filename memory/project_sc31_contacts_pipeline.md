@@ -1,79 +1,79 @@
-# sc-31 — Pipeline contacts qualifiés (marché caché)
+# sc-31 — Qualified contacts pipeline (hidden market)
 
-## Statut
-- **Story Shortcut** : sc-31 (To Do)
-- **Specs produites** :
-  - `specs/sc31-contacts-quality-refinement.yaml` — spec PO complète
-  - `specs/sc31-architecture.md` — architecture technique détaillée
-  - `specs/contact-sourcing-strategy.yaml` — stratégie sourcing v1
-- **Agents impliqués** : PO + Architecte consultés le 2026-03-23
-- **Étude en cours** : agents dédiés recrutement/org entreprise (voir section ci-dessous)
+## Status
+- **Shortcut story**: sc-31 (To Do)
+- **Specs produced**:
+  - `specs/sc31-contacts-quality-refinement.yaml` — full PO spec
+  - `specs/sc31-architecture.md` — detailed technical architecture
+  - `specs/contact-sourcing-strategy.yaml` — sourcing strategy v1
+- **Agents involved**: PO + Architect consulted on 2026-03-23
+- **Study in progress**: dedicated recruitment/company-org agents (see section below)
 
-## Promesse produit (marché caché)
-ExpatHunter cible les **managers opérationnels** (pas les RH) qui ont le pouvoir de recruter, AVANT qu'une offre soit publiée. L'email envoyé doit montrer que l'utilisateur s'est vraiment intéressé à l'entreprise et à la personne. Ce n'est pas de la prospection généraliste — c'est de l'expatriation assistée par IA.
+## Product promise (hidden market)
+ExpatHunter targets **operational managers** (not HR) who have hiring authority, BEFORE a job posting is published. The email sent must show the user genuinely researched the company and the person. This is not generic outreach — it is AI-assisted expatriation.
 
-## Décisions PO validées
+## Validated PO decisions
 
-### Titres par secteur
-- Base **statique** pour le MVP (coût 0, déterministe, testable)
-- **LLM fallback** uniquement pour secteurs inconnus (~0.001$/appel, GPT-4o-mini via OpenRouter)
-- Cache 30 jours en DB (`sector_title_cache`)
-- 5 secteurs MVP : IT, Finance, Marketing, Ops, Construction
+### Titles by sector
+- **Static** base for MVP (zero cost, deterministic, testable)
+- **LLM fallback** only for unknown sectors (~$0.001/call, GPT-4o-mini via OpenRouter)
+- 30-day cache in DB (`sector_title_cache`)
+- 5 MVP sectors: IT, Finance, Marketing, Ops, Construction
 
-### Contacts cibles
-- Managers **opérationnels** uniquement (pas HR par défaut)
-- HR optionnel via checkbox dans l'UX (désactivé par défaut)
-- Exemples IT : Engineering Manager, CTO, Head of Engineering, VP Engineering, IT Manager, Director of Engineering, Lead Software Engineer, Software Manager
+### Target contacts
+- **Operational managers** only (no HR by default)
+- HR optional via UX checkbox (disabled by default)
+- IT examples: Engineering Manager, CTO, Head of Engineering, VP Engineering, IT Manager, Director of Engineering, Lead Software Engineer, Software Manager
 
-### Info nécessaire pour emails impactants
-Culture entreprise, tech stack, compétences demandées, secteur, historique, projets en cours/à venir, besoins du moment, signaux de recrutement actif. Sources : site web (About page LLM-parsé), Hunter Company Enrichment, Google News, Crunchbase basic.
+### Information needed for impactful emails
+Company culture, tech stack, required skills, sector, history, current/upcoming projects, current needs, active hiring signals. Sources: website (About page LLM-parsed), Hunter Company Enrichment, Google News, Crunchbase basic.
 
-### Seuil qualité email
-Tout email est bon, vérifié c'est mieux. Prévoir service de vérification interne (SMTP + pattern).
+### Email quality threshold
+Any verified email is good, verified is better. Plan internal verification service (SMTP + pattern).
 
-### Légal NZ/AU
-Uniquement sources publiques agrégées. Pas de scraping caché.
+### Legal NZ/AU
+Only public aggregated sources. No hidden scraping.
 
-## Décisions Architecte validées
+## Validated architect decisions
 
-### Architecture multi-secteurs
-`SectorRegistry` (même pattern que `ScraperRegistry`). Ajouter un secteur = 1 entrée, zéro code.
+### Multi-sector architecture
+`SectorRegistry` (same pattern as `ScraperRegistry`). Adding a sector = 1 entry, zero code.
 
-### Agents spécialisés
-**Non pour le MVP.** Services spécialisés suffisent. Phase 3+ si besoin.
-(Étude en cours sur agents dédiés recrutement/org — voir ci-dessous)
+### Specialized agents
+**No for MVP.** Specialized services are sufficient. Phase 3+ if needed.
+(Study in progress on dedicated recruitment/org agents — see below)
 
-### Nouvelles sources de contacts
-- Hunter Company Search (découverte entreprises)
-- GitHub API gratuit (5000 req/h)
-- Google → `site:linkedin.com/in` (gratuit, 100/j)
+### New contact sources
+- Hunter Company Search (company discovery)
+- GitHub API free (5000 req/h)
+- Google → `site:linkedin.com/in` (free, 100/day)
 
-### Nouveaux services à créer
-| Service | Responsabilité |
+### New services to create
+| Service | Responsibility |
 |---------|---------------|
-| `sourcing_orchestrator.ts` | Point d'entrée, dispatche jobs |
-| `context_enrichment_service.ts` | Culture, tech stack, news, signaux |
-| `sector_title_service.ts` | Titres par secteur + cache 30j |
+| `sourcing_orchestrator.ts` | Entry point, dispatches jobs |
+| `context_enrichment_service.ts` | Culture, tech stack, news, signals |
+| `sector_title_service.ts` | Titles by sector + 30-day cache |
 | `email_verifier.ts` | MX + SMTP + pattern scoring |
-| `sector_registry.ts` | Config par secteur (whitelist, keywords) |
+| `sector_registry.ts` | Per-sector config (whitelist, keywords) |
 
-### Nouveaux scrapers
-| Scraper | Source | Coût |
+### New scrapers
+| Scraper | Source | Cost |
 |---------|--------|------|
-| `hunter_company_search_scraper.ts` | Hunter Company Search API | Crédits |
-| `github_contact_finder.ts` | GitHub API public | Gratuit |
-| `google_linkedin_proxy_scraper.ts` | Google `site:linkedin.com/in` | Gratuit |
+| `hunter_company_search_scraper.ts` | Hunter Company Search API | Credits |
+| `github_contact_finder.ts` | GitHub public API | Free |
+| `google_linkedin_proxy_scraper.ts` | Google `site:linkedin.com/in` | Free |
 
-### Nouvelles tables DB
-- `sector_title_cache` — titres par secteur + pays, TTL 30j
-- Nouvelles colonnes `companies` : `context_data` (JSONB), `context_enriched_at`, `hiring_signals`
-- Nouvelles colonnes `contacts` : `email_verified_at`, `email_verify_method`, `sector_context`, `linkedin_url`
+### New DB tables
+- `sector_title_cache` — titles by sector + country, TTL 30d
+- New `companies` columns: `context_data` (JSONB), `context_enriched_at`, `hiring_signals`
+- New `contacts` columns: `email_verified_at`, `email_verify_method`, `sector_context`, `linkedin_url`
 
-## Découpage en 8 sous-stories (PO)
+## Split into 8 sub-stories (PO)
 
-| # | Story | Priorité |
+| # | Story | Priority |
 |---|-------|----------|
-| sc-31-1 | Domain Resolver — fuzzy match domaine → URL exacte | **P0 bloquant** |
+| sc-31-1 | Domain Resolver — fuzzy match domain → exact URL | **P0 blocking** |
 | sc-31-2 | SectorRegistry + SectorTitleService | P0 |
 | sc-31-3 | EmailVerifier (SMTP + pattern) | P1 |
 | sc-31-4 | ContextEnrichmentService (culture, tech, news) | P1 |
@@ -82,22 +82,22 @@ Uniquement sources publiques agrégées. Pas de scraping caché.
 | sc-31-7 | Google/LinkedIn proxy | P2 |
 | sc-31-8 | SourcingOrchestrator + BullMQ | P2 |
 
-**À créer dans Shortcut** : en attente validation utilisateur du découpage.
+**To create in Shortcut**: pending user validation of the breakdown.
 
-## Métriques cibles
-- Pertinence contacts : 4% → ≥ 70%
-- Couverture email : 0% → ≥ 60% (vérifié ou probable)
-- Richesse contextuelle : ≥ 4 champs par entreprise
-- Coût Hunter : ≤ 25 calls par sourcing run
+## Target metrics
+- Contact relevance: 4% → ≥ 70%
+- Email coverage: 0% → ≥ 60% (verified or probable)
+- Contextual richness: ≥ 4 fields per company
+- Hunter cost: ≤ 25 calls per sourcing run
 
-## Étude terminée — Agents dédiés recrutement/org (2026-03-23)
+## Study complete — Dedicated recruitment/org agents (2026-03-23)
 
-**Recommandation** : 1 seul agent `recruitment-intelligence.md` dans `.claude/agents/` (hors `.framework/`)
-**Justification** : organisation d'entreprise + marché caché sont indissociables dans le contexte ExpatHunter
+**Recommendation**: 1 single agent `recruitment-intelligence.md` in `.claude/agents/` (outside `.framework/`)
+**Justification**: company organization + hidden market are inseparable in the ExpatHunter context
 
-**Fichiers produits** :
-- `specs/sc31-recruitment-agents-study.md` — étude comparative 1 vs 2 agents
-- `data/sector-titles.yaml` — base statique 10 secteurs × 3 cultures (EN/FR/DE), 4 niveaux par secteur
-- `data/sector-titles-prompt.md` — prompt LLM fallback complet avec validation post-LLM
+**Files produced**:
+- `specs/sc31-recruitment-agents-study.md` — comparative study 1 vs 2 agents
+- `data/sector-titles.yaml` — static base for 10 sectors × 3 cultures (EN/FR/DE), 4 levels per sector
+- `data/sector-titles-prompt.md` — full LLM fallback prompt with post-LLM validation
 
-**À faire** : créer `.claude/agents/recruitment-intelligence.md` avant d'implémenter `SectorTitleService`
+**To do**: create `.claude/agents/recruitment-intelligence.md` before implementing `SectorTitleService`

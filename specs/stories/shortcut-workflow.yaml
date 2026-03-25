@@ -1,7 +1,7 @@
 story:
   id: "shortcut-workflow"
   shortcut_url: "https://app.shortcut.com/expat-hunter/story/315"
-  name: "Shortcut workflow — standardiser les pratiques et l'organisation agile"
+  name: "Shortcut workflow — standardize agile practices and organization"
   type: "chore"
   size: "M"
   estimate: 3
@@ -12,55 +12,64 @@ story:
   scope:
     files_to_modify:
       - "CLAUDE.md"
+      - "memory/expat-hunter.md"
+      - "memory/LESSONS.md"
       - "specs/feature-tracker.yaml"
     files_to_create:
       - "specs/stories/shortcut-workflow.yaml"
     shortcut_actions:
-      - "Fermer les 5 epics validées (304-308)"
-      - "Créer epic Engineering Excellence (314)"
-      - "Créer story sc-315 avec description + ACs checkboxes + build tasks"
-      - "Appliquer labels + estimations sur sc-79, sc-80, sc-81, sc-216"
-      - "Supprimer les labels priority:* des règles (→ custom field Priority)"
+      - "Close 5 validated epics (304-308)"
+      - "Create Engineering Excellence epic (314)"
+      - "Create story sc-315 with description, AC checkboxes, build tasks"
+      - "Apply labels + estimates to sc-79, sc-80, sc-81, sc-216"
+      - "Remove priority:* labels from rules (→ Priority custom field)"
+      - "Convert all non-translation files from French to English"
 
   acceptance_criteria:
     - id: "AC-BP-SW-01"
       type: "BP"
-      description: "Story template dans CLAUDE.md inclut ACs en checkboxes et section Scope Inclus/Exclu"
+      description: "Story template in CLAUDE.md includes ACs as checkboxes and explicit Included/Excluded scope sections"
       verify: "grep -c '\\- \\[ \\] AC' /Volumes/Samsung_T5/dev/expat-hunter/CLAUDE.md"
       tier: 1
 
     - id: "AC-BP-SW-02"
       type: "BP"
-      description: "Règles de transition kanban complètes dans CLAUDE.md (Session start, Story créée, /refine, /build, /validate, Done, PR créée, PR mergée)"
-      verify: "grep -c 'PR mergée' /Volumes/Samsung_T5/dev/expat-hunter/CLAUDE.md"
+      description: "Complete kanban transition rules in CLAUDE.md (Session start, Story created, /refine, /build, /validate, Done, PR created, PR merged)"
+      verify: "grep -c 'PR merged' /Volumes/Samsung_T5/dev/expat-hunter/CLAUDE.md"
       tier: 1
 
     - id: "AC-BP-SW-03"
       type: "BP"
-      description: "Règle estimation Fibonacci documentée (XS=1 S=2 M=3 L=5 XL=8)"
+      description: "Fibonacci estimation rule documented (XS=1 S=2 M=3 L=5 XL=8)"
       verify: "grep -c 'XS = 1' /Volumes/Samsung_T5/dev/expat-hunter/CLAUDE.md"
       tier: 1
 
     - id: "AC-BP-SW-04"
       type: "BP"
-      description: "Labels priority:* marqués comme dépréciés au profit du custom field Priority"
-      verify: "grep -c 'custom field Priority' /Volumes/Samsung_T5/dev/expat-hunter/CLAUDE.md"
+      description: "priority:* labels marked as deprecated in favor of Priority custom field"
+      verify: "grep -c 'Priority custom field' /Volumes/Samsung_T5/dev/expat-hunter/CLAUDE.md"
       tier: 1
 
     - id: "AC-BP-SW-05"
       type: "BP"
-      description: "5 epics validées (304-308) marquées done dans Shortcut"
+      description: "5 validated epics (304-308) marked as done in Shortcut"
       verify: "echo 'verified manually: epics 304,305,306,307,308 set to done via MCP'"
       tier: 3
 
     - id: "AC-BP-SW-06"
       type: "BP"
-      description: "4 stories backlog ont labels scope/type/area + estimation"
+      description: "4 backlog stories have scope/type/area labels + estimate"
       verify: "echo 'verified manually: sc-79(L=5), sc-80(XL=8), sc-81(S=2), sc-216(XS=1) updated'"
       tier: 3
 
     - id: "AC-BP-SW-07"
       type: "BP"
-      description: "Règle fermeture ticket après merge documentée dans CLAUDE.md"
-      verify: "grep -c 'Ne jamais laisser une session se terminer' /Volumes/Samsung_T5/dev/expat-hunter/CLAUDE.md"
+      description: "Mandatory ticket closure after merge rule documented in CLAUDE.md"
+      verify: "grep -c 'Never end a session with a ticket' /Volumes/Samsung_T5/dev/expat-hunter/CLAUDE.md"
+      tier: 1
+
+    - id: "AC-BP-SW-08"
+      type: "BP"
+      description: "Non-translation files contain no French text (CLAUDE.md, LESSONS.md, expat-hunter.md, story files)"
+      verify: "grep -rn 'Critères\\|Contexte\\|Inclus\\|Exclu\\|Résumé\\|Statut\\|Décisions' /Volumes/Samsung_T5/dev/expat-hunter/CLAUDE.md /Volumes/Samsung_T5/dev/expat-hunter/memory/ /Volumes/Samsung_T5/dev/expat-hunter/specs/stories/shortcut-workflow.yaml | grep -v '.json' | wc -l"
       tier: 1
