@@ -1,12 +1,12 @@
 # Mémoire du projet : ExpatHunter
 
-> Last updated by **user** — 2026-03-24
+> Last updated by **agent** — 2026-03-25
 
 ## Metadata
 - **Projet**: expat-hunter
 - **Démarré le**: 2026-03-17
 - **Phase courante**: Phase 2 — Construction (features pending refinement)
-- **Dernière mise à jour**: 2026-03-24
+- **Dernière mise à jour**: 2026-03-25
 - **Framework version**: 2.1.0
 - **Repo GitHub**: https://github.com/tipyaf/expat-hunter (public)
 - **Branches**: main (protégée, défaut), develop (protégée, base dev), feature/* → PR vers develop
@@ -89,9 +89,8 @@
 
 ### Phase 0 — Conception
 - **Statut**: ✅ Validée
-- **Artefacts**: `specs/expat-hunter.yaml`, `specs/expat-hunter-ux.md`, `specs/expat-hunter-architecture.md`
-- **Résumé**: Spec YAML complète (5 must-have, 2 should-have, 6 nice-to-have, 6 entités). Design complet (sitemap, 5 flows, design system, 10 composants, 5 layouts). Architecture layered monorepo pnpm, 8 entités Lucid, 9 épiques, 7 ADRs. Stack profiles AdonisJS + Next.js.
-- **Missing v2.1.0 artefacts**: constitution.md, clarifications.md (phases did not exist at v2.0.0)
+- **Artefacts**: `specs/expat-hunter.yaml`, `specs/expat-hunter-ux.md`, `specs/expat-hunter-architecture.md`, `specs/constitution.md`, `specs/expat-hunter-clarifications.md`, `specs/expat-hunter-manifest.yaml`
+- **Résumé**: Spec YAML complète (5 must-have, 2 should-have, 6 nice-to-have, 6 entités). Design complet (sitemap, 5 flows, design system, 10 composants, 5 layouts). Architecture layered monorepo pnpm, 8 entités Lucid, 9 épiques, 7 ADRs. Stack profiles AdonisJS + Next.js. Constitution, clarifications (12 CL), and manifest created 2026-03-25.
 
 ### Phase 1 — Scaffold
 - **Statut**: ✅ Validée
@@ -153,4 +152,4 @@
 - Sources par pays (configurables). Exemple NZ : Seek, Matchstiq, Zeil, built.com. Global : LinkedIn, Hunter.io
 - L'outil n'est PAS limité à la NZ — chaque utilisateur choisit son pays cible, les sources s'adaptent
 - **Framework v2.1.0**: Enforcement layer actif — feature-tracker + story files + verify: commands
-- **Migration note**: constitution.md et clarifications.md n'existaient pas en v2.0.0 — à créer lors du prochain `/refine` si nécessaire
+- **Phase 0 complete**: All 6 artefacts now exist on disk — phase guards unblocked for `/refine`
