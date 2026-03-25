@@ -13,12 +13,12 @@ project:
 
 # Artefact gates — phase guards verified by filesystem existence
 artefacts:
-  constitution: ""                              # TODO: specs/constitution.md
+  constitution: "specs/constitution.md"
   spec: "specs/expat-hunter.yaml"
-  clarifications: ""                            # TODO: specs/expat-hunter-clarifications.md
+  clarifications: "specs/expat-hunter-clarifications.md"
   wireframes: "specs/expat-hunter-ux.md"
   architecture: "specs/expat-hunter-architecture.md"
-  manifest: ""                                  # TODO: specs/expat-hunter-manifest.yaml
+  manifest: "specs/expat-hunter-manifest.yaml"
 
 # Per-feature tracking — must-have features from spec
 features:
@@ -170,3 +170,16 @@ features:
     started_at: ""
     validated_at: ""
     notes: "Response rates, best channels, message optimization"
+
+  # === TECHNICAL STORIES ===
+
+  - id: "sc-191"
+    name: "Backend unit & functional tests — password reset flow"
+    priority: "chore"
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/sc-191.yaml"
+    depends_on: []
+    started_at: "2026-03-25"
+    validated_at: "2026-03-25"
+    notes: "15 unit tests (PasswordResetService) + 16 functional tests (forgot-password, reset-password). All pass."
