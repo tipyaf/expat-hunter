@@ -173,6 +173,99 @@ test.group('PUT /api/profile', (group) => {
 
     response.assertStatus(422)
   })
+
+  test('should return 422 for invalid sendingSchedule (bad hour)', async ({ client }) => {
+    const token = await createAuthenticatedUser(client)
+
+    const response = await client
+      .put(PROFILE_URL)
+      .header('Authorization', `Bearer ${token}`)
+      .json({
+        sendingSchedule: {
+          allowedDays: ['mon', 'tue'],
+          startHour: 25,
+          endHour: 18,
+          timezone: 'Pacific/Auckland',
+        },
+      })
+
+    response.assertStatus(422)
+  })
+
+  test('should return 422 for invalid sendingSchedule (bad day)', async ({ client }) => {
+    const token = await createAuthenticatedUser(client)
+
+    const response = await client
+      .put(PROFILE_URL)
+      .header('Authorization', `Bearer ${token}`)
+      .json({
+        sendingSchedule: {
+          allowedDays: ['monday'],
+          startHour: 9,
+          endHour: 18,
+          timezone: 'Pacific/Auckland',
+        },
+      })
+
+    response.assertStatus(422)
+  })
+
+  test('should return 422 for invalid followUps (bad unit)', async ({ client }) => {
+    const token = await createAuthenticatedUser(client)
+
+    const response = await client
+      .put(PROFILE_URL)
+      .header('Authorization', `Bearer ${token}`)
+      .json({
+        followUps: [{ delay: 3, unit: 'hours' }],
+      })
+
+    response.assertStatus(422)
+  })
+
+  test('should return 422 for invalid followUps (negative delay)', async ({ client }) => {
+    const token = await createAuthenticatedUser(client)
+
+    const response = await client
+      .put(PROFILE_URL)
+      .header('Authorization', `Bearer ${token}`)
+      .json({
+        followUps: [{ delay: -1, unit: 'days' }],
+      })
+
+    response.assertStatus(422)
+  })
+
+  test('should return completionPercentage = 0 for empty profile', async ({ client, assert }) => {
+    const token = await createAuthenticatedUser(client)
+
+    await client.put(PROFILE_URL).header('Authorization', `Bearer ${token}`).json({})
+
+    const response = await client.get(PROFILE_URL).header('Authorization', `Bearer ${token}`)
+
+    assert.equal(response.body().data.completionPercentage, 20) // fullName counts
+  })
+
+  test('should return completionPercentage = 100 for complete profile', async ({
+    client,
+    assert,
+  }) => {
+    const token = await createAuthenticatedUser(client)
+
+    await client
+      .put(PROFILE_URL)
+      .header('Authorization', `Bearer ${token}`)
+      .json({
+        skills: ['TypeScript'],
+        cvText: 'Experienced developer',
+        targetCountries: ['NZ'],
+        targetRoles: ['Backend Developer'],
+      })
+
+    const response = await client.get(PROFILE_URL).header('Authorization', `Bearer ${token}`)
+
+    assert.equal(response.body().data.completionPercentage, 100)
+  })
 })
 
 test.group('POST /api/profile/complete-onboarding', (group) => {
@@ -300,5 +393,31 @@ test.group('POST /api/profile/cv', (group) => {
       .header('Authorization', `Bearer ${token}`)
 
     response.assertStatus(400)
+  })
+
+  test('should accept a .txt CV file and save the text', async ({ client, assert }) => {
+    const token = await createAuthenticatedUser(client)
+
+    const cvContent = 'John Doe\nSenior Backend Developer\n5 years TypeScript, Node.js, PostgreSQL'
+
+    const response = await client
+      .post(`${PROFILE_URL}/cv`)
+      .header('Authorization', `Bearer ${token}`)
+      .file('cv', Buffer.from(cvContent), { filename: 'cv.txt', contentType: 'text/plain' })
+
+    response.assertStatus(200)
+    assert.isNotNull(response.body().data)
+    assert.include(response.body().data.cvText, 'John Doe')
+  })
+
+  test('should return 422 for unsupported file extension', async ({ client }) => {
+    const token = await createAuthenticatedUser(client)
+
+    const response = await client
+      .post(`${PROFILE_URL}/cv`)
+      .header('Authorization', `Bearer ${token}`)
+      .file('cv', Buffer.from('not a cv'), { filename: 'cv.exe', contentType: 'application/octet-stream' })
+
+    response.assertStatus(422)
   })
 })
