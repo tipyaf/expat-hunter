@@ -205,3 +205,14 @@ features:
     started_at: "2026-03-25"
     validated_at: "2026-03-25"
     notes: "15 unit tests (ProfileService) + 8 new functional tests. Total 39 profile tests, all pass."
+
+  - id: "sc-205"
+    name: "Smart visa cache — store expiryDateOfAccreditation and re-scrape only when expired"
+    priority: "should-have"
+    status: "refined"
+    cycles: 0
+    story_file: "specs/stories/sc-205.yaml"
+    depends_on: ["sc-30"]
+    started_at: ""
+    validated_at: ""
+    notes: "Dynamic TTL = days until expiresAt (fallback 30). Add visaSponsorExpiresAt to Company. Migration 29."
