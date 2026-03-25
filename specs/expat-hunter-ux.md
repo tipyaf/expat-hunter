@@ -1,180 +1,173 @@
 # ExpatHunter — Phase 0.5 : Design UX/UI
 
-## Récapitulatif des décisions UX
+## Decisions UX
 
-| # | Question | Réponse |
+| # | Question | Reponse |
 |---|----------|---------|
-| 1 | Navigation | Sidebar fixe à gauche |
-| 2 | Dashboard | Actions en attente (to-do list) |
-| 3 | Onboarding profil | Wizard + upload CV + IA conversationnelle pour affiner |
-| 4 | Lancement sourcing | Mode assisté par l'IA (suggestions basées sur le profil) |
-| 5 | Validation emails | Hybride (3 premiers un par un, puis lot) |
-| 6 | Pipeline kanban | 5 colonnes simplifiées pour le MVP |
-| 7 | Score pertinence | Badge couleur + explication courte (pas de chiffre brut) |
-| 8 | Tonalité visuelle | Moderne et chaleureux (teal/orange, style Linear/Notion) |
-| 9 | Dark mode | Préférences système par défaut + toggle dans les settings |
-| 10 | i18n | Anglais + Français au MVP, architecturé pour ajouter des langues facilement |
-| 11 | Design system partagé | Web et mobile doivent partager le même design system (tokens, couleurs, typo, composants) |
+| 1 | Navigation | Sidebar fixe a gauche, liens en francais |
+| 2 | Dashboard | Conseil IA + actions en attente + 5 statistiques |
+| 3 | Onboarding profil | Wizard 3 etapes (infos, CV, competences) |
+| 4 | Recherche | Snapshot marche IA + formulaire pays/secteur/ville |
+| 5 | Gestion emails | Filtres par statut (Brouillon/Approuve/Envoye/Ouvert/Repondu/Rejete) |
+| 6 | Pipeline kanban | 6 colonnes (Trouve, A contacter, Contacte, En discussion, Entretien, Termine) |
+| 7 | Contacts | Liste filtrable par statut pipeline (9 filtres) |
+| 8 | Tonalite visuelle | Violet/magenta sur fond clair, coins arrondis |
+| 9 | Dark mode | Auto (systeme) / Clair / Sombre dans les parametres |
+| 10 | i18n | Francais + Anglais, selectable a l'inscription et dans les parametres |
+| 11 | Assistant IA | Bouton flottant violet en bas a droite sur toutes les pages |
 
 ---
 
 ## 1. Architecture d'information (Sitemap)
 
 ### Pages publiques
-- `/login` — Connexion
-- `/register` — Inscription (MVP mono-user, mais prêt)
+- `/login` — Connexion (email + mot de passe)
+- `/register` — Inscription (nom, email, mot de passe, langue)
+- `/forgot-password` — Mot de passe oublie
+- `/reset-password` — Reinitialisation mot de passe
+- `/verify-email` — Verification email
 
-### Pages authentifiées
-- `/` — Dashboard (actions en attente)
-- `/profile` — Profil candidat (édition)
-- `/profile/setup` — Wizard onboarding (première connexion)
-- `/sourcing` — Lancement et historique des campagnes de sourcing
-- `/contacts` — Liste de tous les contacts trouvés
-- `/contacts/:id` — Fiche détaillée d'un contact
-- `/emails` — File d'attente des emails (brouillons, envoyés, relances)
-- `/emails/:id` — Preview/édition d'un email
-- `/pipeline` — Vue kanban du pipeline
-- `/settings` — Paramètres (compte, connecteurs email, préférences)
+### Pages authentifiees
+- `/` — Tableau de bord (dashboard)
+- `/onboarding` — Wizard onboarding 3 etapes (premiere connexion ou profil incomplet)
+- `/recherche` — Recherche automatisee de contacts
+- `/contacts` — Liste des contacts
+- `/contacts/:id` — Fiche detaillee d'un contact
+- `/emails` — Gestion des emails generes par l'IA
+- `/suivi` — Pipeline kanban
+- `/profil` — Profil candidat (edition)
+- `/profil/setup` — Configuration initiale du profil
+- `/parametres` — Parametres generaux
+- `/parametres/templates` — Templates d'emails
+- `/parametres/presets` — Presets de generation IA
+- `/parametres/blocages` — Contacts et entreprises bloques
+- `/parametres/connexion-email` — Configuration IMAP/SMTP
+
+### Pages admin
+- `/admin/users` — Gestion des utilisateurs
+- `/admin/ai-settings` — Configuration IA
 
 ### Navigation sidebar
 ```
-┌──────────────────────┐
-│  🏠 ExpatHunter      │  ← Logo + nom
-├──────────────────────┤
-│  Dashboard           │
-│  Profil              │
-│  Sourcing            │
-│  Contacts            │
-│  Emails              │
-│  Pipeline            │
-├──────────────────────┤
-│  Paramètres          │  ← En bas
-└──────────────────────┘
++----------------------------+
+|  ExpatHunter               |  <- Logo violet, titre magenta
++----------------------------+
+|  [x] Tableau de bord       |  <- Actif : fond violet clair, texte violet
+|  [ ] Trouver des contacts  |
+|  [ ] Mes contacts          |
+|  [ ] Mes emails            |
+|  [ ] Suivi                 |
+|                            |
+|  [ ] Mon profil            |  <- Separe en bas
+|  [ ] Parametres            |
++----------------------------+
+|  Nom Utilisateur           |
+|  email@example.com         |
+|  [Se deconnecter]          |
++----------------------------+
 ```
 
 ---
 
 ## 2. User Flows
 
-### Flow 1 : Onboarding (première connexion)
+### Flow 1 : Inscription et connexion
 
 ```
-1. L'utilisateur se connecte pour la première fois
-2. Redirection vers /profile/setup (wizard)
-3. Étape 1/3 : Infos de base
-   - Nom, pays de résidence actuel
-   - Pays cible(s)
-   - Secteur(s) visé(s)
-4. Étape 2/3 : Upload CV
-   - Drag & drop ou sélection fichier (PDF)
-   - L'IA parse le CV en arrière-plan
-   - Affiche un résumé : compétences détectées, expérience estimée
-   - L'utilisateur valide ou corrige
-5. Étape 3/3 : Affinage conversationnel
-   - L'IA pose 2-3 questions pour préciser :
-     "Tu as mentionné Python et Data — tu cherches plutôt Data Engineer ou Data Scientist ?"
-     "Taille d'entreprise préférée : startup, PME, grand groupe ?"
-   - Les réponses complètent le profil
-6. Profil créé → redirection vers Dashboard avec message de bienvenue
-7. Le dashboard propose de lancer le premier sourcing
-
-### États spéciaux
-- Empty state wizard : indicateur de progression (étape 1/3)
-- Loading : skeleton pendant le parsing CV
-- Error : "Format non supporté" / "Impossible de lire le CV"
-- Success : "Profil créé avec succès"
+1. L'utilisateur arrive sur /login
+2. S'il n'a pas de compte : lien "Creer un compte" -> /register
+3. Inscription : nom complet, email, mot de passe (min 8 car.), langue (FR/EN)
+4. Apres inscription : redirection vers /onboarding
+5. Connexion : email + mot de passe -> redirection vers /
+6. Si profil incomplet : redirection automatique vers /onboarding
 ```
 
-### Flow 2 : Lancement d'un sourcing
+### Flow 2 : Onboarding (premiere connexion)
 
 ```
-1. L'utilisateur clique "Sourcing" dans la sidebar
-2. Il voit l'historique des campagnes précédentes (si existantes)
-3. Il clique "Nouvelle recherche"
-4. L'IA propose des paramètres pré-remplis basés sur le profil :
-   - Pays : [pré-rempli depuis profil]
-   - Secteur : [pré-rempli depuis profil]
-   - Sources : [cochées automatiquement selon le pays]
-   - Type de contacts : "Responsables d'équipes opérationnelles"
-5. L'utilisateur ajuste si besoin et valide
-6. Le sourcing se lance en arrière-plan
-7. Redirection vers la page sourcing avec barre de progression
-8. Notifications au fur et à mesure : "12 contacts trouvés sur Seek..."
-9. Une fois terminé : résumé (X contacts trouvés, Y sources utilisées)
-10. CTA : "Lancer l'analyse IA" ou automatique selon settings
-
-### États spéciaux
-- Empty state : "Aucune campagne lancée. Lancez votre première recherche."
-- Loading : barre de progression avec détail par source
-- Error : "Échec sur Seek (anti-bot détecté), les autres sources ont fonctionné"
-- Success : résumé avec compteurs
+1. Redirection vers /onboarding
+2. Stepper en haut : "1 / 3" avec barre de progression
+3. Etape 1/3 : Informations de base
+   - Nom complet (pre-rempli)
+   - Pays cibles (multi-select avec recherche)
+   - Secteurs (tags, entree libre, appui Entree/virgule pour ajouter)
+   - Postes recherches (tags, entree libre)
+   - Bouton "Suivant"
+4. Etape 2/3 : Votre CV
+   - Upload CV (drag & drop ou clic)
+   - Parsing IA en arriere-plan
+   - Competences detectees (tags editables)
+   - Experience estimee (editable)
+   - Boutons "Retour" / "Suivant"
+5. Etape 3/3 : Experience et competences
+   - Details manuels si pas de CV
+   - Validation finale
+   - Bouton "Terminer"
+6. Profil cree -> redirection vers Dashboard
 ```
 
-### Flow 3 : Analyse IA + validation emails
+### Flow 3 : Recherche automatisee
 
 ```
-1. Après un sourcing, l'IA analyse les contacts automatiquement
-2. Les contacts apparaissent dans /contacts avec leur badge de pertinence
-3. Les contacts "très pertinents" génèrent automatiquement un brouillon d'email
-4. L'utilisateur va dans /emails
-5. Les 3 premiers emails sont présentés un par un :
-   - Preview de l'email (sujet + corps)
-   - Infos du contact (nom, rôle, entreprise, badge pertinence, explication)
-   - Actions : Approuver / Modifier / Rejeter
-6. Après les 3 premiers, vue liste pour le reste :
-   - Liste scrollable de tous les brouillons
-   - Checkbox pour sélection multiple
-   - Actions en masse : "Approuver sélection" / "Rejeter sélection"
-   - Clic sur un email → ouvre le preview/éditeur
-7. Une fois tous les emails validés : bouton "Envoyer tout"
-8. Confirmation : "X emails vont être envoyés. Confirmer ?"
-
-### États spéciaux
-- Empty state : "Aucun email en attente. Lancez un sourcing."
-- Loading : "Génération des emails en cours..." avec progression
-- Error : "Impossible d'envoyer à X (email invalide)"
-- Success : "X emails envoyés avec succès"
+1. L'utilisateur va dans "Trouver des contacts"
+2. En haut : Snapshot du marche IA pour le pays cible
+   - Tendance du marche
+   - Meilleure periode
+   - Offres estimees
+   - Salaire moyen
+   - Conseils d'expert (tips IA avec icones ampoule)
+3. Formulaire "Nouvelle recherche" :
+   - Pays cible (dropdown)
+   - Secteur (champ texte libre)
+   - Ville (champ texte libre)
+   - Checkbox "Inclure les contacts RH / recruteurs"
+   - Bouton "Lancer la recherche" (violet plein)
+4. En bas : Historique des recherches
+5. Apres lancement : progression en temps reel par source
+6. Contacts trouves -> apparaissent dans /contacts
 ```
 
-### Flow 4 : Suivi pipeline
+### Flow 4 : Gestion des contacts
 
 ```
-1. L'utilisateur va dans /pipeline
-2. Vue kanban avec 5 colonnes :
-   - Trouvé (contacts issus du sourcing)
-   - À contacter (validés par l'IA ou l'utilisateur)
-   - Contacté (email envoyé)
-   - En discussion (réponse reçue)
-   - Terminé (entretien obtenu / offre / rejeté — sous-statuts visibles)
-3. Chaque carte contact affiche :
-   - Nom + rôle
-   - Entreprise
-   - Badge pertinence + explication courte
-   - Dernier statut email (envoyé il y a 3j, relance prévue dans 2j)
-4. Drag & drop pour déplacer un contact manuellement
-5. Clic sur une carte → ouvre la fiche contact (/contacts/:id)
-6. Filtres en haut : par source, par pertinence, par date
-
-### États spéciaux
-- Empty state : "Votre pipeline est vide. Lancez un sourcing."
-- Loading : skeleton des colonnes
+1. L'utilisateur va dans "Mes contacts"
+2. En-tete : titre + bouton "Analyser les contacts"
+3. Filtres par statut pipeline (boutons pills colores) :
+   - Tous (compteur) | Identifie | Analyse | A contacter |
+   - Contacte | Repondu | Entretien | Offre | Rejete
+4. Liste des contacts sous forme de tableau/cards
+5. Clic sur un contact -> /contacts/:id (fiche detaillee)
+6. Empty state : "Aucun contact trouve. Lancez un sourcing pour commencer."
 ```
 
-### Flow 5 : Consultation d'un contact
+### Flow 5 : Gestion des emails
 
 ```
-1. Clic sur un contact (depuis pipeline, liste, ou emails)
-2. Page /contacts/:id avec :
-   - En-tête : nom, rôle, entreprise, badge pertinence
-   - Explication IA : pourquoi ce contact est pertinent/non pertinent
-   - Infos entreprise : secteur, taille, site web, signaux détectés
-   - Historique emails : liste des emails envoyés/reçus, statuts
-   - Actions : "Générer un email" / "Override pertinence" / "Changer statut"
-3. L'utilisateur peut override la recommandation IA (bouton toggle)
+1. L'utilisateur va dans "Mes emails"
+2. En-tete : titre + bouton "Generer des emails"
+3. Filtres par statut (boutons pills colores) :
+   - Tous (compteur) | Brouillon | Approuve | Envoye | Ouvert | Repondu | Rejete
+4. Liste des emails avec apercu
+5. Clic sur un email -> edition/preview
+6. Actions : approuver, modifier, rejeter
+7. Empty state : "Aucun email. Generez des emails pour vos contacts recommandes."
+```
 
-### États spéciaux
-- Loading : skeleton de la fiche
-- Error : "Contact introuvable"
+### Flow 6 : Suivi pipeline
+
+```
+1. L'utilisateur va dans "Suivi"
+2. En-tete : "Pipeline" + compteur total de contacts
+3. Vue kanban avec 6 colonnes :
+   - Trouve (contacts issus du sourcing)
+   - A contacter (valides, email en preparation)
+   - Contacte (email envoye)
+   - En discussion (reponse recue)
+   - Entretien (entretien programme)
+   - Termine (offre ou rejete)
+4. Chaque colonne affiche son compteur
+5. Cards contact dans chaque colonne
+6. Empty state par colonne : "Aucun contact"
 ```
 
 ---
@@ -183,611 +176,1209 @@
 
 ### Couleurs
 
-| Rôle | Couleur | Hex | Usage |
-|------|---------|-----|-------|
-| Primary | Teal | `#0D9488` | Actions principales, liens, sidebar active |
-| Primary Hover | Teal foncé | `#0F766E` | Hover sur actions principales |
-| Secondary | Orange chaud | `#F97316` | Accents, notifications, badges importants |
-| Background | Gris très clair | `#FAFAFA` | Fond de page (light) |
-| Background Dark | Gris très foncé | `#18181B` | Fond de page (dark) |
-| Surface | Blanc | `#FFFFFF` | Cartes, modales, sidebar (light) |
-| Surface Dark | Gris foncé | `#27272A` | Cartes, modales, sidebar (dark) |
-| Text | Gris très foncé | `#18181B` | Texte principal (light) |
-| Text Dark | Gris très clair | `#FAFAFA` | Texte principal (dark) |
-| Text Muted | Gris moyen | `#71717A` | Texte secondaire |
-| Success | Vert | `#22C55E` | Confirmations, badge "très pertinent" |
-| Error | Rouge | `#EF4444` | Erreurs, badge "non pertinent" |
-| Warning | Ambre | `#F59E0B` | Avertissements, badge "à vérifier" |
-| Info | Bleu | `#3B82F6` | Informations, badge "pertinent" |
+| Role | Couleur | Hex (approx) | Usage |
+|------|---------|--------------|-------|
+| Primary | Violet/Magenta | `#940d82` | Titres, boutons principaux, liens actifs, sidebar active |
+| Primary Light | Rose clair | `#f5d0f0` | Fond sidebar active, fond conseil IA |
+| Primary Hover | Violet fonce | `#7a0a6b` | Hover boutons |
+| Secondary | Orange | `#f97316` | Accents |
+| Background | Gris tres clair | `#f8fafc` | Fond de page |
+| Surface | Blanc | `#ffffff` | Cartes, sidebar, formulaires |
+| Text | Quasi noir | `#0f172a` | Texte principal |
+| Text Muted | Gris ardoise | `#64748b` | Texte secondaire, descriptions |
+| Text Subtle | Gris clair | `#94a3b8` | Texte tertiaire |
+| Border | Gris clair | `#e2e8f0` | Bordures cartes, separateurs |
+| Border Focus | Teal | `#0d9488` | Focus sur inputs |
+| Success | Vert | `#22C55E` | Badge "Analyse", validations |
+| Warning | Ambre | `#F59E0B` | Badge "A contacter" |
+| Error | Rouge | `#EF4444` | Badge "Rejete", erreurs |
+| Info | Bleu | `#3B82F6` | Badge "Envoye" |
+| Entretien | Violet | `#8B5CF6` | Badge "Entretien" |
+| Offre | Vert fonce | `#16A34A` | Badge "Offre" |
 
-### Badges de pertinence
+### Badges de statut contacts
 
-| Catégorie | Couleur | Label |
-|-----------|---------|-------|
-| Très pertinent (75-100) | Success vert | "Très pertinent" |
-| Pertinent (50-74) | Info bleu | "Pertinent" |
-| À vérifier (25-49) | Warning ambre | "À vérifier" |
-| Non pertinent (0-24) | Error rouge | "Non pertinent" |
+| Statut | Couleur badge |
+|--------|---------------|
+| Tous | Primary (violet) fond plein |
+| Identifie | Gris (outline) |
+| Analyse | Vert (outline) |
+| A contacter | Bleu (outline) |
+| Contacte | Bleu (outline) |
+| Repondu | Vert (outline) |
+| Entretien | Violet (outline) |
+| Offre | Vert fonce (outline) |
+| Rejete | Rouge (outline) |
+
+### Badges de statut emails
+
+| Statut | Couleur badge |
+|--------|---------------|
+| Tous | Primary (violet) fond plein |
+| Brouillon | Gris (outline) |
+| Approuve | Vert (outline) |
+| Envoye | Bleu (outline) |
+| Ouvert | Ambre (outline) |
+| Repondu | Vert (outline) |
+| Rejete | Rouge (outline) |
+
+### Dark mode
+
+Le dark mode est active via la classe CSS `.dark` sur le `<html>`. Il est configurable dans les parametres (Auto/Clair/Sombre).
+
+**Changement majeur** : la couleur primary passe de violet a teal en dark mode.
+
+| Token | Light mode | Dark mode |
+|-------|-----------|-----------|
+| primary | `#940d82` (violet/magenta) | `#14b8a6` (teal) |
+| primary-hover | `#7a0a6b` | `#0d9488` |
+| primary-light | `#f5d0f0` | `#134e4a` |
+| bg-light | `#f8fafc` (gris tres clair) | `#0f172a` (bleu tres fonce) |
+| surface-light | `#ffffff` (blanc) | `#1e293b` (bleu fonce) |
+| surface-raised | `#ffffff` | `#334155` |
+| text-main | `#0f172a` (quasi noir) | `#f1f5f9` (quasi blanc) |
+| text-muted | `#64748b` | `#94a3b8` |
+| text-subtle | `#94a3b8` | `#64748b` |
+| border | `#e2e8f0` | `#334155` |
+| border-focus | `#0d9488` | `#14b8a6` |
+
+**Implications design** :
+- Les titres passent de violet a teal
+- Les boutons primary passent de violet fond a teal fond
+- La sidebar active passe de rose clair/violet a teal fonce/teal
+- Les badges et pills gardent leurs couleurs semantiques (success, error, warning, info)
+- Les ombres sont plus prononcees en dark mode
+- Le fond general est bleu tres fonce (#0f172a), pas noir pur
 
 ### Typographie
 
-| Rôle | Font | Size | Weight |
+| Role | Font | Size | Weight |
 |------|------|------|--------|
-| H1 | Inter | 30px | 700 (Bold) |
-| H2 | Inter | 24px | 600 (Semibold) |
-| H3 | Inter | 20px | 600 (Semibold) |
+| H1 page | Inter | 30px | 700 (Bold) — couleur primary |
+| H2 section | Inter | 24px | 600 (Semibold) |
+| H3 card | Inter | 18px | 600 (Semibold) |
 | Body | Inter | 14px | 400 (Regular) |
-| Body medium | Inter | 14px | 500 (Medium) |
-| Small | Inter | 12px | 400 (Regular) |
-| Caption | Inter | 11px | 500 (Medium) |
+| Small/Caption | Inter | 12px | 400 (Regular) |
+| Button | Inter | 14px | 500 (Medium) |
+
+### Boutons
+
+| Type | Style |
+|------|-------|
+| Primary | Fond violet plein, texte blanc, coins arrondis lg |
+| Secondary | Outline gris, texte gris fonce |
+| Danger | Fond rouge, texte blanc |
+| Filter active | Fond primary, texte blanc, pill shape |
+| Filter inactive | Outline colore, texte colore, pill shape |
 
 ### Spacing
 - Base unit: 4px
-- Scale: xs(4px) sm(8px) md(16px) lg(24px) xl(32px) 2xl(48px) 3xl(64px)
+- Scale: xs(4px) sm(8px) md(16px) lg(24px) xl(32px) 2xl(48px)
 
 ### Border radius
-- Small: 4px — inputs, badges, tags
-- Medium: 8px — cards, buttons
-- Large: 12px — modales, containers
-- Full: 9999px — avatars, pills, toggle
+- Small: 6px — inputs, badges
+- Medium: 8px — cards, boutons
+- Large: 12px — conteneurs principaux
+- Full: 9999px — pills de filtre, avatars
 
-### Shadows (light mode)
-- sm: `0 1px 2px rgba(0,0,0,0.05)` — éléments subtils
-- md: `0 4px 6px rgba(0,0,0,0.07)` — cards
-- lg: `0 10px 15px rgba(0,0,0,0.1)` — modales, dropdowns
-
-### Shadows (dark mode)
-- sm: `0 1px 2px rgba(0,0,0,0.3)` — éléments subtils
-- md: `0 4px 6px rgba(0,0,0,0.4)` — cards
-- lg: `0 10px 15px rgba(0,0,0,0.5)` — modales, dropdowns
+### Shadows
+- Card: `0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06)`
+- Elevated: `0 4px 6px rgba(0,0,0,0.07)`
 
 ---
 
-## 4. Spécification des composants
+## 4. Specification des composants
 
 ### Composant: Sidebar
 
-**Rôle**: Navigation principale fixe à gauche
+**Role**: Navigation principale fixe a gauche
 
 **Wireframe**:
 ```
-┌──────────────────────┐
-│  [Logo] ExpatHunter  │
-│                      │
-│  ● Dashboard         │  ← Actif : fond teal léger, texte teal
-│  ○ Profil            │
-│  ○ Sourcing          │
-│  ○ Contacts     (42) │  ← Badge compteur
-│  ○ Emails       (7)  │  ← Badge compteur (en attente)
-│  ○ Pipeline          │
-│                      │
-│                      │
-│                      │
-│  ──────────────────  │
-│  ○ Paramètres        │
-│  [Avatar] Yannick    │
-└──────────────────────┘
++----------------------------+
+|  ExpatHunter               |  <- Texte magenta bold
+|                            |
+| [bg] Tableau de bord       |  <- Actif : fond rose clair, texte violet, barre gauche 3px
+|  Q   Trouver des contacts  |  <- Icone + texte, gris quand inactif
+|  Ppl Mes contacts          |
+|  Env Mes emails            |
+|  Bar Suivi                 |
+|                            |
+|  --- separateur ---        |
+|  @   Mon profil            |
+|  Gear Parametres           |
+|                            |
++----------------------------+
+|  Nom Utilisateur           |  <- Texte noir bold
+|  email@example.com         |  <- Texte gris small
+|  [-> Se deconnecter]       |  <- Bouton outline
++----------------------------+
 ```
 
-**Dimensions**: 240px de large, hauteur 100vh, position fixed
+**Dimensions**: ~240px de large, hauteur 100vh, position fixed
+**Fond**: Blanc (#FFFFFF) avec bordure droite gris clair
 
-**États**:
-- Default : fond surface, items en text muted
-- Active : fond primary/10%, texte primary, barre latérale gauche 3px primary
-- Hover : fond gris léger
-- Mobile (< 768px) : sidebar cachée, hamburger menu en top-left, overlay
+**Etats**:
+- Default : icone + texte gris
+- Active : fond rose clair, texte violet, barre laterale gauche 3px violet
+- Hover : fond gris tres clair
 
-**Accessibilité**:
-- Role ARIA: `navigation`
-- `aria-current="page"` sur l'item actif
-- Navigation clavier : Tab entre items
+### Composant: DashboardPage
 
----
-
-### Composant: DashboardActions
-
-**Rôle**: Liste des actions en attente sur le dashboard
+**Role**: Page d'accueil apres connexion
 
 **Wireframe**:
 ```
-┌─────────────────────────────────────────────────────┐
-│  Actions en attente (7)                             │
-│                                                     │
-│  ┌─────────────────────────────────────────────┐    │
-│  │ 📧 5 emails à valider                      │    │
-│  │    Générés il y a 2h — Voir →               │    │
-│  └─────────────────────────────────────────────┘    │
-│  ┌─────────────────────────────────────────────┐    │
-│  │ 🔄 2 relances prévues aujourd'hui           │    │
-│  │    J+7 pour Marie D., J+3 pour Tom B. →     │    │
-│  └─────────────────────────────────────────────┘    │
-│  ┌─────────────────────────────────────────────┐    │
-│  │ 📩 1 réponse reçue                          │    │
-│  │    John Smith — Reply Corp — Voir →         │    │
-│  └─────────────────────────────────────────────┘    │
-│  ┌─────────────────────────────────────────────┐    │
-│  │ ✅ Sourcing terminé                         │    │
-│  │    18 contacts trouvés — Analyser →         │    │
-│  └─────────────────────────────────────────────┘    │
-│                                                     │
-│  ── Statistiques rapides ──                         │
-│  Contacts: 42  |  Emails envoyés: 23  |  Réponses: 3│
-└─────────────────────────────────────────────────────┘
++----------------------------------------------------------+
+|  Tableau de bord                                          |
+|  Bienvenue, [Nom]                                        |
+|                                                          |
+|  +------------------------------------------------------+|
+|  | [ampoule] Commencez par completer votre profil pour  ||
+|  |           que l'IA puisse trouver les contacts les    ||
+|  |           plus pertinents.                      [x]  ||
+|  |           > Completer mon profil                      ||
+|  +------------------------------------------------------+|
+|                                                          |
+|  Actions en attente (N)                                  |
+|  +------------------------------------------------------+|
+|  | [description action]                        [lien]   ||
+|  +------------------------------------------------------+|
+|  | ... ou "Aucune action en attente. Tout est a jour !" ||
+|  |         > Lancer une recherche                        ||
+|  +------------------------------------------------------+|
+|                                                          |
+|  Statistiques rapides                                    |
+|  +----------+----------+----------+----------+----------+|
+|  | Contacts | Emails   | Reponses | Taux de  | Entre-   ||
+|  |    42    | envoyes  | recues   | reponse  | tiens    ||
+|  |          |    23    |    3     |   13%    |    1     ||
+|  +----------+----------+----------+----------+----------+|
++----------------------------------------------------------+
 ```
 
-**États**:
-- Empty : "Aucune action en attente. Tout est à jour !" avec CTA vers sourcing
-- Loading : skeleton cards
-- Items cliquables → redirigent vers la page concernée
+**Conseil IA**: Bandeau rose clair avec icone ampoule, texte de conseil, lien d'action, bouton fermer (x)
 
-**Responsive**:
-- Mobile : cards pleine largeur, empilées
-- Desktop : max-width 800px, centré
+**Stats cards**: 5 cartes en ligne, chacune avec icone coloree, label, valeur grande
 
----
+### Composant: RecherchePage
 
-### Composant: ProfileWizard
-
-**Rôle**: Onboarding en 3 étapes
-
-**Wireframe étape 1/3** :
-```
-┌─────────────────────────────────────────────────────┐
-│          Créez votre profil candidat                │
-│          ●───────○───────○                          │
-│          1/3     2/3     3/3                        │
-│                                                     │
-│  Prénom          [___________________]              │
-│  Nom             [___________________]              │
-│                                                     │
-│  Pays cible(s)   [🔍 Rechercher...     ]           │
-│                  [x] New Zealand  [x] Australia     │
-│                                                     │
-│  Secteur(s)      [🔍 Rechercher...     ]           │
-│                  [x] Tech  [x] Engineering          │
-│                                                     │
-│  Type de poste   [🔍 Rechercher...     ]           │
-│                  [x] Backend Dev  [x] Data Engineer │
-│                                                     │
-│                              [Suivant →]            │
-└─────────────────────────────────────────────────────┘
-```
-
-**Wireframe étape 2/3** :
-```
-┌─────────────────────────────────────────────────────┐
-│          Importez votre CV                          │
-│          ●───────●───────○                          │
-│                                                     │
-│  ┌─────────────────────────────────────────────┐    │
-│  │                                             │    │
-│  │     Glissez votre CV ici (PDF)              │    │
-│  │     ou cliquez pour sélectionner            │    │
-│  │                                             │    │
-│  └─────────────────────────────────────────────┘    │
-│                                                     │
-│  ── Compétences détectées ──                        │
-│  [Python] [FastAPI] [PostgreSQL] [Docker] [+]       │
-│                                                     │
-│  Expérience estimée : 8 ans                         │
-│  [Corriger]                                         │
-│                                                     │
-│                   [← Retour]   [Suivant →]          │
-└─────────────────────────────────────────────────────┘
-```
-
-**Wireframe étape 3/3** :
-```
-┌─────────────────────────────────────────────────────┐
-│          Précisons votre recherche                  │
-│          ●───────●───────●                          │
-│                                                     │
-│  ┌─────────────────────────────────────────────┐    │
-│  │ 🤖 D'après votre CV, vous avez de           │    │
-│  │    l'expérience en backend Python.           │    │
-│  │                                              │    │
-│  │    Vous cherchez plutôt :                    │    │
-│  │    ○ Un poste technique (dev/lead)           │    │
-│  │    ○ Un poste management (engineering mgr)   │    │
-│  │    ○ Les deux                                │    │
-│  └─────────────────────────────────────────────┘    │
-│                                                     │
-│  [Réponse de l'utilisateur...]                      │
-│                                                     │
-│  ┌─────────────────────────────────────────────┐    │
-│  │ 🤖 Préférence de taille d'entreprise ?       │    │
-│  │    ○ Startup (< 50)                          │    │
-│  │    ○ PME (50-500)                            │    │
-│  │    ○ Grand groupe (500+)                     │    │
-│  │    ○ Peu importe                             │    │
-│  └─────────────────────────────────────────────┘    │
-│                                                     │
-│                   [← Retour]   [Terminer ✓]         │
-└─────────────────────────────────────────────────────┘
-```
-
-**Responsive**:
-- Mobile : formulaire pleine largeur, padding réduit
-- Desktop : max-width 600px, centré verticalement
-
----
-
-### Composant: SourcingLauncher
-
-**Rôle**: Configurer et lancer un sourcing assisté par l'IA
+**Role**: Lancer des recherches automatisees de contacts
 
 **Wireframe**:
 ```
-┌─────────────────────────────────────────────────────┐
-│  Nouvelle recherche                                 │
-│                                                     │
-│  ┌─────────────────────────────────────────────┐    │
-│  │ 🤖 Suggestion basée sur votre profil :       │    │
-│  │    Pays : New Zealand                        │    │
-│  │    Secteur : Tech, Engineering               │    │
-│  │    Cibles : Team Leads, Engineering Managers  │    │
-│  └─────────────────────────────────────────────┘    │
-│                                                     │
-│  Pays          [New Zealand        ▼] [Modifier]    │
-│  Secteur       [Tech               ▼] [Modifier]   │
-│                                                     │
-│  Sources disponibles pour ce pays :                 │
-│  [✓] Seek          [✓] Matchstiq                   │
-│  [✓] Zeil          [✓] built.com                   │
-│  [✓] LinkedIn      [ ] Hunter.io                   │
-│                                                     │
-│              [Lancer la recherche →]                │
-└─────────────────────────────────────────────────────┘
++----------------------------------------------------------+
+|  Recherche automatisee                 [+ Nouvelle rech.] |
+|  Lancez une recherche et recuperez des contacts...       |
+|                                                          |
+|  +------------------------------------------------------+|
+|  | Globe  Snapshot du marche -- [Pays]                   ||
+|  |                                                      ||
+|  | +----------+  +----------+  +----------+  +--------+ ||
+|  | | Tendance |  | Meilleure|  | Offres   |  | Salaire| ||
+|  | | Forte    |  | periode  |  | estimees |  | moyen  | ||
+|  | | demande  |  | Fev-Avr  |  | ~1200    |  | 80-130k| ||
+|  | +----------+  +----------+  +----------+  +--------+ ||
+|  |                                                      ||
+|  | Conseils d'expert                                    ||
+|  | [ampoule] Visa principal : AEWV...                   ||
+|  | [ampoule] CV NZ : max 2 pages...                     ||
+|  | [ampoule] Culture : tutoiement...                    ||
+|  | [ampoule] Negociation : salaires negociables...      ||
+|  +------------------------------------------------------+|
+|                                                          |
+|  +------------------------------------------------------+|
+|  | Nouvelle recherche                                    ||
+|  |                                                      ||
+|  | Pays cible        Secteur           Ville            ||
+|  | [NZ         v]    [____________]    [___________]    ||
+|  |                                                      ||
+|  | [ ] Inclure les contacts RH / recruteurs             ||
+|  |                                                      ||
+|  |                          [Lancer la recherche ->]    ||
+|  +------------------------------------------------------+|
+|                                                          |
+|  +------------------------------------------------------+|
+|  | Historique des recherches                             ||
+|  | (tableau ou "Aucune recherche effectuee")             ||
+|  +------------------------------------------------------+|
++----------------------------------------------------------+
 ```
 
----
+**Snapshot marche**: Carte avec fond blanc, 4 sous-cartes stats + section conseils
 
-### Composant: SourcingProgress
+**Formulaire**: 3 champs en ligne (pays dropdown, secteur texte, ville texte), checkbox, bouton primary
 
-**Rôle**: Afficher la progression du scraping en cours
+### Composant: ContactsPage
+
+**Role**: Liste et gestion des contacts
 
 **Wireframe**:
 ```
-┌─────────────────────────────────────────────────────┐
-│  Sourcing en cours...                               │
-│  ████████████░░░░░░░░  62%                          │
-│                                                     │
-│  Seek          ✅ Terminé — 8 contacts              │
-│  Matchstiq     ✅ Terminé — 4 contacts              │
-│  Zeil          🔄 En cours...                       │
-│  built.com     ⏳ En attente                        │
-│  LinkedIn      ⏳ En attente                        │
-│                                                     │
-│  12 contacts trouvés pour le moment                 │
-└─────────────────────────────────────────────────────┘
++----------------------------------------------------------+
+|  Contacts                          [Analyser les contacts]|
+|  Gerez vos contacts et suivez votre pipeline.            |
+|                                                          |
+|  [Tous(42)] [Identifie] [Analyse] [A contacter]         |
+|  [Contacte] [Repondu] [Entretien] [Offre] [Rejete]      |
+|                                                          |
+|  +------------------------------------------------------+|
+|  | Nom    | Role    | Entreprise | Pertinence | Statut  ||
+|  |--------|---------|------------|------------|---------|
+|  | J.Smith| Eng Mgr | Xero       | [Tres pert]| Contacte||
+|  | M.Dupt | CTO     | Datacom    | [Pertinent]| A cont. ||
+|  | ...    | ...     | ...        | ...        | ...     ||
+|  +------------------------------------------------------+|
+|                                                          |
+|  OU: "Aucun contact trouve. Lancez un sourcing."         |
++----------------------------------------------------------+
 ```
 
----
+**Filtres**: Pills horizontales, actif = fond colore + texte blanc, inactif = outline colore
 
-### Composant: ContactCard
+### Composant: EmailsPage
 
-**Rôle**: Carte résumée d'un contact (utilisée dans la liste et le kanban)
+**Role**: Gestion des emails generes par l'IA
 
 **Wireframe**:
 ```
-┌─────────────────────────────────────────┐
-│  John Smith                             │
-│  Engineering Manager — Xero             │
-│                                         │
-│  [Très pertinent]  ← badge vert         │
-│  "Leader d'équipe backend, entreprise   │
-│   en croissance dans ton secteur"       │
-│                                         │
-│  📧 Email envoyé il y a 3j             │
-│  Source: LinkedIn                        │
-└─────────────────────────────────────────┘
++----------------------------------------------------------+
+|  Emails                            [Generer des emails]   |
+|  Gerez les emails generes par l'IA pour vos contacts.    |
+|                                                          |
+|  [Tous(7)] [Brouillon] [Approuve] [Envoye]              |
+|  [Ouvert] [Repondu] [Rejete]                            |
+|                                                          |
+|  +------------------------------------------------------+|
+|  | [v] John Smith -- Xero              [Tres pertinent] ||
+|  |     Objet: Regarding your backend team at Xero       ||
+|  |                                                      ||
+|  | [v] Marie Dupont -- Datacom           [Pertinent]    ||
+|  |     Objet: Your data engineering expertise...        ||
+|  |                                                      ||
+|  | Actions en masse : [Rejeter selection] [Approuver]   ||
+|  +------------------------------------------------------+|
+|                                                          |
+|  OU: "Aucun email. Generez des emails pour vos contacts."||
++----------------------------------------------------------+
 ```
 
-**Dimensions kanban**: ~280px de large, hauteur auto
-**Dimensions liste**: pleine largeur, format row
+### Composant: PipelineBoard (page Suivi)
 
-**États**:
-- Default : comme ci-dessus
-- Hover : léger shadow + bordure primary
-- Dragging (kanban) : shadow lg, opacité 90%
-- Sans email : pas de ligne "📧"
-
----
-
-### Composant: EmailPreview
-
-**Rôle**: Preview et édition d'un email avant envoi
+**Role**: Vue kanban du pipeline de contacts
 
 **Wireframe**:
 ```
-┌─────────────────────────────────────────────────────┐
-│  ← Retour à la liste                                │
-│                                                     │
-│  ┌── Contact ──────────────────────────────────┐    │
-│  │ John Smith — Engineering Manager — Xero     │    │
-│  │ [Très pertinent] "Leader d'équipe backend"  │    │
-│  └─────────────────────────────────────────────┘    │
-│                                                     │
-│  À :      john.smith@xero.com                       │
-│  Objet :  [Regarding your backend team at Xero   ]  │
-│                                                     │
-│  ┌─────────────────────────────────────────────┐    │
-│  │ Hi John,                                    │    │
-│  │                                              │    │
-│  │ I noticed Xero's engineering team has been   │    │
-│  │ growing recently...                          │    │
-│  │                                              │    │
-│  │ [Zone éditable — rich text simple]           │    │
-│  └─────────────────────────────────────────────┘    │
-│                                                     │
-│  Relances programmées :                             │
-│  ○ J+3  ○ J+7  ○ J+14  [Configurer]               │
-│                                                     │
-│  [Rejeter]        [Sauver brouillon]   [Approuver ✓]│
-└─────────────────────────────────────────────────────┘
++----------------------------------------------------------+
+|  Pipeline                         N contacts au total     |
+|  Visualisez et gerez votre pipeline de contacts.         |
+|                                                          |
+|  Trouve  | A contac.| Contacte | En disc. | Entretien| Termine |
+|  (18)    | (7)      | (5)      | (2)      | (1)      | (1)     |
+|  -----   | -----    | -----    | -----    | -----    | -----   |
+|  +-----+ | +------+ | +------+ | +------+ | +------+ | +-----+ |
+|  |Smith| | |Dupont| | |Brown | | |Lee   | | |Wong  | | |Chen | |
+|  |EngMg| | |CTO   | | |VP Eng| | |TmLead| | |DirEng| | |PM   | |
+|  |Xero | | |Datcm | | |Spark | | |Trade | | |Rocket| | |Fish | |
+|  |[Tre]| | |[Pert]| | |[Cont]| | |[Disc]| | |[Entr]| | |[Off]| |
+|  +-----+ | +------+ | +------+ | +------+ | +------+ | +-----+ |
+|           |          |          |          |          |         |
++----------------------------------------------------------+
 ```
 
----
+**Colonnes**: Chacune avec en-tete colore (gradient subtil haut de colonne), compteur, cards
 
-### Composant: EmailQueue
+| Colonne | Couleur barre haut |
+|---------|-------------------|
+| Trouve | Gris |
+| A contacter | Bleu |
+| Contacte | Indigo |
+| En discussion | Violet |
+| Entretien | Rose/Magenta |
+| Termine | Ambre/Dore |
 
-**Rôle**: Liste des emails à valider en masse (après les 3 premiers)
+**Cards contact**: Nom, role, entreprise, badge statut
+
+### Composant: OnboardingWizard
+
+**Role**: Configuration initiale du profil en 3 etapes
+
+**Wireframe etape 1/3**:
+```
++----------------------------------------------------------+
+|              Bienvenue sur ExpatHunter                    |
+|     Configurez votre profil en 3 etapes pour des         |
+|     resultats optimaux                                   |
+|                                                          |
+|     1 / 3                                                |
+|     [====|-------|-------]                               |
+|     Informations    Votre CV    Experience et            |
+|     de base                     competences              |
+|                                                          |
+|  +------------------------------------------------------+|
+|  | Informations de base                                 ||
+|  |                                                      ||
+|  | Nom complet                                          ||
+|  | [E2E Test User_________________________]             ||
+|  |                                                      ||
+|  | Pays cibles                                          ||
+|  | [Selectionner des pays...              v]            ||
+|  |                                                      ||
+|  | Secteurs                                             ||
+|  | [Tech, Finance...________________________]           ||
+|  | Appuyez sur Entree ou virgule pour ajouter           ||
+|  |                                                      ||
+|  | Postes recherches                                    ||
+|  | [Backend Developer, CTO..._______________]           ||
+|  | Appuyez sur Entree ou virgule pour ajouter           ||
+|  |                                                      ||
+|  |                                    [Suivant]         ||
+|  +------------------------------------------------------+|
++----------------------------------------------------------+
+```
+
+**Pas de sidebar** pendant l'onboarding — pleine page centree
+
+### Composant: ParametresPage
+
+**Role**: Configuration du compte et des preferences
 
 **Wireframe**:
 ```
-┌─────────────────────────────────────────────────────┐
-│  Emails en attente (12)         [Approuver sélection]│
-│                                                     │
-│  [✓] John Smith — Xero           [Très pertinent]   │
-│      Objet: Regarding your backend team...          │
-│                                                     │
-│  [✓] Marie Dupont — Datacom      [Pertinent]        │
-│      Objet: Your data engineering expertise...      │
-│                                                     │
-│  [ ] Tom Brown — Spark NZ         [À vérifier]      │
-│      Objet: Cloud infrastructure at Spark...        │
-│                                                     │
-│  ...                                                │
-│                                                     │
-│  Sélection : 8/12    [Rejeter sélection] [Approuver]│
-└─────────────────────────────────────────────────────┘
++----------------------------------------------------------+
+|  Parametres                                              |
+|  Configurez votre compte et vos preferences.             |
+|                                                          |
+|  +------------------------------------------------------+|
+|  | Compte                                               ||
+|  | Email : user@example.com                             ||
+|  +------------------------------------------------------+|
+|                                                          |
+|  +------------------------------------------------------+|
+|  | Sequences de relance                    3 maximum    ||
+|  | Definissez quand et combien de relances envoyer.     ||
+|  |                                                      ||
+|  | Relance 1    [7] [jour(s)   v]                       ||
+|  | + Ajouter une relance                                ||
+|  +------------------------------------------------------+|
+|                                                          |
+|  +------------------------------------------------------+|
+|  | Plages d'envoi autorisees                            ||
+|  | Jours autorises                                      ||
+|  | (Lun) (Mar) (Mer) (Jeu) (Ven) [Sam] [Dim]           ||
+|  |  <- actifs en violet outline, inactifs en gris       ||
+|  |                                                      ||
+|  | Heures d'envoi                                       ||
+|  | De [08:00 v]  A [18:00 v]                            ||
+|  |                                                      ||
+|  | Fuseau horaire                                       ||
+|  | [Europe/Paris v]                                     ||
+|  +------------------------------------------------------+|
+|                                                          |
+|  +------------------------------------------------------+|
+|  | Personnalisation des emails                          ||
+|  |                                                      ||
+|  | > Mes templates                                  [>] ||
+|  |   Creez et gerez vos modeles d'emails                ||
+|  |                                                      ||
+|  | > Mes presets de generation                      [>] ||
+|  |   Configurez le ton, le format et les instructions   ||
+|  |                                                      ||
+|  | > Contacts et entreprises bloques                [>] ||
+|  |   Gerez les contacts et entreprises bloques          ||
+|  |                                                      ||
+|  | > Connexion email                                [>] ||
+|  |   Configurez IMAP/SMTP pour recevoir les reponses    ||
+|  +------------------------------------------------------+|
+|                                                          |
+|  +------------------------------------------------------+|
+|  | Langue                                               ||
+|  | [Francais v]                                         ||
+|  +------------------------------------------------------+|
+|                                                          |
+|  +------------------------------------------------------+|
+|  | Mode sombre                                          ||
+|  | [Automatique] [Clair] [Sombre]                       ||
+|  +------------------------------------------------------+|
+|                                                          |
+|  [Sauvegarder]                                           |
++----------------------------------------------------------+
 ```
 
----
+### Composant: LoginPage
 
-### Composant: PipelineBoard
-
-**Rôle**: Vue kanban du pipeline avec 5 colonnes
+**Role**: Connexion au compte
 
 **Wireframe**:
 ```
-┌─────────────────────────────────────────────────────────────────────────┐
-│  Pipeline            [Vue kanban ●] [Vue liste ○]    [Filtres ▼]       │
-│                                                                         │
-│  Trouvé (18)    │ À contacter (7) │ Contacté (5)  │ En discussion (2)│ Terminé (1) │
-│  ──────────     │ ──────────────  │ ──────────    │ ───────────────  │ ──────────  │
-│  ┌───────────┐  │ ┌─────────────┐ │ ┌──────────┐ │ ┌──────────────┐ │ ┌─────────┐ │
-│  │ J. Smith  │  │ │ M. Dupont   │ │ │ T. Brown │ │ │ S. Lee       │ │ │ A. Wong │ │
-│  │ Eng Mgr   │  │ │ CTO         │ │ │ VP Eng   │ │ │ Team Lead    │ │ │ Dir Eng │ │
-│  │ Xero      │  │ │ Datacom     │ │ │ Spark    │ │ │ TradeMe      │ │ │ Rocket  │ │
-│  │ [■ Très]  │  │ │ [■ Pert.]   │ │ │ [■ Véri] │ │ │ [■ Très]     │ │ │ ✅ Offre │ │
-│  └───────────┘  │ └─────────────┘ │ └──────────┘ │ └──────────────┘ │ └─────────┘ │
-│  ┌───────────┐  │ ┌─────────────┐ │ ┌──────────┐ │ ┌──────────────┐ │             │
-│  │ ...       │  │ │ ...         │ │ │ ...      │ │ │ ...          │ │             │
-│  └───────────┘  │ └─────────────┘ │ └──────────┘ │ └──────────────┘ │             │
-└─────────────────────────────────────────────────────────────────────────┘
++----------------------------------------------------------+
+|                                                          |
+|                                                          |
+|              +----------------------------+              |
+|              |     ExpatHunter            |              |
+|              |  Connectez-vous a votre    |              |
+|              |  compte                    |              |
+|              |                            |              |
+|              |  Email                     |              |
+|              |  [vous@exemple.com______]  |              |
+|              |                            |              |
+|              |  Mot de passe              |              |
+|              |  [********************__]  |              |
+|              |                            |              |
+|              |  [== Se connecter ======]  |              |
+|              |                            |              |
+|              |  Mot de passe oublie ?     |              |
+|              |                            |              |
+|              |  Pas encore de compte ?    |              |
+|              |  > Creer un compte         |              |
+|              +----------------------------+              |
+|                                                          |
+|                                        [chat icon]       |
++----------------------------------------------------------+
 ```
 
-**Colonnes MVP**:
-| Colonne | Signification | Sous-statuts |
-|---------|---------------|--------------|
-| Trouvé | Contact issu du sourcing, analysé par l'IA | identified, analyzed |
-| À contacter | Validé comme pertinent, email en préparation | to_contact |
-| Contacté | Email envoyé, en attente de réponse | contacted |
-| En discussion | Réponse reçue, échanges en cours | replied, interview |
-| Terminé | Fin du process | offer, rejected |
+**Card centree**: fond blanc, ombre subtile, coins arrondis large
+**Titre**: "ExpatHunter" en magenta bold
+**Bouton**: fond violet plein, texte blanc
 
-**Interactions**:
-- Drag & drop entre colonnes
-- Clic sur carte → ouvre /contacts/:id
-- Compteur par colonne mis à jour en temps réel
+### Composant: RegisterPage
 
-**Responsive**:
-- Mobile : une seule colonne visible, swipe horizontal pour changer
-- Tablet : 3 colonnes visibles, scroll horizontal
-- Desktop : toutes les colonnes visibles
-
----
-
-### Composant: ContactDetail
-
-**Rôle**: Fiche complète d'un contact
+**Role**: Creation de compte
 
 **Wireframe**:
 ```
-┌─────────────────────────────────────────────────────┐
-│  ← Contacts                                        │
-│                                                     │
-│  ┌── En-tête ──────────────────────────────────┐    │
-│  │  [Avatar]  John Smith                       │    │
-│  │            Engineering Manager @ Xero       │    │
-│  │            Auckland, New Zealand             │    │
-│  │                                              │    │
-│  │  [Très pertinent]                           │    │
-│  │  "Leader d'une équipe backend de 12 devs,   │    │
-│  │   Xero recrute activement dans ton secteur, │    │
-│  │   match fort avec ton profil Python/Data"    │    │
-│  │                                              │    │
-│  │  [Override: Marquer non pertinent]           │    │
-│  └─────────────────────────────────────────────┘    │
-│                                                     │
-│  ── Entreprise ──                                   │
-│  Xero | Tech/Fintech | 3000+ employés | xero.com   │
-│  Signaux : 📈 3 offres publiées ce mois            │
-│                                                     │
-│  ── Historique des échanges ──                      │
-│  📧 Email initial envoyé le 15/03 — Ouvert ✓       │
-│  📧 Relance J+3 envoyée le 18/03 — En attente      │
-│  📧 Relance J+7 prévue le 22/03                    │
-│                                                     │
-│  ── Liens ──                                        │
-│  🔗 Profil LinkedIn    📧 john.smith@xero.com       │
-│                                                     │
-│  Statut : [Contacté ▼]                              │
-│                                                     │
-│  [Générer un email]  [Voir les emails]              │
-└─────────────────────────────────────────────────────┘
++----------------------------------------------------------+
+|                                                          |
+|              +----------------------------+              |
+|              |     ExpatHunter            |              |
+|              |  Creez votre compte        |              |
+|              |                            |              |
+|              |  Nom complet               |              |
+|              |  [Jean Dupont___________]  |              |
+|              |                            |              |
+|              |  Email                     |              |
+|              |  [vous@exemple.com______]  |              |
+|              |                            |              |
+|              |  Mot de passe              |              |
+|              |  [Minimum 8 caracteres__]  |              |
+|              |                            |              |
+|              |  Langue                    |              |
+|              |  [Francais           v  ]  |              |
+|              |                            |              |
+|              |  [== Creer mon compte ==]  |              |
+|              |                            |              |
+|              |  Deja un compte ?          |              |
+|              |  > Se connecter            |              |
+|              +----------------------------+              |
++----------------------------------------------------------+
 ```
+
+### Composant: ForgotPasswordPage
+
+**Role**: Demande de reinitialisation du mot de passe
+
+**Wireframe (etat formulaire)**:
+```
++----------------------------------------------------------+
+|                                                          |
+|                                                          |
+|              +----------------------------+              |
+|              |     ExpatHunter            |              |
+|              |  Reinitialiser votre mot   |              |
+|              |  de passe                  |              |
+|              |                            |              |
+|              |  Email                     |              |
+|              |  [vous@exemple.com______]  |              |
+|              |                            |              |
+|              |  [== Envoyer le lien ===]  |              |
+|              |                            |              |
+|              |  > Retour a la connexion   |              |
+|              +----------------------------+              |
+|                                                          |
+|                                        [chat icon]       |
++----------------------------------------------------------+
+```
+
+**Wireframe (etat succes)**:
+```
++----------------------------------------------------------+
+|                                                          |
+|              +----------------------------+              |
+|              |     ExpatHunter            |              |
+|              |  Reinitialiser votre mot   |              |
+|              |  de passe                  |              |
+|              |                            |              |
+|              |  +------------------------+|              |
+|              |  | Si un compte existe    ||              |
+|              |  | avec cet email, un     ||              |
+|              |  | lien a ete envoye.     ||              |  <- Fond success/10, bordure success/30, texte success
+|              |  +------------------------+|              |
+|              |                            |              |
+|              |  > Retour a la connexion   |              |
+|              +----------------------------+              |
+|                                                          |
+|                                        [chat icon]       |
++----------------------------------------------------------+
+```
+
+**Card centree**: fond surface-light, bordure border, ombre subtile, coins arrondis large (12px)
+**Titre**: "ExpatHunter" en primary bold
+**Bouton**: fond primary plein, texte blanc
+**Message succes**: fond `--color-success`/10, bordure `--color-success`/30, texte `--color-success`
+**Lien retour**: texte primary, underline au hover
+**Note securite**: la reponse est identique qu'un compte existe ou non (anti-enumeration)
 
 ---
 
-### Composant: SettingsPage
+### Composant: ResetPasswordPage
 
-**Rôle**: Configuration du compte et des connecteurs
+**Role**: Saisie du nouveau mot de passe via token recu par email
 
-**Wireframe**:
+**Wireframe (etat invalide — pas de token dans l'URL)**:
 ```
-┌─────────────────────────────────────────────────────┐
-│  Paramètres                                         │
-│                                                     │
-│  ── Compte ──                                       │
-│  Email : yannick@example.com                        │
-│  [Changer le mot de passe]                          │
-│                                                     │
-│  ── Connecteur Email ──                             │
-│  Gmail : ✅ Connecté (yannick@gmail.com)            │
-│  [Déconnecter]  [Ajouter un autre compte]           │
-│                                                     │
-│  ── Séquences de relance (défaut) ──                │
-│  Relance 1 : J+ [3]                                │
-│  Relance 2 : J+ [7]                                │
-│  Relance 3 : J+ [14]                               │
-│                                                     │
-│  ── Apparence ──                                    │
-│  Thème : [Système ▼]  (Clair / Sombre / Système)    │
-│  Par défaut : suit les préférences système          │
-│                                                     │
-│  ── Langue ──                                       │
-│  Langue : [English ▼]  (English / Français)         │
-│  Par défaut : langue du navigateur                  │
-│                                                     │
-│  ── Sources de données ──                           │
-│  Configurer les sources par pays →                  │
-│                                                     │
-│  [Sauvegarder]                                      │
-└─────────────────────────────────────────────────────┘
++----------------------------------------------------------+
+|                                                          |
+|              +----------------------------+              |
+|              |     ExpatHunter            |              |
+|              |  Nouveau mot de passe      |              |
+|              |                            |              |
+|              |  Ce lien de               |              |
+|              |  reinitialisation est      |              |
+|              |  invalide.                 |              |  <- Texte color-error
+|              |                            |              |
+|              |  > Demander un nouveau     |              |
+|              |    lien                    |              |
+|              +----------------------------+              |
+|                                                          |
+|                                        [chat icon]       |
++----------------------------------------------------------+
 ```
+
+**Wireframe (etat formulaire — token valide dans l'URL)**:
+```
++----------------------------------------------------------+
+|                                                          |
+|              +----------------------------+              |
+|              |     ExpatHunter            |              |
+|              |  Nouveau mot de passe      |              |
+|              |                            |              |
+|              |  Nouveau mot de passe      |              |
+|              |  [********************__]  |              |
+|              |                            |              |
+|              |  Confirmer le mot de passe |              |
+|              |  [********************__]  |              |
+|              |                            |              |
+|              |  [=== Reinitialiser =====] |              |
+|              +----------------------------+              |
+|                                                          |
+|                                        [chat icon]       |
++----------------------------------------------------------+
+```
+
+**Wireframe (etat erreur — token invalide ou expire)**:
+```
++----------------------------------------------------------+
+|                                                          |
+|              +----------------------------+              |
+|              |     ExpatHunter            |              |
+|              |  Nouveau mot de passe      |              |
+|              |                            |              |
+|              |  +------------------------+|              |
+|              |  | Lien invalide ou       ||              |
+|              |  | expire. Veuillez       ||              |  <- Fond error/10, bordure error/30, texte error
+|              |  | demander un nouveau    ||              |
+|              |  | lien.                  ||              |
+|              |  +------------------------+|              |
+|              |                            |              |
+|              |  [=== Reinitialiser =====] |              |  <- Toujours present mais disabled possible
+|              +----------------------------+              |
+|                                                          |
+|                                        [chat icon]       |
++----------------------------------------------------------+
+```
+
+**Wireframe (etat succes)**:
+```
++----------------------------------------------------------+
+|                                                          |
+|              +----------------------------+              |
+|              |     ExpatHunter            |              |
+|              |  Nouveau mot de passe      |              |
+|              |                            |              |
+|              |  +------------------------+|              |
+|              |  | Votre mot de passe a   ||              |
+|              |  | ete reinitialise. Vous ||              |  <- Fond success/10, bordure success/30, texte success
+|              |  | pouvez maintenant vous ||              |
+|              |  | connecter.             ||              |
+|              |  +------------------------+|              |
+|              |                            |              |
+|              |  > Se connecter            |              |
+|              +----------------------------+              |
+|                                                          |
+|                                        [chat icon]       |
++----------------------------------------------------------+
+```
+
+**Card centree**: fond surface-light, bordure border, ombre subtile, coins arrondis large (12px)
+**Titre**: "ExpatHunter" en primary bold
+**Subtitle**: "Nouveau mot de passe" en text-muted
+**Inputs password**: coins arrondis 6px, bordure border, focus ring border-focus (teal)
+**Bouton**: fond primary plein, texte blanc
+**Message succes**: fond `--color-success`/10, bordure `--color-success`/30, texte `--color-success`
+**Message erreur**: fond `--color-error`/10, bordure `--color-error`/30, texte `--color-error`
+**Lien retour**: texte primary, underline au hover
+**Validation**: mot de passe minimum 8 caracteres, les deux champs doivent correspondre
+**Token**: transmis via query param `?token=<hex64>`, lu via `useSearchParams()`
+
+---
+
+### Composant: AssistantButton
+
+**Role**: Bouton flottant pour ouvrir l'assistant IA
+
+**Position**: Fixed, bas droite (bottom: 24px, right: 24px)
+**Style**: Cercle violet ~56px, icone bulle de chat blanche, ombre elevee
+**Present sur**: Toutes les pages (auth et non-auth)
 
 ---
 
 ## 5. Layouts des pages
 
-### Page: Dashboard — `/`
+### Layout authentifie (avec sidebar)
 
 ```
-┌──────────┬──────────────────────────────────────────┐
-│          │                                          │
-│          │  Bonjour Yannick 👋                      │
-│          │                                          │
-│ Sidebar  │  ┌── Actions en attente (7) ──────────┐ │
-│          │  │  [DashboardActions]                 │ │
-│          │  │  ...                                │ │
-│          │  └────────────────────────────────────┘ │
-│          │                                          │
-│          │  ── Statistiques rapides ──              │
-│          │  [42 contacts] [23 emails] [3 réponses]  │
-│          │                                          │
-└──────────┴──────────────────────────────────────────┘
++----------+-------------------------------------------------+
+|          |                                                 |
+| Sidebar  |  Contenu principal                              |
+| (240px)  |  (flex-1, padding 24-32px)                      |
+|          |                                                 |
+|          |                                                 |
++----------+-------------------------------------------------+
+                                              [Assistant btn]
 ```
 
-**Données** : actions depuis l'API, stats depuis /api/pipeline
-
-### Page: Sourcing — `/sourcing`
+### Layout non-authentifie (sans sidebar)
 
 ```
-┌──────────┬──────────────────────────────────────────┐
-│          │                                          │
-│          │  Sourcing          [+ Nouvelle recherche]│
-│          │                                          │
-│ Sidebar  │  ── Campagne en cours ──                 │
-│          │  [SourcingProgress]  (si applicable)      │
-│          │                                          │
-│          │  ── Historique ──                         │
-│          │  | Date  | Pays | Contacts | Statut |    │
-│          │  | 17/03 | NZ   | 18       | ✅     |    │
-│          │  | 10/03 | NZ   | 12       | ✅     |    │
-│          │                                          │
-└──────────┴──────────────────────────────────────────┘
++----------------------------------------------------------+
+|                                                          |
+|              [Card centree, max-width 480px]              |
+|                                                          |
++----------------------------------------------------------+
+                                              [Assistant btn]
 ```
 
-### Page: Contacts — `/contacts`
+### Layout onboarding (sans sidebar)
 
 ```
-┌──────────┬──────────────────────────────────────────┐
-│          │                                          │
-│          │  Contacts (42)        [Filtres ▼] [🔍]  │
-│          │                                          │
-│ Sidebar  │  ┌─ Row ──────────────────────────────┐ │
-│          │  │ J. Smith | Eng Mgr | Xero | [■Très]│ │
-│          │  └────────────────────────────────────┘ │
-│          │  ┌─ Row ──────────────────────────────┐ │
-│          │  │ M. Dupont | CTO | Datacom | [■Pert]│ │
-│          │  └────────────────────────────────────┘ │
-│          │  ...                                     │
-│          │                                          │
-│          │  [← 1 2 3 ... →]  pagination             │
-└──────────┴──────────────────────────────────────────┘
-```
-
-### Page: Pipeline — `/pipeline`
-
-```
-┌──────────┬──────────────────────────────────────────────────────┐
-│          │                                                      │
-│          │  Pipeline   [Kanban ●] [Liste ○]   [Filtres ▼]      │
-│ Sidebar  │                                                      │
-│          │  [PipelineBoard — 5 colonnes avec ContactCards]       │
-│          │                                                      │
-└──────────┴──────────────────────────────────────────────────────┘
-```
-
-### Page: Emails — `/emails`
-
-```
-┌──────────┬──────────────────────────────────────────┐
-│          │                                          │
-│          │  Emails    [Brouillons (7)] [Envoyés] [Relances]│
-│          │                                          │
-│ Sidebar  │  ── Mode validation (3 premiers) ──      │
-│          │  [EmailPreview — email 1/3]               │
-│          │                                          │
-│          │  ── OU mode liste ──                      │
-│          │  [EmailQueue — liste scrollable]          │
-│          │                                          │
-│          │  [Envoyer les emails approuvés (5)]       │
-└──────────┴──────────────────────────────────────────┘
++----------------------------------------------------------+
+|                                                          |
+|  [Titre centre + stepper, max-width 640px]               |
+|  [Card formulaire]                                       |
+|                                                          |
++----------------------------------------------------------+
+                                              [Assistant btn]
 ```
 
 ---
 
-## 6. Guidelines d'accessibilité
+## 5bis. Pages manquantes et etats avec data
 
-### WCAG 2.1 AA — Exigences spécifiques
+### Composant: ContactsPage (etat avec data)
 
-1. **Contraste** : ratio minimum 4.5:1 pour le texte, 3:1 pour les grands textes et les éléments UI
-2. **Navigation clavier** : tous les éléments interactifs accessibles via Tab, actions via Enter/Space
-3. **Drag & drop kanban** : alternative clavier (menu contextuel "Déplacer vers..." sur chaque carte)
-4. **Focus visible** : outline 2px primary sur tous les éléments focusables
-5. **Labels de formulaire** : chaque input a un label explicite (pas de placeholder seul)
-6. **Badges de pertinence** : ne pas reposer uniquement sur la couleur — le texte "Très pertinent" est toujours visible
-7. **Annonces dynamiques** : `aria-live="polite"` pour les mises à jour de progression (sourcing, analyse)
-8. **Skip link** : lien "Aller au contenu principal" en premier élément focusable
-9. **Images/avatars** : `alt` descriptif ou `aria-hidden` si décoratif
-10. **Dark mode** : les contrastes doivent être respectés dans les deux modes
+**Wireframe avec contacts charges**:
+```
++----------------------------------------------------------+
+|  Contacts                          [Analyser les contacts]|
+|  Gerez vos contacts et suivez votre pipeline.            |
+|                                                          |
+|  Stats analyse (si analysed > 0):                        |
+|  [* Tres pertinent (5)] [. Pertinent (8)]                |
+|  [? A verifier (3)] [x Non pertinent (2)]                |
+|                                                          |
+|  [Tous(42)] [Identifie] [Analyse] [A contacter] ...     |
+|                                                          |
+|  +------------------------------------------------------+|
+|  | John Smith                 [85] [Identifie]  [* 92]  ||
+|  | Engineering Manager                                   ||
+|  | Xero . Auckland . Tech                                ||
+|  | "Leader d'equipe backend, match fort avec profil"     ||
+|  | john@xero.com   LinkedIn   Source: seek   [Contacter] ||
+|  |                                [Statut: [Identifie v]]||
+|  +------------------------------------------------------+|
+|  | Marie Dupont               [72] [Analyse]   [. 75]   ||
+|  | CTO                                                   ||
+|  | Datacom . Wellington . Tech                           ||
+|  | "Profil management, experience similaire"             ||
+|  | marie@datacom.nz  LinkedIn  Source: matchstiq [Revoir]||
+|  |                                [Statut: [Analyse   v]]||
+|  +------------------------------------------------------+|
+|                                                          |
+|  [< Precedent]  1 / 3  [Suivant >]                      |
++----------------------------------------------------------+
+```
+
+**Elements par contact**:
+- Nom (bold) + score de confiance (badge circulaire) + badge statut (pill coloree) + badge pertinence (icone + score)
+- Role (semi-bold)
+- Entreprise . Ville . Secteur
+- Raison de pertinence IA (italic, gris)
+- Email, lien LinkedIn, source, recommandation IA (contacter/revoir/ignorer)
+- Dropdown changement de statut a droite
+
+### Composant: EmailsPage (etat avec data)
+
+**Wireframe avec emails charges**:
+```
++----------------------------------------------------------+
+|  Emails                [Approuver tout (5)] [Envoyer     ||
+|  Gerez les emails...   tous (3)] [Generer des emails]    |
+|                                                          |
+|  [message de feedback si present]                        |
+|                                                          |
+|  [Barre de progression envoi si en cours]                |
+|  [============================] 8/12                     |
+|                                                          |
+|  [Tous(12)] [Brouillon] [Approuve] [Envoye] ...         |
+|                                                          |
+|  [ ] Selectionner tous les approuves                     |
+|                                                          |
+|  +------------------------------------------------------+|
+|  |[v]  [Brouillon]  initial                             ||
+|  |     A: John Smith -- Eng Manager @ Xero (john@xero)  ||
+|  |     [Regenerer] [Modifier] [Approuver] [Rejeter]     ||
+|  |                                                      ||
+|  |     Regarding your backend team at Xero              ||
+|  |     Hi John, I noticed Xero's engineering team...    ||
+|  +------------------------------------------------------+|
+|  |[ ]  [Approuve]  initial                              ||
+|  |     A: Marie Dupont -- CTO @ Datacom (marie@dat)     ||
+|  |                                                      ||
+|  |     Your data engineering expertise at Datacom       ||
+|  |     Hi Marie, I noticed Datacom has been growing...  ||
+|  +------------------------------------------------------+|
+|                                                          |
+|  [< Precedent]  1 / 2  [Suivant >]                      |
+|                                                          |
+|  +======================================================+|
+|  ||  3 email(s) selectionne(s)                          |||
+|  ||            [Approuver selection] [Envoyer (2)] [x]  |||
+|  +======================================================+|
++----------------------------------------------------------+
+```
+
+**Barre d'actions batch**: Fixed en bas, fond sombre, texte clair, avec compteur + actions + bouton fermer
+
+**Email en mode edition** (inline):
+```
+  +------------------------------------------------------+
+  | [input sujet editable____________________________]   |
+  | [textarea body editable                          ]   |
+  | [                                                ]   |
+  | [                                                ]   |
+  |                          [Sauvegarder] [Annuler]     |
+  +------------------------------------------------------+
+```
+
+### Composant: ContactDetailPage `/contacts/:id`
+
+**Wireframe**:
+```
++----------------------------------------------------------+
+|  John Smith                          [Identifie]          |
+|  Engineering Manager . Xero . Auckland                    |
+|  john.smith@xero.com                                     |
+|                                                          |
+|  [Informations]  [Fil de discussion]                     |
+|  ────────────────────────────────────                    |
+|                                                          |
+|  == Onglet Informations ==                               |
+|  +------------------------------------------------------+|
+|  | Informations du contact                              ||
+|  | Email        john.smith@xero.com                     ||
+|  | Entreprise   Xero                                    ||
+|  | Secteur      Tech                                    ||
+|  | Pays         NZ                                      ||
+|  +------------------------------------------------------+|
+|                                                          |
+|  == Onglet Fil de discussion (ThreadView) ==             |
+|  +------------------------------------------------------+|
+|  | Fil de discussion              [Synchroniser]        ||
+|  +------------------------------------------------------+|
+|  | Resume IA (si disponible)                            ||
+|  | "Contact interesse, a demande plus de details sur..." ||
+|  +------------------------------------------------------+|
+|  |                                                      ||
+|  | [NON LU] john@xero.com   [Entretien]   15 mars 2025 ||
+|  | Re: Regarding your backend team                      ||
+|  | Thanks for reaching out! I'd be happy to...          ||
+|  | [Voir plus]                                          ||
+|  | [Suggerer une reponse]                               ||
+|  |                                                      ||
+|  | +--------------------------------------------------+ ||
+|  | | Reponse suggeree par l'IA                        | ||
+|  | | Thank you for your interest, John. I would...    | ||
+|  | +--------------------------------------------------+ ||
+|  +------------------------------------------------------+|
++----------------------------------------------------------+
+```
+
+**Onglets**: "Informations" et "Fil de discussion" avec underline active primary
+**Replies**: Card avec bordure gauche primary si non lu, badge event (Entretien/Rejet/Offre/Demande info), bouton "Suggerer une reponse"
+
+### Composant: ProfilPage `/profil`
+
+**Wireframe**:
+```
++----------------------------------------------------------+
+|  Mon profil                                              |
+|  Gerez vos informations et votre CV.                     |
+|                                                          |
+|  +------------------------------------------------------+|
+|  | Completion du profil                          75%    ||
+|  | [==========================--------]                 ||
+|  | Completez votre profil pour de meilleurs resultats   ||
+|  +------------------------------------------------------+|
+|                                                          |
+|  [Conseil IA contextuel si disponible]                   |
+|                                                          |
+|  +-- Formulaire (2/3 largeur) --+  +-- CV (1/3) ------+|
+|  |                               |  |                   ||
+|  | Competences                   |  | Mon CV            ||
+|  | [TypeScript x] [React x] [+] |  | CV enregistre     ||
+|  |                               |  | [Remplacer le CV] ||
+|  | Annees d'experience           |  |                   ||
+|  | [8]                           |  | Texte extrait     ||
+|  |                               |  | (scrollable)      ||
+|  | Pays cibles                   |  | "Senior dev..."   ||
+|  | [NZ x] [AU x] [Rechercher..] |  |                   ||
+|  |                               |  +-------------------+|
+|  | Secteurs                      |                       |
+|  | [Tech x] [SaaS x] [+]       |                       |
+|  |                               |                       |
+|  | Postes recherches             |                       |
+|  | [Backend Dev x] [CTO x] [+] |                       |
+|  |                               |                       |
+|  | [Sauvegarder]                 |                       |
+|  +-------------------------------+                       |
++----------------------------------------------------------+
+```
+
+### Composant: TemplatesPage `/parametres/templates`
+
+**Wireframe**:
+```
++----------------------------------------------------------+
+|  Mes templates                     [+ Nouveau template]   |
+|  Creez et gerez vos modeles d'emails.                    |
+|                                                          |
+|  [Formulaire inline si creation/edition active]          |
+|  +------------------------------------------------------+|
+|  | Creer un template / Modifier un template             ||
+|  |                                                      ||
+|  | Nom                                                  ||
+|  | [Premier contact formel___________]                  ||
+|  |                                                      ||
+|  | Sujet                                                ||
+|  | [Regarding {{role}} at {{company}}]                  ||
+|  | Variables: {{name}}, {{role}}, {{company}}           ||
+|  |                                                      ||
+|  | Corps                                                ||
+|  | [Hi {{name}},                              ]         ||
+|  | [                                          ]         ||
+|  | [I noticed {{company}} has been...         ]         ||
+|  |                                                      ||
+|  | [ ] Definir comme template par defaut                ||
+|  |                                                      ||
+|  | [Sauvegarder] [Annuler]                              ||
+|  +------------------------------------------------------+|
+|                                                          |
+|  +------------------------------------------------------+|
+|  | Premier contact formel          [* Par defaut]       ||
+|  | Sujet: Regarding {{role}} at {{company}}             ||
+|  | Hi {{name}}, I noticed {{company}}...                ||
+|  |                                    [Modifier] [Suppr]||
+|  +------------------------------------------------------+|
+|  | Relance amicale                                      ||
+|  | Sujet: Following up — {{company}}                    ||
+|  | Hi {{name}}, just wanted to follow...                ||
+|  |                                    [Modifier] [Suppr]||
+|  +------------------------------------------------------+|
+|                                                          |
+|  OU (si aucun template):                                 |
+|  "Aucun template. Creez votre premier template."         |
+|  [+ Creer un template]                                   |
++----------------------------------------------------------+
+```
+
+### Composant: PresetsPage `/parametres/presets`
+
+**Wireframe**:
+```
++----------------------------------------------------------+
+|  Presets de generation              [+ Nouveau preset]    |
+|  Configurez le ton, le format et les instructions IA.    |
+|                                                          |
+|  [Formulaire inline si creation/edition active]          |
+|  +------------------------------------------------------+|
+|  | Creer un preset                                      ||
+|  |                                                      ||
+|  | Nom                                                  ||
+|  | [Approche directe NZ_____________]                   ||
+|  |                                                      ||
+|  | Longueur            Langue                           ||
+|  | [Court] [Moyen] [Long]    [Francais v]               ||
+|  |                                                      ||
+|  | Framework                                            ||
+|  | [AIDA] [PAS] [BAB] [DIRECT]                          ||
+|  | "Direct : message court et factuel"                  ||
+|  |                                                      ||
+|  | Ton (multi-select)                                   ||
+|  | (Professionnel) (Amical) [Direct] [Enthousiaste]     ||
+|  |                                                      ||
+|  | Instructions personnalisees                          ||
+|  | [Toujours mentionner le visa sponsorship...  ]       ||
+|  |                                                      ||
+|  | [ ] Definir comme preset par defaut                  ||
+|  |                                                      ||
+|  | [Sauvegarder] [Annuler]                              ||
+|  +------------------------------------------------------+|
+|                                                          |
+|  +------------------------------------------------------+|
+|  | Approche directe NZ        [* Par defaut]            ||
+|  | [Moyen] [DIRECT] [Professionnel, Direct] [FR]        ||
+|  | "Mentionner visa sponsorship..."                     ||
+|  |                                    [Modifier] [Suppr]||
+|  +------------------------------------------------------+|
++----------------------------------------------------------+
+```
+
+### Composant: BlocagesPage `/parametres/blocages`
+
+**Wireframe**:
+```
++----------------------------------------------------------+
+|  Contacts et entreprises bloques                         |
+|  Gerez les contacts et entreprises que vous avez bloques.|
+|                                                          |
+|  +------------------------------------------------------+|
+|  | [Entreprise]  Acme Corp                              ||
+|  | Raison: Pas de visa sponsorship                      ||
+|  | Permanent                              [Debloquer]   ||
+|  +------------------------------------------------------+|
+|  | [Contact]  spam@company.com                          ||
+|  | Raison: Doublon                                      ||
+|  | Jusqu'au: 15/06/2025                   [Debloquer]   ||
+|  +------------------------------------------------------+|
+|                                                          |
+|  OU: "Aucun blocage. Vous n'avez bloque aucun contact." |
++----------------------------------------------------------+
+```
+
+**Badges type**: "Entreprise" (violet) ou "Contact" (gris)
+
+### Composant: ConnexionEmailPage `/parametres/connexion-email`
+
+**Wireframe**:
+```
++----------------------------------------------------------+
+|  Connexion email                                         |
+|  Configurez IMAP/SMTP pour recevoir les reponses.        |
+|                                                          |
+|  +------------------------------------------------------+|
+|  | Guide de configuration                               ||
+|  | Gmail : activez l'acces IMAP et utilisez un mot...   ||
+|  | Outlook : activez POP/IMAP dans les parametres...    ||
+|  +------------------------------------------------------+|
+|                                                          |
+|  +------------------------------------------------------+|
+|  | Fournisseur                                          ||
+|  | [Gmail] [Outlook] [Yahoo] [Autre]                    ||
+|  +------------------------------------------------------+|
+|                                                          |
+|  +------------------------------------------------------+|
+|  | IMAP (reception)                                     ||
+|  | Serveur            Port                              ||
+|  | [imap.gmail.com]   [993]                             ||
+|  |                                                      ||
+|  | Utilisateur                                          ||
+|  | [you@gmail.com]                                      ||
+|  |                                                      ||
+|  | Mot de passe                                         ||
+|  | [**********]                                         ||
+|  +------------------------------------------------------+|
+|                                                          |
+|  +------------------------------------------------------+|
+|  | SMTP (envoi)                                         ||
+|  | Serveur            Port                              ||
+|  | [smtp.gmail.com]   [587]                             ||
+|  |                                                      ||
+|  | Utilisateur                                          ||
+|  | [you@gmail.com]                                      ||
+|  |                                                      ||
+|  | Mot de passe                                         ||
+|  | [**********]                                         ||
+|  +------------------------------------------------------+|
+|                                                          |
+|  [Tester la connexion] [Sauvegarder] [Supprimer]        |
++----------------------------------------------------------+
+```
+
+### Composant: AdminUsersPage `/admin/users`
+
+**Wireframe**:
+```
++----------------------------------------------------------+
+|  Gestion des utilisateurs                                |
+|  Gerez les comptes et les roles.                         |
+|                                                          |
+|  +------------------------------------------------------+|
+|  | Nom             | Email                  | Admin     ||
+|  |-----------------|------------------------|-----------|
+|  | Yannick B.      | yannick@example.com    | [Admin]   ||
+|  | E2E Test User   | e2e@expathunter.test   | [User]    ||
+|  +------------------------------------------------------+|
++----------------------------------------------------------+
+```
+
+**Toggle admin**: Clic sur le badge bascule le role (disabled sur soi-meme)
+
+### Composant: AdminAiSettingsPage `/admin/ai-settings`
+
+**Wireframe**:
+```
++----------------------------------------------------------+
+|  Configuration IA                                        |
+|  Gerez les modeles et parametres d'intelligence artif.   |
+|                                                          |
+|  +------------------------------------------------------+|
+|  | Defaut                              [Configurer]     ||
+|  | Modele: openai/gpt-4o-mini                           ||
+|  | Temperature: 0.3 | Max tokens: 1024                  ||
+|  | Active                                               ||
+|  +------------------------------------------------------+|
+|  | Extraction CV                       [Configurer]     ||
+|  | Non configure                                        ||
+|  +------------------------------------------------------+|
+|  | Analyse de pertinence               [Configurer]     ||
+|  | Modele: openai/gpt-4o                                ||
+|  | Temperature: 0.1 | Max tokens: 2048                  ||
+|  +------------------------------------------------------+|
+|  | Generation d'emails                 [Configurer]     ||
+|  | ...                                                  ||
+|  +------------------------------------------------------+|
+|                                                          |
+|  +------------------------------------------------------+|
+|  | Cache IA                              [Purger]       ||
+|  | +----------+  +----------+                           ||
+|  | | Total    |  | Expires  |                           ||
+|  | |   245    |  |    12    |                           ||
+|  | +----------+  +----------+                           ||
+|  | Par type: relevance (120, ~3j), email (80, ~5j)      ||
+|  +------------------------------------------------------+|
+|                                                          |
+|  +------------------------------------------------------+|
+|  | Limites d'envoi email                                ||
+|  | Max relances      [3]                                ||
+|  | Delai min relance [1] [jours v]                      ||
+|  | [Sauvegarder]                                        ||
+|  +------------------------------------------------------+|
++----------------------------------------------------------+
+```
+
+### Composant: SearchProgressModal
+
+**Wireframe** (modal overlay):
+```
++----------------------------------------------------------+
+|                                                          |
+|  +--------------------------------------------------+   |
+|  |                                                  |   |
+|  |              [Spinner anime]                     |   |
+|  |                                                  |   |
+|  |  Recherche en cours -- NZ, Tech                  |   |
+|  |  [=============================------] 75%       |   |
+|  |                                                  |   |
+|  |  [v] Scraping        12 contacts trouves         |   |
+|  |  [v] Enrichissement  10 emails trouves           |   |
+|  |  [~] Analyse IA      En cours...                 |   |
+|  |  [ ] Generation       En attente                 |   |
+|  |                                                  |   |
+|  |  12 contacts . 8 pertinents . 0 emails generes   |   |
+|  |  (2 contacts exclus - contactes recemment)       |   |
+|  |                                                  |   |
+|  +--------------------------------------------------+   |
+|                                                          |
++----------------------------------------------------------+
+
+Etat termine:
++--------------------------------------------------+
+|              [Icone check vert]                   |
+|                                                  |
+|  Recherche terminee !                            |
+|  12 contacts . 8 pertinents . 6 emails generes   |
+|                                                  |
+|  [Voir les emails]                [Fermer]       |
++--------------------------------------------------+
+```
+
+### Composant: ChatPanel (assistant IA)
+
+**Wireframe** (panneau lateral droit):
+```
++-------------------------------+
+| Assistant IA            [x]   |
+|-------------------------------|
+|                               |
+| Suggestions:                  |
+| [Meilleurs secteurs en NZ ?]  |
+| [Salaires en tech a Auckland?]|
+| [Comment optimiser ma rech?]  |
+|                               |
+| [Mode: Support] [Expert]      |
+|                               |
+| +---------------------------+ |
+| | User: Comment contacter   | |
+| | ce profil ?                | |
+| +---------------------------+ |
+| | IA: Je vous suggere de... | |
+| | **points cles**:          | |
+| | - Mentionner le visa...   | |
+| +---------------------------+ |
+|                               |
+| [Effacer]                     |
+|                               |
+| [Votre message...______] [>] |
++-------------------------------+
+```
+
+**Suggestions contextuelles** par page :
+- emails: "Ameliorer le ton", "Meilleur moment pour envoyer", "Personnaliser relances"
+- suivi: "Preparer entretien", "Relancer apres silence", "Apres une offre"
+- contacts: "Info sur entreprise", "Sponsorise visas ?", "Comment contacter"
+- recherche: "Meilleurs secteurs", "Salaires", "Optimiser recherche"
+- defaut: "Lancer recherche", "Envoyer emails", "Fonctionnement kanban"
+
+---
+
+## 6. Guidelines d'accessibilite
+
+### WCAG 2.1 AA
+
+1. **Skip link** : "Aller au contenu principal" en premier element focusable (deja implemente)
+2. **Contraste** : ratio minimum 4.5:1 pour le texte, 3:1 pour les elements UI
+3. **Navigation clavier** : tous les elements interactifs accessibles via Tab
+4. **Labels de formulaire** : chaque input a un label explicite au-dessus
+5. **Badges de statut** : texte toujours visible (pas de couleur seule)
+6. **Focus visible** : outline sur tous les elements focusables
+7. **Annonces dynamiques** : aria-live pour les mises a jour (recherche, emails)
+8. **Alternatives drag & drop** : menu contextuel pour deplacer les contacts dans le pipeline
+9. **Dark mode** : contrastes respectes dans les deux modes
+10. **Alert role** : element alert present pour les messages de feedback
 
 ### Responsive breakpoints
 | Breakpoint | Largeur | Adaptation |
 |------------|---------|------------|
-| Mobile | < 768px | Sidebar cachée (hamburger), colonnes empilées, cards pleine largeur |
-| Tablet | 768-1024px | Sidebar collapsible, kanban 3 colonnes visibles |
+| Mobile | < 768px | Sidebar cachee (hamburger), cards empilees |
+| Tablet | 768-1024px | Sidebar collapsible, kanban scroll horizontal |
 | Desktop | > 1024px | Sidebar fixe, layout complet |
