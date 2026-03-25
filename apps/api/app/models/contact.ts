@@ -99,12 +99,6 @@ export default class Contact extends BaseModel {
   declare githubUrl: string | null
 
   @column.dateTime()
-  declare emailVerifiedAt: DateTime | null
-
-  @column()
-  declare emailVerifyMethod: string | null
-
-  @column.dateTime()
   declare lastContactedAt: DateTime | null
 
   @column.dateTime()

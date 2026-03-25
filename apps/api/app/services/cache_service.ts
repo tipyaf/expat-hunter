@@ -13,13 +13,17 @@ const DEFAULT_TTL_DAYS: Record<EntityType, number> = {
 export default class CacheService {
   /**
    * Cache-first: return cached data if fresh, otherwise call fetcher and cache the result.
+   *
+   * `ttlDays` can be a fixed number OR a function `(data: T) => number` that computes the TTL
+   * from the freshly fetched result. Use the function form when the TTL depends on the data
+   * (e.g. cache until an expiry date embedded in the result).
    */
   async getOrFetch<T extends Record<string, unknown>>(
     source: string,
     entityType: EntityType,
     entityKey: string,
     fetcher: () => Promise<T>,
-    ttlDays?: number
+    ttlDays?: number | ((data: T) => number)
   ): Promise<{ data: T; fromCache: boolean; fetchedAt: DateTime }> {
     const cached = await ExternalCache.query()
       .where('source', source)
@@ -36,7 +40,8 @@ export default class CacheService {
     }
 
     const freshData = await fetcher()
-    const ttl = ttlDays ?? DEFAULT_TTL_DAYS[entityType]
+    const ttlValue = typeof ttlDays === 'function' ? ttlDays(freshData) : ttlDays
+    const ttl = ttlValue ?? DEFAULT_TTL_DAYS[entityType]
     const now = DateTime.now()
 
     if (cached) {

@@ -2,7 +2,6 @@
 
 import { Sidebar } from '@/components/layout/sidebar'
 import { useAuth } from '@/contexts/auth-context'
-import { useSendingSettings } from '@/hooks/use-sending-settings'
 import { apiClient } from '@/lib/api-client'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useState } from 'react'
@@ -31,16 +30,6 @@ export default function AiSettingsPage() {
   const [form, setForm] = useState({ model: '', temperature: 0.3, maxTokens: 1024, isEnabled: true })
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
-  const { settings: sendingSettings, updateAdminLimits } = useSendingSettings()
-  const [emailLimitsForm, setEmailLimitsForm] = useState({ maxFollowUps: 3, minFollowUpDelay: 1, minFollowUpDelayUnit: 'days' as 'days' | 'weeks' | 'months' })
-  const [savingEmailLimits, setSavingEmailLimits] = useState(false)
-  useEffect(() => {
-    setEmailLimitsForm({
-      maxFollowUps: sendingSettings.limits.maxFollowUps,
-      minFollowUpDelay: sendingSettings.limits.minFollowUpDelay,
-      minFollowUpDelayUnit: sendingSettings.limits.minFollowUpDelayUnit,
-    })
-  }, [sendingSettings.limits])
   const [cacheStats, setCacheStats] = useState<{
     totalEntries: number
     expiredEntries: number
@@ -261,61 +250,6 @@ export default function AiSettingsPage() {
                   )}
                 </div>
               )}
-
-              {/* Email sending limits */}
-              <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-5">
-                <h3 className="font-semibold mb-4">{t('emailSettingsTitle')}</h3>
-                <div className="space-y-4">
-                  <div className="flex items-center gap-4">
-                    <label className="text-sm font-medium w-52">{t('maxFollowUps')}</label>
-                    <input
-                      type="number"
-                      min={0}
-                      max={10}
-                      value={emailLimitsForm.maxFollowUps}
-                      onChange={(e) => setEmailLimitsForm((f) => ({ ...f, maxFollowUps: Number(e.target.value) }))}
-                      className="w-16 rounded-lg border border-[var(--color-border)] bg-transparent px-2 py-1 text-sm text-center"
-                    />
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <label className="text-sm font-medium w-52">{t('minFollowUpDelay')}</label>
-                    <input
-                      type="number"
-                      min={1}
-                      value={emailLimitsForm.minFollowUpDelay}
-                      onChange={(e) => setEmailLimitsForm((f) => ({ ...f, minFollowUpDelay: Number(e.target.value) }))}
-                      className="w-16 rounded-lg border border-[var(--color-border)] bg-transparent px-2 py-1 text-sm text-center"
-                    />
-                    <select
-                      value={emailLimitsForm.minFollowUpDelayUnit}
-                      onChange={(e) => setEmailLimitsForm((f) => ({ ...f, minFollowUpDelayUnit: e.target.value as 'days' | 'weeks' | 'months' }))}
-                      className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-light)] px-2 py-1 text-sm"
-                    >
-                      <option value="days">{t('days')}</option>
-                      <option value="weeks">{t('weeks')}</option>
-                      <option value="months">{t('months')}</option>
-                    </select>
-                  </div>
-                  <button
-                    type="button"
-                    disabled={savingEmailLimits}
-                    onClick={async () => {
-                      setSavingEmailLimits(true)
-                      try {
-                        await updateAdminLimits(emailLimitsForm)
-                        setMessage(t('emailLimitsSaved'))
-                      } catch {
-                        setMessage(tc('error'))
-                      } finally {
-                        setSavingEmailLimits(false)
-                      }
-                    }}
-                    className="rounded-lg bg-primary px-4 py-2 text-sm text-white hover:bg-primary/90 disabled:opacity-50"
-                  >
-                    {savingEmailLimits ? tc('saving') : tc('save')}
-                  </button>
-                </div>
-              </div>
 
               {message && (
                 <div className="rounded-lg bg-primary/10 text-primary px-4 py-2 text-sm">{message}</div>

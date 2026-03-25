@@ -8,7 +8,6 @@ import SourcingRun from './sourcing_run.js'
 export type SearchRunStatus =
   | 'pending'
   | 'scraping'
-  | 'enriching'
   | 'analyzing'
   | 'generating'
   | 'completed'

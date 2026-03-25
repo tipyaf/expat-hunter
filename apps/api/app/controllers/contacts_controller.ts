@@ -2,7 +2,6 @@ import type { HttpContext } from '@adonisjs/core/http'
 import Contact from '#models/contact'
 import ExpatScoringService from '#services/expat_scoring_service'
 import type { ExpatScoreResult } from '#services/expat_scoring_service'
-import ContactMovementService from '#services/contact_movement_service'
 
 const VALID_STATUSES = [
   'identified', 'analyzed', 'to_contact', 'contacted',
@@ -10,7 +9,6 @@ const VALID_STATUSES = [
 ]
 
 export default class ContactsController {
-  private movementService = new ContactMovementService()
   /**
    * GET /api/contacts — Paginated list with filters.
    */
@@ -72,9 +70,7 @@ export default class ContactsController {
    */
   async updateStatus({ auth, params, request, response }: HttpContext) {
     const user = auth.getUserOrFail()
-    const { status, trigger } = request.only(['status', 'trigger'])
-    const validTriggers = ['manual', 'email_sent', 'email_replied', 'drag_drop']
-    const movementTrigger = validTriggers.includes(trigger) ? trigger : 'manual'
+    const { status } = request.only(['status'])
 
     if (!status || !VALID_STATUSES.includes(status)) {
       return response.badRequest({
@@ -93,42 +89,10 @@ export default class ContactsController {
       })
     }
 
-    const fromStatus = contact.status
     contact.status = status
     await contact.save()
 
-    if (fromStatus !== status) {
-      await this.movementService.recordMovement(contact.id, fromStatus, status, movementTrigger)
-    }
-
     return response.ok({ data: this.serialize(contact) })
-  }
-
-  /**
-   * GET /api/contacts/:id/movements — Movement history for a contact.
-   */
-  async movements({ auth, params, response }: HttpContext) {
-    const user = auth.getUserOrFail()
-
-    const contact = await Contact.query()
-      .where('id', params.id)
-      .where('userId', user.id)
-      .first()
-
-    if (!contact) {
-      return response.notFound({ error: { code: 'CONTACT_NOT_FOUND', message: 'Contact not found' } })
-    }
-
-    const movements = await this.movementService.getMovements(contact.id)
-    return response.ok({
-      data: movements.map((m) => ({
-        id: m.id,
-        fromStatus: m.fromStatus,
-        toStatus: m.toStatus,
-        trigger: m.trigger,
-        createdAt: m.createdAt.toISO(),
-      })),
-    })
   }
 
   /**

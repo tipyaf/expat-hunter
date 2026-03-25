@@ -191,20 +191,6 @@ export default class ExpatScoringService {
       reasons.push('signaux expat-friendly détectés')
     }
 
-    // Signals from context enrichment (ContextEnrichmentService)
-    const ctx = company?.contextData as Record<string, unknown> | null
-    if (ctx) {
-      const expatSignals = ctx.expatFriendlySignals as string[] | undefined
-      if (expatSignals?.length) {
-        score += Math.min(expatSignals.length * 2, 5)
-        reasons.push(`${expatSignals.length} signaux context: ${expatSignals.slice(0, 2).join(', ')}`)
-      }
-      if (ctx.culture) {
-        score += 2
-        reasons.push('culture entreprise documentée')
-      }
-    }
-
     score = Math.min(score, 15)
 
     if (score === 0) {
@@ -238,15 +224,6 @@ export default class ExpatScoringService {
 
     if (signals?.isHiring) {
       return { score: 8, maxScore: 10, explanation: 'Signaux de croissance active détectés' }
-    }
-
-    // Context enrichment: tech stack or recent news = active company
-    const ctx = company.contextData as Record<string, unknown> | null
-    if (ctx) {
-      const techStack = ctx.techStack as string[] | undefined
-      if (techStack?.length && techStack.length >= 3) {
-        return { score: 6, maxScore: 10, explanation: `Stack tech documentée (${techStack.slice(0, 3).join(', ')})` }
-      }
     }
 
     if (company.hiringIntensity && company.hiringIntensity >= 3) {

@@ -63,4 +63,12 @@ export default await Env.create(new URL('../', import.meta.url), {
   */
   HUNTER_API_KEY: Env.schema.string.optional(),
   APOLLO_API_KEY: Env.schema.string.optional(),
+
+  /*
+  |--------------------------------------------------------------------------
+  | Playwright (external scraping server)
+  |--------------------------------------------------------------------------
+  */
+  PLAYWRIGHT_SERVER_URL: Env.schema.string.optional(),
+  PLAYWRIGHT_SERVER_TOKEN: Env.schema.string.optional(),
 })

@@ -146,16 +146,16 @@ export default class EnrichmentController {
    */
   async refreshVisaRegistries({ request, response }: HttpContext) {
     const { countries } = request.only(['countries']) as {
-      countries?: ('NZ' | 'UK' | 'AU' | 'US')[]
+      countries?: ('NZ' | 'UK' | 'AU')[]
     }
 
-    const toRefresh = countries ?? (['NZ', 'UK', 'AU', 'US'] as const)
+    const toRefresh = countries ?? (['NZ', 'UK', 'AU'] as const)
     const registry = new VisaSponsorRegistryService()
     const results: Record<string, { count: number; error?: string }> = {}
 
     for (const country of toRefresh) {
       try {
-        const count = await registry.refreshRegistry(country as 'NZ' | 'UK' | 'AU' | 'US')
+        const count = await registry.refreshRegistry(country as 'NZ' | 'UK' | 'AU')
         results[country] = { count }
       } catch (err) {
         results[country] = {
