@@ -51,8 +51,9 @@ When a user describes a project idea or asks to build something:
 1. Read `memory/expat-hunter.md` to restore context
 2. Read `memory/LESSONS.md` for known pitfalls
 3. Read `specs/feature-tracker.yaml` to know feature states
-4. Summarize the project state to the user: what's done, what's next, which features are pending/refined/validated
-5. Resume where it left off — use the appropriate skill
+4. **Check Shortcut** — query pending/in-progress stories before deciding what to do next (MANDATORY)
+5. Summarize the project state to the user: what's done, what's next, which features are pending/refined/validated
+6. Resume where it left off — use the appropriate skill
 
 ## Phase workflow
 
@@ -146,6 +147,56 @@ Before executing a skill, verify its prerequisites exist **on the filesystem**:
 | `/build` | `specs/stories/[feature-id].yaml` + feature status=`refined` in tracker | → "This story needs refinement" → `/refine` |
 | `/validate` | Feature status=`building` or `testing` in tracker | → "Nothing to validate yet" → `/build` |
 | `/review` | ALL features status=`validated` in tracker | → "Some features still need validation" → list them |
+
+## Shortcut workflow rules (MANDATORY)
+
+### Story template — every story MUST have this structure
+```
+## Contexte
+[Pourquoi cette story existe, quel problème elle résout]
+
+## Scope
+[Ce qui est inclus / exclu explicitement]
+
+## Critères d'acceptation
+[Liste reprise des ACs du story file YAML, cochée au fur et à mesure]
+
+## Références
+- Story file: specs/stories/[id].yaml
+- Epic: [lien Shortcut]
+```
+
+### Build checklist — à ajouter sur TOUTE story avant de démarrer le dev
+Ces 11 tâches DOIVENT être présentes et cochées au fur et à mesure via `stories-update-task`:
+1. `[ ]` Refinement validé par l'utilisateur
+2. `[ ]` Story file YAML écrit (specs/stories/)
+3. `[ ]` Code implémenté (scope respecté)
+4. `[ ]` Tests unitaires écrits et passants
+5. `[ ]` Tests fonctionnels / e2e écrits et passants
+6. `[ ]` Audit sécurité (OWASP — injections, secrets, auth)
+7. `[ ]` TypeScript : 0 erreurs (tsc --noEmit)
+8. `[ ]` ACs vérifiés (chaque verify: command exécuté et passant)
+9. `[ ]` UI validée visuellement (dark + light mode, login requis)
+10. `[ ]` PR créée sur GitHub et liée à la story Shortcut
+11. `[ ]` feature-tracker.yaml mis à jour → validated
+
+### Labels — à appliquer à chaque transition
+- **scope:** `scope:pending` → `scope:refined` → `scope:building` → `scope:testing` → `scope:validated`
+- **type:** `type:feature` | `type:bug` | `type:chore` | `type:tech-debt`
+- **area:** `area:frontend` | `area:backend` | `area:fullstack` | `area:infra` | `area:ai`
+- **priority:** `priority:critical` | `priority:high` | `priority:medium` | `priority:low`
+
+### Workflow states (ID → nom)
+- `500000006` Backlog → `500000007` To Do → `500000008` In Progress → `500000009` In Review → `500000010` Done
+
+### Règles automatiques agent
+| Événement | Action Shortcut obligatoire |
+|-----------|----------------------------|
+| Début `/build` | `workflow_state_id: 500000008` + label `scope:building` |
+| Début `/validate` | `workflow_state_id: 500000009` + label `scope:testing` |
+| Tous ACs passent | `workflow_state_id: 500000010` + label `scope:validated` |
+| Chaque étape build complétée | `stories-update-task isCompleted: true` |
+| PR créée | `stories-add-external-link` avec l'URL GitHub |
 
 ## Acceptance criteria format (unified)
 

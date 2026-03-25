@@ -34,6 +34,34 @@ Recurring failures and lessons learned across sessions. Every agent MUST read th
 **Root cause**: Agent started working without updating the story state first.
 **Rule**: ALWAYS update Shortcut story state in real-time at each transition: To Do → In Progress (500000008, start dev) → In Review (500000009, start review/validation) → Done (500000010, validated). Never skip a state.
 
+### [Workflow] Cocher les tâches build au fur et à mesure — mise à jour automatique
+**Problem**: Les checklists build existent dans Shortcut mais ne sont jamais cochées → le progress bar reste à 0%, impossible de savoir où en est le build.
+**Root cause**: L'agent complète les étapes sans appeler `stories-update-task isCompleted: true` à chaque étape.
+**Rule**: À chaque étape du build complétée, cocher la tâche correspondante IMMÉDIATEMENT via `stories-update-task`. Séquence obligatoire pour chaque story en build :
+1. Refinement validé → cocher tâche "Refinement validé"
+2. Story file YAML écrit → cocher tâche "Story file YAML"
+3. Code implémenté → cocher tâche "Code implémenté"
+4. TU passants → cocher tâche "Tests unitaires"
+5. e2e passants → cocher tâche "Tests fonctionnels / e2e"
+6. Audit sécurité OK → cocher tâche "Audit sécurité"
+7. TS 0 erreurs → cocher tâche "TypeScript : 0 erreurs"
+8. ACs vérifiés → cocher tâche "ACs vérifiés"
+9. UI validée → cocher tâche "UI validée visuellement"
+10. PR créée → cocher tâche "PR créée" + lier la PR à la story via `stories-add-external-link`
+11. feature-tracker.yaml → validated → cocher tâche "feature-tracker.yaml mis à jour"
+Le % de complétion de la story ET de l'épic parent se met à jour automatiquement dans Shortcut.
+
+### [Workflow] Toujours lier les labels de phase à chaque story
+**Problem**: Les stories n'ont pas de label scope: → impossible de filtrer par phase dans le kanban.
+**Root cause**: L'agent ne met pas à jour le label scope: quand la phase change.
+**Rule**: À chaque transition de phase, mettre à jour le label scope: sur la story :
+- Créée → `scope:pending`
+- Story file écrit → `scope:refined`
+- Build démarré → `scope:building`
+- Validation démarrée → `scope:testing`
+- Tous ACs passent → `scope:validated`
+Utiliser `stories-update labels:[{name: "scope:building"}]` à chaque transition.
+
 ### [Workflow] Segmenter les tickets en tâches (checklist)
 **Problem**: Les tickets sc-57/58/59 ont été réalisés sans tâches, impossible de savoir ce qui est fait vs ce qui reste.
 **Root cause**: L'agent a travaillé sur le ticket sans le découper en sous-tâches traçables.

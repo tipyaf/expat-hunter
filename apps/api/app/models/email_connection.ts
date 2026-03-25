@@ -2,7 +2,13 @@ import { BaseModel, beforeCreate, belongsTo, column } from '@adonisjs/lucid/orm'
 import type { BelongsTo } from '@adonisjs/lucid/types/relations'
 import { randomUUID } from 'node:crypto'
 import { DateTime } from 'luxon'
+import encryption from '@adonisjs/core/services/encryption'
 import User from './user.js'
+
+const encryptedColumn = {
+  prepare: (value: string) => encryption.encrypt(value),
+  consume: (value: string) => encryption.decrypt<string>(value) ?? value,
+}
 
 export default class EmailConnection extends BaseModel {
   static table = 'email_connections'
@@ -22,7 +28,7 @@ export default class EmailConnection extends BaseModel {
   @column()
   declare imapUser: string
 
-  @column()
+  @column(encryptedColumn)
   declare imapPassword: string
 
   @column()
@@ -34,7 +40,7 @@ export default class EmailConnection extends BaseModel {
   @column()
   declare smtpUser: string
 
-  @column()
+  @column(encryptedColumn)
   declare smtpPassword: string
 
   @column()
