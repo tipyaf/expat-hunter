@@ -183,3 +183,14 @@ features:
     started_at: "2026-03-25"
     validated_at: "2026-03-25"
     notes: "15 unit tests (PasswordResetService) + 16 functional tests (forgot-password, reset-password). All pass."
+
+  - id: "sc-198"
+    name: "Backend test coverage — candidate-profile"
+    priority: "chore"
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/sc-198.yaml"
+    depends_on: ["candidate-profile"]
+    started_at: "2026-03-25"
+    validated_at: "2026-03-25"
+    notes: "15 unit tests (ProfileService) + 8 new functional tests. Total 39 profile tests, all pass."
