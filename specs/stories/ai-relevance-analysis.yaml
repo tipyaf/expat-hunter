@@ -1,0 +1,101 @@
+id: "ai-relevance-analysis"
+name: "feat: AI relevance analysis — OpenRouter scoring, batch analysis, user override"
+type: "feature"
+status: "validated"
+shortcut_url: ""
+
+context: |
+  Retrospective story — the feature was fully implemented before the framework was set up.
+  RelevanceAnalyzer calls OpenRouter (temp 0.2, maxTokens 512) to score contacts 0-100
+  against the candidate profile. AnalysisService handles batch + single analysis with
+  graceful error handling. Contact model stores score, label, reason, recommendation,
+  and userOverride. Controller exposes run/analyzeOne/stats endpoints.
+
+scope:
+  - "apps/api/app/ai/relevance_analyzer.ts"
+  - "apps/api/app/ai/prompts/relevance_analysis_prompt.ts"
+  - "apps/api/app/services/analysis_service.ts"
+  - "apps/api/app/controllers/analysis_controller.ts"
+  - "apps/api/app/models/contact.ts"
+  - "apps/api/start/routes.ts"
+  - "apps/frontend/src/hooks/use-analysis.ts"
+
+acceptance_criteria:
+  - id: "AC-FUNC-AI-01"
+    type: "FUNC"
+    description: "POST /api/analysis/run wired to AnalysisController.run"
+    verify: "grep -c \"AnalysisController, 'run'\" apps/api/start/routes.ts"
+    tier: 1
+
+  - id: "AC-FUNC-AI-02"
+    type: "FUNC"
+    description: "POST /api/analysis/contact/:id wired to analyzeOne"
+    verify: "grep -c \"AnalysisController, 'analyzeOne'\" apps/api/start/routes.ts"
+    tier: 1
+
+  - id: "AC-FUNC-AI-03"
+    type: "FUNC"
+    description: "PUT /api/contacts/:id/override wired to ContactsController.override"
+    verify: "grep -c \"ContactsController, 'override'\" apps/api/start/routes.ts"
+    tier: 1
+
+  - id: "AC-FUNC-AI-04"
+    type: "FUNC"
+    description: "RelevanceAnalysisResult type defines score, label, reason, recommendation"
+    verify: "grep -c 'score.*number\\|label.*very_relevant\\|reason.*string\\|recommendation.*contact' apps/api/app/ai/prompts/relevance_analysis_prompt.ts"
+    tier: 1
+
+  - id: "AC-FUNC-AI-05"
+    type: "FUNC"
+    description: "RelevanceAnalyzer calls OpenRouter with temperature 0.2 and maxTokens 512"
+    verify: "grep -c 'temperature.*0.2\\|maxTokens.*512' apps/api/app/ai/relevance_analyzer.ts"
+    tier: 1
+
+  - id: "AC-FUNC-AI-06"
+    type: "FUNC"
+    description: "Contact model has relevanceScore, relevanceLabel, relevanceReason, aiRecommendation, userOverride"
+    verify: "grep -c 'relevanceScore\\|relevanceLabel\\|relevanceReason\\|aiRecommendation\\|userOverride' apps/api/app/models/contact.ts"
+    tier: 1
+
+  - id: "AC-FUNC-AI-07"
+    type: "FUNC"
+    description: "All AI analysis unit tests pass"
+    verify: "cd apps/api && ~/.nvm/versions/node/v22.22.1/bin/node --import tsx/esm bin/test.ts 2>&1 | grep -E 'Tests.*passed'"
+    tier: 2
+
+  - id: "AC-SEC-AI-01"
+    type: "SEC"
+    description: "All /api/analysis routes are protected by auth middleware"
+    verify: "grep -A 6 'prefix.*api/analysis' apps/api/start/routes.ts | grep -c 'middleware.auth'"
+    tier: 1
+
+  - id: "AC-SEC-AI-02"
+    type: "SEC"
+    description: "analyzeOne scopes contact query to auth.user.id"
+    verify: "grep -c 'userId.*userId\\|where.*userId' apps/api/app/services/analysis_service.ts"
+    tier: 1
+
+  - id: "AC-SEC-AI-03"
+    type: "SEC"
+    description: "OpenRouter API key read from env — not hardcoded"
+    verify: "grep -c 'env.get.*OPENROUTER_API_KEY' apps/api/app/ai/openrouter_client.ts"
+    tier: 1
+
+  - id: "AC-BP-AI-01"
+    type: "BP"
+    description: "Business logic in AnalysisService — controller only instantiates service and calls it"
+    verify: "grep -c 'new AnalysisService\\|service\\.' apps/api/app/controllers/analysis_controller.ts"
+    tier: 1
+
+  - id: "AC-BP-AI-02"
+    type: "BP"
+    description: "Batch analysis catches per-contact errors — one failure does not abort the batch"
+    verify: "grep -c 'catch.*err\\|result.errors' apps/api/app/services/analysis_service.ts"
+    tier: 1
+
+edge_cases:
+  - "OpenRouter key missing → analyzeContacts returns 0/0/0, logged as warn"
+  - "No candidate profile → default criteria used (generic tech profile)"
+  - "Contact has no company → skipped (result.skipped++)"
+  - "LLM returns malformed JSON → parseRelevanceAnalysisResponse throws, caught per-contact"
+  - "userOverride=true → contact excluded from batch re-analysis"

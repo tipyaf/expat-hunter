@@ -214,6 +214,27 @@
     "stat_offer": "Offer",
     "stat_rejected": "Rejected"
   },
+  "contactPanel": {
+    "title": "Contact",
+    "close": "Close",
+    "aiAnalysis": "AI Analysis",
+    "notAnalyzed": "Not analyzed yet",
+    "emailHistory": "Email history",
+    "noEmails": "No emails sent yet",
+    "viewLinkedin": "View LinkedIn profile",
+    "viewGithub": "View GitHub profile",
+    "reply": "Reply",
+    "relevance_very_relevant": "Very relevant",
+    "relevance_relevant": "Relevant",
+    "relevance_to_review": "To review",
+    "relevance_not_relevant": "Not relevant",
+    "email_draft": "Draft",
+    "email_approved": "Approved",
+    "email_sent": "Sent",
+    "email_opened": "Opened",
+    "email_replied": "Replied",
+    "email_bounced": "Bounced"
+  },
   "settings": {
     "title": "Settings",
     "subtitle": "Configure your account and preferences.",
