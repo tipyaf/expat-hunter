@@ -2,6 +2,7 @@ import type { HttpContext } from '@adonisjs/core/http'
 import EmailMessage from '#models/email_message'
 import Contact from '#models/contact'
 import EmailGenerationService from '#services/email_generation_service'
+import EmailSendingService from '#services/email_sending_service'
 
 const VALID_STATUSES = ['draft', 'approved', 'sent', 'opened', 'replied', 'bounced']
 
@@ -168,6 +169,36 @@ export default class EmailsController {
     await email.load('contact', (q) => q.preload('company'))
 
     return response.ok({ data: this.serialize(email) })
+  }
+
+  /**
+   * POST /api/emails/send-batch — Send all approved emails in background.
+   */
+  async sendBatch({ auth, request, response }: HttpContext) {
+    const user = auth.getUserOrFail()
+    const { emailIds } = request.only(['emailIds'])
+
+    const service = new EmailSendingService()
+    const result = await service.sendBatch(
+      user.id,
+      Array.isArray(emailIds) && emailIds.length > 0 ? emailIds : undefined
+    )
+
+    return response.ok({ data: result })
+  }
+
+  /**
+   * GET /api/emails/send-batch/:batchId/progress — Get send batch progress.
+   */
+  async sendBatchProgress({ params, response }: HttpContext) {
+    const service = new EmailSendingService()
+    const progress = service.getProgress(params.batchId)
+
+    if (!progress) {
+      return response.notFound({ error: { code: 'BATCH_NOT_FOUND', message: 'Batch not found' } })
+    }
+
+    return response.ok({ data: progress })
   }
 
   /**

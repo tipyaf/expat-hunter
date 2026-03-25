@@ -2,10 +2,12 @@
 
 import { Sidebar } from '@/components/layout/sidebar'
 import { Button } from '@/components/ui/button'
+import { ConfirmModal } from '@/components/ui/confirm-modal'
 import { useAuth } from '@/contexts/auth-context'
 import { EMAIL_STATUSES, useEmailGeneration, useEmails } from '@/hooks/use-emails'
 import { useTranslations } from 'next-intl'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { CheckSquare, Send, Square, X } from 'lucide-react'
 
 function statusColor(status: string) {
   switch (status) {
@@ -19,15 +21,25 @@ function statusColor(status: string) {
   }
 }
 
+interface SendProgress {
+  batchId: string
+  status: 'running' | 'completed' | 'failed'
+  total: number
+  sent: number
+  failed: number
+}
+
 export default function EmailsPage() {
   const { user, isLoading: authLoading } = useAuth()
   const t = useTranslations('emails')
   const tc = useTranslations('common')
 
   const [statusFilter, setStatusFilter] = useState<string>('')
-  const { emails, meta, page, isLoading, approve, reject, updateEmail, regenerate, approveBatch, goToPage, refetch } = useEmails({
-    status: statusFilter || undefined,
-  })
+  const {
+    emails, meta, page, isLoading,
+    approve, reject, updateEmail, regenerate, approveBatch, sendBatch, getSendBatchProgress,
+    goToPage, refetch,
+  } = useEmails({ status: statusFilter || undefined })
   const { isGenerating, generate } = useEmailGeneration()
 
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null)
@@ -36,13 +48,30 @@ export default function EmailsPage() {
   const [editBody, setEditBody] = useState('')
   const [actionId, setActionId] = useState<string | null>(null)
 
-  if (authLoading || !user) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-[var(--color-text-muted)]">{tc('loading')}</p>
-      </div>
-    )
+  // Batch selection
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [showSendConfirm, setShowSendConfirm] = useState(false)
+  const [sendProgress, setSendProgress] = useState<SendProgress | null>(null)
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // Clear selection when filter changes
+  useEffect(() => { setSelected(new Set()) }, [statusFilter])
+
+  const toggleSelect = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
   }
+
+  const selectAll = () => {
+    const approvable = emails.filter((e) => e.status === 'approved').map((e) => e.id)
+    setSelected(new Set(approvable))
+  }
+
+  const clearSelection = () => setSelected(new Set())
 
   const handleGenerate = async () => {
     setMessage(null)
@@ -74,11 +103,57 @@ export default function EmailsPage() {
     try { await regenerate(id) } finally { setActionId(null) }
   }
 
-  const handleApproveAll = async () => {
+  const handleApproveAllDrafts = async () => {
     const draftIds = emails.filter((e) => e.status === 'draft').map((e) => e.id)
     if (draftIds.length === 0) return
     await approveBatch(draftIds)
   }
+
+  const handleApproveSelected = async () => {
+    const ids = [...selected].filter((id) => emails.find((e) => e.id === id && e.status === 'draft'))
+    if (ids.length === 0) return
+    await approveBatch(ids)
+    clearSelection()
+  }
+
+  const handleSendConfirmed = async () => {
+    setShowSendConfirm(false)
+    setMessage(null)
+    try {
+      const emailIds = selected.size > 0 ? [...selected] : undefined
+      const result = await sendBatch(emailIds)
+      const progress: SendProgress = {
+        batchId: result.batchId,
+        status: 'running',
+        total: result.total,
+        sent: 0,
+        failed: 0,
+      }
+      setSendProgress(progress)
+      clearSelection()
+
+      // Poll for progress
+      pollRef.current = setInterval(async () => {
+        const p = await getSendBatchProgress(result.batchId)
+        if (p) {
+          setSendProgress({ batchId: p.batchId, status: p.status, total: p.total, sent: p.sent, failed: p.failed })
+          if (p.status === 'completed' || p.status === 'failed') {
+            clearInterval(pollRef.current!)
+            pollRef.current = null
+            setMessage({
+              text: t('sendComplete', { sent: p.sent, failed: p.failed }),
+              type: p.failed > 0 ? 'error' : 'success',
+            })
+            void refetch()
+          }
+        }
+      }, 1500)
+    } catch {
+      setMessage({ text: t('sendError'), type: 'error' })
+    }
+  }
+
+  useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current) }, [])
 
   const startEditing = (email: { id: string; subject: string; body: string }) => {
     setEditingId(email.id)
@@ -87,6 +162,16 @@ export default function EmailsPage() {
   }
 
   const draftCount = emails.filter((e) => e.status === 'draft').length
+  const approvedCount = emails.filter((e) => e.status === 'approved').length
+  const selectedApproved = [...selected].filter((id) => emails.find((e) => e.id === id && e.status === 'approved'))
+
+  if (authLoading || !user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-[var(--color-text-muted)]">{tc('loading')}</p>
+      </div>
+    )
+  }
 
   return (
     <div className="flex h-dvh overflow-hidden">
@@ -98,10 +183,16 @@ export default function EmailsPage() {
               <h1 className="text-3xl font-bold text-primary">{t('title')}</h1>
               <p className="text-[var(--color-text-muted)] mt-1">{t('subtitle')}</p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap justify-end">
               {draftCount > 1 && (
-                <Button variant="secondary" onClick={() => void handleApproveAll()}>
+                <Button variant="secondary" onClick={() => void handleApproveAllDrafts()}>
                   {t('approveAll')} ({draftCount})
+                </Button>
+              )}
+              {approvedCount > 0 && selected.size === 0 && (
+                <Button variant="secondary" onClick={() => setShowSendConfirm(true)}>
+                  <Send className="w-4 h-4 mr-1.5" />
+                  {t('sendAll')} ({approvedCount})
                 </Button>
               )}
               <Button onClick={() => void handleGenerate()} disabled={isGenerating}>
@@ -110,6 +201,7 @@ export default function EmailsPage() {
             </div>
           </div>
 
+          {/* Messages */}
           {message && (
             <div className={`mb-4 rounded-lg px-4 py-3 text-sm ${
               message.type === 'error'
@@ -120,12 +212,29 @@ export default function EmailsPage() {
             </div>
           )}
 
+          {/* Send progress */}
+          {sendProgress && sendProgress.status === 'running' && (
+            <div className="mb-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-light)] px-4 py-3">
+              <div className="flex items-center justify-between text-sm mb-2">
+                <span className="text-[var(--color-text-main)] font-medium">{t('sending')}</span>
+                <span className="text-[var(--color-text-muted)]">{sendProgress.sent}/{sendProgress.total}</span>
+              </div>
+              <div className="h-2 bg-[var(--color-border)] rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-primary rounded-full transition-all duration-500"
+                  style={{ width: `${sendProgress.total > 0 ? Math.round((sendProgress.sent / sendProgress.total) * 100) : 0}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Status filter tabs */}
           <div className="flex flex-wrap gap-2">
             <button
               type="button"
               onClick={() => setStatusFilter('')}
               className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                !statusFilter ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                !statusFilter ? 'bg-primary text-white' : 'bg-[var(--color-border)] text-[var(--color-text-muted)] hover:opacity-80'
               }`}
             >
               {t('all')} {meta ? `(${meta.total})` : ''}
@@ -145,121 +254,163 @@ export default function EmailsPage() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-4 md:px-8 pb-8">
+        {/* Email list */}
+        <div className="flex-1 overflow-y-auto px-4 md:px-8 pb-24">
           {isLoading ? (
-            <p className="text-sm text-[var(--color-text-muted)]">{tc('loading')}</p>
+            <p className="text-sm text-[var(--color-text-muted)] pt-4">{tc('loading')}</p>
           ) : emails.length === 0 ? (
-            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-8 text-center">
+            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-8 text-center mt-4">
               <p className="text-[var(--color-text-muted)]">{t('noEmails')}</p>
             </div>
           ) : (
             <>
-              <div className="space-y-4">
-                {emails.map((email) => (
-                  <div
-                    key={email.id}
-                    className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-5 shadow-sm"
-                  >
-                    <div className="flex items-start justify-between gap-4 mb-3">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium shrink-0 ${statusColor(email.status)}`}>
-                            {t(`status_${email.status}`)}
-                          </span>
-                          <span className="text-xs text-[var(--color-text-muted)]">{email.type}</span>
-                        </div>
-                        {email.contact && (
-                          <p className="text-sm text-[var(--color-text-muted)]">
-                            {t('to')}: <span className="font-medium text-[var(--color-text-main)]">{email.contact.fullName}</span>
-                            {email.contact.role && ` — ${email.contact.role}`}
-                            {email.contact.company && ` @ ${email.contact.company.name}`}
-                            {email.contact.email && (
-                              <span className="ml-2 text-xs">({email.contact.email})</span>
-                            )}
-                          </p>
-                        )}
-                      </div>
-                      {email.status === 'draft' && (
-                        <div className="flex gap-1 shrink-0">
-                          <button
-                            type="button"
-                            onClick={() => void handleRegenerate(email.id)}
-                            disabled={actionId === email.id}
-                            className="rounded-lg border border-[var(--color-border)] px-2 py-1 text-xs hover:bg-gray-50 disabled:opacity-50"
-                            title={t('regenerate')}
-                          >
-                            {t('regenerate')}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => startEditing(email)}
-                            className="rounded-lg border border-[var(--color-border)] px-2 py-1 text-xs hover:bg-gray-50"
-                          >
-                            {t('edit')}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => void handleApprove(email.id)}
-                            disabled={actionId === email.id}
-                            className="rounded-lg bg-green-600 px-2 py-1 text-xs text-white hover:bg-green-700 disabled:opacity-50"
-                          >
-                            {t('approve')}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => void handleReject(email.id)}
-                            disabled={actionId === email.id}
-                            className="rounded-lg bg-red-500 px-2 py-1 text-xs text-white hover:bg-red-600 disabled:opacity-50"
-                          >
-                            {t('reject')}
-                          </button>
-                        </div>
-                      )}
-                    </div>
+              {/* Select all row */}
+              <div className="flex items-center gap-3 pt-4 pb-2">
+                <button
+                  type="button"
+                  onClick={selected.size > 0 ? clearSelection : selectAll}
+                  className="flex items-center gap-1.5 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] transition-colors"
+                >
+                  {selected.size > 0
+                    ? <CheckSquare className="w-4 h-4 text-primary" />
+                    : <Square className="w-4 h-4" />
+                  }
+                  {selected.size > 0
+                    ? t('clearSelection', { count: selected.size })
+                    : t('selectAllApproved')}
+                </button>
+              </div>
 
-                    {editingId === email.id ? (
-                      <div className="space-y-2">
-                        <input
-                          type="text"
-                          value={editSubject}
-                          onChange={(e) => setEditSubject(e.target.value)}
-                          className="w-full rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-sm font-medium"
-                        />
-                        <textarea
-                          value={editBody}
-                          onChange={(e) => setEditBody(e.target.value)}
-                          rows={6}
-                          className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm"
-                        />
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            onClick={async () => {
-                              await updateEmail(email.id, { subject: editSubject, body: editBody })
-                              setEditingId(null)
-                            }}
-                          >
-                            {tc('save')}
-                          </Button>
-                          <button
-                            type="button"
-                            onClick={() => setEditingId(null)}
-                            className="rounded-lg border border-[var(--color-border)] px-3 py-1 text-xs"
-                          >
-                            {tc('cancel')}
-                          </button>
+              <div className="space-y-3">
+                {emails.map((email) => {
+                  const isSelected = selected.has(email.id)
+                  const isApproved = email.status === 'approved'
+
+                  return (
+                    <div
+                      key={email.id}
+                      className={`rounded-xl border bg-[var(--color-surface-light)] p-5 shadow-sm transition-colors ${
+                        isSelected ? 'border-primary/50 ring-1 ring-primary/20' : 'border-[var(--color-border)]'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3">
+                        {/* Checkbox */}
+                        <button
+                          type="button"
+                          onClick={() => toggleSelect(email.id)}
+                          disabled={!isApproved}
+                          className={`mt-0.5 shrink-0 transition-colors ${isApproved ? 'cursor-pointer' : 'opacity-30 cursor-not-allowed'}`}
+                          aria-label={isSelected ? t('deselect') : t('select')}
+                        >
+                          {isSelected
+                            ? <CheckSquare className="w-5 h-5 text-primary" />
+                            : <Square className="w-5 h-5 text-[var(--color-text-muted)]" />
+                          }
+                        </button>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-4 mb-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium shrink-0 ${statusColor(email.status)}`}>
+                                  {t(`status_${email.status}`)}
+                                </span>
+                                <span className="text-xs text-[var(--color-text-muted)]">{email.type}</span>
+                              </div>
+                              {email.contact && (
+                                <p className="text-sm text-[var(--color-text-muted)]">
+                                  {t('to')}: <span className="font-medium text-[var(--color-text-main)]">{email.contact.fullName}</span>
+                                  {email.contact.role && ` — ${email.contact.role}`}
+                                  {email.contact.company && ` @ ${email.contact.company.name}`}
+                                  {email.contact.email && (
+                                    <span className="ml-2 text-xs">({email.contact.email})</span>
+                                  )}
+                                </p>
+                              )}
+                            </div>
+                            {email.status === 'draft' && (
+                              <div className="flex gap-1 shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={() => void handleRegenerate(email.id)}
+                                  disabled={actionId === email.id}
+                                  className="rounded-lg border border-[var(--color-border)] px-2 py-1 text-xs hover:bg-[var(--color-bg-light)] disabled:opacity-50"
+                                >
+                                  {t('regenerate')}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => startEditing(email)}
+                                  className="rounded-lg border border-[var(--color-border)] px-2 py-1 text-xs hover:bg-[var(--color-bg-light)]"
+                                >
+                                  {t('edit')}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => void handleApprove(email.id)}
+                                  disabled={actionId === email.id}
+                                  className="rounded-lg bg-green-600 px-2 py-1 text-xs text-white hover:bg-green-700 disabled:opacity-50"
+                                >
+                                  {t('approve')}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => void handleReject(email.id)}
+                                  disabled={actionId === email.id}
+                                  className="rounded-lg bg-red-500 px-2 py-1 text-xs text-white hover:bg-red-600 disabled:opacity-50"
+                                >
+                                  {t('reject')}
+                                </button>
+                              </div>
+                            )}
+                          </div>
+
+                          {editingId === email.id ? (
+                            <div className="space-y-2">
+                              <input
+                                type="text"
+                                value={editSubject}
+                                onChange={(e) => setEditSubject(e.target.value)}
+                                className="w-full rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-sm font-medium bg-[var(--color-surface-light)]"
+                              />
+                              <textarea
+                                value={editBody}
+                                onChange={(e) => setEditBody(e.target.value)}
+                                rows={6}
+                                className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm bg-[var(--color-surface-light)]"
+                              />
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={async () => {
+                                    await updateEmail(email.id, { subject: editSubject, body: editBody })
+                                    setEditingId(null)
+                                  }}
+                                >
+                                  {tc('save')}
+                                </Button>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditingId(null)}
+                                  className="rounded-lg border border-[var(--color-border)] px-3 py-1 text-xs"
+                                >
+                                  {tc('cancel')}
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <h3 className="font-medium text-[var(--color-text-main)] mb-2">{email.subject}</h3>
+                              <p className="text-sm text-[var(--color-text-muted)] whitespace-pre-wrap line-clamp-4">
+                                {email.body}
+                              </p>
+                            </>
+                          )}
                         </div>
                       </div>
-                    ) : (
-                      <>
-                        <h3 className="font-medium mb-2">{email.subject}</h3>
-                        <p className="text-sm text-[var(--color-text-muted)] whitespace-pre-wrap">
-                          {email.body}
-                        </p>
-                      </>
-                    )}
-                  </div>
-                ))}
+                    </div>
+                  )
+                })}
               </div>
 
               {meta && meta.lastPage > 1 && (
@@ -288,6 +439,59 @@ export default function EmailsPage() {
             </>
           )}
         </div>
+
+        {/* Batch actions bar */}
+        {selected.size > 0 && (
+          <div className="fixed bottom-0 inset-x-0 md:left-64 z-40 p-4">
+            <div className="max-w-2xl mx-auto flex items-center justify-between gap-4 rounded-2xl bg-[var(--color-text-main)] text-[var(--color-surface-light)] px-5 py-3 shadow-xl">
+              <span className="text-sm font-medium">
+                {t('selectedCount', { count: selected.size })}
+              </span>
+              <div className="flex items-center gap-2">
+                {selected.size > 0 && emails.some((e) => selected.has(e.id) && e.status === 'draft') && (
+                  <button
+                    type="button"
+                    onClick={() => void handleApproveSelected()}
+                    className="rounded-lg bg-blue-500 px-3 py-1.5 text-xs font-medium hover:bg-blue-600 transition-colors"
+                  >
+                    {t('approveSelected')}
+                  </button>
+                )}
+                {selectedApproved.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowSendConfirm(true)}
+                    className="rounded-lg bg-green-500 px-3 py-1.5 text-xs font-medium hover:bg-green-600 transition-colors flex items-center gap-1"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    {t('sendSelected', { count: selectedApproved.length })}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={clearSelection}
+                  className="rounded-lg border border-white/20 px-2 py-1.5 hover:bg-white/10 transition-colors"
+                  aria-label={tc('cancel')}
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Send confirmation modal */}
+        <ConfirmModal
+          open={showSendConfirm}
+          title={t('confirmSendTitle')}
+          message={t('confirmSendMessage', {
+            count: selected.size > 0 ? selectedApproved.length : approvedCount,
+          })}
+          confirmLabel={t('confirmSend')}
+          cancelLabel={tc('cancel')}
+          onConfirm={() => void handleSendConfirmed()}
+          onCancel={() => setShowSendConfirm(false)}
+        />
       </main>
     </div>
   )

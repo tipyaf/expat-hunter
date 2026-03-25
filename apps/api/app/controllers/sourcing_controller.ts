@@ -1,13 +1,15 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import SourcingService from '#services/sourcing_service'
+import SourcingOrchestrator from '#services/sourcing_orchestrator'
 // Register scrapers on first import
 import '../scrapers/register.js'
 
 export default class SourcingController {
   private sourcingService = new SourcingService()
+  private orchestrator = new SourcingOrchestrator()
 
   /**
-   * POST /api/sourcing/run — Launch a new sourcing campaign.
+   * POST /api/sourcing/run — Launch a new sourcing campaign (5-phase pipeline).
    */
   async run({ auth, request, response }: HttpContext) {
     const user = auth.getUserOrFail()
@@ -19,7 +21,13 @@ export default class SourcingController {
       })
     }
 
-    const run = await this.sourcingService.runSourcing(
+    if (SourcingOrchestrator.isRunning(user.id)) {
+      return response.conflict({
+        error: { code: 'RUN_IN_PROGRESS', message: 'A sourcing run is already in progress' },
+      })
+    }
+
+    const result = await this.orchestrator.run(
       user.id,
       country.toUpperCase(),
       sector ?? undefined,
@@ -27,8 +35,13 @@ export default class SourcingController {
     )
 
     return response.ok({
-      data: this.serializeRun(run),
-      message: `Sourcing completed: ${run.contactsFound} contacts found`,
+      data: {
+        ...this.serializeRun(result.run),
+        phases: result.phases,
+        qualifiedContacts: result.qualifiedContacts,
+        emailVerified: result.emailVerified,
+      },
+      message: `Sourcing completed: ${result.totalContacts} contacts, ${result.qualifiedContacts} qualified, ${result.emailVerified} verified`,
     })
   }
 

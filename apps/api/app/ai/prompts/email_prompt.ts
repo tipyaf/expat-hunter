@@ -15,6 +15,22 @@ export interface CandidateForEmail {
   cvSummary: string | null
 }
 
+const CULTURAL_CONVENTIONS: Record<string, string> = {
+  NZ: 'Use a casual, direct tone. First-name basis is common. Keep it brief (5-7 sentences).',
+  AU: 'Be friendly and informal. Australians value directness and brevity.',
+  UK: "Be formal but not stiff. Use 'Dear [Name]' and maintain professional courtesy.",
+  CA: 'Be warm but professional. Bilingual awareness if targeting Quebec.',
+  US: 'Be confident and achievement-focused. Use action verbs.',
+}
+
+function getCulturalInstruction(country: string): string {
+  const instruction = CULTURAL_CONVENTIONS[country]
+  if (instruction) {
+    return `\n- Cultural conventions for ${country}: ${instruction}`
+  }
+  return ''
+}
+
 export interface EmailGenerationResult {
   subject: string
   body: string
@@ -38,7 +54,7 @@ Règles strictes :
 - Mentionne le rôle du contact et son entreprise naturellement
 - Mets en avant 2-3 compétences pertinentes du candidat par rapport au contexte
 - Termine par une question ouverte ou une proposition concrète
-- Le sujet doit être court et accrocheur (max 60 caractères)
+- Le sujet doit être court et accrocheur (max 60 caractères)${getCulturalInstruction(contact.companyCountry)}
 ${isFollowUp ? '- C\'est une RELANCE, sois plus bref et mentionne l\'email précédent' : ''}
 
 Réponds UNIQUEMENT avec un objet JSON valide :

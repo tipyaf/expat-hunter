@@ -85,11 +85,11 @@ test.group('GET /api/pipeline', (group) => {
     response.assertStatus(200)
     const board = response.body().data
     assert.isArray(board)
-    assert.lengthOf(board, 5)
+    assert.lengthOf(board, 6)
 
     // Verify column keys
     const keys = board.map((col: { key: string }) => col.key)
-    assert.deepEqual(keys, ['found', 'to_contact', 'contacted', 'in_discussion', 'done'])
+    assert.deepEqual(keys, ['found', 'to_contact', 'contacted', 'in_discussion', 'interview', 'done'])
 
     // All counts should be 0
     for (const col of board) {
@@ -152,7 +152,7 @@ test.group('GET /api/pipeline', (group) => {
     assert.equal(col.count, 1)
   })
 
-  test('should place replied and interview contacts in the in_discussion column', async ({
+  test('should place replied contacts in in_discussion and interview contacts in interview', async ({
     client,
     assert,
   }) => {
@@ -164,8 +164,10 @@ test.group('GET /api/pipeline', (group) => {
 
     response.assertStatus(200)
     const board = response.body().data
-    const col = board.find((c: { key: string }) => c.key === 'in_discussion')
-    assert.equal(col.count, 2)
+    const inDiscussion = board.find((c: { key: string }) => c.key === 'in_discussion')
+    assert.equal(inDiscussion.count, 1)
+    const interviewCol = board.find((c: { key: string }) => c.key === 'interview')
+    assert.equal(interviewCol.count, 1)
   })
 
   test('should place offer and rejected contacts in the done column', async ({

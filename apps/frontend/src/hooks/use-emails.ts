@@ -109,9 +109,36 @@ export function useEmails(filters?: { status?: string; contactId?: string }) {
     setEmails((prev) => prev.map((e) => emailIds.includes(e.id) ? { ...e, status: 'approved' } : e))
   }, [token])
 
+  const sendBatch = useCallback(async (emailIds?: string[]) => {
+    if (!token) throw new Error('Not authenticated')
+    const res = await apiClient.post<{ data: { batchId: string; total: number } }>(
+      '/api/emails/send-batch',
+      emailIds ? { emailIds } : {},
+      { token }
+    )
+    return res.data
+  }, [token])
+
+  const getSendBatchProgress = useCallback(async (batchId: string) => {
+    if (!token) return null
+    try {
+      const res = await apiClient.get<{ data: {
+        batchId: string
+        status: 'running' | 'completed' | 'failed'
+        total: number
+        sent: number
+        failed: number
+        completedAt: string | null
+      } }>(`/api/emails/send-batch/${batchId}/progress`, { token })
+      return res.data
+    } catch {
+      return null
+    }
+  }, [token])
+
   return {
     emails, meta, page, isLoading,
-    approve, reject, updateEmail, regenerate, approveBatch,
+    approve, reject, updateEmail, regenerate, approveBatch, sendBatch, getSendBatchProgress,
     goToPage: fetchEmails,
     refetch: () => fetchEmails(page),
   }

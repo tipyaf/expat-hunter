@@ -45,7 +45,7 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 
 const TOKEN_KEY = 'expathunter_token'
 
-const publicPaths = ['/login', '/register']
+const publicPaths = ['/login', '/register', '/forgot-password', '/reset-password']
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)

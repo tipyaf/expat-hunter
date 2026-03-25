@@ -21,7 +21,8 @@ export default class SourcingService {
     userId: string,
     country: string,
     sector?: string,
-    sourceNames?: string[]
+    sourceNames?: string[],
+    city?: string
   ): Promise<SourcingRun> {
     // Get enabled sources for this country
     const availableSources = await SourcingSource.query()
@@ -53,6 +54,7 @@ export default class SourcingService {
       const params: ScrapeParams = {
         country,
         sector: sector ?? undefined,
+        city: city ?? undefined,
         maxResults: 20,
       }
 
@@ -105,6 +107,46 @@ export default class SourcingService {
   }
 
   /**
+   * Generic names that should be deduplicated by company + role instead of by name.
+   */
+  /**
+   * Generic contact names (not real person names) used for deduplication.
+   * English-only for now — see US for i18n extension.
+   */
+  private static readonly GENERIC_NAMES = new Set([
+    'hiring manager',
+    'contact',
+    'unknown',
+    'hr manager',
+    'recruiter',
+    'team',
+    'hiring',
+    'jobs',
+    'talent',
+    'recruitment',
+    'careers',
+    'hr',
+    'info',
+    'support',
+    'connect',
+    'admin',
+    'office',
+    'reception',
+    'enquiries',
+    'general',
+    'hello',
+    'apply',
+    'people',
+    'human resources',
+    'talent acquisition',
+    'people operations',
+  ])
+
+  private isGenericName(name: string): boolean {
+    return SourcingService.GENERIC_NAMES.has(name.toLowerCase().trim())
+  }
+
+  /**
    * Persist raw contacts: create companies and contacts, skip duplicates.
    * Returns count of persisted contacts and list of companies without any email.
    */
@@ -147,7 +189,7 @@ export default class SourcingService {
             .catch(() => null)
 
           if (visaCheck) {
-            company.visaSponsorStatus = visaCheck.isAccredited ? 'accredited' : 'not_found'
+            company.visaSponsorStatus = visaCheck.status
             company.visaSponsorCountries = visaCheck.countries.length > 0 ? visaCheck.countries : null
             company.visaRegistryCheckedAt = DateTime.now()
           }

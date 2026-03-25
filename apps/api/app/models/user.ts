@@ -35,6 +35,13 @@ export default class User extends compose(BaseModel, AuthFinder) {
   @column()
   declare isAdmin: boolean
 
+  @column.dateTime()
+  declare emailVerifiedAt: DateTime | null
+
+  get isEmailVerified(): boolean {
+    return this.emailVerifiedAt !== null
+  }
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 

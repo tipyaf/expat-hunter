@@ -80,7 +80,9 @@ export class SeekScraper extends BaseScraper {
       return []
     }
 
-    const keywords = params.keywords?.join(' ') ?? params.sector ?? 'technology'
+    let keywords = params.keywords?.join(' ') ?? params.sector ?? 'technology'
+    // Append city to search term if provided (Seek filters by location in search)
+    if (params.city) keywords = `${keywords} ${params.city}`
     const maxResults = Math.min(params.maxResults ?? 20, 50) // Cap to control costs
 
     try {

@@ -8,7 +8,7 @@ import { BaseModel, column } from '@adonisjs/lucid/orm'
 import { DateTime } from 'luxon'
 
 export class AiSettingSchema extends BaseModel {
-  static $columns = ['createdAt', 'featureKey', 'id', 'isEnabled', 'maxTokens', 'model', 'temperature', 'updatedAt'] as const
+  static $columns = ['createdAt', 'featureKey', 'id', 'isEnabled', 'maxTokens', 'model', 'temperature', 'updatedAt', 'value'] as const
   $columns = AiSettingSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -26,6 +26,8 @@ export class AiSettingSchema extends BaseModel {
   declare temperature: number
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
+  @column()
+  declare value: any | null
 }
 
 export class AuthAccessTokenSchema extends BaseModel {
@@ -53,8 +55,29 @@ export class AuthAccessTokenSchema extends BaseModel {
   declare updatedAt: DateTime | null
 }
 
+export class BlockedEntitySchema extends BaseModel {
+  static $columns = ['blockedUntil', 'createdAt', 'entityId', 'entityType', 'id', 'reason', 'updatedAt', 'userId'] as const
+  $columns = BlockedEntitySchema.$columns
+  @column.dateTime()
+  declare blockedUntil: DateTime | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare entityId: string
+  @column()
+  declare entityType: string
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare reason: string | null
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare userId: string
+}
+
 export class CandidateProfileSchema extends BaseModel {
-  static $columns = ['createdAt', 'cvFilePath', 'cvText', 'experienceYears', 'id', 'onboardingCompleted', 'preferences', 'recontactCooldownDays', 'skills', 'targetCountries', 'targetRoles', 'targetSectors', 'updatedAt', 'userId'] as const
+  static $columns = ['createdAt', 'cvFilePath', 'cvText', 'experienceYears', 'followUps', 'id', 'onboardingCompleted', 'preferences', 'recontactCooldownDays', 'sendingSchedule', 'skills', 'targetCountries', 'targetRoles', 'targetSectors', 'updatedAt', 'userId'] as const
   $columns = CandidateProfileSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -64,6 +87,8 @@ export class CandidateProfileSchema extends BaseModel {
   declare cvText: string | null
   @column()
   declare experienceYears: number
+  @column()
+  declare followUps: any | null
   @column({ isPrimary: true })
   declare id: string
   @column()
@@ -72,6 +97,8 @@ export class CandidateProfileSchema extends BaseModel {
   declare preferences: any | null
   @column()
   declare recontactCooldownDays: number
+  @column()
+  declare sendingSchedule: any | null
   @column()
   declare skills: any
   @column()
@@ -87,10 +114,14 @@ export class CandidateProfileSchema extends BaseModel {
 }
 
 export class CompanySchema extends BaseModel {
-  static $columns = ['city', 'country', 'createdAt', 'domain', 'hiringIntensity', 'id', 'linkedinUrl', 'name', 'sector', 'signals', 'size', 'source', 'teamCrawledAt', 'updatedAt', 'visaRegistryCheckedAt', 'visaSponsorCountries', 'visaSponsorStatus', 'website'] as const
+  static $columns = ['city', 'contextData', 'contextEnrichedAt', 'country', 'createdAt', 'domain', 'hiringIntensity', 'id', 'linkedinUrl', 'name', 'sector', 'signals', 'size', 'source', 'teamCrawledAt', 'updatedAt', 'visaRegistryCheckedAt', 'visaSponsorCountries', 'visaSponsorStatus', 'website'] as const
   $columns = CompanySchema.$columns
   @column()
   declare city: string | null
+  @column()
+  declare contextData: any | null
+  @column.dateTime()
+  declare contextEnrichedAt: DateTime | null
   @column()
   declare country: string
   @column.dateTime({ autoCreate: true })
@@ -127,8 +158,25 @@ export class CompanySchema extends BaseModel {
   declare website: string | null
 }
 
+export class ContactMovementSchema extends BaseModel {
+  static $columns = ['contactId', 'createdAt', 'fromStatus', 'id', 'toStatus', 'trigger'] as const
+  $columns = ContactMovementSchema.$columns
+  @column()
+  declare contactId: string
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare fromStatus: string
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare toStatus: string
+  @column()
+  declare trigger: string
+}
+
 export class ContactSchema extends BaseModel {
-  static $columns = ['aiRecommendation', 'companyId', 'cooldownUntil', 'createdAt', 'email', 'emailAlternatives', 'emailConfidence', 'emailSource', 'emailStatus', 'fullName', 'githubUrl', 'id', 'lastContactedAt', 'linkedinUrl', 'relevanceLabel', 'relevanceReason', 'relevanceScore', 'role', 'scoreBreakdown', 'scoreVersion', 'source', 'sourceDetail', 'sourcingRunId', 'status', 'updatedAt', 'userId', 'userOverride'] as const
+  static $columns = ['aiRecommendation', 'companyId', 'cooldownUntil', 'createdAt', 'email', 'emailAlternatives', 'emailConfidence', 'emailSource', 'emailStatus', 'emailVerifiedAt', 'emailVerifyMethod', 'fullName', 'githubUrl', 'id', 'lastContactedAt', 'linkedinUrl', 'relevanceLabel', 'relevanceReason', 'relevanceScore', 'role', 'scoreBreakdown', 'scoreVersion', 'source', 'sourceDetail', 'sourcingRunId', 'status', 'updatedAt', 'userId', 'userOverride'] as const
   $columns = ContactSchema.$columns
   @column()
   declare aiRecommendation: string | null
@@ -148,6 +196,10 @@ export class ContactSchema extends BaseModel {
   declare emailSource: string | null
   @column()
   declare emailStatus: string | null
+  @column.dateTime()
+  declare emailVerifiedAt: DateTime | null
+  @column()
+  declare emailVerifyMethod: string | null
   @column()
   declare fullName: string
   @column()
@@ -186,6 +238,39 @@ export class ContactSchema extends BaseModel {
   declare userOverride: boolean
 }
 
+export class EmailConnectionSchema extends BaseModel {
+  static $columns = ['createdAt', 'id', 'imapHost', 'imapPassword', 'imapPort', 'imapUser', 'isActive', 'lastSyncedAt', 'smtpHost', 'smtpPassword', 'smtpPort', 'smtpUser', 'updatedAt', 'userId'] as const
+  $columns = EmailConnectionSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare imapHost: string
+  @column()
+  declare imapPassword: string
+  @column()
+  declare imapPort: number
+  @column()
+  declare imapUser: string
+  @column()
+  declare isActive: boolean
+  @column.dateTime()
+  declare lastSyncedAt: DateTime | null
+  @column()
+  declare smtpHost: string
+  @column()
+  declare smtpPassword: string
+  @column()
+  declare smtpPort: number
+  @column()
+  declare smtpUser: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare userId: string
+}
+
 export class EmailMessageSchema extends BaseModel {
   static $columns = ['body', 'contactId', 'createdAt', 'id', 'openedAt', 'repliedAt', 'scheduledAt', 'sentAt', 'status', 'subject', 'type', 'updatedAt'] as const
   $columns = EmailMessageSchema.$columns
@@ -213,6 +298,77 @@ export class EmailMessageSchema extends BaseModel {
   declare type: string
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
+}
+
+export class EmailReplySchema extends BaseModel {
+  static $columns = ['aiSummary', 'bodyHtml', 'bodyText', 'contactId', 'createdAt', 'detectedEvent', 'emailMessageId', 'fromEmail', 'id', 'isRead', 'receivedAt', 'subject', 'updatedAt', 'userId'] as const
+  $columns = EmailReplySchema.$columns
+  @column()
+  declare aiSummary: string | null
+  @column()
+  declare bodyHtml: string | null
+  @column()
+  declare bodyText: string | null
+  @column()
+  declare contactId: string
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare detectedEvent: string | null
+  @column()
+  declare emailMessageId: string | null
+  @column()
+  declare fromEmail: string
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare isRead: boolean
+  @column.dateTime()
+  declare receivedAt: DateTime
+  @column()
+  declare subject: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare userId: string
+}
+
+export class EmailTemplateSchema extends BaseModel {
+  static $columns = ['bodyPattern', 'createdAt', 'id', 'isDefault', 'name', 'subjectPattern', 'updatedAt', 'userId'] as const
+  $columns = EmailTemplateSchema.$columns
+  @column()
+  declare bodyPattern: string
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare isDefault: boolean
+  @column()
+  declare name: string
+  @column()
+  declare subjectPattern: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare userId: string
+}
+
+export class EmailVerificationSchema extends BaseModel {
+  static $columns = ['createdAt', 'expiresAt', 'id', 'token', 'used', 'userId'] as const
+  $columns = EmailVerificationSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column.dateTime()
+  declare expiresAt: DateTime
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare token: string
+  @column()
+  declare used: boolean
+  @column()
+  declare userId: string
 }
 
 export class ExternalCacheSchema extends BaseModel {
@@ -253,6 +409,50 @@ export class FollowUpSequenceSchema extends BaseModel {
   declare id: string
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
+  @column()
+  declare userId: string
+}
+
+export class GenerationPresetSchema extends BaseModel {
+  static $columns = ['createdAt', 'customInstructions', 'framework', 'id', 'isDefault', 'language', 'length', 'name', 'tone', 'updatedAt', 'userId'] as const
+  $columns = GenerationPresetSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare customInstructions: string | null
+  @column()
+  declare framework: string
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare isDefault: boolean
+  @column()
+  declare language: string
+  @column()
+  declare length: string
+  @column()
+  declare name: string
+  @column()
+  declare tone: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare userId: string
+}
+
+export class PasswordResetSchema extends BaseModel {
+  static $columns = ['createdAt', 'expiresAt', 'id', 'token', 'used', 'userId'] as const
+  $columns = PasswordResetSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column.dateTime()
+  declare expiresAt: DateTime
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare token: string
+  @column()
+  declare used: boolean
   @column()
   declare userId: string
 }
@@ -349,12 +549,14 @@ export class SourcingSourceSchema extends BaseModel {
 }
 
 export class UserSchema extends BaseModel {
-  static $columns = ['createdAt', 'email', 'fullName', 'id', 'isAdmin', 'locale', 'password', 'updatedAt'] as const
+  static $columns = ['createdAt', 'email', 'emailVerifiedAt', 'fullName', 'id', 'isAdmin', 'locale', 'password', 'updatedAt'] as const
   $columns = UserSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
   @column()
   declare email: string
+  @column.dateTime()
+  declare emailVerifiedAt: DateTime | null
   @column()
   declare fullName: string
   @column({ isPrimary: true })

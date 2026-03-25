@@ -1,0 +1,207 @@
+# ============================================================================
+# FEATURE TRACKER — ExpatHunter per-feature state management
+# ============================================================================
+# Status flow: pending → refined → building → testing → validated
+# Updated by agents after each phase transition.
+# Read by skills to enforce phase guards.
+# ============================================================================
+
+project:
+  name: "expat-hunter"
+  spec_file: "specs/expat-hunter.yaml"
+  created_at: "2026-03-17"
+
+# Artefact gates — phase guards verified by filesystem existence
+artefacts:
+  constitution: "specs/constitution.md"
+  spec: "specs/expat-hunter.yaml"
+  clarifications: "specs/expat-hunter-clarifications.md"
+  wireframes: "specs/expat-hunter-ux.md"
+  architecture: "specs/expat-hunter-architecture.md"
+  manifest: "specs/expat-hunter-manifest.yaml"
+
+# Per-feature tracking — must-have features from spec
+features:
+  # === MUST-HAVE (MVP) ===
+
+  - id: "candidate-profile"
+    name: "Candidate Profile"
+    priority: "must-have"
+    status: "pending"
+    cycles: 1
+    story_file: ""
+    depends_on: []
+    started_at: ""
+    validated_at: ""
+    notes: "User configures CV, skills, experience, target country/sector/role"
+
+  - id: "contact-sourcing"
+    name: "Contact Sourcing"
+    priority: "must-have"
+    status: "pending"
+    cycles: 1
+    story_file: ""
+    depends_on: ["candidate-profile"]
+    started_at: ""
+    validated_at: ""
+    notes: "Pluggable scrapers per country/source, anti-detection, dedup"
+
+  - id: "ai-relevance-analysis"
+    name: "AI Relevance Analysis"
+    priority: "must-have"
+    status: "pending"
+    cycles: 1
+    story_file: ""
+    depends_on: ["candidate-profile", "contact-sourcing"]
+    started_at: ""
+    validated_at: ""
+    notes: "Score 0-100, explanation, recommendation, OpenRouter"
+
+  - id: "personalized-emailing"
+    name: "Personalized Emailing"
+    priority: "must-have"
+    status: "pending"
+    cycles: 1
+    story_file: ""
+    depends_on: ["ai-relevance-analysis"]
+    started_at: ""
+    validated_at: ""
+    notes: "AI-generated emails, Gmail API, follow-up sequences"
+
+  - id: "pipeline-dashboard"
+    name: "Pipeline Dashboard"
+    priority: "must-have"
+    status: "pending"
+    cycles: 1
+    story_file: ""
+    depends_on: ["contact-sourcing"]
+    started_at: ""
+    validated_at: ""
+    notes: "Kanban view, drag & drop, filters, counters"
+
+  # === SHOULD-HAVE ===
+
+  - id: "signal-detection"
+    name: "Signal Detection"
+    priority: "should-have"
+    status: "pending"
+    cycles: 1
+    story_file: ""
+    depends_on: ["contact-sourcing"]
+    started_at: ""
+    validated_at: ""
+    notes: "Job posts, team growth, fundraising signals"
+
+  - id: "multi-country"
+    name: "Multi-Country Support"
+    priority: "should-have"
+    status: "pending"
+    cycles: 1
+    story_file: ""
+    depends_on: ["contact-sourcing"]
+    started_at: ""
+    validated_at: ""
+    notes: "Country-specific source connectors"
+
+  # === NICE-TO-HAVE ===
+
+  - id: "linkedin-messaging"
+    name: "LinkedIn Messaging"
+    priority: "nice-to-have"
+    status: "pending"
+    cycles: 1
+    story_file: ""
+    depends_on: ["contact-sourcing"]
+    started_at: ""
+    validated_at: ""
+    notes: "Requires feasibility study first (ban risk)"
+
+  - id: "multi-users"
+    name: "Multi-Users"
+    priority: "nice-to-have"
+    status: "pending"
+    cycles: 1
+    story_file: ""
+    depends_on: []
+    started_at: ""
+    validated_at: ""
+    notes: "Registration, auth, billing"
+
+  - id: "expat-assistance"
+    name: "Expat Assistance"
+    priority: "nice-to-have"
+    status: "pending"
+    cycles: 1
+    story_file: ""
+    depends_on: []
+    started_at: ""
+    validated_at: ""
+    notes: "Visa info, work legislation, housing"
+
+  - id: "interview-prep"
+    name: "Interview Preparation"
+    priority: "nice-to-have"
+    status: "pending"
+    cycles: 1
+    story_file: ""
+    depends_on: ["candidate-profile"]
+    started_at: ""
+    validated_at: ""
+    notes: "AI interviewer, country-specific culture, target language"
+
+  - id: "mobile-app"
+    name: "Mobile App"
+    priority: "nice-to-have"
+    status: "pending"
+    cycles: 1
+    story_file: ""
+    depends_on: ["pipeline-dashboard"]
+    started_at: ""
+    validated_at: ""
+    notes: "React Native, pipeline + notifications"
+
+  - id: "analytics"
+    name: "Analytics Dashboard"
+    priority: "nice-to-have"
+    status: "pending"
+    cycles: 1
+    story_file: ""
+    depends_on: ["personalized-emailing"]
+    started_at: ""
+    validated_at: ""
+    notes: "Response rates, best channels, message optimization"
+
+  # === TECHNICAL STORIES ===
+
+  - id: "sc-30"
+    name: "Fix visa check NZ — Playwright-based scraping via external server"
+    priority: "should-have"
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/sc-30.yaml"
+    depends_on: []
+    started_at: ""
+    validated_at: ""
+    notes: "Replace broken direct API call with Playwright scraping. POC proven by n8n workflow 8sRbC6W5Z0sSHr62."
+
+  - id: "sc-191"
+    name: "Backend unit & functional tests — password reset flow"
+    priority: "chore"
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/sc-191.yaml"
+    depends_on: []
+    started_at: "2026-03-25"
+    validated_at: "2026-03-25"
+    notes: "15 unit tests (PasswordResetService) + 16 functional tests (forgot-password, reset-password). All pass."
+
+  - id: "sc-198"
+    name: "Backend test coverage — candidate-profile"
+    priority: "chore"
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/sc-198.yaml"
+    depends_on: ["candidate-profile"]
+    started_at: "2026-03-25"
+    validated_at: "2026-03-25"
+    notes: "15 unit tests (ProfileService) + 8 new functional tests. Total 39 profile tests, all pass."
