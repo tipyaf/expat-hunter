@@ -39,7 +39,7 @@ export default function ForgotPasswordPage() {
 
         {sent ? (
           <div className="text-center space-y-4">
-            <div className="rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 px-4 py-3 text-sm text-green-800 dark:text-green-300">
+            <div className="rounded-lg bg-[var(--color-success)]/10 border border-[var(--color-success)]/30 px-4 py-3 text-sm text-[var(--color-success)]">
               {t('resetEmailSent')}
             </div>
             <Link href="/login" className="text-sm text-primary hover:underline">
