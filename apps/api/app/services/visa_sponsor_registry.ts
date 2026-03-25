@@ -1,9 +1,11 @@
 import VisaSponsorRegistry from '#models/visa_sponsor_registry'
 import CacheService from './cache_service.js'
+import PlaywrightClient from './playwright_client.js'
 import { DateTime } from 'luxon'
 import { randomUUID } from 'node:crypto'
 
 export interface VisaCheckResult {
+  status: 'accredited' | 'not_found' | 'unknown'
   isAccredited: boolean
   countries: string[]
   visaTypes: string[]
@@ -34,12 +36,23 @@ const SOURCE_URLS: Record<string, string> = {
   AU: 'https://immi.homeaffairs.gov.au/visas/working-in-australia/standard-business-sponsorship',
 }
 
-const NZ_API_URL = 'https://www.immigration.govt.nz/list-api/getAPIResults/'
+// NZ Immigration — Playwright-based scraping constants
+const NZ_PAGE_URL =
+  'https://www.immigration.govt.nz/work/requirements-for-work-visas/approved-employers/accredited-employer-list/'
+const NZ_SEARCH_INPUT_SELECTOR = '#search-filter-input-keyword'
+const NZ_SEARCH_BUTTON_SELECTOR =
+  'div.list-search__actions > button.btn.list-search__action.list-search__action--search'
+const NZ_API_NETWORK_PATTERN = '**/list-api/getAPIResults/'
+const NZ_WAIT_AFTER_CLICK_MS = 3_000
+
 const US_DOL_LCA_URL =
   'https://www.dol.gov/sites/dolgov/files/ETA/oflc/pdfs/LCA_Disclosure_Data_FY2025_Q4.xlsx'
 
 export default class VisaSponsorRegistryService {
   private cacheService = new CacheService()
+  private playwrightClient = new PlaywrightClient()
+  /** Delay after clicking the search button, in ms. Override in tests to speed them up. */
+  private nzWaitAfterClickMs = NZ_WAIT_AFTER_CLICK_MS
 
   /**
    * Check if a company is an accredited visa sponsor for a given country.
@@ -60,13 +73,15 @@ export default class VisaSponsorRegistryService {
   }
 
   /**
-   * Check NZ accredited employer status via Immigration NZ API.
-   * The API is at POST /list-api/getAPIResults/ with multipart form data.
-   * Results are cached for 30 days in external_cache.
+   * Check NZ accredited employer status via Playwright scraping.
+   * Navigates to immigration.govt.nz, fills the search form, intercepts
+   * the /list-api/getAPIResults/ network response, and parses the results.
+   * Results are cached for 30 days. Returns 'unknown' on any error.
    */
   async checkNZ(companyName: string): Promise<VisaCheckResult> {
     const cacheKey = `nz:${this.normalizeCompanyName(companyName)}`
-    const notFoundResult: VisaCheckResult = {
+    const unknownResult: VisaCheckResult = {
+      status: 'unknown',
       isAccredited: false,
       countries: [],
       visaTypes: [],
@@ -75,108 +90,119 @@ export default class VisaSponsorRegistryService {
     }
 
     try {
-      const { data, fromCache } = await this.cacheService.getOrFetch(
+      const { data } = await this.cacheService.getOrFetch(
         'immigration-nz',
         'visa',
         cacheKey,
         async () => {
-          const result = await this.queryNzApi(companyName)
+          const result = await this.scrapeNzPage(companyName)
           return result as unknown as Record<string, unknown>
         },
         30
       )
 
-      const result = data as unknown as VisaCheckResult
-      if (fromCache) return result
-      return result
-    } catch (err) {
-      // Graceful degradation: if the API is down, try local registry
-      const registryResult = await this.checkFromRegistry(companyName, 'NZ').catch(() => null)
-      if (registryResult && registryResult.isAccredited) return registryResult
-      return notFoundResult
+      return data as unknown as VisaCheckResult
+    } catch {
+      return unknownResult
     }
   }
 
   /**
-   * Query the NZ Immigration accredited employer API.
+   * Scrape the NZ Immigration accredited employer list using the external Playwright server.
+   * Flow: navigate → wait for input → fill → verify fill → click search → wait → get network response
    */
-  private async queryNzApi(companyName: string): Promise<VisaCheckResult> {
+  private async scrapeNzPage(companyName: string): Promise<VisaCheckResult> {
     const normalized = this.normalizeCompanyName(companyName)
-
-    // Build multipart form data manually (Node 22 supports FormData natively)
-    const formData = new FormData()
-    formData.append('query', companyName)
-    formData.append('collection', '2')
-    formData.append('page', '1')
-
-    const res = await fetch(NZ_API_URL, {
-      method: 'POST',
-      body: formData,
-      headers: {
-        Accept: 'application/json, text/plain, */*',
-        Origin: 'https://www.immigration.govt.nz',
-        Referer:
-          'https://www.immigration.govt.nz/work/requirements-for-work-visas/approved-employers/accredited-employer-list/',
-      },
-      signal: AbortSignal.timeout(15_000),
-    })
-
-    // NZ API returns HTTP 400 with "No Results" when company is not found — not a real error
-    if (res.status === 400) {
-      const body = (await res.json().catch(() => null)) as { Title?: string } | null
-      if (body?.Title === 'No Results') {
-        return {
-          isAccredited: false,
-          countries: [],
-          visaTypes: [],
-          confidence: 0,
-          source: 'immigration.govt.nz',
-        }
-      }
-      throw new Error(`NZ Immigration API 400: ${JSON.stringify(body)}`)
+    const unknownResult: VisaCheckResult = {
+      status: 'unknown',
+      isAccredited: false,
+      countries: [],
+      visaTypes: [],
+      confidence: 0,
+      source: 'immigration.govt.nz',
     }
 
-    if (!res.ok) {
-      throw new Error(`NZ Immigration API returned ${res.status}`)
+    // Step 1: open the page and capture network traffic
+    const { sessionId } = await this.playwrightClient.navigate(NZ_PAGE_URL)
+    if (!sessionId) return unknownResult
+
+    // Step 2: wait for the search input to be ready
+    await this.playwrightClient.waitForSelector(NZ_SEARCH_INPUT_SELECTOR, sessionId)
+
+    // Step 3: fill the input using React-aware fill (native setter + synthetic events)
+    // Plain `fill` does not trigger React's onChange, leaving the value empty on submit
+    const filledValue = await this.playwrightClient.fillReactInput(
+      NZ_SEARCH_INPUT_SELECTOR,
+      companyName,
+      sessionId
+    )
+
+    // Step 4: verify fill worked — retry with plain fill as last resort
+    if (!filledValue) {
+      await this.playwrightClient.fill(NZ_SEARCH_INPUT_SELECTOR, companyName, sessionId)
     }
 
-    const json = (await res.json()) as {
-      results: string
-      current: number
-      totalPages: number
-      totalResults: number
+    // Step 5: click the search button
+    await this.playwrightClient.click(NZ_SEARCH_BUTTON_SELECTOR, sessionId)
+
+    // Step 6: wait for the API response to be captured
+    await new Promise((resolve) => setTimeout(resolve, this.nzWaitAfterClickMs))
+
+    // Step 7: retrieve intercepted network request
+    const networkResult = await this.playwrightClient.getNetworkRequests(
+      NZ_API_NETWORK_PATTERN,
+      sessionId
+    )
+
+    const request = networkResult.requests?.[0]
+    if (!request?.body) return { ...unknownResult, status: 'not_found' }
+
+    return this.parseNzApiResponse(request.body, request.statusCode, normalized)
+  }
+
+  /**
+   * Parse the intercepted /list-api/getAPIResults/ response body.
+   * The body is a JSON string, and inside it "results" is also a JSON string.
+   */
+  private parseNzApiResponse(
+    rawBody: string,
+    statusCode: number,
+    normalizedQuery: string
+  ): VisaCheckResult {
+    const notFoundResult: VisaCheckResult = {
+      status: 'not_found',
+      isAccredited: false,
+      countries: [],
+      visaTypes: [],
+      confidence: 0,
+      source: 'immigration.govt.nz',
     }
 
-    if (!json.results || json.totalResults === 0) {
-      return {
-        isAccredited: false,
-        countries: [],
-        visaTypes: [],
-        confidence: 0,
-        source: 'immigration.govt.nz',
-      }
+    let parsed: { results?: string | unknown[]; totalResults?: number; Message?: string; Title?: string }
+
+    try {
+      parsed = JSON.parse(rawBody)
+    } catch {
+      return notFoundResult
     }
 
-    // results is a JSON string containing an array of employer objects
-    const results = JSON.parse(json.results) as Array<{
-      field_schema: {
-        raw: Array<{ APIColumn: string; Value: string }>
-      }
-      title: { raw: string }
-      id: { raw: number }
+    // API returns 400 with Title="No Results" when nothing found
+    if (statusCode !== 200 || !parsed.results) {
+      return notFoundResult
+    }
+
+    // "results" is itself a JSON string — double parse
+    const results = (
+      typeof parsed.results === 'string' ? JSON.parse(parsed.results) : parsed.results
+    ) as Array<{
+      field_schema: { raw: Array<{ APIColumn: string; Value: string }> }
+      title?: { raw: string }
+      id?: { raw: number }
     }>
 
-    if (results.length === 0) {
-      return {
-        isAccredited: false,
-        countries: [],
-        visaTypes: [],
-        confidence: 0,
-        source: 'immigration.govt.nz',
-      }
-    }
+    if (!results || results.length === 0) return notFoundResult
 
-    // Find the best match among results
+    // Find best match by fuzzy-matching employerName and tradingName
     let bestMatch: (typeof results)[0] | null = null
     let bestScore = 0
 
@@ -186,8 +212,8 @@ export default class VisaSponsorRegistryService {
       const tradingName =
         result.field_schema.raw.find((f) => f.APIColumn === 'tradingName')?.Value ?? ''
 
-      const scoreEmployer = this.fuzzyMatch(normalized, this.normalizeCompanyName(employerName))
-      const scoreTrading = this.fuzzyMatch(normalized, this.normalizeCompanyName(tradingName))
+      const scoreEmployer = this.fuzzyMatch(normalizedQuery, this.normalizeCompanyName(employerName))
+      const scoreTrading = this.fuzzyMatch(normalizedQuery, this.normalizeCompanyName(tradingName))
       const score = Math.max(scoreEmployer, scoreTrading)
 
       if (score > bestScore) {
@@ -196,27 +222,20 @@ export default class VisaSponsorRegistryService {
       }
     }
 
-    if (!bestMatch || bestScore < 0.7) {
-      return {
-        isAccredited: false,
-        countries: [],
-        visaTypes: [],
-        confidence: bestScore,
-        source: 'immigration.govt.nz',
-      }
-    }
+    if (!bestMatch || bestScore < 0.7) return { ...notFoundResult, confidence: bestScore }
 
     const matchedName =
       bestMatch.field_schema.raw.find((f) => f.APIColumn === 'employerName')?.Value ?? ''
     const expiryDate =
-      bestMatch.field_schema.raw.find((f) => f.APIColumn === 'expiryDateOfAccreditation')?.Value ??
-      ''
+      bestMatch.field_schema.raw.find((f) => f.APIColumn === 'expiryDateOfAccreditation')
+        ?.Value ?? ''
 
-    // Check if accreditation has expired
+    // Expired accreditation → not_found
     if (expiryDate) {
       const expiry = DateTime.fromISO(expiryDate)
       if (expiry.isValid && expiry < DateTime.now()) {
         return {
+          status: 'not_found',
           isAccredited: false,
           countries: ['NZ'],
           visaTypes: ['AEWV'],
@@ -228,6 +247,7 @@ export default class VisaSponsorRegistryService {
     }
 
     return {
+      status: 'accredited',
       isAccredited: true,
       countries: ['NZ'],
       visaTypes: ['AEWV'],
@@ -247,7 +267,8 @@ export default class VisaSponsorRegistryService {
    */
   async checkUS(companyName: string): Promise<VisaCheckResult> {
     const cacheKey = `us:${this.normalizeCompanyName(companyName)}`
-    const notFoundResult: VisaCheckResult = {
+    const unknownResult: VisaCheckResult = {
+      status: 'unknown',
       isAccredited: false,
       countries: [],
       visaTypes: [],
@@ -271,8 +292,8 @@ export default class VisaSponsorRegistryService {
     } catch {
       // Fallback to local registry
       const registryResult = await this.checkFromRegistry(companyName, 'US').catch(() => null)
-      if (registryResult && registryResult.isAccredited) return registryResult
-      return notFoundResult
+      if (registryResult?.isAccredited) return registryResult
+      return unknownResult
     }
   }
 
@@ -292,8 +313,8 @@ export default class VisaSponsorRegistryService {
     try {
       return await this.queryH1bGraderApi(companyName)
     } catch {
-      // If all sources fail, return not_found
       return {
+        status: 'unknown',
         isAccredited: false,
         countries: [],
         visaTypes: [],
@@ -353,6 +374,7 @@ export default class VisaSponsorRegistryService {
     if (companyMentioned && hasApprovedPetitions) {
       const bestMatch = matches.sort((a, b) => b.score - a.score)[0]
       return {
+        status: 'accredited',
         isAccredited: true,
         countries: ['US'],
         visaTypes: ['H-1B'],
@@ -363,6 +385,7 @@ export default class VisaSponsorRegistryService {
     }
 
     return {
+      status: 'not_found',
       isAccredited: false,
       countries: [],
       visaTypes: [],
@@ -380,7 +403,7 @@ export default class VisaSponsorRegistryService {
     const records = await VisaSponsorRegistry.query().where('country', country)
 
     if (records.length === 0) {
-      return { isAccredited: false, countries: [], visaTypes: [], confidence: 0 }
+      return { status: 'not_found', isAccredited: false, countries: [], visaTypes: [], confidence: 0 }
     }
 
     let bestMatch: VisaSponsorRegistry | null = null
@@ -395,7 +418,7 @@ export default class VisaSponsorRegistryService {
     }
 
     if (!bestMatch || bestScore < 0.85) {
-      return { isAccredited: false, countries: [], visaTypes: [], confidence: bestScore }
+      return { status: 'not_found', isAccredited: false, countries: [], visaTypes: [], confidence: bestScore }
     }
 
     // Gather all visa types for this company
@@ -407,6 +430,7 @@ export default class VisaSponsorRegistryService {
     const countries = [...new Set(allRecords.map((r) => r.country))]
 
     return {
+      status: 'accredited',
       isAccredited: true,
       countries,
       visaTypes,
@@ -490,7 +514,7 @@ export default class VisaSponsorRegistryService {
           formData.append('collection', '2')
           formData.append('page', String(page))
 
-          const res = await fetch(NZ_API_URL, {
+          const res = await fetch('https://www.immigration.govt.nz/list-api/getAPIResults/', {
             method: 'POST',
             body: formData,
             headers: {

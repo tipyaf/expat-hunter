@@ -173,6 +173,17 @@ features:
 
   # === TECHNICAL STORIES ===
 
+  - id: "sc-30"
+    name: "Fix visa check NZ — Playwright-based scraping via external server"
+    priority: "should-have"
+    status: "refined"
+    cycles: 0
+    story_file: "specs/stories/sc-30.yaml"
+    depends_on: []
+    started_at: ""
+    validated_at: ""
+    notes: "Replace broken direct API call with Playwright scraping. POC proven by n8n workflow 8sRbC6W5Z0sSHr62."
+
   - id: "sc-191"
     name: "Backend unit & functional tests — password reset flow"
     priority: "chore"

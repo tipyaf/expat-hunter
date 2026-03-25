@@ -188,7 +188,7 @@ export default class SourcingService {
             .catch(() => null)
 
           if (visaCheck) {
-            company.visaSponsorStatus = visaCheck.isAccredited ? 'accredited' : 'not_found'
+            company.visaSponsorStatus = visaCheck.status
             company.visaSponsorCountries = visaCheck.countries.length > 0 ? visaCheck.countries : null
             company.visaRegistryCheckedAt = DateTime.now()
           }
