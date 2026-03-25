@@ -277,6 +277,27 @@
     "blockReasonPlaceholder": "Ex: Pas de réponse, hors cible...",
     "blockConfirm": "Bloquer"
   },
+  "contactPanel": {
+    "title": "Contact",
+    "close": "Fermer",
+    "aiAnalysis": "Analyse IA",
+    "notAnalyzed": "Pas encore analysé",
+    "emailHistory": "Historique emails",
+    "noEmails": "Aucun email envoyé",
+    "viewLinkedin": "Voir le profil LinkedIn",
+    "viewGithub": "Voir le profil GitHub",
+    "reply": "Réponse",
+    "relevance_very_relevant": "Très pertinent",
+    "relevance_relevant": "Pertinent",
+    "relevance_to_review": "À vérifier",
+    "relevance_not_relevant": "Non pertinent",
+    "email_draft": "Brouillon",
+    "email_approved": "Approuvé",
+    "email_sent": "Envoyé",
+    "email_opened": "Ouvert",
+    "email_replied": "Répondu",
+    "email_bounced": "Rejeté"
+  },
   "settings": {
     "title": "Paramètres",
     "subtitle": "Configurez votre compte et vos préférences.",

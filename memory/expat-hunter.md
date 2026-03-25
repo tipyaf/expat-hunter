@@ -20,11 +20,11 @@
 
 | Feature | Priority | Status | Story file | Cycles |
 |---------|----------|--------|------------|--------|
-| candidate-profile | must-have | pending | — | 0 |
-| contact-sourcing | must-have | pending | — | 0 |
-| ai-relevance-analysis | must-have | pending | — | 0 |
-| personalized-emailing | must-have | pending | — | 0 |
-| pipeline-dashboard | must-have | pending | — | 0 |
+| candidate-profile | must-have | ✅ validated | specs/stories/candidate-profile.yaml | 1 |
+| contact-sourcing | must-have | ✅ validated | specs/stories/contact-sourcing.yaml | 1 |
+| ai-relevance-analysis | must-have | ✅ validated | specs/stories/ai-relevance-analysis.yaml | 1 |
+| personalized-emailing | must-have | ✅ validated | specs/stories/personalized-emailing.yaml | 1 |
+| pipeline-dashboard | must-have | ✅ validated | specs/stories/pipeline-dashboard.yaml | 1 |
 | signal-detection | should-have | pending | — | 0 |
 | multi-country | should-have | pending | — | 0 |
 | linkedin-messaging | nice-to-have | pending | — | 0 |
@@ -33,8 +33,9 @@
 | interview-prep | nice-to-have | pending | — | 0 |
 | mobile-app | nice-to-have | pending | — | 0 |
 | analytics | nice-to-have | pending | — | 0 |
+| contact-detail-panel | must-have | ✅ validated | specs/stories/contact-detail-panel.yaml | 1 |
 
-**Summary**: 13 features total — 0 refined, 0 validated, 0 escalated — next: `/refine` candidate-profile
+**Summary**: 14 features total — 6 must-have validated (all MVP features + contact-detail-panel) — ready for `/review`
 
 ## Décisions prises
 

@@ -6,7 +6,8 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["dev"],
       "port": 3000,
-      "cwd": "apps/frontend"
+      "cwd": "apps/frontend",
+      "autoPort": true
     },
     {
       "name": "wireframes",

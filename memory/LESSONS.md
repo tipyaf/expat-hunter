@@ -59,6 +59,16 @@ Recurring failures and lessons learned across sessions. Every agent MUST read th
 **Root cause**: L'agent a validé chaque service isolément (TU) sans jamais tester l'intégration complète : "je lance une recherche → j'obtiens des contacts nommés avec des emails".
 **Rule**: Après avoir écrit les TU, TOUJOURS tester le flux complet : appeler l'API ou naviguer dans l'app comme un utilisateur et vérifier que le résultat est utile. Un service branché nulle part est un service qui n'existe pas.
 
+### [Env] Tests Japa nécessitent Node >= 22
+**Problem**: `pnpm test` échoue avec Node 20 (`SyntaxError: The requested module 'node:fs/promises' does not provide an export named 'glob'`).
+**Root cause**: Japa 5.3.0 utilise `fs/promises.glob` disponible uniquement depuis Node 22.
+**Rule**: TOUJOURS lancer les tests avec Node >= 22 (`~/.nvm/versions/node/v22.22.1/bin/node`). Vérifier `node --version` avant de déclarer des tests comme échoués.
+
+### [Validation] Se connecter avant de vérifier une page protégée
+**Problem**: Validation UI déclarée sans avoir vérifié la page réelle — le preview redirige vers /login si non authentifié.
+**Root cause**: L'agent a pris un screenshot sans vérifier si la page était accessible (authentification requise).
+**Rule**: TOUJOURS se connecter via le preview AVANT de tenter de visiter une page protégée. Séquence obligatoire : 1) Naviguer vers /login, 2) Remplir email + password (profile-unit@example.com / password123 pour les tests), 3) Cliquer submit, 4) THEN naviguer vers la page cible. Ne jamais déclarer une UI validée sans screenshot de la page réelle après connexion.
+
 ### [Quality] TOUJOURS écrire les TU avant de déclarer terminé
 **Problem**: sc-60 — 4 services modifiés (visa_sponsor_registry, email_enricher, company_enricher, sourcing_service) sans aucun test unitaire. Détecté en review par l'utilisateur.
 **Root cause**: L'agent a implémenté le code et déclaré "done" sans écrire les tests, alors que le framework l'exige (Phase 4: Test).

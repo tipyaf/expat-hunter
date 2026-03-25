@@ -1,6 +1,7 @@
 'use client'
 
 import { Sidebar } from '@/components/layout/sidebar'
+import { ContactDetailPanel } from '@/components/ui/contact-detail-panel'
 import { ContactSourceBadge } from '@/components/ui/contact-source-badge'
 import { EmailStatusBadge } from '@/components/ui/email-status-badge'
 import { ScoreBreakdown } from '@/components/ui/score-breakdown'
@@ -51,17 +52,20 @@ function ContactCard({
   t,
   onDragStart,
   onBlock,
+  onCardClick,
 }: {
   contact: PipelineContact
   t: (key: string) => string
   onDragStart: (e: React.DragEvent, contactId: string) => void
   onBlock: (contact: PipelineContact) => void
+  onCardClick: (contactId: string) => void
 }) {
   return (
     <div
       draggable
       onDragStart={(e) => onDragStart(e, contact.id)}
-      className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-light)] p-3 shadow-sm cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow group"
+      onClick={() => onCardClick(contact.id)}
+      className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-light)] p-3 shadow-sm cursor-pointer hover:shadow-md transition-shadow group"
     >
       {/* Name + relevance + block */}
       <div className="flex items-start justify-between gap-2 mb-1">
@@ -152,6 +156,7 @@ export default function PipelinePage() {
   const { columns, stats, total, isLoading, moveContact, refresh } = usePipeline()
   const [dragOverCol, setDragOverCol] = useState<string | null>(null)
   const dragContactId = useRef<string | null>(null)
+  const [selectedContactId, setSelectedContactId] = useState<string | null>(null)
   const [blockTarget, setBlockTarget] = useState<PipelineContact | null>(null)
   const [blockForm, setBlockForm] = useState<{ scope: 'contact' | 'company'; durationDays: string; reason: string }>({
     scope: 'contact',
@@ -308,6 +313,7 @@ export default function PipelinePage() {
                           t={t}
                           onDragStart={handleDragStart}
                           onBlock={setBlockTarget}
+                          onCardClick={setSelectedContactId}
                         />
                       ))
                     )}
@@ -318,6 +324,12 @@ export default function PipelinePage() {
           )}
         </div>
       </main>
+
+      {/* Contact detail panel */}
+      <ContactDetailPanel
+        contactId={selectedContactId}
+        onClose={() => setSelectedContactId(null)}
+      />
 
       {/* Block modal */}
       {blockTarget && (

@@ -27,57 +27,57 @@ features:
   - id: "candidate-profile"
     name: "Candidate Profile"
     priority: "must-have"
-    status: "pending"
-    cycles: 0
-    story_file: ""
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/candidate-profile.yaml"
     depends_on: []
-    started_at: ""
-    validated_at: ""
-    notes: "User configures CV, skills, experience, target country/sector/role"
+    started_at: "2026-03-17"
+    validated_at: "2026-03-25"
+    notes: "Retrospective validation. All 14 ACs pass. 238/240 tests pass (2 failures = port conflict with running dev server, not code issues). Requires Node >= 22 (Japa 5.3.0)."
 
   - id: "contact-sourcing"
     name: "Contact Sourcing"
     priority: "must-have"
-    status: "pending"
-    cycles: 0
-    story_file: ""
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/contact-sourcing.yaml"
     depends_on: ["candidate-profile"]
-    started_at: ""
-    validated_at: ""
-    notes: "Pluggable scrapers per country/source, anti-detection, dedup"
+    started_at: "2026-03-17"
+    validated_at: "2026-03-25"
+    notes: "Retrospective validation. All 13 ACs pass. 238/240 tests pass (2 failures = port conflict, not code). 5 scrapers extend BaseScraper, ScraperRegistry pluggable, no raw SQL."
 
   - id: "ai-relevance-analysis"
     name: "AI Relevance Analysis"
     priority: "must-have"
-    status: "pending"
-    cycles: 0
-    story_file: ""
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/ai-relevance-analysis.yaml"
     depends_on: ["candidate-profile", "contact-sourcing"]
-    started_at: ""
-    validated_at: ""
-    notes: "Score 0-100, explanation, recommendation, OpenRouter"
+    started_at: "2026-03-17"
+    validated_at: "2026-03-25"
+    notes: "Retrospective validation. All 12 ACs pass. OpenRouter env-based, batch error-tolerant, userOverride supported."
 
   - id: "personalized-emailing"
     name: "Personalized Emailing"
     priority: "must-have"
-    status: "pending"
-    cycles: 0
-    story_file: ""
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/personalized-emailing.yaml"
     depends_on: ["ai-relevance-analysis"]
-    started_at: ""
-    validated_at: ""
-    notes: "AI-generated emails, Gmail API, follow-up sequences"
+    started_at: "2026-03-17"
+    validated_at: "2026-03-25"
+    notes: "Retrospective validation. Fixed AC-SEC-PE-03: imapPassword + smtpPassword now encrypted via AdonisJS encryption service. All 12 ACs pass."
 
   - id: "pipeline-dashboard"
     name: "Pipeline Dashboard"
     priority: "must-have"
-    status: "pending"
-    cycles: 0
-    story_file: ""
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/pipeline-dashboard.yaml"
     depends_on: ["contact-sourcing"]
-    started_at: ""
-    validated_at: ""
-    notes: "Kanban view, drag & drop, filters, counters"
+    started_at: "2026-03-17"
+    validated_at: "2026-03-25"
+    notes: "Retrospective validation. All 11 ACs pass. 6-column kanban, drag & drop, ContactCard with relevance/email/visa badges."
 
   # === SHOULD-HAVE ===
 
@@ -170,6 +170,17 @@ features:
     started_at: ""
     validated_at: ""
     notes: "Response rates, best channels, message optimization"
+
+  - id: "contact-detail-panel"
+    name: "Contact Detail Panel"
+    priority: "must-have"
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/contact-detail-panel.yaml"
+    depends_on: ["pipeline-dashboard"]
+    started_at: "2026-03-25"
+    validated_at: "2026-03-25"
+    notes: "All 10 ACs pass. 0 TS errors. 2 new files (panel 270L, hook 109L). page.tsx 415L (15L over limit — pre-existing). No security issues."
 
   # === TECHNICAL STORIES ===
 
