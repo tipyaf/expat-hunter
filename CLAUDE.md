@@ -152,51 +152,76 @@ Before executing a skill, verify its prerequisites exist **on the filesystem**:
 
 ### Story template — every story MUST have this structure
 ```
-## Contexte
-[Pourquoi cette story existe, quel problème elle résout]
+## Context
+[Why this story exists, what problem it solves]
 
 ## Scope
-[Ce qui est inclus / exclu explicitement]
+**Included:** [explicit list]
+**Excluded:** [explicit list]
 
-## Critères d'acceptation
-[Liste reprise des ACs du story file YAML, cochée au fur et à mesure]
+## Acceptance Criteria
+- [ ] AC1 — [Given / When / Then]
+- [ ] AC2 — [Given / When / Then]
+(copy ACs exactly from the story file YAML — check off as you go)
 
-## Références
+## References
 - Story file: specs/stories/[id].yaml
-- Epic: [lien Shortcut]
+- Epic: [Shortcut link]
 ```
 
-### Build checklist — à ajouter sur TOUTE story avant de démarrer le dev
-Ces 11 tâches DOIVENT être présentes et cochées au fur et à mesure via `stories-update-task`:
-1. `[ ]` Refinement validé par l'utilisateur
-2. `[ ]` Story file YAML écrit (specs/stories/)
-3. `[ ]` Code implémenté (scope respecté)
-4. `[ ]` Tests unitaires écrits et passants
-5. `[ ]` Tests fonctionnels / e2e écrits et passants
-6. `[ ]` Audit sécurité (OWASP — injections, secrets, auth)
-7. `[ ]` TypeScript : 0 erreurs (tsc --noEmit)
-8. `[ ]` ACs vérifiés (chaque verify: command exécuté et passant)
-9. `[ ]` UI validée visuellement (dark + light mode, login requis)
-10. `[ ]` PR créée sur GitHub et liée à la story Shortcut
-11. `[ ]` feature-tracker.yaml mis à jour → validated
+### Build checklist — add to EVERY story before starting dev
+These 11 tasks MUST be present and checked off via `stories-update-task` as each step completes:
+1. `[ ]` Refinement validated by user
+2. `[ ]` Story file YAML written (specs/stories/)
+3. `[ ]` Code implemented (scope respected)
+4. `[ ]` Unit tests written and passing
+5. `[ ]` Functional / e2e tests written and passing
+6. `[ ]` Security audit (OWASP — injections, secrets, auth)
+7. `[ ]` TypeScript: 0 errors (tsc --noEmit)
+8. `[ ]` ACs verified (every verify: command executed and passing)
+9. `[ ]` UI validated visually (dark + light mode, login required)
+10. `[ ]` PR created on GitHub and linked to Shortcut story
+11. `[ ]` feature-tracker.yaml updated → validated
 
-### Labels — à appliquer à chaque transition
+### Labels — apply at each transition
 - **scope:** `scope:pending` → `scope:refined` → `scope:building` → `scope:testing` → `scope:validated`
 - **type:** `type:feature` | `type:bug` | `type:chore` | `type:tech-debt`
 - **area:** `area:frontend` | `area:backend` | `area:fullstack` | `area:infra` | `area:ai`
-- **priority:** `priority:critical` | `priority:high` | `priority:medium` | `priority:low`
 
-### Workflow states (ID → nom)
+> ⚠️ Do NOT use `priority:*` labels — use only the native Shortcut **Priority custom field** (Highest / High / Medium / Low / Lowest).
+
+### Estimation — Fibonacci scale (mandatory)
+Every story MUST have a point estimate:
+- **XS = 1** — trivial change, < 1h
+- **S = 2** — small feature or simple fix, < 2h
+- **M = 3** — standard feature, half a day
+- **L = 5** — complex feature, 1 day
+- **XL = 8** — major feature, 2+ days
+- **Epic = 13+** — must be split before starting
+
+### Mandatory closure after merge
+After each PR is merged, the agent MUST immediately:
+1. Move the ticket to `workflow_state_id: 500000010` (Done)
+2. Apply label `scope:validated`
+3. Verify no other linked ticket remains in "In Review"
+
+Never end a session with a ticket in "In Review" whose PR is already merged.
+
+### Workflow states (ID → name)
 - `500000006` Backlog → `500000007` To Do → `500000008` In Progress → `500000009` In Review → `500000010` Done
 
-### Règles automatiques agent
-| Événement | Action Shortcut obligatoire |
-|-----------|----------------------------|
-| Début `/build` | `workflow_state_id: 500000008` + label `scope:building` |
-| Début `/validate` | `workflow_state_id: 500000009` + label `scope:testing` |
-| Tous ACs passent | `workflow_state_id: 500000010` + label `scope:validated` |
-| Chaque étape build complétée | `stories-update-task isCompleted: true` |
-| PR créée | `stories-add-external-link` avec l'URL GitHub |
+### Automatic agent rules
+| Event | Required Shortcut action |
+|-------|--------------------------|
+| Session start | Check Shortcut (stories-search) BEFORE any decision |
+| Story created | Add 11 build checklist tasks via `stories-add-task` + estimate + labels scope/type/area |
+| Start `/refine` | `workflow_state_id: 500000007` (To Do) + label `scope:refined` |
+| Start `/build` | `workflow_state_id: 500000008` (In Progress) + label `scope:building` |
+| Start `/validate` | `workflow_state_id: 500000009` (In Review) + label `scope:testing` |
+| All ACs pass | `workflow_state_id: 500000010` (Done) + label `scope:validated` |
+| Each build step done | `stories-update-task isCompleted: true` (check off immediately) |
+| PR created | `stories-add-external-link` with GitHub URL |
+| PR merged | `workflow_state_id: 500000010` + check all linked tickets |
 
 ## Acceptance criteria format (unified)
 
