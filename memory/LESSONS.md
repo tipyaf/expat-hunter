@@ -59,6 +59,11 @@ Recurring failures and lessons learned across sessions. Every agent MUST read th
 **Root cause**: L'agent a validé chaque service isolément (TU) sans jamais tester l'intégration complète : "je lance une recherche → j'obtiens des contacts nommés avec des emails".
 **Rule**: Après avoir écrit les TU, TOUJOURS tester le flux complet : appeler l'API ou naviguer dans l'app comme un utilisateur et vérifier que le résultat est utile. Un service branché nulle part est un service qui n'existe pas.
 
+### [Workflow] Toujours fermer le ticket Shortcut après le merge
+**Problem**: sc-30 — PR mergée, story laissée en "In Review". Détecté à la session suivante.
+**Root cause**: La transition Shortcut "In Review → Done" n'était pas dans les verify: commands du story file. La session s'est terminée en plein merge conflict, l'étape de clôture n'a jamais été exécutée.
+**Rule**: Le story template inclut désormais un `AC-BP-[FEATURE]-DONE` (closing_ac) qui vérifie que le PR est mergé. Le validator DOIT passer cet AC en dernier et appeler `stories-update` (workflow_state_id: 500000010) immédiatement après. Sans ça, la story n'est pas "done".
+
 ### [Quality] TOUJOURS écrire les TU avant de déclarer terminé
 **Problem**: sc-60 — 4 services modifiés (visa_sponsor_registry, email_enricher, company_enricher, sourcing_service) sans aucun test unitaire. Détecté en review par l'utilisateur.
 **Root cause**: L'agent a implémenté le code et déclaré "done" sans écrire les tests, alors que le framework l'exige (Phase 4: Test).
