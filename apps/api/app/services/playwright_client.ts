@@ -120,6 +120,18 @@ export default class PlaywrightClient {
     })
   }
 
+  /**
+   * Close the browser session on the Playwright server.
+   * Best-effort — errors are swallowed so they never mask the original scraping result.
+   */
+  async close(sessionId: string): Promise<void> {
+    try {
+      await this.execute<void>('close_session', { sessionId })
+    } catch {
+      // Session closure is best-effort — never re-throw
+    }
+  }
+
   // ─── Private ───────────────────────────────────────────────────────────────
 
   private async execute<T>(tool: string, args: Record<string, unknown>): Promise<T> {

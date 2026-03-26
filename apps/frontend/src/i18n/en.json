@@ -38,7 +38,12 @@
     "register": "Create my account",
     "hasAccount": "Already have an account?",
     "login": "Sign in",
-    "emailConflict": "This email is already in use"
+    "emailConflict": "This email is already in use",
+    "forgotPassword": "Forgot your password?",
+    "forgotPasswordTitle": "Reset your password",
+    "resetEmailSent": "A reset link has been sent to your email.",
+    "backToLogin": "Back to login",
+    "sendResetLink": "Send reset link"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -426,5 +431,18 @@
     "dim_hiring": "Hiring",
     "dim_expatFriendly": "Expat-friendly",
     "dim_momentum": "Momentum"
+  },
+  "chat": {
+    "title": "ExpatHunter Assistant",
+    "modeSupport": "Support",
+    "modeExpert": "Expert",
+    "modeMixed": "Mixed",
+    "clearHistory": "Clear",
+    "closeChat": "Close chat",
+    "welcomeMessage": "Hello! I can help you with your job search, visa questions, and email campaigns.",
+    "suggestionsTitle": "Suggestions",
+    "placeholder": "Ask a question…",
+    "send": "Send",
+    "openChat": "Open chat"
   }
 }

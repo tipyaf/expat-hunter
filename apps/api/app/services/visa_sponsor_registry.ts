@@ -137,42 +137,48 @@ export default class VisaSponsorRegistryService {
       source: 'immigration.govt.nz',
     }
 
-    // Step 1: open the page and capture network traffic
-    const { sessionId } = await this.playwrightClient.navigate(NZ_PAGE_URL)
-    if (!sessionId) return unknownResult
+    let sessionId: string | undefined
 
-    // Step 2: wait for the search input to be ready
-    await this.playwrightClient.waitForSelector(NZ_SEARCH_INPUT_SELECTOR, sessionId)
+    try {
+      // Step 1: open the page and capture network traffic
+      ;({ sessionId } = await this.playwrightClient.navigate(NZ_PAGE_URL))
+      if (!sessionId) return unknownResult
 
-    // Step 3: fill the input using React-aware fill (native setter + synthetic events)
-    // Plain `fill` does not trigger React's onChange, leaving the value empty on submit
-    const filledValue = await this.playwrightClient.fillReactInput(
-      NZ_SEARCH_INPUT_SELECTOR,
-      companyName,
-      sessionId
-    )
+      // Step 2: wait for the search input to be ready
+      await this.playwrightClient.waitForSelector(NZ_SEARCH_INPUT_SELECTOR, sessionId)
 
-    // Step 4: verify fill worked — retry with plain fill as last resort
-    if (!filledValue) {
-      await this.playwrightClient.fill(NZ_SEARCH_INPUT_SELECTOR, companyName, sessionId)
+      // Step 3: fill the input using React-aware fill (native setter + synthetic events)
+      // Plain `fill` does not trigger React's onChange, leaving the value empty on submit
+      const filledValue = await this.playwrightClient.fillReactInput(
+        NZ_SEARCH_INPUT_SELECTOR,
+        companyName,
+        sessionId
+      )
+
+      // Step 4: verify fill worked — retry with plain fill as last resort
+      if (!filledValue) {
+        await this.playwrightClient.fill(NZ_SEARCH_INPUT_SELECTOR, companyName, sessionId)
+      }
+
+      // Step 5: click the search button
+      await this.playwrightClient.click(NZ_SEARCH_BUTTON_SELECTOR, sessionId)
+
+      // Step 6: wait for the API response to be captured
+      await new Promise((resolve) => setTimeout(resolve, this.nzWaitAfterClickMs))
+
+      // Step 7: retrieve intercepted network request
+      const networkResult = await this.playwrightClient.getNetworkRequests(
+        NZ_API_NETWORK_PATTERN,
+        sessionId
+      )
+
+      const request = networkResult.requests?.[0]
+      if (!request?.body) return { ...unknownResult, status: 'not_found' }
+
+      return this.parseNzApiResponse(request.body, request.statusCode, normalized)
+    } finally {
+      if (sessionId) await this.playwrightClient.close(sessionId)
     }
-
-    // Step 5: click the search button
-    await this.playwrightClient.click(NZ_SEARCH_BUTTON_SELECTOR, sessionId)
-
-    // Step 6: wait for the API response to be captured
-    await new Promise((resolve) => setTimeout(resolve, this.nzWaitAfterClickMs))
-
-    // Step 7: retrieve intercepted network request
-    const networkResult = await this.playwrightClient.getNetworkRequests(
-      NZ_API_NETWORK_PATTERN,
-      sessionId
-    )
-
-    const request = networkResult.requests?.[0]
-    if (!request?.body) return { ...unknownResult, status: 'not_found' }
-
-    return this.parseNzApiResponse(request.body, request.statusCode, normalized)
   }
 
   /**

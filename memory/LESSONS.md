@@ -107,6 +107,11 @@ Use `stories-update labels:[{name: "scope:building"}]` at each transition.
 **Root cause**: The refinement agent listed `schema.ts` in `files_to_modify` without knowing it was auto-generated.
 **Rule**: Before including a file in a story's scope, ALWAYS check whether it carries an "auto-generated / DO NOT EDIT" notice. If yes: do NOT include it in `files_to_modify`. Instead: create the corresponding migration → run `migration:run` → the file regenerates automatically with the right data. Same rule for any generated file (OpenAPI, GraphQL schema, etc.).
 
+### [Validation] Pre-existing errors found during validation must be fixed or tracked
+**Problem**: sc-216 — validator found console errors (`MISSING_MESSAGE: chat`, `auth.forgotPassword`) during the preview check and noted them as "pre-existing, not related to sc-216" without taking any action.
+**Root cause**: Agent treated pre-existing errors as acceptable background noise instead of actionable issues.
+**Rule**: ANY error found during validation (console errors, TypeScript errors, test failures) MUST result in one of two outcomes: 1) Fix it immediately in the current PR if small (< 30 min), 2) Create a Shortcut story for it if out of scope or complex. There is NO third option of "noting it and moving on". Ignoring an error is never acceptable.
+
 ### [Quality] ALWAYS write unit tests before declaring done
 **Problem**: sc-60 — 4 services modified (visa_sponsor_registry, email_enricher, company_enricher, sourcing_service) with no unit tests. Caught in review by the user.
 **Root cause**: Agent implemented the code and declared "done" without writing tests, even though the framework requires it (Phase 4: Test).

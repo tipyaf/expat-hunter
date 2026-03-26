@@ -182,6 +182,17 @@ features:
     validated_at: "2026-03-25"
     notes: "All 10 ACs pass. 0 TS errors. 2 new files (panel 270L, hook 109L). page.tsx 415L (15L over limit — pre-existing). No security issues."
 
+  - id: "sc-216"
+    name: "Close scraper session after search"
+    priority: "bug"
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/sc-216.yaml"
+    depends_on: []
+    started_at: "2026-03-26"
+    validated_at: "2026-03-26"
+    notes: "close(sessionId) added to PlaywrightClient; scrapeNzPage() wrapped in try/finally. 13 unit tests pass. All 6 AC verify commands pass. PR #70."
+
   # === TECHNICAL STORIES ===
 
   - id: "sc-191"
