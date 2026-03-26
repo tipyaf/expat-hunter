@@ -272,3 +272,25 @@ features:
     started_at: "2026-03-26"
     validated_at: "2026-03-26"
     notes: "Replaced ?: with | null for nullable DB fields across 5 shared type files. Fixed Contact.userOverride: boolean. Created stacks/typescript.md. Updated stack profiles and framework template. All 11 ACs pass. PR #73."
+
+  - id: "sc-398"
+    name: "Fix: chat falls back to support mode when OpenRouter unavailable"
+    priority: "bug"
+    status: "refined"
+    cycles: 0
+    story_file: "specs/stories/sc-398.yaml"
+    depends_on: []
+    started_at: "2026-03-26"
+    validated_at: ""
+    notes: "getExpertResponse() returned hardcoded error when OpenRouter client is null. Fix: fall back to getSupportResponse() and log a warning."
+
+  - id: "sc-399"
+    name: "Fix: user account wiped from dev DB when tests run"
+    priority: "high"
+    status: "testing"
+    cycles: 1
+    story_file: "specs/stories/sc-399.yaml"
+    depends_on: []
+    started_at: "2026-03-26"
+    validated_at: ""
+    notes: "Guard in bin/test.ts: assert NODE_ENV=test + DB_DATABASE ends with _test. Ensures functional tests cannot run against expat_hunter_dev. All 5 ACs pass. 0 TS errors."
