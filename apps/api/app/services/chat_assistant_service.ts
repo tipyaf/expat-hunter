@@ -43,35 +43,35 @@ const sessions = new Map<string, ChatMessage[]>()
 const APP_FAQ = [
   {
     q: 'comment lancer une recherche',
-    a: 'Allez dans **Recherche** (menu gauche), choisissez votre pays et secteur, puis cliquez sur "Lancer".',
+    a: 'Allez dans **[Recherche](/recherche)** (menu gauche), choisissez votre pays et secteur, puis cliquez sur "Lancer".',
   },
   {
     q: 'comment générer des emails',
-    a: "Dans **Emails**, sélectionnez vos contacts et cliquez sur \"Générer\". Approuvez avant l'envoi.",
+    a: "Dans **[Emails](/emails)**, sélectionnez vos contacts et cliquez sur \"Générer\". Approuvez avant l'envoi.",
   },
   {
     q: 'comment envoyer des emails',
-    a: 'Approuvez vos emails dans la page **Emails** puis utilisez "Envoyer la sélection".',
+    a: 'Approuvez vos emails dans la page **[Emails](/emails)** puis utilisez "Envoyer la sélection".',
   },
   {
     q: 'comment modifier un template',
-    a: 'Dans **Paramètres > Templates**, vous pouvez créer et modifier vos modèles d\'email.',
+    a: 'Dans **[Paramètres > Templates](/parametres/templates)**, vous pouvez créer et modifier vos modèles d\'email.',
   },
   {
     q: 'comment bloquer une entreprise',
-    a: 'Dans le **Kanban**, cliquez sur l\'icône bloquer sur une carte contact pour bloquer le contact ou son entreprise.',
+    a: 'Dans le **[Kanban](/suivi)**, cliquez sur l\'icône bloquer sur une carte contact pour bloquer le contact ou son entreprise.',
   },
   {
     q: 'comment voir mes statistiques',
-    a: 'Le **Dashboard** (page d\'accueil) affiche vos statistiques : contacts, emails envoyés, taux de réponse.',
+    a: 'Le **[Dashboard](/)** (page d\'accueil) affiche vos statistiques : contacts, emails envoyés, taux de réponse.',
   },
   {
     q: 'what is a preset',
-    a: 'A **Preset** is a saved configuration for email generation (tone, length, language, custom instructions). Manage them in Settings > Presets.',
+    a: 'A **Preset** is a saved configuration for email generation (tone, length, language, custom instructions). Manage them in **[Settings > Presets](/parametres/presets)**.',
   },
   {
     q: 'how to track applications',
-    a: 'The **Kanban** (Suivi) lets you track your applications through 6 stages: Found → To Contact → Contacted → Discussion → Interview → Done.',
+    a: 'The **[Kanban](/suivi)** (Suivi) lets you track your applications through 6 stages: Found → To Contact → Contacted → Discussion → Interview → Done.',
   },
 ]
 
