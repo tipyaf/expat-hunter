@@ -43,7 +43,9 @@
     "forgotPasswordTitle": "Reset your password",
     "resetEmailSent": "A reset link has been sent to your email.",
     "backToLogin": "Back to login",
-    "sendResetLink": "Send reset link"
+    "sendResetLink": "Send reset link",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
   },
   "dashboard": {
     "title": "Dashboard",

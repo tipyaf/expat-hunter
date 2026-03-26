@@ -43,7 +43,9 @@
     "forgotPasswordTitle": "Réinitialiser votre mot de passe",
     "resetEmailSent": "Un lien de réinitialisation a été envoyé à votre email.",
     "backToLogin": "Retour à la connexion",
-    "sendResetLink": "Envoyer le lien"
+    "sendResetLink": "Envoyer le lien",
+    "showPassword": "Afficher le mot de passe",
+    "hidePassword": "Masquer le mot de passe"
   },
   "dashboard": {
     "title": "Tableau de bord",

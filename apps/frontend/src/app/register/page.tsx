@@ -1,6 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
+import { PasswordInput } from '@/components/ui/password-input'
 import { ApiError, useAuth } from '@/contexts/auth-context'
 import Link from 'next/link'
 import { type FormEvent, useState } from 'react'
@@ -84,16 +85,14 @@ export default function RegisterPage() {
             <label htmlFor="password" className="block text-sm font-medium mb-1">
               {t('passwordLabel')}
             </label>
-            <input
+            <PasswordInput
               id="password"
-              type="password"
               required
               minLength={8}
               value={password}
               onChange={(e) => {
                 setPassword(e.target.value)
               }}
-              className="w-full rounded-lg border border-[var(--color-border)] bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
               placeholder={t('passwordPlaceholder')}
             />
           </div>
