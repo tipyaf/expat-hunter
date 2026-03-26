@@ -193,6 +193,17 @@ features:
     validated_at: "2026-03-26"
     notes: "close(sessionId) added to PlaywrightClient; scrapeNzPage() wrapped in try/finally. 13 unit tests pass. All 6 AC verify commands pass. PR #70."
 
+  - id: "sc-340"
+    name: "fix: resolve pre-existing TypeScript errors (profile, contact, routes)"
+    priority: "bug"
+    status: "refined"
+    cycles: 0
+    story_file: "specs/stories/sc-340.yaml"
+    depends_on: []
+    started_at: "2026-03-26"
+    validated_at: ""
+    notes: "Model/type drift: 3 migrations added DB columns but models were never updated. movements() stub missing from ContactsController."
+
   # === TECHNICAL STORIES ===
 
   - id: "sc-191"

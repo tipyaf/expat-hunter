@@ -127,6 +127,13 @@ export default class ContactsController {
     return response.ok({ data: this.serialize(contact) })
   }
 
+  /**
+   * GET /api/contacts/:id/movements — Status movement history (not yet implemented).
+   */
+  async movements({ response }: HttpContext) {
+    return response.ok({ data: [] })
+  }
+
   private serialize(contact: Contact, score?: ExpatScoreResult) {
     return {
       id: contact.id,
