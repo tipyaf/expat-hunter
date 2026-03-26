@@ -220,7 +220,7 @@ Never end a session with a ticket in "In Review" whose PR is already merged.
 | Start `/validate` | `workflow_state_id: 500000009` (In Review) + label `scope:testing` |
 | All ACs pass | `workflow_state_id: 500000010` (Done) + label `scope:validated` |
 | Each build step done | `stories-update-task isCompleted: true` (check off immediately) |
-| PR created | `stories-add-external-link` with GitHub URL |
+| PR created | `stories-add-external-link` with GitHub URL + **always output the PR URL to the user** |
 | PR merged | `workflow_state_id: 500000010` + check all linked tickets |
 
 ## Acceptance criteria format (unified)
