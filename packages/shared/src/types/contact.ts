@@ -13,16 +13,16 @@ export interface Contact {
   id: string // uuid
   userId: string
   companyId: string
-  sourcingRunId?: string
+  sourcingRunId: string | null
   fullName: string
   role: string
-  email?: string
-  linkedinUrl?: string
+  email: string | null
+  linkedinUrl: string | null
   source: string
   status: ContactStatus
-  relevanceScore?: number
-  relevanceLabel?: string
-  relevanceReason?: string
-  aiRecommendation?: string
-  userOverride?: string
+  relevanceScore: number | null
+  relevanceLabel: string | null
+  relevanceReason: string | null
+  aiRecommendation: string | null
+  userOverride: boolean
 }
