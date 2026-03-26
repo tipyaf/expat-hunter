@@ -1,6 +1,7 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
+import { PasswordInput } from '@/components/ui/password-input'
 import { apiClient } from '@/lib/api-client'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
@@ -80,13 +81,11 @@ function ResetPasswordForm() {
           <label htmlFor="password" className="block text-sm font-medium mb-1">
             {t('newPasswordLabel')}
           </label>
-          <input
+          <PasswordInput
             id="password"
-            type="password"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-full rounded-lg border border-[var(--color-border)] bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
             placeholder="••••••••"
             minLength={8}
           />
@@ -95,13 +94,11 @@ function ResetPasswordForm() {
           <label htmlFor="confirmPassword" className="block text-sm font-medium mb-1">
             {t('confirmPasswordLabel')}
           </label>
-          <input
+          <PasswordInput
             id="confirmPassword"
-            type="password"
             required
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full rounded-lg border border-[var(--color-border)] bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
             placeholder="••••••••"
             minLength={8}
           />

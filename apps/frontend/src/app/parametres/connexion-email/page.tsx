@@ -1,6 +1,7 @@
 'use client'
 
 import { Sidebar } from '@/components/layout/sidebar'
+import { PasswordInput } from '@/components/ui/password-input'
 import { useAuth } from '@/contexts/auth-context'
 import { useEmailConnection, type EmailConnectionPayload } from '@/hooks/use-email-connection'
 import { useTranslations } from 'next-intl'
@@ -183,11 +184,9 @@ export default function EmailConnectionPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">{t('password')}</label>
-                    <input
-                      type="password"
+                    <PasswordInput
                       value={form.imapPassword}
                       onChange={(e) => setForm((p) => ({ ...p, imapPassword: e.target.value }))}
-                      className="w-full rounded-lg border border-[var(--color-border)] bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                   </div>
                 </div>
@@ -231,11 +230,9 @@ export default function EmailConnectionPage() {
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">{t('password')}</label>
-                    <input
-                      type="password"
+                    <PasswordInput
                       value={form.smtpPassword}
                       onChange={(e) => setForm((p) => ({ ...p, smtpPassword: e.target.value }))}
-                      className="w-full rounded-lg border border-[var(--color-border)] bg-transparent px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                   </div>
                 </div>

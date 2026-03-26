@@ -238,3 +238,14 @@ features:
     started_at: "2026-03-25"
     validated_at: "2026-03-25"
     notes: "15 unit tests (ProfileService) + 8 new functional tests. Total 39 profile tests, all pass."
+
+  - id: "sc-353"
+    name: "Password fields show/hide toggle"
+    priority: "feature"
+    status: "testing"
+    cycles: 0
+    story_file: "specs/stories/sc-353.yaml"
+    depends_on: []
+    started_at: "2026-03-26"
+    validated_at: ""
+    notes: "PasswordInput component with Eye/EyeOff toggle. Replaces all 6 password fields across 4 pages. i18n keys added to en.json + fr.json."
