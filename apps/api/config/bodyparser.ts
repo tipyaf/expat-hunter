@@ -1,6 +1,7 @@
 import { defineConfig } from '@adonisjs/core/bodyparser'
 
-const bodyParserConfig = defineConfig({
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const bodyParserConfig: ReturnType<typeof defineConfig> = defineConfig({
   allowedMethods: ['POST', 'PUT', 'PATCH', 'DELETE'],
 
   form: {

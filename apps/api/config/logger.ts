@@ -1,7 +1,8 @@
 import { defineConfig, targets } from '@adonisjs/core/logger'
 import env from '#start/env'
 
-const loggerConfig = defineConfig({
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const loggerConfig: any = defineConfig({
   default: 'app',
 
   loggers: {

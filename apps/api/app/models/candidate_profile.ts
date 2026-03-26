@@ -48,6 +48,12 @@ export default class CandidateProfile extends BaseModel {
   @column()
   declare recontactCooldownDays: number
 
+  @column(jsonbColumn)
+  declare followUps: Array<{ delay: number; unit: 'days' | 'weeks' | 'months' }> | null
+
+  @column(jsonbColumn)
+  declare sendingSchedule: { allowedDays: string[]; startHour: number; endHour: number; timezone: string } | null
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 
