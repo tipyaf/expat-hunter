@@ -22,8 +22,8 @@ export interface EmailMessage {
   body: string
   type: EmailType
   status: EmailStatus
-  sentAt?: Date
-  scheduledAt?: Date
-  openedAt?: Date
-  repliedAt?: Date
+  sentAt: Date | null
+  scheduledAt: Date | null
+  openedAt: Date | null
+  repliedAt: Date | null
 }

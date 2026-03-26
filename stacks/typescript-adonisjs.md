@@ -1,6 +1,7 @@
 # Stack Profile: TypeScript + AdonisJS 6
 
 > Stack profile for ExpatHunter backend. This is the coding and security contract for all backend code.
+> See also: [stacks/typescript.md](./typescript.md) for shared TypeScript conventions (type system rules, naming, anti-patterns).
 
 ## Coding Best Practices
 
@@ -19,7 +20,7 @@
 - **Database columns**: snake_case — `user_id`, `created_at`
 - **Routes**: kebab-case — `/api/sourcing/run`, `/api/contacts/:id/status`
 - **Env variables**: UPPER_SNAKE_CASE — `DATABASE_URL`, `OPENROUTER_API_KEY`
-- All functions must have explicit return types
+- All functions must have explicit return types (see [typescript.md](./typescript.md))
 - Use `const` by default, `let` only when reassignment is needed
 - Prefer early returns over deep nesting
 
@@ -32,7 +33,7 @@
 - **No raw SQL** — always use Lucid query builder or model methods
 - **No business logic in controllers** — controllers are thin
 - **No direct `console.log`** — use AdonisJS Logger
-- **No `any` type** — use `unknown` if type is genuinely unknown, then narrow
+- **No `any` type** — see [typescript.md](./typescript.md) for the full rule
 - **No circular imports** — services should not import controllers
 - **No synchronous file I/O** — always use async/await
 - **No hardcoded config values** — use AdonisJS Env module

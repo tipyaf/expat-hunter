@@ -11,10 +11,10 @@ export interface SourcingRun {
   userId: string
   status: SourcingStatus
   country: string
-  sector?: string
+  sector: string | null
   sources: string[]
   contactsFound: number
-  startedAt?: Date
-  completedAt?: Date
-  errors?: string[]
+  startedAt: Date | null
+  completedAt: Date | null
+  errors: Record<string, unknown> | null
 }

@@ -9,13 +9,13 @@ export interface User {
 export interface CandidateProfile {
   id: string // uuid
   userId: string
-  cvText?: string
-  cvFilePath?: string
+  cvText: string | null
+  cvFilePath: string | null
   skills: string[]
   experienceYears: number
   targetCountries: string[]
   targetSectors: string[]
   targetRoles: string[]
-  preferences?: Record<string, unknown>
+  preferences: Record<string, unknown> | null
   onboardingCompleted: boolean
 }
