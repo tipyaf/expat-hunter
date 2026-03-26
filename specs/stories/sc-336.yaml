@@ -1,0 +1,100 @@
+story:
+  id: "sc-336"
+  shortcut_url: "https://app.shortcut.com/expat-hunter/story/336"
+  title: "Move test account credentials from hardcoded strings to .env.test"
+  parent_spec: "specs/expat-hunter.yaml"
+  status: "refined"
+  size: "S"
+  estimate: 2
+  type: "chore"
+  refined_at: "2026-03-26"
+  refined_by: "refinement"
+
+user_story: >
+  As a developer, I want test credentials to be defined in .env.test
+  rather than hardcoded in 45 test files, so that rotating the test
+  password requires changing a single file instead of 45.
+
+scope:
+  files_to_create:
+    - path: "apps/api/tests/helpers/credentials.ts"
+      reason: "Centralized test credentials read from process.env with fallback"
+  files_to_modify:
+    - path: "apps/api/.env.test"
+      reason: "Add TEST_USER_EMAIL and TEST_USER_PASSWORD variables"
+    - path: "apps/api/.env.example"
+      reason: "Document TEST_USER_EMAIL and TEST_USER_PASSWORD for new devs"
+    - path: "apps/api/tests/functional/auth/auth.spec.ts"
+      reason: "Replace hardcoded 'password123' with TEST_USER_PASSWORD from helper"
+    - path: "apps/api/tests/functional/auth/password_reset.spec.ts"
+      reason: "Replace hardcoded 'password123' with TEST_USER_PASSWORD from helper"
+    - path: "apps/api/tests/functional/admin/admin.spec.ts"
+      reason: "Replace hardcoded 'password123' with TEST_USER_PASSWORD from helper"
+    - path: "apps/api/tests/functional/admin/cache.spec.ts"
+      reason: "Replace hardcoded 'password123' with TEST_USER_PASSWORD from helper"
+    - path: "apps/api/tests/functional/admin/visa_sponsor_registry.spec.ts"
+      reason: "Replace hardcoded 'password123' with TEST_USER_PASSWORD from helper"
+    - path: "memory/LESSONS.md"
+      reason: "Update login sequence to reference env var names instead of hardcoded values"
+  files_to_read:
+    - "apps/api/.env.test"
+    - "apps/api/tests/functional/auth/auth.spec.ts"
+    - "apps/api/tests/functional/admin/admin.spec.ts"
+
+acceptance_criteria:
+
+  security:
+    - id: "AC-SEC-SC336-01"
+      description: "password123 no longer appears as a hardcoded string in any test file"
+      verify: "grep -rn \"'password123'\" /Volumes/Samsung_T5/dev/expat-hunter/apps/api/tests/ | grep -v node_modules | wc -l | tr -d ' ' | grep '^0$'"
+      tier: 1
+
+    - id: "AC-SEC-SC336-02"
+      description: ".env.test defines TEST_USER_PASSWORD"
+      verify: "grep -n 'TEST_USER_PASSWORD' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/.env.test"
+      tier: 1
+
+  functional:
+    - id: "AC-FUNC-SC336-01"
+      description: "credentials.ts exports TEST_USER_PASSWORD read from process.env with fallback"
+      verify: "grep -n 'process.env.TEST_USER_PASSWORD' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/tests/helpers/credentials.ts"
+      tier: 1
+
+  best_practices:
+    - id: "AC-BP-SC336-01"
+      description: "All functional tests still pass after the refactor"
+      verify: "cd /Volumes/Samsung_T5/dev/expat-hunter/apps/api && NODE_ENV=test ~/.nvm/versions/node/v22.22.1/bin/node --import tsx/esm bin/test.ts 2>&1 | grep -E 'Tests.*passed'"
+      tier: 2
+
+    - id: "AC-BP-SC336-02"
+      description: "TypeScript: 0 errors"
+      verify: "cd /Volumes/Samsung_T5/dev/expat-hunter/apps/api && npx tsc --noEmit 2>&1 | wc -l | tr -d ' ' | grep '^0$'"
+      tier: 1
+
+edge_cases:
+  - description: "TEST_USER_PASSWORD not set in env (CI without .env.test)"
+    handling: "Fallback: process.env.TEST_USER_PASSWORD ?? 'password123' — tests still run"
+  - description: ".env.test is gitignored"
+    handling: "Check .gitignore — test env files with no real secrets can be committed"
+
+depends_on: []
+
+notes: |
+  45 occurrences of 'password123' found across functional test files.
+  Unit tests that create temporary users inline (not the persistent test account)
+  may keep their own inline passwords — only the shared test account credentials
+  need centralizing.
+
+definition_of_done:
+  - "AC-SEC-SC336-01: grep finds 0 occurrences of hardcoded password123 in tests/"
+  - "AC-SEC-SC336-02: .env.test has TEST_USER_PASSWORD"
+  - "AC-FUNC-SC336-01: credentials.ts reads from process.env"
+  - "All tests pass"
+  - "PR merged"
+
+closing_ac:
+  - id: "AC-BP-SC336-DONE"
+    type: "BP"
+    description: "PR merged into main."
+    verify: "gh pr list --state merged --base main --json title | grep -q 'sc-336'"
+    tier: 1

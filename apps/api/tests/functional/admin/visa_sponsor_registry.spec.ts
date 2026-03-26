@@ -1,3 +1,4 @@
+import { TEST_USER_PASSWORD } from '#tests/helpers/credentials'
 import db from '@adonisjs/lucid/services/db'
 import type { ApiClient } from '@japa/api-client'
 import { test } from '@japa/runner'
@@ -9,13 +10,13 @@ const VISA_REGISTRIES_URL = '/api/admin/refresh-visa-registries'
 
 const adminUser = {
   email: 'visa-admin-test@example.com',
-  password: 'password123',
+  password: TEST_USER_PASSWORD,
   fullName: 'Visa Admin Test',
 }
 
 const regularUser = {
   email: 'visa-regular-test@example.com',
-  password: 'password123',
+  password: TEST_USER_PASSWORD,
   fullName: 'Visa Regular Test',
 }
 

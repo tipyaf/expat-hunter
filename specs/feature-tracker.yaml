@@ -193,6 +193,17 @@ features:
     validated_at: "2026-03-26"
     notes: "close(sessionId) added to PlaywrightClient; scrapeNzPage() wrapped in try/finally. 13 unit tests pass. All 6 AC verify commands pass. PR #70."
 
+  - id: "sc-336"
+    name: "Move test account credentials from hardcoded strings to .env.test"
+    priority: "chore"
+    status: "refined"
+    cycles: 0
+    story_file: "specs/stories/sc-336.yaml"
+    depends_on: []
+    started_at: "2026-03-26"
+    validated_at: ""
+    notes: "45 occurrences of hardcoded 'password123' in functional tests. Centralize via tests/helpers/credentials.ts reading from .env.test."
+
   - id: "sc-340"
     name: "fix: resolve pre-existing TypeScript errors (profile, contact, routes)"
     priority: "bug"

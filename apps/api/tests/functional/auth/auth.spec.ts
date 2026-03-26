@@ -1,3 +1,4 @@
+import { TEST_USER_PASSWORD } from '#tests/helpers/credentials'
 import db from '@adonisjs/lucid/services/db'
 import { test } from '@japa/runner'
 import User from '#models/user'
@@ -6,7 +7,7 @@ const BASE_URL = '/api/auth'
 
 const validUser = {
   email: 'test@example.com',
-  password: 'password123',
+  password: TEST_USER_PASSWORD,
   fullName: 'Test User',
 }
 
@@ -33,7 +34,7 @@ test.group('POST /api/auth/register', (group) => {
 
   test('should return 422 when email is missing', async ({ client }) => {
     const response = await client.post(`${BASE_URL}/register`).json({
-      password: 'password123',
+      password: TEST_USER_PASSWORD,
       fullName: 'Test User',
     })
 
@@ -53,7 +54,7 @@ test.group('POST /api/auth/register', (group) => {
   test('should return 422 when fullName is missing', async ({ client }) => {
     const response = await client.post(`${BASE_URL}/register`).json({
       email: 'test@example.com',
-      password: 'password123',
+      password: TEST_USER_PASSWORD,
     })
 
     response.assertStatus(422)
@@ -121,7 +122,7 @@ test.group('POST /api/auth/login', (group) => {
   test('should return 400 with non-existent email', async ({ client }) => {
     const response = await client.post(`${BASE_URL}/login`).json({
       email: 'nonexistent@example.com',
-      password: 'password123',
+      password: TEST_USER_PASSWORD,
     })
 
     response.assertStatus(400)

@@ -95,7 +95,7 @@ Use `stories-update labels:[{name: "scope:building"}]` at each transition.
 ### [Validation] Log in before verifying a protected page
 **Problem**: UI validation declared without verifying the actual page — the preview redirects to /login if not authenticated.
 **Root cause**: Agent took a screenshot without checking whether the page was accessible (authentication required).
-**Rule**: ALWAYS log in via the preview BEFORE attempting to visit a protected page. Required sequence: 1) Navigate to /login, 2) Fill email + password (profile-unit@example.com / password123 for tests), 3) Click submit, 4) THEN navigate to the target page. Never declare UI validated without a real screenshot taken after login.
+**Rule**: ALWAYS log in via the preview BEFORE attempting to visit a protected page. Required sequence: 1) Navigate to /login, 2) Fill email + password (use TEST_USER_EMAIL / TEST_USER_PASSWORD from .env.test, defaults: profile-unit@example.com / password123), 3) Click submit, 4) THEN navigate to the target page. Never declare UI validated without a real screenshot taken after login.
 
 ### [Workflow] Always close the Shortcut ticket after merge
 **Problem**: sc-30 — PR merged, story left in "In Review". Detected in the next session.
