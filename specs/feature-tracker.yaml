@@ -276,21 +276,21 @@ features:
   - id: "sc-398"
     name: "Fix: chat falls back to support mode when OpenRouter unavailable"
     priority: "bug"
-    status: "refined"
-    cycles: 0
+    status: "testing"
+    cycles: 1
     story_file: "specs/stories/sc-398.yaml"
     depends_on: []
     started_at: "2026-03-26"
     validated_at: ""
-    notes: "getExpertResponse() returned hardcoded error when OpenRouter client is null. Fix: fall back to getSupportResponse() and log a warning."
+    notes: "getExpertResponse() now falls back to getSupportResponse() when OpenRouter client is null, with logger.warn. Hardcoded error kept as last resort. All 5 ACs pass. 0 TS errors. PR #77."
 
   - id: "sc-399"
     name: "Fix: user account wiped from dev DB when tests run"
     priority: "high"
-    status: "testing"
+    status: "validated"
     cycles: 1
     story_file: "specs/stories/sc-399.yaml"
     depends_on: []
     started_at: "2026-03-26"
-    validated_at: ""
-    notes: "Guard in bin/test.ts: assert NODE_ENV=test + DB_DATABASE ends with _test. Ensures functional tests cannot run against expat_hunter_dev. All 5 ACs pass. 0 TS errors."
+    validated_at: "2026-03-26"
+    notes: "Guard in bin/test.ts: assert NODE_ENV=test + DB_DATABASE ends with _test. Ensures functional tests cannot run against expat_hunter_dev. All 5 ACs pass. 0 TS errors. PR #78."

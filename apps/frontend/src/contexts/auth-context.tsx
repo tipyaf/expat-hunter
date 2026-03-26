@@ -143,12 +143,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginWithToken = useCallback(
     async (accessToken: string) => {
-      saveToken(accessToken)
-      const userData = await apiClient.get<User>('/api/auth/me', { token: accessToken })
-      setUser(userData)
-      router.push('/')
+      try {
+        saveToken(accessToken)
+        const userData = await apiClient.get<User>('/api/auth/me', { token: accessToken })
+        setUser(userData)
+        router.push('/')
+      } catch {
+        clearAuth()
+        router.push('/login?error=oauth_failed')
+      }
     },
-    [router, saveToken],
+    [router, saveToken, clearAuth],
   )
 
   const value = useMemo(

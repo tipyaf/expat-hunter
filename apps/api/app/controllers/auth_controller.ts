@@ -203,6 +203,6 @@ export default class AuthController {
     const token = await User.accessTokens.create(user)
     const tokenValue = token.value!.release()
 
-    return response.redirect(`${env.get('FRONTEND_URL')}/auth/callback?token=${tokenValue}`)
+    return response.redirect(`${env.get('FRONTEND_URL')}/auth/callback?token=${encodeURIComponent(tokenValue)}`)
   }
 }
