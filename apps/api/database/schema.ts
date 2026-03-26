@@ -551,7 +551,7 @@ export class SourcingSourceSchema extends BaseModel {
 }
 
 export class UserSchema extends BaseModel {
-  static $columns = ['createdAt', 'email', 'emailVerifiedAt', 'fullName', 'id', 'isAdmin', 'locale', 'password', 'updatedAt'] as const
+  static $columns = ['createdAt', 'email', 'emailVerifiedAt', 'fullName', 'googleId', 'id', 'isAdmin', 'locale', 'password', 'updatedAt'] as const
   $columns = UserSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -561,6 +561,8 @@ export class UserSchema extends BaseModel {
   declare emailVerifiedAt: DateTime | null
   @column()
   declare fullName: string
+  @column()
+  declare googleId: string | null
   @column({ isPrimary: true })
   declare id: string
   @column()
@@ -568,7 +570,7 @@ export class UserSchema extends BaseModel {
   @column()
   declare locale: string
   @column({ serializeAs: null })
-  declare password: string
+  declare password: string | null
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
 }

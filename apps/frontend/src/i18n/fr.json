@@ -45,7 +45,9 @@
     "backToLogin": "Retour à la connexion",
     "sendResetLink": "Envoyer le lien",
     "showPassword": "Afficher le mot de passe",
-    "hidePassword": "Masquer le mot de passe"
+    "hidePassword": "Masquer le mot de passe",
+    "continueWithGoogle": "Continuer avec Google",
+    "orContinueWith": "ou"
   },
   "dashboard": {
     "title": "Tableau de bord",
