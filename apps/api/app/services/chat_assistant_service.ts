@@ -1,5 +1,6 @@
 import OpenRouterClient from '#ai/openrouter_client'
 import CacheService from '#services/cache_service'
+import logger from '@adonisjs/core/services/logger'
 
 export type ChatMode = 'support' | 'expert' | 'mixed'
 
@@ -237,7 +238,12 @@ Fonctionnalités principales de l'app :
       // DB or config error — treat as unconfigured
     }
     if (!client) {
-      return "L'assistant IA expert n'est pas configuré. Veuillez contacter l'administrateur pour activer cette fonctionnalité."
+      logger.warn('OpenRouter unavailable for chat_assistant — falling back to support mode')
+      try {
+        return await this.getSupportResponse(message, history)
+      } catch {
+        return "L'assistant IA expert n'est pas configuré. Veuillez contacter l'administrateur pour activer cette fonctionnalité."
+      }
     }
 
     const lower = message.toLowerCase()
