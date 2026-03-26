@@ -1,3 +1,4 @@
+import { TEST_USER_PASSWORD } from '#tests/helpers/credentials'
 import db from '@adonisjs/lucid/services/db'
 import mail from '@adonisjs/mail/services/main'
 import { test } from '@japa/runner'
@@ -9,7 +10,7 @@ const BASE_URL = '/api/auth'
 
 const TEST_USER = {
   email: 'reset-func@example.com',
-  password: 'password123',
+  password: TEST_USER_PASSWORD,
   fullName: 'Reset Functional User',
   locale: 'en',
 }

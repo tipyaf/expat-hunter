@@ -1,3 +1,4 @@
+import { TEST_USER_PASSWORD } from '#tests/helpers/credentials'
 import db from '@adonisjs/lucid/services/db'
 import type { ApiClient } from '@japa/api-client'
 import { test } from '@japa/runner'
@@ -8,7 +9,7 @@ const DASHBOARD_URL = '/api/dashboard'
 
 const testUser = {
   email: 'dashboard-test@example.com',
-  password: 'password123',
+  password: TEST_USER_PASSWORD,
   fullName: 'Dashboard Test User',
 }
 

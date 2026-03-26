@@ -1,3 +1,4 @@
+import { TEST_USER_PASSWORD } from '#tests/helpers/credentials'
 /**
  * E2E test: Search quality validation.
  *
@@ -15,7 +16,7 @@ const SEARCH_URL = '/api/recherche'
 
 const testUser = {
   email: 'quality-test@example.com',
-  password: 'password123',
+  password: TEST_USER_PASSWORD,
   fullName: 'Quality Test User',
 }
 

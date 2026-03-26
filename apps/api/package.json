@@ -32,7 +32,8 @@
     "#start/*": "./start/*.js",
     "#migrations/*": "./database/migrations/*.js",
     "#seeders/*": "./database/seeders/*.js",
-    "#factories/*": "./database/factories/*.js"
+    "#factories/*": "./database/factories/*.js",
+    "#tests/*": "./tests/*.js"
   },
   "dependencies": {
     "@adonisjs/auth": "^10.0.0",
