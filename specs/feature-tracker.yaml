@@ -294,3 +294,14 @@ features:
     started_at: "2026-03-26"
     validated_at: "2026-03-26"
     notes: "Guard in bin/test.ts: assert NODE_ENV=test + DB_DATABASE ends with _test. Ensures functional tests cannot run against expat_hunter_dev. All 5 ACs pass. 0 TS errors. PR #78."
+
+  - id: "sc-422"
+    name: "Sign in with Google (OAuth)"
+    priority: "should-have"
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/sc-422.yaml"
+    depends_on: []
+    started_at: "2026-03-26"
+    validated_at: "2026-03-27"
+    notes: "Google OAuth via @adonisjs/ally. googleId column added, password nullable. encodeURIComponent fix for token in redirect URL. loginWithToken() error handling added. All 15 ACs pass. 0 TS errors. PR #79."
