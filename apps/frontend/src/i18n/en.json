@@ -45,7 +45,9 @@
     "backToLogin": "Back to login",
     "sendResetLink": "Send reset link",
     "showPassword": "Show password",
-    "hidePassword": "Hide password"
+    "hidePassword": "Hide password",
+    "continueWithGoogle": "Continue with Google",
+    "orContinueWith": "or"
   },
   "dashboard": {
     "title": "Dashboard",

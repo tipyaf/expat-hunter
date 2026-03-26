@@ -1,8 +1,10 @@
 import type { HttpContext } from '@adonisjs/core/http'
+import { DateTime } from 'luxon'
 import User from '#models/user'
 import { loginValidator, registerValidator } from '#validators/auth_validator'
 import PasswordResetService from '#services/password_reset_service'
 import EmailVerificationService from '#services/email_verification_service'
+import env from '#start/env'
 // @ts-expect-error — no type declarations for this package
 import disposableDomains from 'disposable-email-domains'
 
@@ -151,5 +153,56 @@ export default class AuthController {
     }
 
     return response.ok({ message: 'Password has been reset successfully' })
+  }
+
+  async googleRedirect({ ally }: HttpContext) {
+    return ally.use('google').redirect()
+  }
+
+  async googleCallback({ ally, response }: HttpContext) {
+    const google = ally.use('google')
+
+    if (google.accessDenied()) {
+      return response.redirect(`${env.get('FRONTEND_URL')}/login?error=access_denied`)
+    }
+
+    if (google.stateMisMatch()) {
+      return response.redirect(`${env.get('FRONTEND_URL')}/login?error=state_mismatch`)
+    }
+
+    if (google.hasError()) {
+      return response.redirect(`${env.get('FRONTEND_URL')}/login?error=oauth_failed`)
+    }
+
+    const googleUser = await google.user()
+
+    // Find by googleId first, then by email
+    let user = await User.findBy('google_id', googleUser.id)
+
+    if (!user && googleUser.email) {
+      user = await User.findBy('email', googleUser.email)
+      if (user) {
+        // Link existing account
+        user.googleId = googleUser.id
+        await user.save()
+      }
+    }
+
+    if (!user) {
+      // Create new user — email already verified by Google
+      user = await User.create({
+        email: googleUser.email!,
+        fullName: googleUser.name ?? googleUser.email!.split('@')[0],
+        googleId: googleUser.id,
+        locale: 'en',
+        emailVerifiedAt: DateTime.now(),
+        password: null,
+      })
+    }
+
+    const token = await User.accessTokens.create(user)
+    const tokenValue = token.value!.release()
+
+    return response.redirect(`${env.get('FRONTEND_URL')}/auth/callback?token=${tokenValue}`)
   }
 }

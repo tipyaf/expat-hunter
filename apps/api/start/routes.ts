@@ -42,6 +42,8 @@ router
     router.post('reset-password', [AuthController, 'resetPassword'])
     router.post('verify-email', [AuthController, 'verifyEmail'])
     router.post('resend-verification', [AuthController, 'resendVerification']).use(middleware.auth())
+    router.get('google', [AuthController, 'googleRedirect'])
+    router.get('google/callback', [AuthController, 'googleCallback'])
   })
   .prefix('/api/auth')
 

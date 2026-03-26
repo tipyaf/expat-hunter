@@ -71,4 +71,14 @@ export default await Env.create(new URL('../', import.meta.url), {
   */
   PLAYWRIGHT_SERVER_URL: Env.schema.string.optional(),
   PLAYWRIGHT_SERVER_TOKEN: Env.schema.string.optional(),
+
+  /*
+  |--------------------------------------------------------------------------
+  | Google OAuth
+  |--------------------------------------------------------------------------
+  */
+  GOOGLE_CLIENT_ID: Env.schema.string(),
+  GOOGLE_CLIENT_SECRET: Env.schema.string(),
+  APP_URL: Env.schema.string(),
+  FRONTEND_URL: Env.schema.string(),
 })
