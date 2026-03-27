@@ -196,13 +196,13 @@ features:
   - id: "sc-336"
     name: "Centralize hardcoded test credentials (API + e2e)"
     priority: "chore"
-    status: "testing"
+    status: "validated"
     cycles: 1
     story_file: "specs/stories/sc-336.yaml"
     depends_on: []
     started_at: "2026-03-26"
-    validated_at: ""
-    notes: "Merges sc-461. e2e/fixtures/seed.ts reads E2E_USER_EMAIL + E2E_USER_PASSWORD from env. API functional tests already used credentials.ts helper. All 7 ACs pass. 0 TS errors. PR #81."
+    validated_at: "2026-03-27"
+    notes: "Merges sc-461. e2e/fixtures/seed.ts reads E2E_USER_EMAIL + E2E_USER_PASSWORD from env. API functional tests already used credentials.ts helper. All 7 ACs pass. 0 TS errors. PR #81 merged."
 
   - id: "sc-340"
     name: "fix: resolve pre-existing TypeScript errors (profile, contact, routes)"
