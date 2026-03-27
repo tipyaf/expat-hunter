@@ -7,8 +7,10 @@
  */
 import Contact from '#models/contact'
 import CandidateProfile from '#models/candidate_profile'
+import User from '#models/user'
 import SearchRun from '#models/search_run'
 import type { SearchRunStatus } from '#models/search_run'
+import { FREE_QUOTAS } from '@expat-hunter/shared'
 import logger from '@adonisjs/core/services/logger'
 import { DateTime } from 'luxon'
 import SourcingService from './sourcing_service.js'
@@ -48,6 +50,10 @@ export default class SearchOrchestratorService {
    * Launch the full search flow: scraping → analysis → email generation.
    */
   async launch(userId: string, params: SearchParams): Promise<SearchResult> {
+    // Check user plan for contact limit and analysis gating
+    const user = await User.findOrFail(userId)
+    const contactLimit = user.isPremium ? undefined : FREE_QUOTAS.results
+
     const searchRun = await SearchRun.create({
       userId,
       country: params.country,
@@ -80,35 +86,42 @@ export default class SearchOrchestratorService {
       const cooldownExcluded = await this.markCooldownContacts(userId, sourcingRun.id)
       searchRun.contactsExcludedCooldown = cooldownExcluded
 
-      // Step 2: Analysis
-      await this.updateStatus(searchRun, 'analyzing', 40)
+      // Step 2: Analysis (skip for free users — premium only)
+      if (!user.isPremium) {
+        logger.info('SearchOrchestrator: skipping AI analysis for free user %s', userId)
+        searchRun.contactsRelevant = 0
+        await this.updateStatus(searchRun, 'analyzing', 66)
+      } else {
+        await this.updateStatus(searchRun, 'analyzing', 40)
 
-      const analysisResult = await this.analysisService.analyzeContacts(userId, {
-        sourcingRunId: sourcingRun.id,
-        batchSize: 50,
-      })
-
-      searchRun.contactsRelevant = analysisResult.analyzed
-      await this.updateStatus(searchRun, 'analyzing', 66)
-
-      // Step 3: Email generation — only for contacts that have an email address
-      await this.updateStatus(searchRun, 'generating', 70)
-
-      const contactsWithEmail = await Contact.query()
-        .where('userId', userId)
-        .where('aiRecommendation', 'contact')
-        .whereNotNull('email')
-        .whereDoesntHave('emails', (q) => {
-          q.where('type', 'initial')
+        const analysisResult = await this.analysisService.analyzeContacts(userId, {
+          sourcingRunId: sourcingRun.id,
+          batchSize: 50,
         })
-        .select('id')
 
-      const emailResult = await this.emailGenerationService.generateForContacts(userId, {
-        contactIds: contactsWithEmail.map((c) => c.id),
-        batchSize: 50,
-      })
+        searchRun.contactsRelevant = analysisResult.analyzed
+        await this.updateStatus(searchRun, 'analyzing', 66)
 
-      searchRun.emailsGenerated = emailResult.generated
+        // Step 3: Email generation — only for contacts that have an email address
+        await this.updateStatus(searchRun, 'generating', 70)
+
+        const contactsWithEmail = await Contact.query()
+          .where('userId', userId)
+          .where('aiRecommendation', 'contact')
+          .whereNotNull('email')
+          .whereDoesntHave('emails', (q) => {
+            q.where('type', 'initial')
+          })
+          .select('id')
+
+        const emailResult = await this.emailGenerationService.generateForContacts(userId, {
+          contactIds: contactsWithEmail.map((c) => c.id),
+          batchSize: 50,
+        })
+
+        searchRun.emailsGenerated = emailResult.generated
+      }
+
       await this.updateStatus(searchRun, 'completed', 100)
 
       searchRun.completedAt = DateTime.now()

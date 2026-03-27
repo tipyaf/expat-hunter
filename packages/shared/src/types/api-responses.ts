@@ -8,6 +8,12 @@ export interface ApiResponse<T> {
   }
 }
 
+export interface QuotaInfo {
+  used: number
+  limit: number | null
+  remaining: number | null
+}
+
 export interface PaginatedResponse<T> {
   success: boolean
   data: T[]

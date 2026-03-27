@@ -1,12 +1,14 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import SourcingService from '#services/sourcing_service'
 import SourcingOrchestrator from '#services/sourcing_orchestrator'
+import UsageService from '#services/usage_service'
 // Register scrapers on first import
 import '../scrapers/register.js'
 
 export default class SourcingController {
   private sourcingService = new SourcingService()
   private orchestrator = new SourcingOrchestrator()
+  private usageService = new UsageService()
 
   /**
    * POST /api/sourcing/run — Launch a new sourcing campaign (5-phase pipeline).
@@ -18,6 +20,15 @@ export default class SourcingController {
     if (!country || typeof country !== 'string' || country.length < 2) {
       return response.badRequest({
         error: { code: 'COUNTRY_REQUIRED', message: 'A valid country code is required (e.g. NZ, AU)' },
+      })
+    }
+
+    // Quota check: searches
+    const searchCheck = await this.usageService.checkQuota(user.id, user.plan, 'searches')
+    if (!searchCheck.allowed) {
+      return response.forbidden({
+        error: { code: 'QUOTA_EXCEEDED', message: 'Search quota exceeded. Upgrade to Premium for unlimited searches.' },
+        quota: searchCheck.quota,
       })
     }
 
@@ -34,6 +45,10 @@ export default class SourcingController {
       Array.isArray(sources) ? sources : undefined
     )
 
+    // Increment search counter after successful run
+    await this.usageService.increment(user.id, 'searches')
+    const searchQuota = await this.usageService.getRemainingQuota(user.id, user.plan, 'searches')
+
     return response.ok({
       data: {
         ...this.serializeRun(result.run),
@@ -41,6 +56,7 @@ export default class SourcingController {
         qualifiedContacts: result.qualifiedContacts,
         emailVerified: result.emailVerified,
       },
+      quota: searchQuota,
       message: `Sourcing completed: ${result.totalContacts} contacts, ${result.qualifiedContacts} qualified, ${result.emailVerified} verified`,
     })
   }
