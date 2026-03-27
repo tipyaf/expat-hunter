@@ -1,8 +1,8 @@
 const API_URL = process.env.API_URL ?? 'http://localhost:3333'
 
 export const TEST_USER = {
-  email: 'e2e-test@expathunter.test',
-  password: 'E2eTestPassword123!',
+  email: process.env.E2E_USER_EMAIL ?? 'e2e-test@expathunter.test',
+  password: process.env.E2E_USER_PASSWORD ?? 'E2eTestPassword123!',
   fullName: 'E2E Test User',
   locale: 'fr',
 }

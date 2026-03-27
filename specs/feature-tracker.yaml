@@ -194,15 +194,15 @@ features:
     notes: "close(sessionId) added to PlaywrightClient; scrapeNzPage() wrapped in try/finally. 13 unit tests pass. All 6 AC verify commands pass. PR #70."
 
   - id: "sc-336"
-    name: "Move test account credentials from hardcoded strings to .env.test"
+    name: "Centralize hardcoded test credentials (API + e2e)"
     priority: "chore"
-    status: "validated"
-    cycles: 0
+    status: "testing"
+    cycles: 1
     story_file: "specs/stories/sc-336.yaml"
     depends_on: []
     started_at: "2026-03-26"
-    validated_at: "2026-03-27"
-    notes: "Done in Shortcut (state synced 2026-03-27)."
+    validated_at: ""
+    notes: "Merges sc-461. e2e/fixtures/seed.ts reads E2E_USER_EMAIL + E2E_USER_PASSWORD from env. API functional tests already used credentials.ts helper. All 7 ACs pass. 0 TS errors. PR #81."
 
   - id: "sc-340"
     name: "fix: resolve pre-existing TypeScript errors (profile, contact, routes)"
@@ -294,6 +294,17 @@ features:
     started_at: "2026-03-26"
     validated_at: "2026-03-26"
     notes: "Replaced ?: with | null for nullable DB fields across 5 shared type files. Fixed Contact.userOverride: boolean. Created stacks/typescript.md. Updated stack profiles and framework template. All 11 ACs pass. PR #73."
+
+  - id: "sc-446"
+    name: "e2e: audit and complete frontend test coverage"
+    priority: "chore"
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/sc-446.yaml"
+    depends_on: []
+    started_at: "2026-03-27"
+    validated_at: "2026-03-27"
+    notes: "5 e2e specs added (contact-detail, email-settings, chat, password-toggle, source-management). E2e rules scoped to web-only projects in CLAUDE.md. PR #80 merged."
 
   - id: "sc-398"
     name: "Fix: chat falls back to support mode when OpenRouter unavailable"
