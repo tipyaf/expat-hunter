@@ -225,6 +225,7 @@ router
   .group(() => {
     router.get('/', [AiSettingsController, 'listUsers'])
     router.patch('/:id/admin', [AiSettingsController, 'toggleAdmin'])
+    router.patch('/:id/plan', [AiSettingsController, 'togglePlan'])
   })
   .prefix('/api/admin/users')
   .use(middleware.auth())
