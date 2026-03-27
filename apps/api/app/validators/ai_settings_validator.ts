@@ -14,3 +14,9 @@ export const toggleAdminValidator = vine.compile(
     isAdmin: vine.boolean(),
   })
 )
+
+export const togglePlanValidator = vine.compile(
+  vine.object({
+    plan: vine.enum(['free', 'premium']),
+  })
+)

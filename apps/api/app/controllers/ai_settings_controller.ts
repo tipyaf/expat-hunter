@@ -3,7 +3,7 @@ import type { FeatureKey } from '#models/ai_setting'
 import User from '#models/user'
 import AiSettingsService from '#services/ai_settings_service'
 import CacheService from '#services/cache_service'
-import { upsertAiSettingValidator, toggleAdminValidator } from '#validators/ai_settings_validator'
+import { upsertAiSettingValidator, toggleAdminValidator, togglePlanValidator } from '#validators/ai_settings_validator'
 
 const VALID_KEYS: FeatureKey[] = ['default', 'cv_extraction', 'relevance_analysis', 'email_generation']
 
@@ -36,7 +36,7 @@ export default class AiSettingsController {
 
   async listUsers({ response }: HttpContext) {
     const users = await User.query()
-      .select('id', 'email', 'fullName', 'isAdmin', 'createdAt')
+      .select('id', 'email', 'fullName', 'isAdmin', 'plan', 'createdAt')
       .orderBy('createdAt', 'asc')
       .limit(200)
 
@@ -46,6 +46,7 @@ export default class AiSettingsController {
         email: u.email,
         fullName: u.fullName,
         isAdmin: u.isAdmin,
+        plan: u.plan,
         createdAt: u.createdAt,
       })),
     })
@@ -82,6 +83,29 @@ export default class AiSettingsController {
         email: user.email,
         fullName: user.fullName,
         isAdmin: user.isAdmin,
+      },
+    })
+  }
+
+  async togglePlan({ params, request, response }: HttpContext) {
+    const data = await request.validateUsing(togglePlanValidator)
+
+    const user = await User.find(params.id)
+    if (!user) {
+      return response.notFound({
+        error: { code: 'USER_NOT_FOUND', message: 'User not found' },
+      })
+    }
+
+    user.plan = data.plan
+    await user.save()
+
+    return response.ok({
+      data: {
+        id: user.id,
+        email: user.email,
+        fullName: user.fullName,
+        plan: user.plan,
       },
     })
   }
