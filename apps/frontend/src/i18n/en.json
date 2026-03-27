@@ -450,7 +450,10 @@
     "suggestionsTitle": "Suggestions",
     "placeholder": "Ask a question…",
     "send": "Send",
-    "openChat": "Open chat"
+    "openChat": "Open chat",
+    "quotaRemaining": "{remaining}/{limit} questions remaining",
+    "quotaExhausted": "You have used all your free questions.",
+    "upgradeForChat": "Upgrade to Premium for unlimited chat"
   },
   "premium": {
     "badge": "Premium",
