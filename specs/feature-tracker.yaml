@@ -338,3 +338,60 @@ features:
     started_at: "2026-03-26"
     validated_at: "2026-03-27"
     notes: "Google OAuth via @adonisjs/ally. googleId column added, password nullable. encodeURIComponent fix for token in redirect URL. loginWithToken() error handling added. All 15 ACs pass. 0 TS errors. PR #79."
+
+  # === PREMIUM & FREE FEATURES (Epic sc-431) ===
+
+  - id: "sc-431-1"
+    name: "Premium/Free: data model + PlanGuard middleware"
+    priority: "must-have"
+    status: "refined"
+    cycles: 0
+    story_file: "specs/stories/sc-431-1.yaml"
+    depends_on: []
+    started_at: ""
+    validated_at: ""
+    notes: "Foundation: plan column on User, PlanGuard middleware, shared constants FREE_QUOTAS. Shortcut sc-473."
+
+  - id: "sc-431-2"
+    name: "Premium/Free: quota tracking + enforcement"
+    priority: "must-have"
+    status: "refined"
+    cycles: 0
+    story_file: "specs/stories/sc-431-2.yaml"
+    depends_on: ["sc-431-1"]
+    started_at: ""
+    validated_at: ""
+    notes: "UsageService, usage_counters table, sourcing/email enforcement, Hunter limit=5, AI analysis skip for free. Shortcut sc-474."
+
+  - id: "sc-431-3"
+    name: "Premium/Free: frontend premium badges, gated UI + upgrade page"
+    priority: "must-have"
+    status: "refined"
+    cycles: 0
+    story_file: "specs/stories/sc-431-3.yaml"
+    depends_on: ["sc-431-1"]
+    started_at: ""
+    validated_at: ""
+    notes: "PremiumBadge, PremiumGate, FakeContactRow, /upgrade page, kanban gate, sidebar CTA. Shortcut sc-475."
+
+  - id: "sc-431-4"
+    name: "Premium/Free: chat free mode (commercial tone + restrictions)"
+    priority: "must-have"
+    status: "refined"
+    cycles: 0
+    story_file: "specs/stories/sc-431-4.yaml"
+    depends_on: ["sc-431-1", "sc-431-2"]
+    started_at: ""
+    validated_at: ""
+    notes: "Free-mode system prompt, topic restriction, 15 question limit, counter UI. Shortcut sc-476."
+
+  - id: "sc-431-5"
+    name: "Premium/Free: admin panel user management"
+    priority: "must-have"
+    status: "refined"
+    cycles: 0
+    story_file: "specs/stories/sc-431-5.yaml"
+    depends_on: ["sc-431-1"]
+    started_at: ""
+    validated_at: ""
+    notes: "Admin page: list users, toggle premium/free, filter by plan. Shortcut sc-477."
