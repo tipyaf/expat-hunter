@@ -273,15 +273,31 @@ features:
     validated_at: "2026-03-26"
     notes: "Replaced ?: with | null for nullable DB fields across 5 shared type files. Fixed Contact.userOverride: boolean. Created stacks/typescript.md. Updated stack profiles and framework template. All 11 ACs pass. PR #73."
 
+  - id: "sc-446"
+    name: "e2e: audit and complete frontend test coverage"
+    priority: "chore"
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/sc-446.yaml"
+    depends_on: []
+    started_at: "2026-03-27"
+    validated_at: "2026-03-27"
+    notes: "5 e2e specs added (contact-detail, email-settings, chat, password-toggle, source-management). E2e rules scoped to web-only projects in CLAUDE.md. PR #80 merged."
+
   - id: "sc-398"
     name: "Fix: chat falls back to support mode when OpenRouter unavailable"
     priority: "bug"
-    status: "testing"
+    status: "validated"
     cycles: 1
     story_file: "specs/stories/sc-398.yaml"
     depends_on: []
     started_at: "2026-03-26"
     validated_at: ""
+    cycles: 1
+    story_file: "specs/stories/sc-398.yaml"
+    depends_on: []
+    started_at: "2026-03-26"
+    validated_at: "2026-03-27"
     notes: "getExpertResponse() now falls back to getSupportResponse() when OpenRouter client is null, with logger.warn. Hardcoded error kept as last resort. All 5 ACs pass. 0 TS errors. PR #77."
 
   - id: "sc-399"
