@@ -9,6 +9,8 @@ import { VisaSponsorBadge } from '@/components/ui/visa-sponsor-badge'
 import { ProactiveTip } from '@/components/ui/proactive-tip'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
 import { useAuth } from '@/contexts/auth-context'
+import { PremiumGate } from '@/components/ui/premium-gate'
+import { usePlan } from '@/hooks/use-plan'
 import { usePipeline } from '@/hooks/use-pipeline'
 import type { PipelineContact } from '@/hooks/use-pipeline'
 import { apiClient } from '@/lib/api-client'
@@ -237,10 +239,13 @@ export default function PipelinePage() {
     }
   }
 
+  const { isFree } = usePlan()
+
   return (
     <div className="flex h-dvh overflow-hidden">
       <Sidebar />
       <main id="main-content" className="flex-1 flex flex-col overflow-hidden">
+        <PremiumGate>
         <div className="shrink-0 px-4 md:px-8 pt-8 pb-4 pl-16 md:pl-8 bg-[var(--color-bg-light)]">
           <div className="flex items-start justify-between mb-2">
             <div>
@@ -323,6 +328,7 @@ export default function PipelinePage() {
             </div>
           )}
         </div>
+        </PremiumGate>
       </main>
 
       {/* Contact detail panel */}
