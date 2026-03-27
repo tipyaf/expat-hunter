@@ -207,13 +207,35 @@ features:
   - id: "sc-340"
     name: "fix: resolve pre-existing TypeScript errors (profile, contact, routes)"
     priority: "bug"
-    status: "refined"
+    status: "validated"
     cycles: 0
     story_file: "specs/stories/sc-340.yaml"
     depends_on: []
     started_at: "2026-03-26"
+    validated_at: "2026-03-27"
+    notes: "Done in Shortcut (state synced 2026-03-27)."
+
+  - id: "sc-446"
+    name: "e2e: audit and complete frontend test coverage"
+    priority: "high"
+    status: "building"
+    cycles: 1
+    story_file: "specs/stories/sc-446.yaml"
+    depends_on: []
+    started_at: "2026-03-27"
     validated_at: ""
-    notes: "Model/type drift: 3 migrations added DB columns but models were never updated. movements() stub missing from ContactsController."
+    notes: "5 new specs written (login-flow, contact-detail-panel, password-toggle, chat-links, oauth). 26 passed, 8 skipped (no contacts in test data). 35 pre-existing failures tracked in sc-461. CLAUDE.md updated with e2e rules and merge blocker."
+
+  - id: "sc-461"
+    name: "fix: e2e specs with hardcoded credentials fail"
+    priority: "bug"
+    status: "pending"
+    cycles: 0
+    story_file: ""
+    depends_on: ["sc-446"]
+    started_at: ""
+    validated_at: ""
+    notes: "35 pre-existing failures in epic1/epic2/epic8/reset-password specs using ya.net@hotmail.fr. Found during sc-446 audit."
 
   # === TECHNICAL STORIES ===
 
@@ -292,13 +314,8 @@ features:
     story_file: "specs/stories/sc-398.yaml"
     depends_on: []
     started_at: "2026-03-26"
-    validated_at: ""
-    cycles: 1
-    story_file: "specs/stories/sc-398.yaml"
-    depends_on: []
-    started_at: "2026-03-26"
     validated_at: "2026-03-27"
-    notes: "getExpertResponse() now falls back to getSupportResponse() when OpenRouter client is null, with logger.warn. Hardcoded error kept as last resort. All 5 ACs pass. 0 TS errors. PR #77."
+    notes: "getExpertResponse() now falls back to getSupportResponse() when OpenRouter client is null, with logger.warn. Hardcoded error kept as last resort. All 5 ACs pass. 0 TS errors. PR #77 merged."
 
   - id: "sc-399"
     name: "Fix: user account wiped from dev DB when tests run"
