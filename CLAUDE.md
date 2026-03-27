@@ -170,18 +170,30 @@ Before executing a skill, verify its prerequisites exist **on the filesystem**:
 ```
 
 ### Build checklist — add to EVERY story before starting dev
-These 11 tasks MUST be present and checked off via `stories-update-task` as each step completes:
+These 12 tasks MUST be present and checked off via `stories-update-task` as each step completes:
 1. `[ ]` Refinement validated by user
 2. `[ ]` Story file YAML written (specs/stories/)
 3. `[ ]` Code implemented (scope respected)
 4. `[ ]` Unit tests written and passing
-5. `[ ]` Functional / e2e tests written and passing
+5. `[ ]` Functional / e2e tests written and passing (web projects: see e2e rules below — skip if not web)
 6. `[ ]` Security audit (OWASP — injections, secrets, auth)
 7. `[ ]` TypeScript: 0 errors (tsc --noEmit)
 8. `[ ]` ACs verified (every verify: command executed and passing)
 9. `[ ]` UI validated visually (dark + light mode, login required)
-10. `[ ]` PR created on GitHub and linked to Shortcut story
-11. `[ ]` feature-tracker.yaml updated → validated
+10. `[ ]` E2e specs updated for any modified frontend behaviour (web projects only — see e2e rules below)
+11. `[ ]` PR created on GitHub and linked to Shortcut story
+12. `[ ]` feature-tracker.yaml updated → validated
+
+### E2e test rules (web projects only — `spec.type: web`)
+
+> ⚠️ These rules apply **only when `spec.type` is `web` or `fullstack`**. Skip entirely for CLI, API-only, mobile, library, or embedded projects.
+
+| Rule | Detail |
+|------|--------|
+| **Write specs** | Every story that adds or changes frontend behaviour MUST include a Playwright spec (`e2e/tests/`) covering the new flow. No spec = not done. |
+| **Update existing specs** | If a frontend change breaks an existing e2e spec, the spec MUST be updated in the same PR. Broken e2e tests block the merge — they are never "acceptable background noise". |
+| **Merge blocker** | A PR with failing e2e tests MUST NOT be merged. Fix the spec or fix the code — never skip, disable, or mark as flaky without a tracked issue. |
+| **Coverage minimum** | Every page/flow listed in the UX spec must have at least one e2e spec. New pages added without a spec require a follow-up story created immediately. |
 
 ### Labels — apply at each transition
 - **scope:** `scope:pending` → `scope:refined` → `scope:building` → `scope:testing` → `scope:validated`
