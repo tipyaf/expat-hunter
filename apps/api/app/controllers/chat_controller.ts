@@ -2,6 +2,7 @@ import type { HttpContext } from '@adonisjs/core/http'
 import vine from '@vinejs/vine'
 import ChatAssistantService from '#services/chat_assistant_service'
 import ProfileService from '#services/profile_service'
+import UsageService from '#services/usage_service'
 
 const chatMessageSchema = vine.compile(
   vine.object({
@@ -17,6 +18,7 @@ const chatMessageSchema = vine.compile(
 export default class ChatController {
   private chatService = new ChatAssistantService()
   private profileService = new ProfileService()
+  private usageService = new UsageService()
 
   /**
    * POST /api/assistant/chat
@@ -25,6 +27,15 @@ export default class ChatController {
     const user = auth.getUserOrFail()
 
     const payload = await request.validateUsing(chatMessageSchema)
+
+    // Quota check: chat questions
+    const chatCheck = await this.usageService.checkQuota(user.id, user.plan, 'chatQuestions')
+    if (!chatCheck.allowed) {
+      return response.forbidden({
+        error: { code: 'QUOTA_EXCEEDED', message: 'Chat question quota exceeded. Upgrade to Premium for unlimited chat.' },
+        quota: chatCheck.quota,
+      })
+    }
 
     // Load user profile for enhanced expert context (F14.7)
     let userProfile: { cvText?: string; skills?: string[]; experienceYears?: number } | undefined
@@ -52,10 +63,15 @@ export default class ChatController {
           companyName: payload.companyName,
           country: payload.country,
         },
-        userProfile
+        userProfile,
+        user.plan
       )
 
-      return response.ok({ data: result })
+      // Increment chat question counter
+      await this.usageService.increment(user.id, 'chatQuestions')
+      const chatQuota = await this.usageService.getRemainingQuota(user.id, user.plan, 'chatQuestions')
+
+      return response.ok({ data: result, quota: chatQuota })
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error in chat service'
       return response.internalServerError({

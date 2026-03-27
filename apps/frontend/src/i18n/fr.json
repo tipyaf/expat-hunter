@@ -447,6 +447,9 @@
     "suggestionsTitle": "Suggestions",
     "placeholder": "Posez une question…",
     "send": "Envoyer",
-    "openChat": "Ouvrir le chat"
+    "openChat": "Ouvrir le chat",
+    "quotaRemaining": "{remaining}/{limit} questions restantes",
+    "quotaExhausted": "Vous avez utilisé toutes vos questions gratuites.",
+    "upgradeForChat": "Passer à Premium pour un chat illimité"
   }
 }

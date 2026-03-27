@@ -1,5 +1,7 @@
 import OpenRouterClient from '#ai/openrouter_client'
 import CacheService from '#services/cache_service'
+import { PLAN_PREMIUM } from '@expat-hunter/shared'
+import type { UserPlan } from '@expat-hunter/shared'
 import logger from '@adonisjs/core/services/logger'
 
 export type ChatMode = 'support' | 'expert' | 'mixed'
@@ -178,7 +180,8 @@ export default class ChatAssistantService {
 
   private async getSupportResponse(
     message: string,
-    history: ChatMessage[]
+    history: ChatMessage[],
+    isPremium: boolean = true
   ): Promise<string> {
     // Try FAQ first
     const faqAnswer = findFaqMatch(message)
@@ -195,6 +198,10 @@ export default class ChatAssistantService {
     }
     if (client) {
       try {
+        const freeUserTone = !isPremium
+          ? `\n\nIMPORTANT — Ton commercial subtil : L'utilisateur est en mode gratuit. De manière naturelle et discrète (pas à chaque réponse), mentionne les avantages Premium quand c'est pertinent. Par exemple : "Avec Premium, vous pourriez aussi bénéficier de l'analyse IA de pertinence" ou "Les membres Premium ont accès au suivi kanban complet". Ne sois jamais insistant ou agressif dans tes suggestions.`
+          : ''
+
         const systemPrompt = `Tu es l'assistant support d'ExpatHunter, une plateforme de recherche d'emploi à l'international.
 Réponds en français de manière concise et utile. Aide l'utilisateur à utiliser l'application.
 Si tu ne connais pas la réponse, dis-le honnêtement.
@@ -205,7 +212,7 @@ Fonctionnalités principales de l'app :
 - Emails : génération et envoi d'emails de prospection personnalisés
 - Kanban (Suivi) : suivi du pipeline de candidature (6 étapes)
 - Dashboard : statistiques globales
-- Paramètres : templates, presets de génération, paramètres d'envoi`
+- Paramètres : templates, presets de génération, paramètres d'envoi${freeUserTone}`
 
         const messages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
           { role: 'system', content: systemPrompt },
@@ -330,18 +337,27 @@ Page actuelle: ${context.page}${context.companyName ? `\nEntreprise: ${context.c
     sessionId: string,
     message: string,
     context: ChatContext,
-    userProfile?: { cvText?: string; skills?: string[]; experienceYears?: number }
+    userProfile?: { cvText?: string; skills?: string[]; experienceYears?: number },
+    plan?: UserPlan
   ): Promise<ChatResponse> {
     const history = this.getHistory(sessionId)
     const mode = detectIntent(message)
+    const isPremium = plan === PLAN_PREMIUM
 
     // Add user message to history
     this.addToSession(sessionId, { role: 'user', content: message })
 
     let responseText: string
 
+    // Free users: only support mode allowed (app/support questions)
+    if (!isPremium && (mode === 'expert' || mode === 'mixed')) {
+      responseText = "Cette fonctionnalité est réservée aux membres Premium. En tant qu'utilisateur gratuit, je peux vous aider avec le fonctionnement de l'application et le support. Pour des conseils personnalisés sur votre recherche d'emploi, les visas ou le marché, passez à Premium !"
+      this.addToSession(sessionId, { role: 'assistant', content: responseText, mode: 'support' })
+      return { message: responseText, mode: 'support' }
+    }
+
     if (mode === 'support') {
-      responseText = await this.getSupportResponse(message, history)
+      responseText = await this.getSupportResponse(message, history, isPremium)
     } else if (mode === 'expert') {
       responseText = await this.getExpertResponse(message, context, history, userProfile)
     } else {
@@ -349,7 +365,7 @@ Page actuelle: ${context.page}${context.companyName ? `\nEntreprise: ${context.c
       responseText = await this.getExpertResponse(message, context, history, userProfile)
       // If expert returned the "not configured" message, try support instead
       if (responseText.includes("n'est pas configuré")) {
-        responseText = await this.getSupportResponse(message, history)
+        responseText = await this.getSupportResponse(message, history, isPremium)
       }
     }
 
