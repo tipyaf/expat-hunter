@@ -182,6 +182,7 @@ router
   })
   .prefix('/api/pipeline')
   .use(middleware.auth())
+  .use(middleware.planGuard())
 
 router
   .group(() => {

@@ -18,6 +18,7 @@ interface User {
   fullName: string
   locale: string
   isAdmin: boolean
+  plan: 'free' | 'premium'
 }
 
 interface AuthContextValue {
