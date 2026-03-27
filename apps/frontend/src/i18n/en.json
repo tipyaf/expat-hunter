@@ -147,6 +147,8 @@
     "subtitle": "Manage your contacts and track your pipeline.",
     "all": "All",
     "noContacts": "No contacts found. Launch a sourcing run to get started.",
+    "fakeContactsHint": "Upgrade to Premium to discover more contacts and unlock AI analysis.",
+    "upgradeCta": "Upgrade to Premium",
     "source": "Source",
     "status_identified": "Identified",
     "status_analyzed": "Analyzed",
@@ -304,7 +306,8 @@
     "adminSection": "Administration",
     "logout": "Sign out",
     "openMenu": "Open menu",
-    "closeMenu": "Close menu"
+    "closeMenu": "Close menu",
+    "upgrade": "Upgrade to Premium"
   },
   "search": {
     "title": "Automated Search",
@@ -451,5 +454,35 @@
     "quotaRemaining": "{remaining}/{limit} questions remaining",
     "quotaExhausted": "You have used all your free questions.",
     "upgradeForChat": "Upgrade to Premium for unlimited chat"
+  },
+  "premium": {
+    "badge": "Premium",
+    "badgeTooltip": "Premium feature",
+    "gateTitle": "Premium Feature",
+    "gateDescription": "Upgrade to Premium to unlock this feature and access all tools without limits.",
+    "upgradeCta": "Upgrade to Premium",
+    "upgradeTitle": "Choose your plan",
+    "upgradeSubtitle": "Unlock the full power of ExpatHunter with Premium. More searches, unlimited contacts, AI analysis, and email campaigns.",
+    "freePlan": "Free",
+    "freePrice": "$0",
+    "freeDescription": "Get started with limited access",
+    "premiumPlan": "Premium",
+    "premiumPrice": "Coming soon",
+    "premiumDescription": "Full access to all features",
+    "recommended": "Recommended",
+    "unlimited": "Unlimited",
+    "currentPlan": "Current plan",
+    "choosePremium": "Choose Premium",
+    "contactAdmin": "Contact your administrator to upgrade your account.",
+    "features": {
+      "searches": "Sourcing searches",
+      "contacts": "Contacts found",
+      "emails": "Emails generated",
+      "chatQuestions": "Chat questions",
+      "pipeline": "Pipeline kanban",
+      "aiAnalysis": "AI relevance analysis",
+      "emailRegenerate": "Email modification & regeneration",
+      "expertChat": "Expert chat (job search, visas)"
+    }
   }
 }

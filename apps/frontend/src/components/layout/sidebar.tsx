@@ -1,6 +1,7 @@
 'use client'
 
 import { useAuth } from '@/contexts/auth-context'
+import { usePlan } from '@/hooks/use-plan'
 import {
   Home,
   Search,
@@ -14,6 +15,7 @@ import {
   LogOut,
   Menu,
   X,
+  Crown,
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -30,6 +32,7 @@ interface NavItem {
 export function Sidebar() {
   const pathname = usePathname()
   const { user, logout } = useAuth()
+  const { isFree } = usePlan()
   const t = useTranslations('sidebar')
   const tc = useTranslations('common')
   const [isOpen, setIsOpen] = useState(false)
@@ -147,6 +150,20 @@ export function Sidebar() {
             </>
           )}
         </nav>
+
+        {/* Upgrade CTA for free users */}
+        {isFree && (
+          <div className="mx-3 mb-3">
+            <Link
+              href="/upgrade"
+              onClick={close}
+              className="flex items-center gap-2 rounded-[var(--radius-md)] bg-gradient-to-r from-amber-400 to-orange-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:shadow-md transition-shadow"
+            >
+              <Crown className="h-4 w-4 shrink-0" aria-hidden="true" />
+              {t('upgrade')}
+            </Link>
+          </div>
+        )}
 
         {/* User footer */}
         <div className="border-t border-[var(--color-border)] p-4">

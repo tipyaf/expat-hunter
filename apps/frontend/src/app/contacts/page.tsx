@@ -3,7 +3,10 @@
 import { Sidebar } from '@/components/layout/sidebar'
 import { Button } from '@/components/ui/button'
 import { ConfidenceScore } from '@/components/ui/confidence-score'
+import { FakeContactRow } from '@/components/ui/fake-contact-row'
+import { PremiumBadge } from '@/components/ui/premium-badge'
 import { useAuth } from '@/contexts/auth-context'
+import { usePlan } from '@/hooks/use-plan'
 import { useAnalysis } from '@/hooks/use-analysis'
 import { CONTACT_STATUSES, useContacts, type ContactStatus } from '@/hooks/use-contacts'
 import { useTranslations } from 'next-intl'
@@ -33,8 +36,11 @@ function relevanceBadge(label: string | null) {
   }
 }
 
+const FAKE_CONTACTS_COUNT = 8
+
 export default function ContactsPage() {
   const { user, isLoading: authLoading } = useAuth()
+  const { isPremium, isFree } = usePlan()
   const t = useTranslations('contacts')
   const tc = useTranslations('common')
 
@@ -190,7 +196,7 @@ export default function ContactsPage() {
             <>
               <div className="space-y-3">
                 {contacts.map((contact) => {
-                  const badge = relevanceBadge(contact.relevanceLabel)
+                  const badge = isPremium ? relevanceBadge(contact.relevanceLabel) : null
                   return (
                     <div
                       key={contact.id}
@@ -276,6 +282,34 @@ export default function ContactsPage() {
                   )
                 })}
               </div>
+
+              {/* Fake blurred contacts for free users */}
+              {isFree && user && (
+                <div className="mt-4 space-y-3 relative">
+                  {Array.from({ length: FAKE_CONTACTS_COUNT }, (_, i) => (
+                    <div
+                      key={`fake-${i}`}
+                      className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-4 shadow-sm pointer-events-none select-none opacity-50"
+                    >
+                      <FakeContactRow index={i} userId={user.id} />
+                    </div>
+                  ))}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="flex flex-col items-center gap-3 bg-[var(--color-surface-light)]/90 backdrop-blur-sm rounded-xl p-6 shadow-lg">
+                      <PremiumBadge size="md" />
+                      <p className="text-sm text-[var(--color-text-muted)] text-center max-w-xs">
+                        {t('fakeContactsHint')}
+                      </p>
+                      <a
+                        href="/upgrade"
+                        className="inline-flex items-center gap-2 rounded-[var(--radius-md)] bg-gradient-to-r from-amber-400 to-orange-500 px-4 py-2 text-sm font-semibold text-white shadow-md hover:shadow-lg transition-shadow"
+                      >
+                        {t('upgradeCta')}
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Pagination */}
               {meta && meta.lastPage > 1 && (

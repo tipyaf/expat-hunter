@@ -147,6 +147,8 @@
     "subtitle": "Gérez vos contacts et suivez votre pipeline.",
     "all": "Tous",
     "noContacts": "Aucun contact trouvé. Lancez un sourcing pour commencer.",
+    "fakeContactsHint": "Passez à Premium pour découvrir plus de contacts et débloquer l'analyse IA.",
+    "upgradeCta": "Passer à Premium",
     "source": "Source",
     "status_identified": "Identifié",
     "status_analyzed": "Analysé",
@@ -304,7 +306,8 @@
     "adminSection": "Administration",
     "logout": "Se déconnecter",
     "openMenu": "Ouvrir le menu",
-    "closeMenu": "Fermer le menu"
+    "closeMenu": "Fermer le menu",
+    "upgrade": "Passer à Premium"
   },
   "search": {
     "title": "Recherche automatisée",
@@ -451,5 +454,35 @@
     "quotaRemaining": "{remaining}/{limit} questions restantes",
     "quotaExhausted": "Vous avez utilisé toutes vos questions gratuites.",
     "upgradeForChat": "Passer à Premium pour un chat illimité"
+  },
+  "premium": {
+    "badge": "Premium",
+    "badgeTooltip": "Fonctionnalité Premium",
+    "gateTitle": "Fonctionnalité Premium",
+    "gateDescription": "Passez à Premium pour débloquer cette fonctionnalité et accéder à tous les outils sans limites.",
+    "upgradeCta": "Passer à Premium",
+    "upgradeTitle": "Choisissez votre plan",
+    "upgradeSubtitle": "Débloquez toute la puissance d'ExpatHunter avec Premium. Plus de recherches, contacts illimités, analyse IA et campagnes email.",
+    "freePlan": "Gratuit",
+    "freePrice": "0 €",
+    "freeDescription": "Démarrez avec un accès limité",
+    "premiumPlan": "Premium",
+    "premiumPrice": "Bientôt disponible",
+    "premiumDescription": "Accès complet à toutes les fonctionnalités",
+    "recommended": "Recommandé",
+    "unlimited": "Illimité",
+    "currentPlan": "Plan actuel",
+    "choosePremium": "Choisir Premium",
+    "contactAdmin": "Contactez votre administrateur pour mettre à niveau votre compte.",
+    "features": {
+      "searches": "Recherches de sourcing",
+      "contacts": "Contacts trouvés",
+      "emails": "Emails générés",
+      "chatQuestions": "Questions chat",
+      "pipeline": "Pipeline kanban",
+      "aiAnalysis": "Analyse de pertinence IA",
+      "emailRegenerate": "Modification et régénération d'emails",
+      "expertChat": "Chat expert (recherche d'emploi, visas)"
+    }
   }
 }
