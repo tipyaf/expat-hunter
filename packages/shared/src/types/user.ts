@@ -1,8 +1,11 @@
+import type { UserPlan } from '../constants/plans.js'
+
 export interface User {
   id: string // uuid
   email: string
   fullName: string
   locale: string
+  plan: UserPlan
   createdAt: Date
 }
 

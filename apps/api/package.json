@@ -45,6 +45,7 @@
     "@adonisjs/mail": "^10.0.1",
     "@adonisjs/shield": "^9.0.0",
     "@adonisjs/static": "^2.0.1",
+    "@expat-hunter/shared": "workspace:^",
     "@poppinss/ts-exec": "^1.4.4",
     "@vinejs/vine": "^4.3.0",
     "bcrypt": "^6.0.0",
