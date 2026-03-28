@@ -62,7 +62,9 @@
     "emailNotVerified": "Votre email n'est pas encore vérifié.",
     "resendVerification": "Renvoyer l'email de vérification",
     "verificationSent": "Email de vérification envoyé !",
-    "disposableEmail": "Les adresses email jetables ne sont pas autorisées. Veuillez utiliser un email permanent."
+    "disposableEmail": "Les adresses email jetables ne sont pas autorisées. Veuillez utiliser un email permanent.",
+    "orContinueWith": "Ou continuer avec",
+    "continueWithGoogle": "Continuer avec Google"
   },
   "dashboard": {
     "title": "Tableau de bord",

@@ -62,7 +62,9 @@
     "emailNotVerified": "Your email is not yet verified.",
     "resendVerification": "Resend verification email",
     "verificationSent": "Verification email sent!",
-    "disposableEmail": "Disposable email addresses are not allowed. Please use a permanent email."
+    "disposableEmail": "Disposable email addresses are not allowed. Please use a permanent email.",
+    "orContinueWith": "Or continue with",
+    "continueWithGoogle": "Continue with Google"
   },
   "dashboard": {
     "title": "Dashboard",
