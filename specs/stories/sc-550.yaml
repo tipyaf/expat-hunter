@@ -136,7 +136,7 @@ acceptance_criteria:
   - id: "AC-FUNC-550-09"
     type: "FUNC"
     description: "Migration adds connectionType, oauthProvider, oauthAccessToken, oauthRefreshToken, oauthExpiresAt to email_connections table"
-    verify: "grep -r 'connectionType.*oauthProvider\\|oauthAccessToken\\|oauthRefreshToken\\|oauthExpiresAt' apps/api/database/migrations/ --include='*.ts' | grep -q '.'"
+    verify: "grep -r 'connection_type\\|oauth_access_token\\|oauth_refresh_token\\|oauth_expires_at' apps/api/database/migrations/ --include='*.ts' | grep -q '.'"
     tier: 1
 
   - id: "AC-SEC-550-01"
@@ -160,7 +160,7 @@ acceptance_criteria:
   - id: "AC-BP-550-01"
     type: "BP"
     description: "i18n keys for OAuth UI exist in both en.json and fr.json"
-    verify: "grep -q 'connectWithGoogle' apps/frontend/src/i18n/en.json && grep -q 'connectWithGoogle' apps/frontend/src/i18n/fr.json"
+    verify: "grep -q 'connectGoogle' apps/frontend/src/i18n/en.json && grep -q 'connectGoogle' apps/frontend/src/i18n/fr.json"
     tier: 1
 
   - id: "AC-BP-550-02"

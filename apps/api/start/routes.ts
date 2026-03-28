@@ -21,6 +21,7 @@ const BlockedEntitiesController = () => import('#controllers/blocked_entities_co
 const ChatController = () => import('#controllers/chat_controller')
 const ThreadController = () => import('#controllers/thread_controller')
 const EmailConnectionsController = () => import('#controllers/email_connections_controller')
+const EmailOAuthController = () => import('#controllers/email_oauth_controller')
 const OnboardingController = () => import('#controllers/onboarding_controller')
 const NotificationsController = () => import('#controllers/notifications_controller')
 
@@ -239,6 +240,11 @@ router
   })
   .prefix('/api/email-connections')
   .use(middleware.auth())
+
+// OAuth email routes — no auth middleware (browser redirects can't send Bearer token)
+// Auth is handled via token query param + httpOnly cookie round-trip
+router.get('/api/email-connections/oauth/google', [EmailOAuthController, 'googleRedirect'])
+router.get('/api/email-connections/oauth/google/callback', [EmailOAuthController, 'googleCallback'])
 
 router
   .get('/api/replies/unread-count', [ThreadController, 'unreadCount'])
