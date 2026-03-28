@@ -73,11 +73,14 @@ export default class SearchOrchestratorService {
   /**
    * Launch the full search flow: scraping → email enrichment → analysis → email generation.
    */
-  async launch(userId: string, params: SearchParams): Promise<SearchResult> {
-    // Check user plan for contact limit and analysis gating
-    const user = await User.findOrFail(userId)
-    const contactLimit = user.isPremium ? undefined : FREE_QUOTAS.results
+  /**
+   * Launch from an existing SearchRun (created by controller for async response).
+   */
+  async launchFromRun(searchRun: SearchRun, userId: string, params: SearchParams): Promise<SearchResult> {
+    return this.runPipeline(searchRun, userId, params)
+  }
 
+  async launch(userId: string, params: SearchParams): Promise<SearchResult> {
     const searchRun = await SearchRun.create({
       userId,
       country: params.country,
@@ -89,6 +92,13 @@ export default class SearchOrchestratorService {
       contactsExcludedCooldown: 0,
       progressPercent: 0,
     })
+    return this.runPipeline(searchRun, userId, params)
+  }
+
+  private async runPipeline(searchRun: SearchRun, userId: string, params: SearchParams): Promise<SearchResult> {
+    // Check user plan for contact limit and analysis gating
+    const user = await User.findOrFail(userId)
+    const contactLimit = user.isPremium ? undefined : FREE_QUOTAS.results
 
     try {
       searchRun.startedAt = DateTime.now()
