@@ -170,7 +170,7 @@ Before executing a skill, verify its prerequisites exist **on the filesystem**:
 ```
 
 ### Build checklist — add to EVERY story before starting dev
-These 12 tasks MUST be present and checked off via `stories-update-task` as each step completes:
+These 13 tasks MUST be present and checked off via `stories-update-task` as each step completes:
 1. `[ ]` Refinement validated by user
 2. `[ ]` Story file YAML written (specs/stories/)
 3. `[ ]` Code implemented (scope respected)
@@ -179,10 +179,11 @@ These 12 tasks MUST be present and checked off via `stories-update-task` as each
 6. `[ ]` Security audit (OWASP — injections, secrets, auth)
 7. `[ ]` TypeScript: 0 errors (tsc --noEmit)
 8. `[ ]` ACs verified (every verify: command executed and passing)
-9. `[ ]` UI validated visually (dark + light mode, login required)
-10. `[ ]` E2e specs updated for any modified frontend behaviour (web projects only — see e2e rules below)
-11. `[ ]` PR created on GitHub and linked to Shortcut story
-12. `[ ]` feature-tracker.yaml updated → validated
+9. `[ ]` Zero console errors/stacktraces (front: browser console, back: server logs)
+10. `[ ]` UI validated visually (dark + light mode, login required)
+11. `[ ]` E2e specs updated for any modified frontend behaviour (web projects only — see e2e rules below)
+12. `[ ]` PR created on GitHub and linked to Shortcut story
+13. `[ ]` feature-tracker.yaml updated → validated
 
 ### E2e test rules (web projects only — `spec.type: web`)
 
@@ -226,7 +227,7 @@ Never end a session with a ticket in "In Review" whose PR is already merged.
 | Event | Required Shortcut action |
 |-------|--------------------------|
 | Session start | Check Shortcut (stories-search) BEFORE any decision |
-| Story created | Add 11 build checklist tasks via `stories-add-task` + estimate + labels scope/type/area |
+| Story created | Add 13 build checklist tasks via `stories-add-task` + estimate + labels scope/type/area |
 | Start `/refine` | `workflow_state_id: 500000007` (To Do) + label `scope:refined` |
 | Start `/build` | `workflow_state_id: 500000008` (In Progress) + label `scope:building` |
 | Start `/validate` | `workflow_state_id: 500000009` (In Review) + label `scope:testing` |
