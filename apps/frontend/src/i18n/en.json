@@ -237,7 +237,15 @@
     "status_sent": "Sent",
     "status_opened": "Opened",
     "status_replied": "Replied",
-    "status_bounced": "Bounced"
+    "status_bounced": "Bounced",
+    "editEmail": "Edit email",
+    "improveWithAi": "Improve with AI",
+    "regenerateCompletely": "Regenerate",
+    "instructionsPlaceholder": "e.g. Make it more casual, mention my React experience...",
+    "improving": "Improving...",
+    "regenerating": "Regenerating...",
+    "aiInstructions": "AI instructions",
+    "closeModal": "Close"
   },
   "pipeline": {
     "title": "Pipeline",

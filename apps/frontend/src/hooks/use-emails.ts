@@ -96,9 +96,10 @@ export function useEmails(filters?: { status?: string; contactId?: string }) {
     return res.data
   }, [token])
 
-  const regenerate = useCallback(async (emailId: string) => {
+  const regenerate = useCallback(async (emailId: string, options?: { instructions?: string }) => {
     if (!token) return
-    const res = await apiClient.post<EmailResponse>(`/api/emails/${emailId}/regenerate`, {}, { token })
+    const body = options?.instructions ? { instructions: options.instructions } : {}
+    const res = await apiClient.post<EmailResponse>(`/api/emails/${emailId}/regenerate`, body, { token })
     setEmails((prev) => prev.map((e) => (e.id === emailId ? res.data : e)))
     return res.data
   }, [token])

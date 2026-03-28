@@ -36,10 +36,16 @@ export interface EmailGenerationResult {
   body: string
 }
 
+export interface EmailPromptOptions {
+  type?: 'initial' | 'follow_up_1' | 'follow_up_2' | 'follow_up_3'
+  previousEmail?: string
+  instructions?: string
+}
+
 export function buildEmailPrompt(
   contact: ContactForEmail,
   candidate: CandidateForEmail,
-  options?: { type?: 'initial' | 'follow_up_1' | 'follow_up_2' | 'follow_up_3'; previousEmail?: string }
+  options?: EmailPromptOptions
 ): { system: string; user: string } {
   const isFollowUp = options?.type && options.type !== 'initial'
 
@@ -78,8 +84,9 @@ Réponds UNIQUEMENT avec un objet JSON valide :
 - **Rôles visés** : ${candidate.targetRoles.join(', ') || 'Non renseignés'}
 ${candidate.cvSummary ? `- **Résumé** : ${candidate.cvSummary}` : ''}
 ${isFollowUp && options?.previousEmail ? `\n## Email précédent\n${options.previousEmail}` : ''}
+${options?.instructions ? `\n## Instructions de l'utilisateur\n${options.instructions}` : ''}
 
-${isFollowUp ? 'Rédige une relance courte et naturelle.' : 'Rédige un premier email de prise de contact.'}`,
+${isFollowUp ? 'Rédige une relance courte et naturelle.' : options?.instructions ? 'Améliore l\'email existant en suivant les instructions ci-dessus.' : 'Rédige un premier email de prise de contact.'}`,
   }
 }
 
