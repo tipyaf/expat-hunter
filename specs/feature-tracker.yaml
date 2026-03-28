@@ -440,6 +440,17 @@ features:
     validated_at: "2026-03-28"
     notes: "All 7 ACs pass. PR #94 merged. Framework submodule committed + pushed."
 
+  - id: "sc-547"
+    name: "fix: add missing i18n keys for contact detail panel"
+    priority: "bug"
+    status: "testing"
+    cycles: 1
+    story_file: "specs/stories/sc-547.yaml"
+    depends_on: []
+    started_at: "2026-03-28"
+    validated_at: ""
+    notes: "contactPanel namespace missing from en.json + fr.json. 19 keys added. All 4 ACs pass."
+
   - id: "sc-550"
     name: "One-click email account connection via Google OAuth"
     priority: "feature"
