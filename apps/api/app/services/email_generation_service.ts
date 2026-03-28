@@ -4,6 +4,7 @@ import Contact from '#models/contact'
 import CandidateProfile from '#models/candidate_profile'
 import EmailMessage from '#models/email_message'
 import type { EmailType } from '#models/email_message'
+import EmailTemplate from '#models/email_template'
 import User from '#models/user'
 import logger from '@adonisjs/core/services/logger'
 
@@ -129,7 +130,7 @@ export default class EmailGenerationService {
   async regenerate(
     emailId: string,
     userId: string,
-    options?: { instructions?: string }
+    options?: { instructions?: string; templateId?: string }
   ): Promise<EmailMessage | null> {
     if (!this.composer.isConfigured) return null
 
@@ -144,10 +145,21 @@ export default class EmailGenerationService {
     const profile = await CandidateProfile.query().where('userId', userId).first()
     if (!user || !profile) return null
 
+    let template: EmailTemplate | null = null
+    if (options?.templateId) {
+      template = await EmailTemplate.query()
+        .where('id', options.templateId)
+        .where('userId', userId)
+        .first()
+    }
+
     const candidate = this.buildCandidateData(user, profile)
     const contactData = this.buildContactData(email.contact)
     const result = await this.composer.compose(contactData, candidate, {
       instructions: options?.instructions,
+      template: template
+        ? { subjectPattern: template.subjectPattern, bodyPattern: template.bodyPattern }
+        : undefined,
     })
 
     email.subject = result.subject

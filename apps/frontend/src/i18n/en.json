@@ -245,7 +245,11 @@
     "improving": "Improving...",
     "regenerating": "Regenerating...",
     "aiInstructions": "AI instructions",
-    "closeModal": "Close"
+    "closeModal": "Close",
+    "selectTemplate": "Apply a template",
+    "noTemplate": "No template",
+    "applyTemplate": "Apply",
+    "applyingTemplate": "Applying..."
   },
   "pipeline": {
     "title": "Pipeline",
@@ -396,7 +400,8 @@
     "logout": "Sign out",
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
-    "upgrade": "Upgrade to Premium"
+    "upgrade": "Upgrade to Premium",
+    "templates": "Templates"
   },
   "search": {
     "title": "Automated Search",
