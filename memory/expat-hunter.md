@@ -1,30 +1,30 @@
-# Mémoire du projet : ExpatHunter
+# Project Memory: ExpatHunter
 
 > Last updated by **agent** — 2026-03-25
 
 ## Metadata
-- **Projet**: expat-hunter
-- **Démarré le**: 2026-03-17
-- **Phase courante**: Phase 2 — Construction (features pending refinement)
-- **Dernière mise à jour**: 2026-03-25
+- **Project**: expat-hunter
+- **Started**: 2026-03-17
+- **Current phase**: Phase 2 — Construction (features pending refinement)
+- **Last updated**: 2026-03-26
 - **Framework version**: 2.1.0
-- **Repo GitHub**: https://github.com/tipyaf/expat-hunter (public)
-- **Branches**: main (protégée, défaut), develop (protégée, base dev), feature/* → PR vers develop
+- **GitHub repo**: https://github.com/tipyaf/expat-hunter (public)
+- **Branches**: main (protected, default), develop (protected, dev base), feature/* → PR to develop
 
 ## Spec
-- **Fichier**: `specs/expat-hunter.yaml`
+- **File**: `specs/expat-hunter.yaml`
 - **Type**: fullstack TypeScript
-- **Stack**: AdonisJS + Lucid, Next.js (React), Tailwind CSS, PostgreSQL, OpenRouter, Playwright (scraping), Shortcut.com (gestion projet)
+- **Stack**: AdonisJS + Lucid, Next.js (React), Tailwind CSS, PostgreSQL, OpenRouter, Playwright (scraping), Shortcut.com (project management)
 
 ## Feature Status
 
 | Feature | Priority | Status | Story file | Cycles |
 |---------|----------|--------|------------|--------|
-| candidate-profile | must-have | pending | — | 0 |
-| contact-sourcing | must-have | pending | — | 0 |
-| ai-relevance-analysis | must-have | pending | — | 0 |
-| personalized-emailing | must-have | pending | — | 0 |
-| pipeline-dashboard | must-have | pending | — | 0 |
+| candidate-profile | must-have | ✅ validated | specs/stories/candidate-profile.yaml | 1 |
+| contact-sourcing | must-have | ✅ validated | specs/stories/contact-sourcing.yaml | 1 |
+| ai-relevance-analysis | must-have | ✅ validated | specs/stories/ai-relevance-analysis.yaml | 1 |
+| personalized-emailing | must-have | ✅ validated | specs/stories/personalized-emailing.yaml | 1 |
+| pipeline-dashboard | must-have | ✅ validated | specs/stories/pipeline-dashboard.yaml | 1 |
 | signal-detection | should-have | pending | — | 0 |
 | multi-country | should-have | pending | — | 0 |
 | linkedin-messaging | nice-to-have | pending | — | 0 |
@@ -33,123 +33,125 @@
 | interview-prep | nice-to-have | pending | — | 0 |
 | mobile-app | nice-to-have | pending | — | 0 |
 | analytics | nice-to-have | pending | — | 0 |
+| contact-detail-panel | must-have | ✅ validated | specs/stories/contact-detail-panel.yaml | 1 |
 
-**Summary**: 13 features total — 0 refined, 0 validated, 0 escalated — next: `/refine` candidate-profile
+**Summary**: 14 features total — 6 must-have validated (all MVP features + contact-detail-panel) — `/review` done, Sprint 1 in progress
 
-## Décisions prises
+## Architecture Decisions
 
 ### Architecture
-| # | Décision | Alternatives considered | Raison | Phase |
+| # | Decision | Alternatives considered | Reason | Phase |
 |---|----------|------------------------|--------|-------|
-| 1 | Connecteurs pluggables par source/pays | Scraping monolithique | Scalabilité multi-pays | 0 |
-| 2 | OpenRouter comme provider IA | OpenAI direct, Ollama | Modèles interchangeables, low-cost | 0 |
-| 3 | Scraping maison + Apify fallback | Apify only, Scrapy | Réduire dépendances externes, maîtriser coûts | 0 |
-| 4 | Mono-user MVP, architecturé multi-user | Multi-user from start | Livrer vite, scaler ensuite | 0 |
-| 5 | Pas de n8n, tout dans le SaaS | n8n orchestration | Centraliser, simplifier | 0 |
-| 6 | Fullstack TypeScript (Node.js + Next.js) | Python + FastAPI | Un seul runtime, types partagés, moins de RAM, stack de confort | 1 |
-| 10 | Next.js + Tailwind CSS pour le frontend | Remix, SvelteKit | React plus mature web, drag&drop kanban, SEO optionnel, bundle léger | 1 |
-| 11 | AdonisJS comme backend framework | NestJS, Hono, Fastify | Batteries-included (auth, mail, queue, i18n, validation), 0 briques à câbler | 1 |
-| 12 | Lucid comme ORM (natif AdonisJS) | Prisma, Drizzle | Cohérent avec l'écosystème, migrations, seeds intégrés | 1 |
-| 13 | Biome pour linting/formatting | ESLint + Prettier | Ultra rapide, remplace deux outils | 1 |
-| 14 | Vitest pour les tests | Jest | Rapide, compatible TypeScript natif | 1 |
-| 15 | pnpm comme package manager | npm, yarn, bun | Rapide, économe en disque, workspace natif | 1 |
-| 16 | REST API (pas tRPC/GraphQL) | tRPC, GraphQL | Testable indépendamment, réutilisable mobile, pas de couplage | 1 |
-| 17 | Scrapers pluggables (Strategy + Registry) | Hardcoded scrapers | Ajouter un pays/source = 1 classe + 1 ligne | 1 |
-| 18 | Background jobs BullMQ (@adonisjs/queue) | Cron, Bull | Scraping + IA + email en async, retry automatique | 1 |
-| 19 | pnpm workspaces simples (pas Turborepo/Nx) | Turborepo, Nx | Suffisant pour 3 packages, zero config | 1 |
-| 20 | Japa (backend) + Vitest (frontend) | Jest everywhere | Natif AdonisJS côté API, rapide côté frontend | 1 |
+| 1 | Pluggable connectors per source/country | Monolithic scraping | Multi-country scalability | 0 |
+| 2 | OpenRouter as AI provider | OpenAI direct, Ollama | Interchangeable models, low-cost | 0 |
+| 3 | In-house scraping + Apify fallback | Apify only, Scrapy | Reduce external deps, control costs | 0 |
+| 4 | Mono-user MVP, architected for multi-user | Multi-user from start | Ship fast, scale later | 0 |
+| 5 | No n8n, everything in the SaaS | n8n orchestration | Centralize, simplify | 0 |
+| 6 | Fullstack TypeScript (Node.js + Next.js) | Python + FastAPI | Single runtime, shared types, less RAM, comfort stack | 1 |
+| 10 | Next.js + Tailwind CSS for frontend | Remix, SvelteKit | React more mature for web, drag&drop kanban, optional SEO, light bundle | 1 |
+| 11 | AdonisJS as backend framework | NestJS, Hono, Fastify | Batteries-included (auth, mail, queue, i18n, validation), zero wiring | 1 |
+| 12 | Lucid ORM (native AdonisJS) | Prisma, Drizzle | Consistent with ecosystem, migrations + seeds built-in | 1 |
+| 13 | Biome for linting/formatting | ESLint + Prettier | Ultra fast, replaces two tools | 1 |
+| 14 | Vitest for tests | Jest | Fast, native TypeScript support | 1 |
+| 15 | pnpm as package manager | npm, yarn, bun | Fast, disk-efficient, native workspaces | 1 |
+| 16 | REST API (no tRPC/GraphQL) | tRPC, GraphQL | Independently testable, mobile-reusable, no coupling | 1 |
+| 17 | Pluggable scrapers (Strategy + Registry) | Hardcoded scrapers | Adding a country/source = 1 class + 1 line | 1 |
+| 18 | Background jobs BullMQ (@adonisjs/queue) | Cron, Bull | Scraping + AI + email async, automatic retry | 1 |
+| 19 | Simple pnpm workspaces (no Turborepo/Nx) | Turborepo, Nx | Sufficient for 3 packages, zero config | 1 |
+| 20 | Japa (backend) + Vitest (frontend) | Jest everywhere | Native AdonisJS on API side, fast on frontend | 1 |
 
-### Fonctionnel
-| # | Décision | Raison | Phase |
+### Functional
+| # | Decision | Reason | Phase |
 |---|----------|--------|-------|
-| 1 | Cibler responsables d'équipes opérationnelles, PAS les RH | Les RH publient les offres, on veut le marché caché | 0 |
-| 2 | Persona configurable (pas fixé à Yannick) | Pour que l'outil soit utilisable par tous | 0 |
-| 3 | LinkedIn messaging en nice-to-have avec étude préalable | Risque de ban, nécessite recherche | 0 |
-| 4 | Mail comme canal principal du MVP | Moins risqué, plus simple | 0 |
-| 5 | Pas limité au secteur tech pour les utilisateurs | Le candidat définit son secteur, le système s'adapte | 0 |
-| 6 | Préparation entretiens (langue du pays, culture locale) en nice-to-have | Valeur ajoutée forte pour expatriés | 0 |
+| 1 | Target operational team leads, NOT HR | HR posts jobs, we want the hidden market | 0 |
+| 2 | Configurable persona (not fixed to Yannick) | Makes the tool usable by anyone | 0 |
+| 3 | LinkedIn messaging as nice-to-have with prior study | Ban risk, requires research | 0 |
+| 4 | Email as main MVP channel | Less risky, simpler | 0 |
+| 5 | Not limited to tech sector | Candidate defines their sector, system adapts | 0 |
+| 6 | Interview prep (local language, culture) as nice-to-have | High value-add for expats | 0 |
 
 ### UX/UI
-| # | Décision | Raison | Phase |
+| # | Decision | Reason | Phase |
 |---|----------|--------|-------|
-| 1 | Simplicité extrême malgré complexité technique | Requirement utilisateur | 0 |
-| 2 | Sidebar fixe à gauche (style SaaS) | Navigation toujours visible | 0.5 |
-| 3 | Dashboard = actions en attente (to-do style) | L'utilisateur sait quoi faire immédiatement | 0.5 |
-| 4 | Onboarding wizard + upload CV + IA conversationnelle | Guidé, rapide, intelligent | 0.5 |
-| 5 | Sourcing assisté par l'IA (suggestions pré-remplies) | Simplicité + pertinence | 0.5 |
-| 6 | Validation emails hybride (3 premiers un par un, puis lot) | Contrôle qualité + efficacité | 0.5 |
-| 7 | Pipeline 5 colonnes MVP (Trouvé/À contacter/Contacté/En discussion/Terminé) | Lisibilité, pas de surcharge | 0.5 |
-| 8 | Badges pertinence : couleur + explication courte (pas de score brut) | Plus compréhensible qu'un chiffre | 0.5 |
-| 9 | Tonalité moderne/chaleureuse (teal/orange, style Linear) | Convivial, pro sans être corporate | 0.5 |
-| 10 | Dark mode : préférences système par défaut + toggle settings | Confort + contrôle utilisateur | 0.5 |
-| 11 | i18n : EN + FR au MVP, langue navigateur par défaut, extensible | Valider l'i18n dès le départ, cible internationale | 0.5 |
-| 12 | Design system partagé web + mobile | Cohérence visuelle, un seul jeu de tokens | 0.5 |
+| 1 | Extreme simplicity despite technical complexity | User requirement | 0 |
+| 2 | Fixed left sidebar (SaaS style) | Always-visible navigation | 0.5 |
+| 3 | Dashboard = pending actions (to-do style) | User knows what to do immediately | 0.5 |
+| 4 | Onboarding wizard + CV upload + conversational AI | Guided, fast, intelligent | 0.5 |
+| 5 | AI-assisted sourcing (pre-filled suggestions) | Simplicity + relevance | 0.5 |
+| 6 | Hybrid email validation (first 3 one-by-one, then batch) | Quality control + efficiency | 0.5 |
+| 7 | 5-column MVP pipeline (Found/To contact/Contacted/In discussion/Done) | Readable, no overload | 0.5 |
+| 8 | Relevance badges: color + short explanation (no raw score) | More understandable than a number | 0.5 |
+| 9 | Modern/warm tone (teal/orange, Linear style) | Friendly, professional without corporate feel | 0.5 |
+| 10 | Dark mode: system preference default + settings toggle | Comfort + user control | 0.5 |
+| 11 | i18n: EN + FR at MVP, browser language default, extensible | Validate i18n early, international target | 0.5 |
+| 12 | Shared design system web + mobile | Visual consistency, single token set | 0.5 |
 
-## Historique des phases
+## Phase History
 
 ### Phase 0 — Conception
-- **Statut**: ✅ Validée
-- **Artefacts**: `specs/expat-hunter.yaml`, `specs/expat-hunter-ux.md`, `specs/expat-hunter-architecture.md`, `specs/constitution.md`, `specs/expat-hunter-clarifications.md`, `specs/expat-hunter-manifest.yaml`
-- **Résumé**: Spec YAML complète (5 must-have, 2 should-have, 6 nice-to-have, 6 entités). Design complet (sitemap, 5 flows, design system, 10 composants, 5 layouts). Architecture layered monorepo pnpm, 8 entités Lucid, 9 épiques, 7 ADRs. Stack profiles AdonisJS + Next.js. Constitution, clarifications (12 CL), and manifest created 2026-03-25.
+- **Status**: ✅ Done
+- **Artifacts**: `specs/expat-hunter.yaml`, `specs/expat-hunter-ux.md`, `specs/expat-hunter-architecture.md`, `specs/constitution.md`, `specs/expat-hunter-clarifications.md`, `specs/expat-hunter-manifest.yaml`
+- **Summary**: Full YAML spec (5 must-have, 2 should-have, 6 nice-to-have, 6 entities). Full design (sitemap, 5 flows, design system, 10 components, 5 layouts). Layered monorepo pnpm architecture, 8 Lucid entities, 9 epics, 7 ADRs. Stack profiles AdonisJS + Next.js. Constitution, clarifications (12 CL), and manifest created 2026-03-25.
 
 ### Phase 1 — Scaffold
-- **Statut**: ✅ Validée
-- **Résumé**: Monorepo pnpm créé. AdonisJS 7 scaffoldé (core, lucid, auth, mail, i18n, cors, shield, drive). Next.js 14 (App Router) + Tailwind CSS v4. Package shared (types + constantes). Docker-compose (PostgreSQL 16 + Redis 7). Biome, .env.example.
-- **Note**: AdonisJS v7 (pas v6 comme prévu initialement)
+- **Status**: ✅ Done
+- **Summary**: pnpm monorepo created. AdonisJS 7 scaffolded (core, lucid, auth, mail, i18n, cors, shield, drive). Next.js 14 (App Router) + Tailwind CSS v4. Shared package (types + constants). Docker-compose (PostgreSQL 16 + Redis 7). Biome, .env.example.
+- **Note**: AdonisJS v7 (not v6 as originally planned)
 
 ### Phase 2 — Construction
-- **Statut**: 🔄 En cours — all features pending refinement
-- **Features**: 5 must-have (0/5 refined), 2 should-have, 6 nice-to-have
-- **Next**: `/refine` candidate-profile
+- **Status**: 🔄 In progress — Sprint 1 active (sc-216, sc-79, sc-80, sc-81)
+- **Features**: 6 must-have validated, 2 should-have pending, 6 nice-to-have pending
+- **Next**: Pick a story from Sprint 1 backlog
 
 ### Phase 3 — Review
-- **Statut**: ⬜ Non démarré
+- **Status**: ✅ Done (all must-have features validated 2026-03-25)
 
 ### Phase 4 — Deploy
-- **Statut**: ⬜ Non démarré
+- **Status**: ⬜ Not started
 
 ### Phase 5 — Release
-- **Statut**: ⬜ Non démarré
+- **Status**: ⬜ Not started
 
-## Problèmes rencontrés
-| # | Problème | Solution | Phase |
-|---|----------|----------|-------|
+## Issues Encountered
+| # | Issue | Solution | Phase |
+|---|-------|----------|-------|
 | - | - | - | - |
 
-## Feedback utilisateur (cumulatif)
-| Phase | Feedback | Action prise |
+## User Feedback (cumulative)
+| Phase | Feedback | Action taken |
 |-------|----------|-------------|
-| 0 | Pas limiter au tech, cibler responsables opérationnels | Mis à jour spec |
-| 0 | Persona configurable, pas fixe | Mis à jour spec |
-| 0 | LinkedIn messaging risqué, étude préalable nécessaire | Mis en nice-to-have avec condition |
-| 0 | Scraping anti-détection important | Ajouté dans contraintes spec |
-| 0 | Arrêter n8n, tout centraliser | Architecture full SaaS |
-| 0 | built.com pas BuiltWith | Corrigé |
-| 0 | Vision long terme : aide expatriation complète | Documenté en nice-to-have |
-| 0 | OpenRouter pour IA (modèles interchangeables) | Mis à jour stack |
-| 0 | VPS Hostinger KVM2 existant | Mis à jour déploiement |
-| 1 | Python proposé en premier alors que TS suffisait | Framework amélioré : évaluer techniquement d'abord, confort en tiebreaker |
-| 1 | AdonisJS pas proposé initialement (biais popularité) | Framework amélioré : anti-bias rules + evaluation checklist ajoutés |
+| 0 | Don't limit to tech, target operational leads | Updated spec |
+| 0 | Configurable persona, not fixed | Updated spec |
+| 0 | LinkedIn messaging risky, prior study needed | Moved to nice-to-have with condition |
+| 0 | Anti-detection scraping important | Added to spec constraints |
+| 0 | Stop n8n, centralize everything | Full SaaS architecture |
+| 0 | built.com not BuiltWith | Fixed |
+| 0 | Long-term vision: full expat assistance | Documented as nice-to-have |
+| 0 | OpenRouter for AI (interchangeable models) | Updated stack |
+| 0 | Existing Hostinger KVM2 VPS | Updated deployment |
+| 1 | Python proposed first even though TS was sufficient | Framework improved: evaluate technically first, comfort as tiebreaker |
+| 1 | AdonisJS not proposed initially (popularity bias) | Framework improved: anti-bias rules + evaluation checklist added |
+| 2 | Files committed in French (non-translation) | Rule: ALL non-translation files must be in English |
 
-## Fichiers clés
-| Fichier | Rôle |
-|---------|------|
-| `specs/expat-hunter.yaml` | Spec complète du projet |
-| `specs/expat-hunter-ux.md` | Design UX/UI complet |
-| `specs/expat-hunter-architecture.md` | Plan d'architecture complet |
-| `specs/feature-tracker.yaml` | État de chaque feature (v2.1.0) |
+## Key Files
+| File | Role |
+|------|------|
+| `specs/expat-hunter.yaml` | Full project spec |
+| `specs/expat-hunter-ux.md` | Full UX/UI design |
+| `specs/expat-hunter-architecture.md` | Full architecture plan |
+| `specs/feature-tracker.yaml` | Feature state tracker (v2.1.0) |
 | `specs/stories/` | Story files — build contracts (v2.1.0) |
-| `stacks/typescript-adonisjs.md` | Stack profile backend AdonisJS |
-| `stacks/typescript-nextjs.md` | Stack profile frontend Next.js |
-| `memory/expat-hunter.md` | Ce fichier — état du projet |
-| `memory/LESSONS.md` | Erreurs passées, lues par tous les agents |
-| `memory/SYNC.md` | Version du framework |
+| `stacks/typescript-adonisjs.md` | Backend stack profile AdonisJS |
+| `stacks/typescript-nextjs.md` | Frontend stack profile Next.js |
+| `memory/expat-hunter.md` | This file — project state |
+| `memory/LESSONS.md` | Past mistakes, read by all agents |
+| `memory/SYNC.md` | Framework version |
 
-## Notes libres
-- Budget strict : 30$/mois max
-- Le VPS Hostinger KVM2 peut être limité pour Ollama — OpenRouter d'abord
-- L'utilisateur a un pipeline existant LinkedIn + Hunter.io + n8n qui ne donne pas de résultats probants (mauvais ciblage + messages génériques)
-- Sources par pays (configurables). Exemple NZ : Seek, Matchstiq, Zeil, built.com. Global : LinkedIn, Hunter.io
-- L'outil n'est PAS limité à la NZ — chaque utilisateur choisit son pays cible, les sources s'adaptent
-- **Framework v2.1.0**: Enforcement layer actif — feature-tracker + story files + verify: commands
-- **Phase 0 complete**: All 6 artefacts now exist on disk — phase guards unblocked for `/refine`
+## Notes
+- Strict budget: $30/month max
+- Hostinger KVM2 VPS may be limited for Ollama — OpenRouter first
+- User has an existing LinkedIn + Hunter.io + n8n pipeline that yields poor results (bad targeting + generic messages)
+- Sources by country (configurable). NZ example: Seek, Matchstiq, Zeil, built.com. Global: LinkedIn, Hunter.io
+- Tool is NOT limited to NZ — each user chooses their target country, sources adapt
+- **Framework v2.1.0**: Enforcement layer active — feature-tracker + story files + verify: commands
+- **Phase 0 complete**: All 6 artifacts exist on disk — phase guards unblocked for `/refine`

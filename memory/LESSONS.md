@@ -34,42 +34,90 @@ Recurring failures and lessons learned across sessions. Every agent MUST read th
 **Root cause**: Agent started working without updating the story state first.
 **Rule**: ALWAYS update Shortcut story state in real-time at each transition: To Do → In Progress (500000008, start dev) → In Review (500000009, start review/validation) → Done (500000010, validated). Never skip a state.
 
-### [Workflow] Segmenter les tickets en tâches (checklist)
-**Problem**: Les tickets sc-57/58/59 ont été réalisés sans tâches, impossible de savoir ce qui est fait vs ce qui reste.
-**Root cause**: L'agent a travaillé sur le ticket sans le découper en sous-tâches traçables.
-**Rule**: TOUJOURS ajouter des tâches (stories-add-task) dans un ticket Shortcut AVANT de commencer le travail. Chaque étape significative = une tâche. Cocher les tâches au fur et à mesure (stories-update-task isCompleted). Cela permet de savoir exactement où on en est à tout moment, même si la session est interrompue.
+### [Workflow] Check off build tasks as you go — real-time updates
+**Problem**: Build checklists exist in Shortcut but are never checked off → progress bar stays at 0%, impossible to know where the build stands.
+**Root cause**: Agent completes steps without calling `stories-update-task isCompleted: true` at each step.
+**Rule**: After each build step, check off the corresponding task IMMEDIATELY via `stories-update-task`. Required sequence for every story in build:
+1. Refinement validated → check "Refinement validated"
+2. Story file YAML written → check "Story file YAML"
+3. Code implemented → check "Code implemented"
+4. Unit tests passing → check "Unit tests"
+5. e2e tests passing → check "Functional / e2e tests"
+6. Security audit done → check "Security audit"
+7. TS 0 errors → check "TypeScript: 0 errors"
+8. ACs verified → check "ACs verified"
+9. UI validated → check "UI validated visually"
+10. PR created → check "PR created" + link PR via `stories-add-external-link`
+11. feature-tracker.yaml → validated → check "feature-tracker.yaml updated"
+Story and parent epic completion % update automatically in Shortcut.
 
-### [Shortcut] Règles de création de stories — checklist obligatoire
-**Problem**: sc-88 à sc-94 créées sans team → invisibles dans le kanban. Sous-stories pas liées à sc-31 → non rattachées.
-**Root cause**: `stories-create` appelé sans les paramètres `team` et sans lier au parent.
-**Rule**: À chaque `stories-create`, vérifier OBLIGATOIREMENT :
-1. `team` : toujours passer `ya-bes-team` (ou l'équipe du projet)
-2. `epic` : lier à l'épic si applicable
-3. Sous-stories : appeler `stories-add-subtask` immédiatement après création pour lier au parent
-4. Tâches : appeler `stories-add-task` pour chaque étape AVANT de commencer le dev
-5. Description : inclure vision, scope, critères d'acceptation, références
+### [Workflow] Always apply phase labels to every story
+**Problem**: Stories have no `scope:` label → impossible to filter by phase in the kanban.
+**Root cause**: Agent does not update the `scope:` label when the phase changes.
+**Rule**: At each phase transition, update the `scope:` label on the story:
+- Created → `scope:pending`
+- Story file written → `scope:refined`
+- Build started → `scope:building`
+- Validation started → `scope:testing`
+- All ACs pass → `scope:validated`
+Use `stories-update labels:[{name: "scope:building"}]` at each transition.
 
-### [Workflow] JAMAIS coder sans refinement de l'US d'abord
-**Problem**: sc-82 — bug identifié, story créée, mais l'agent est parti coder immédiatement sans présenter l'US pour refinement. Le framework exige une étape de refinement avant tout développement.
-**Root cause**: L'agent a confondu "créer la story" avec "avoir fait le refinement".
-**Rule**: Créer la story NE SUFFIT PAS. Le workflow est : 1) Créer l'US, 2) Présenter l'US à l'utilisateur pour refinement/validation, 3) Attendre l'accord explicite, 4) SEULEMENT ALORS passer en In Progress et commencer le dev. Ne jamais sauter l'étape de refinement, même pour un bug simple.
+### [Workflow] Break tickets into tasks (checklist)
+**Problem**: sc-57/58/59 tickets were completed without tasks — impossible to know what's done vs remaining.
+**Root cause**: Agent worked on the ticket without breaking it into traceable sub-tasks.
+**Rule**: ALWAYS add tasks (stories-add-task) to a Shortcut ticket BEFORE starting work. Each significant step = one task. Check tasks off as you go (stories-update-task isCompleted). This ensures you always know exactly where things stand, even if the session is interrupted.
 
-### [Quality] Les TU ne suffisent pas — tester le FLUX END-TO-END
-**Problem**: sc-88 à sc-94 — 64 TU passants mais l'orchestrateur n'était pas câblé dans le contrôleur. Le flux réel retournait des "Hiring Manager" sans nom ni email. Validé Done sans tester un vrai parcours utilisateur.
-**Root cause**: L'agent a validé chaque service isolément (TU) sans jamais tester l'intégration complète : "je lance une recherche → j'obtiens des contacts nommés avec des emails".
-**Rule**: Après avoir écrit les TU, TOUJOURS tester le flux complet : appeler l'API ou naviguer dans l'app comme un utilisateur et vérifier que le résultat est utile. Un service branché nulle part est un service qui n'existe pas.
+### [Shortcut] Story creation rules — mandatory checklist
+**Problem**: sc-88 to sc-94 created without a team → invisible in the kanban. Sub-stories not linked to sc-31 → orphaned.
+**Root cause**: `stories-create` called without `team` parameter and without linking to parent.
+**Rule**: On every `stories-create`, ALWAYS verify:
+1. `team`: always pass `ya-bes-team` (or the project team)
+2. `epic`: link to epic if applicable
+3. Sub-stories: call `stories-add-subtask` immediately after creation to link to parent
+4. Tasks: call `stories-add-task` for each step BEFORE starting dev
+5. Description: include context, scope, acceptance criteria, references
 
-### [Workflow] Toujours fermer le ticket Shortcut après le merge
-**Problem**: sc-30 — PR mergée, story laissée en "In Review". Détecté à la session suivante.
-**Root cause**: La transition Shortcut "In Review → Done" n'était pas dans les verify: commands du story file. La session s'est terminée en plein merge conflict, l'étape de clôture n'a jamais été exécutée.
-**Rule**: Le story template inclut désormais un `AC-BP-[FEATURE]-DONE` (closing_ac) qui vérifie que le PR est mergé. Le validator DOIT passer cet AC en dernier et appeler `stories-update` (workflow_state_id: 500000010) immédiatement après. Sans ça, la story n'est pas "done".
+### [Workflow] NEVER code without refinement first
+**Problem**: sc-82 — bug identified, story created, but agent jumped to coding immediately without presenting the story for refinement. The framework requires a refinement step before any development.
+**Root cause**: Agent confused "story created" with "refinement done".
+**Rule**: Creating the story is NOT enough. The workflow is: 1) Create the story, 2) Present it to the user for refinement/validation, 3) Wait for explicit agreement, 4) ONLY THEN move to In Progress and start dev. Never skip the refinement step, even for a simple bug.
 
-### [Build] Ne jamais éditer manuellement un fichier auto-généré
-**Problem**: sc-205 — la story demandait de modifier `database/schema.ts` manuellement. Ce fichier porte la mention "DO NOT EDIT manually" et est régénéré automatiquement à chaque `migration:run`. Notre modification a été écrasée par le `--dry-run`.
-**Root cause**: Le refinement agent avait listé `schema.ts` dans le scope `files_to_modify` sans savoir qu'il était auto-généré.
-**Rule**: Avant d'inclure un fichier dans le scope d'une story, TOUJOURS vérifier s'il porte une mention "auto-generated / DO NOT EDIT". Si oui : NE PAS l'inclure dans `files_to_modify`. À la place : créer la migration correspondante → lancer `migration:run` → le fichier se régénère automatiquement avec les bonnes informations. Même règle pour tout fichier généré (OpenAPI, GraphQL schema, etc.).
+### [Quality] Unit tests alone are not enough — test the END-TO-END FLOW
+**Problem**: sc-88 to sc-94 — 64 unit tests passing but the orchestrator was not wired into the controller. The real flow returned "Hiring Manager" entries with no name or email. Declared Done without testing a real user journey.
+**Root cause**: Agent validated each service in isolation (unit tests) without ever testing the full integration: "I launch a search → I get named contacts with emails".
+**Rule**: After writing unit tests, ALWAYS test the complete flow: call the API or navigate the app like a user and verify the result is useful. A service wired to nothing is a service that does not exist.
 
-### [Quality] TOUJOURS écrire les TU avant de déclarer terminé
-**Problem**: sc-60 — 4 services modifiés (visa_sponsor_registry, email_enricher, company_enricher, sourcing_service) sans aucun test unitaire. Détecté en review par l'utilisateur.
-**Root cause**: L'agent a implémenté le code et déclaré "done" sans écrire les tests, alors que le framework l'exige (Phase 4: Test).
-**Rule**: TOUTE modification de code DOIT être accompagnée de tests unitaires AVANT de pousser. C'est dans les specs du framework (Phase 4). Ne JAMAIS déclarer terminé sans : 1) TU écrits et passants pour chaque fonction modifiée, 2) e2e vérifié si impact frontend. Les TU ne sont PAS optionnels.
+### [Env] Japa tests require Node >= 22
+**Problem**: `pnpm test` fails with Node 20 (`SyntaxError: The requested module 'node:fs/promises' does not provide an export named 'glob'`).
+**Root cause**: Japa 5.3.0 uses `fs/promises.glob` which is only available from Node 22.
+**Rule**: ALWAYS run tests with Node >= 22 (`~/.nvm/versions/node/v22.22.1/bin/node`). Check `node --version` before declaring tests as failed.
+
+### [Validation] Log in before verifying a protected page
+**Problem**: UI validation declared without verifying the actual page — the preview redirects to /login if not authenticated.
+**Root cause**: Agent took a screenshot without checking whether the page was accessible (authentication required).
+**Rule**: ALWAYS log in via the preview BEFORE attempting to visit a protected page. Required sequence: 1) Navigate to /login, 2) Fill email + password (use TEST_USER_EMAIL / TEST_USER_PASSWORD from .env.test, defaults: profile-unit@example.com / password123), 3) Click submit, 4) THEN navigate to the target page. Never declare UI validated without a real screenshot taken after login.
+
+### [Workflow] Always close the Shortcut ticket after merge
+**Problem**: sc-30 — PR merged, story left in "In Review". Detected in the next session.
+**Root cause**: The Shortcut "In Review → Done" transition was not in the story file verify: commands. The session ended mid-merge-conflict, the closing step was never executed.
+**Rule**: The story template now includes an `AC-BP-[FEATURE]-DONE` (closing_ac) that verifies the PR is merged. The validator MUST run this AC last and call `stories-update` (workflow_state_id: 500000010) immediately after. Without this, the story is not "done".
+
+### [Build] Never manually edit an auto-generated file
+**Problem**: sc-205 — the story asked to modify `database/schema.ts` manually. This file carries a "DO NOT EDIT manually" notice and is regenerated automatically on every `migration:run`. Our change was overwritten by `--dry-run`.
+**Root cause**: The refinement agent listed `schema.ts` in `files_to_modify` without knowing it was auto-generated.
+**Rule**: Before including a file in a story's scope, ALWAYS check whether it carries an "auto-generated / DO NOT EDIT" notice. If yes: do NOT include it in `files_to_modify`. Instead: create the corresponding migration → run `migration:run` → the file regenerates automatically with the right data. Same rule for any generated file (OpenAPI, GraphQL schema, etc.).
+
+### [Validation] Pre-existing errors found during validation must be fixed or tracked
+**Problem**: sc-216 — validator found console errors (`MISSING_MESSAGE: chat`, `auth.forgotPassword`) during the preview check and noted them as "pre-existing, not related to sc-216" without taking any action.
+**Root cause**: Agent treated pre-existing errors as acceptable background noise instead of actionable issues.
+**Rule**: ANY error found during validation (console errors, TypeScript errors, test failures) MUST result in one of two outcomes: 1) Fix it immediately in the current PR if small (< 30 min), 2) Create a Shortcut story for it if out of scope or complex. There is NO third option of "noting it and moving on". Ignoring an error is never acceptable.
+
+### [Quality] ALWAYS write unit tests before declaring done
+**Problem**: sc-60 — 4 services modified (visa_sponsor_registry, email_enricher, company_enricher, sourcing_service) with no unit tests. Caught in review by the user.
+**Root cause**: Agent implemented the code and declared "done" without writing tests, even though the framework requires it (Phase 4: Test).
+**Rule**: EVERY code change MUST be accompanied by unit tests BEFORE pushing. This is in the framework spec (Phase 4). NEVER declare done without: 1) unit tests written and passing for every modified function, 2) e2e verified if there is frontend impact. Unit tests are NOT optional.
+
+### [Quality] CRITICAL — NEVER validate without e2e + unit tests executed and passing
+**Problem**: sc-431 epic (5 stories) — all 5 stories validated and merged without writing e2e tests for frontend changes. Only sc-431-2 had unit tests. User caught the violation and was extremely frustrated.
+**Root cause**: Agent treated e2e tests as optional, rubber-stamped the build checklist tasks "Functional / e2e tests written and passing" without actually writing or running them. Prioritized speed over correctness.
+**Rule**: Before ANY story can be marked validated: 1) Unit tests MUST exist and PASS for every new/modified service, 2) E2e tests MUST exist and PASS for every frontend-impacting change (CLAUDE.md e2e rules), 3) Tests MUST be EXECUTED (show output) — not just "written". 4) If tests fail, FIX before validating. NEVER skip, NEVER rubber-stamp. This is the #1 priority — violating this erodes all trust.

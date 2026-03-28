@@ -1,10 +1,11 @@
 @import "tailwindcss";
+@plugin "@tailwindcss/typography";
 
 @theme {
-  /* Primary palette — teal */
-  --color-primary: #0d9488;
-  --color-primary-hover: #0f766e;
-  --color-primary-light: #ccfbf1;
+  /* Primary palette — purple-magenta (light mode) */
+  --color-primary: #940d82;
+  --color-primary-hover: #7a0a6b;
+  --color-primary-light: #f5d0f0;
 
   /* Secondary — orange accent */
   --color-secondary: #f97316;
@@ -47,6 +48,9 @@
 }
 
 .dark {
+  --color-primary: #14b8a6;
+  --color-primary-hover: #0d9488;
+  --color-primary-light: #134e4a;
   --color-bg-light: #0f172a;
   --color-surface-light: #1e293b;
   --color-surface-raised: #334155;
@@ -55,7 +59,6 @@
   --color-text-subtle: #64748b;
   --color-border: #334155;
   --color-border-focus: #14b8a6;
-  --color-primary-light: #134e4a;
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.2);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.2);
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.35), 0 4px 6px -4px rgb(0 0 0 / 0.2);

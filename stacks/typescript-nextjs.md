@@ -1,6 +1,7 @@
 # Stack Profile: TypeScript + Next.js 14 (App Router)
 
 > Stack profile for ExpatHunter frontend. This is the coding and security contract for all frontend code.
+> See also: [stacks/typescript.md](./typescript.md) for shared TypeScript conventions (type system rules, naming, anti-patterns).
 
 ## Coding Best Practices
 
@@ -29,7 +30,7 @@
 - Never import server-only code in client components
 
 ### Anti-patterns
-- **No `any` type** — use proper types from `@expat-hunter/shared`
+- **No `any` type** — see [typescript.md](./typescript.md) for the full rule; use proper types from `@expat-hunter/shared`
 - **No inline styles** — use Tailwind classes
 - **No direct `fetch` calls** — use the `api-client.ts` wrapper (handles auth, errors, base URL)
 - **No prop drilling beyond 2 levels** — use React Context or custom hooks

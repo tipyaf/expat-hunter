@@ -8,6 +8,19 @@
 */
 
 import 'reflect-metadata'
+
+// Safety guard: prevent tests from running against the development database
+if (process.env.NODE_ENV !== 'test') {
+  console.error('ERROR: Tests must run with NODE_ENV=test. Current value:', process.env.NODE_ENV)
+  process.exit(1)
+}
+
+const dbName = process.env.DB_DATABASE ?? ''
+if (!dbName.endsWith('_test')) {
+  console.error('ERROR: Tests must run against a _test database. Current DB_DATABASE:', dbName)
+  process.exit(1)
+}
+
 import { Ignitor, prettyPrintError } from '@adonisjs/core'
 import { apiClient } from '@japa/api-client'
 import { assert } from '@japa/assert'

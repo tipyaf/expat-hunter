@@ -4,6 +4,7 @@ import { Sidebar } from '@/components/layout/sidebar'
 import { MarketSnapshot } from '@/components/ui/market-snapshot'
 import { SearchProgressModal } from '@/components/ui/search-progress-modal'
 import { useAuth } from '@/contexts/auth-context'
+import { useDebounce } from '@/hooks/use-debounce'
 import { useMarketSnapshot } from '@/hooks/use-market-snapshot'
 import { useSearch, type SearchRun } from '@/hooks/use-search'
 import { useTranslations } from 'next-intl'
@@ -15,7 +16,7 @@ const COUNTRY_CODES = ['NZ', 'AU', 'CA', 'UK', 'US', 'SG', 'MY', 'PH', 'ID', 'TH
 function statusColor(status: string) {
   switch (status) {
     case 'completed': return 'bg-green-100 text-green-800'
-    case 'scraping': case 'analyzing': case 'generating': case 'pending': return 'bg-blue-100 text-blue-800'
+    case 'scraping': case 'enriching': case 'analyzing': case 'generating': case 'pending': return 'bg-blue-100 text-blue-800'
     case 'failed': return 'bg-red-100 text-red-800'
     default: return 'bg-gray-100 text-gray-800'
   }
@@ -35,13 +36,16 @@ export default function SearchPage() {
 
   const [country, setCountry] = useState('NZ')
   const [sector, setSector] = useState('')
+  const [city, setCity] = useState('')
+  const [includeHr, setIncludeHr] = useState(false)
   const [isLaunching, setIsLaunching] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
   const launchButtonRef = useRef<HTMLButtonElement>(null)
   const prevActiveRunStatus = useRef<string | null>(null)
 
-  const { snapshot, isLoading: snapshotLoading } = useMarketSnapshot(country, sector || null)
+  const debouncedSector = useDebounce(sector, 500)
+  const { snapshot, isLoading: snapshotLoading } = useMarketSnapshot(country, debouncedSector || null)
 
   // Pre-fill from profile defaults
   useEffect(() => {
@@ -117,7 +121,7 @@ export default function SearchPage() {
     setIsLaunching(true)
     setShowModal(true)
     try {
-      await launchSearch(country, sector || undefined)
+      await launchSearch(country, sector || undefined, undefined, city || undefined, includeHr)
     } catch (err) {
       // Error is visible in the modal via activeRun.status === 'failed'
       console.error('Search launch error:', err)
@@ -191,7 +195,7 @@ export default function SearchPage() {
           {/* Launch form */}
           <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-6 shadow-sm">
             <h2 className="text-lg font-semibold mb-4">{t('launchTitle')}</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
               <div>
                 <label htmlFor="country" className="block text-sm font-medium mb-1">
                   {t('countryLabel')}
@@ -222,6 +226,19 @@ export default function SearchPage() {
                   className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm"
                 />
               </div>
+              <div>
+                <label htmlFor="city" className="block text-sm font-medium mb-1">
+                  {t('cityLabel')}
+                </label>
+                <input
+                  id="city"
+                  type="text"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  placeholder={t('cityPlaceholder')}
+                  className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm"
+                />
+              </div>
               <div className="flex items-end">
                 <button
                   ref={launchButtonRef}
@@ -234,6 +251,16 @@ export default function SearchPage() {
                 </button>
               </div>
             </div>
+            <label htmlFor="includeHr" className="flex items-center gap-2 mt-2 cursor-pointer">
+              <input
+                id="includeHr"
+                type="checkbox"
+                checked={includeHr}
+                onChange={(e) => setIncludeHr(e.target.checked)}
+                className="h-4 w-4 rounded border-[var(--color-border)] text-primary focus:ring-primary"
+              />
+              <span className="text-sm text-[var(--color-text-muted)]">{t('includeHrLabel')}</span>
+            </label>
           </div>
 
           {/* Runs history */}

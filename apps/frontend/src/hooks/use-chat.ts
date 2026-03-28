@@ -21,10 +21,17 @@ export interface ChatContext {
   country?: string
 }
 
+export interface ChatQuota {
+  used: number
+  limit: number | null
+  remaining: number | null
+}
+
 export function useChat() {
   const { token } = useAuth()
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [quota, setQuota] = useState<ChatQuota | null>(null)
   const [sessionId] = useState(
     () => `sess_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
   )
@@ -40,6 +47,7 @@ export function useChat() {
       try {
         const res = await apiClient.post<{
           data: { message: string; mode: ChatMode; actions?: { label: string; type: string; payload?: Record<string, unknown> }[] }
+          quota?: ChatQuota
         }>(
           '/api/assistant/chat',
           {
@@ -60,6 +68,9 @@ export function useChat() {
           actions: res.data.actions,
         }
         setMessages((prev) => [...prev, assistantMsg])
+        if (res.quota) {
+          setQuota(res.quota)
+        }
       } catch (err) {
         const detail =
           err instanceof Error ? err.message : 'Unknown error'
@@ -80,5 +91,5 @@ export function useChat() {
 
   const clearMessages = useCallback(() => setMessages([]), [])
 
-  return { messages, isLoading, sessionId, sendMessage, clearMessages }
+  return { messages, isLoading, sessionId, sendMessage, clearMessages, quota }
 }

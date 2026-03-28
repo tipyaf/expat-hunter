@@ -79,6 +79,7 @@ function mockPlaywrightClient(options: {
           ]
         : [],
     }),
+    close: async () => {},
   } as unknown as PlaywrightClient
 }
 
@@ -256,6 +257,32 @@ test.group('VisaSponsorRegistryService — NZ Playwright scraping (unit)', () =>
     // Call the TTL function with a result that has the future expiresAt
     const ttlValue = (capturedTtl as (data: unknown) => number)({ expiresAt: futureDate })
     assert.isAbove(ttlValue, 1, 'Dynamic TTL should exceed 1 day for a future expiry date')
+  })
+
+  test('close() is called even when click() throws mid-scrape', async ({ assert }) => {
+    let closeCalled = false
+    const service = new VisaSponsorRegistryService()
+    ;(service as any).playwrightClient = {
+      ...mockPlaywrightClient({ sessionId: 'test-session' }),
+      click: async () => {
+        throw new Error('click failed')
+      },
+      close: async (sid: string) => {
+        closeCalled = true
+        assert.equal(sid, 'test-session')
+      },
+    }
+    ;(service as any).nzWaitAfterClickMs = 0
+    ;(service as any).cacheService = {
+      getOrFetch: async (_s: string, _t: string, _k: string, fn: () => Promise<unknown>) => ({
+        data: await fn(),
+        fromCache: false,
+      }),
+    }
+
+    await service.checkNZ('Datacom').catch(() => {})
+
+    assert.isTrue(closeCalled, 'close() must be called even when click() throws mid-scrape')
   })
 
   test('dynamic TTL falls back to 30 days when expiresAt is absent', async ({ assert }) => {

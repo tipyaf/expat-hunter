@@ -18,6 +18,7 @@ interface User {
   fullName: string
   locale: string
   isAdmin: boolean
+  plan: 'free' | 'premium'
 }
 
 interface AuthContextValue {
@@ -27,6 +28,7 @@ interface AuthContextValue {
   login: (email: string, password: string) => Promise<void>
   register: (data: RegisterData) => Promise<void>
   logout: () => Promise<void>
+  loginWithToken: (token: string) => Promise<void>
 }
 
 interface RegisterData {
@@ -45,7 +47,7 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 
 const TOKEN_KEY = 'expathunter_token'
 
-const publicPaths = ['/login', '/register', '/forgot-password', '/reset-password']
+const publicPaths = ['/login', '/register', '/forgot-password', '/reset-password', '/auth/callback']
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
@@ -140,9 +142,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [token, clearAuth, router])
 
+  const loginWithToken = useCallback(
+    async (accessToken: string) => {
+      try {
+        saveToken(accessToken)
+        const userData = await apiClient.get<User>('/api/auth/me', { token: accessToken })
+        setUser(userData)
+        router.push('/')
+      } catch {
+        clearAuth()
+        router.push('/login?error=oauth_failed')
+      }
+    },
+    [router, saveToken, clearAuth],
+  )
+
   const value = useMemo(
-    () => ({ user, token, isLoading, login, register, logout }),
-    [user, token, isLoading, login, register, logout],
+    () => ({ user, token, isLoading, login, register, logout, loginWithToken }),
+    [user, token, isLoading, login, register, logout, loginWithToken],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

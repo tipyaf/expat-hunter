@@ -3,10 +3,12 @@ import EmailMessage from '#models/email_message'
 import Contact from '#models/contact'
 import EmailGenerationService from '#services/email_generation_service'
 import EmailSendingService from '#services/email_sending_service'
+import UsageService from '#services/usage_service'
 
 const VALID_STATUSES = ['draft', 'approved', 'sent', 'opened', 'replied', 'bounced']
 
 export default class EmailsController {
+  private usageService = new UsageService()
   /**
    * GET /api/emails — List emails for current user (paginated).
    */
@@ -139,6 +141,15 @@ export default class EmailsController {
     const user = auth.getUserOrFail()
     const { contactIds, batchSize } = request.only(['contactIds', 'batchSize'])
 
+    // Quota check: emails
+    const emailCheck = await this.usageService.checkQuota(user.id, user.plan, 'emails')
+    if (!emailCheck.allowed) {
+      return response.forbidden({
+        error: { code: 'QUOTA_EXCEEDED', message: 'Email generation quota exceeded. Upgrade to Premium for unlimited emails.' },
+        quota: emailCheck.quota,
+      })
+    }
+
     const MAX_BATCH = 50
     const safeBatch = batchSize ? Math.min(Math.max(1, Math.floor(Number(batchSize) || 10)), MAX_BATCH) : undefined
 
@@ -148,7 +159,14 @@ export default class EmailsController {
       batchSize: safeBatch,
     })
 
-    return response.ok({ data: result })
+    // Increment email counter by number generated
+    const generated = result?.generated ?? 0
+    if (generated > 0) {
+      await this.usageService.increment(user.id, 'emails', generated)
+    }
+    const emailQuota = await this.usageService.getRemainingQuota(user.id, user.plan, 'emails')
+
+    return response.ok({ data: result, quota: emailQuota })
   }
 
   /**

@@ -1,3 +1,4 @@
+import { TEST_USER_PASSWORD, ensureTestUserPremium } from '#tests/helpers/credentials'
 /**
  * E2E test: Search quality validation.
  *
@@ -15,7 +16,7 @@ const SEARCH_URL = '/api/recherche'
 
 const testUser = {
   email: 'quality-test@example.com',
-  password: 'password123',
+  password: TEST_USER_PASSWORD,
   fullName: 'Quality Test User',
 }
 
@@ -23,6 +24,7 @@ async function createUserWithProfile(client: ApiClient) {
   const response = await client.post(`${AUTH_URL}/register`).json(testUser)
   const token = response.body().token as string
   const userId = response.body().user.id as string
+  await ensureTestUserPremium(userId)
 
   await db.table('candidate_profiles').insert({
     id: crypto.randomUUID(),
@@ -66,15 +68,30 @@ test.group('Search quality — full pipeline', (group) => {
   test('NZ search produces named contacts with emails', async ({ client, assert }) => {
     const { token } = await createUserWithProfile(client)
 
-    // Launch full search
-    const response = await client
+    // Launch search (returns immediately with searchRunId)
+    const launchRes = await client
       .post(SEARCH_URL)
       .header('Authorization', `Bearer ${token}`)
       .json({ country: 'NZ', sector: 'technology' })
-      .timeout(300_000)
 
-    response.assertStatus(200)
-    const data = response.body().data
+    launchRes.assertStatus(200)
+    const searchRunId = launchRes.body().data.searchRunId
+    assert.isString(searchRunId)
+
+    // Poll until completed or failed (max 5 minutes)
+    let data: { contactsFound: number; status: string } = { contactsFound: 0, status: 'pending' }
+    const maxWait = 300_000
+    const start = Date.now()
+    while (Date.now() - start < maxWait) {
+      const progressRes = await client
+        .get(`${SEARCH_URL}/${searchRunId}/progress`)
+        .header('Authorization', `Bearer ${token}`)
+      data = progressRes.body().data
+      if (data.status === 'completed' || data.status === 'failed') break
+      await new Promise((r) => setTimeout(r, 2000))
+    }
+
+    assert.equal(data.status, 'completed', 'Search should complete')
     assert.isAbove(data.contactsFound, 0, 'Should find at least 1 contact')
 
     // Check quality in DB

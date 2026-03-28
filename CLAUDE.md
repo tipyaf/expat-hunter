@@ -51,8 +51,9 @@ When a user describes a project idea or asks to build something:
 1. Read `memory/expat-hunter.md` to restore context
 2. Read `memory/LESSONS.md` for known pitfalls
 3. Read `specs/feature-tracker.yaml` to know feature states
-4. Summarize the project state to the user: what's done, what's next, which features are pending/refined/validated
-5. Resume where it left off — use the appropriate skill
+4. **Check Shortcut** — query pending/in-progress stories before deciding what to do next (MANDATORY)
+5. Summarize the project state to the user: what's done, what's next, which features are pending/refined/validated
+6. Resume where it left off — use the appropriate skill
 
 ## Phase workflow
 
@@ -107,6 +108,24 @@ PHASE 5 — RELEASE — ✅ Human
 ═══════════════════════════════════════════════════════════
 ```
 
+## Validation model
+
+| Phase | Skill | Agent | Validation | Gate (file must exist) |
+|-------|-------|-------|------------|------------------------|
+| 0: Constitution | /spec | — | Human | `specs/constitution.md` |
+| 0.1: Scoping | /spec | PO | Human | `specs/expat-hunter.yaml` |
+| 0.2: Clarify | /spec | PO | Human | `specs/expat-hunter-clarifications.md` |
+| 0.3: Design | /spec | UX/UI | Human | `specs/expat-hunter-ux.md` |
+| 0.5: Ordering | /spec | PO+Arch | Human | Features ordered in arch doc |
+| 1: Plan | /spec | Architect | Human | `specs/expat-hunter-architecture.md` |
+| 2: Scaffold | /build | Developer | Auto | Project compiles/starts |
+| 2.5: Refine | /refine | Refinement | Human | `specs/stories/[feature].yaml` |
+| 3: Implement | /build | Developer | Auto | Code + tests written |
+| 3.5: Validate | /validate | Validator | Auto | ALL `verify:` commands PASS |
+| 4: Review | /review | Reviewer+Security+Tester | Auto | Quality + security PASS |
+| 5: Deploy | — | DevOps | Human | Infrastructure decision |
+| 6: Release | — | — | Human | Go/no-go decision |
+
 ## Enforcement mechanisms
 
 | Mechanism | What it enforces |
@@ -128,6 +147,93 @@ Before executing a skill, verify its prerequisites exist **on the filesystem**:
 | `/build` | `specs/stories/[feature-id].yaml` + feature status=`refined` in tracker | → "This story needs refinement" → `/refine` |
 | `/validate` | Feature status=`building` or `testing` in tracker | → "Nothing to validate yet" → `/build` |
 | `/review` | ALL features status=`validated` in tracker | → "Some features still need validation" → list them |
+
+## Shortcut workflow rules (MANDATORY)
+
+### Story template — every story MUST have this structure
+```
+## Context
+[Why this story exists, what problem it solves]
+
+## Scope
+**Included:** [explicit list]
+**Excluded:** [explicit list]
+
+## Acceptance Criteria
+- [ ] AC1 — [Given / When / Then]
+- [ ] AC2 — [Given / When / Then]
+(copy ACs exactly from the story file YAML — check off as you go)
+
+## References
+- Story file: specs/stories/[id].yaml
+- Epic: [Shortcut link]
+```
+
+### Build checklist — add to EVERY story before starting dev
+These 12 tasks MUST be present and checked off via `stories-update-task` as each step completes:
+1. `[ ]` Refinement validated by user
+2. `[ ]` Story file YAML written (specs/stories/)
+3. `[ ]` Code implemented (scope respected)
+4. `[ ]` Unit tests written and passing
+5. `[ ]` Functional / e2e tests written and passing (web projects: see e2e rules below — skip if not web)
+6. `[ ]` Security audit (OWASP — injections, secrets, auth)
+7. `[ ]` TypeScript: 0 errors (tsc --noEmit)
+8. `[ ]` ACs verified (every verify: command executed and passing)
+9. `[ ]` UI validated visually (dark + light mode, login required)
+10. `[ ]` E2e specs updated for any modified frontend behaviour (web projects only — see e2e rules below)
+11. `[ ]` PR created on GitHub and linked to Shortcut story
+12. `[ ]` feature-tracker.yaml updated → validated
+
+### E2e test rules (web projects only — `spec.type: web`)
+
+> ⚠️ These rules apply **only when `spec.type` is `web` or `fullstack`**. Skip entirely for CLI, API-only, mobile, library, or embedded projects.
+
+| Rule | Detail |
+|------|--------|
+| **Write specs** | Every story that adds or changes frontend behaviour MUST include a Playwright spec (`e2e/tests/`) covering the new flow. No spec = not done. |
+| **Update existing specs** | If a frontend change breaks an existing e2e spec, the spec MUST be updated in the same PR. Broken e2e tests block the merge — they are never "acceptable background noise". |
+| **Merge blocker** | A PR with failing e2e tests MUST NOT be merged. Fix the spec or fix the code — never skip, disable, or mark as flaky without a tracked issue. |
+| **Coverage minimum** | Every page/flow listed in the UX spec must have at least one e2e spec. New pages added without a spec require a follow-up story created immediately. |
+
+### Labels — apply at each transition
+- **scope:** `scope:pending` → `scope:refined` → `scope:building` → `scope:testing` → `scope:validated`
+- **type:** `type:feature` | `type:bug` | `type:chore` | `type:tech-debt`
+- **area:** `area:frontend` | `area:backend` | `area:fullstack` | `area:infra` | `area:ai`
+
+> ⚠️ Do NOT use `priority:*` labels — use only the native Shortcut **Priority custom field** (Highest / High / Medium / Low / Lowest).
+
+### Estimation — Fibonacci scale (mandatory)
+Every story MUST have a point estimate:
+- **XS = 1** — trivial change, < 1h
+- **S = 2** — small feature or simple fix, < 2h
+- **M = 3** — standard feature, half a day
+- **L = 5** — complex feature, 1 day
+- **XL = 8** — major feature, 2+ days
+- **Epic = 13+** — must be split before starting
+
+### Mandatory closure after merge
+After each PR is merged, the agent MUST immediately:
+1. Move the ticket to `workflow_state_id: 500000010` (Done)
+2. Apply label `scope:validated`
+3. Verify no other linked ticket remains in "In Review"
+
+Never end a session with a ticket in "In Review" whose PR is already merged.
+
+### Workflow states (ID → name)
+- `500000006` Backlog → `500000007` To Do → `500000008` In Progress → `500000009` In Review → `500000010` Done
+
+### Automatic agent rules
+| Event | Required Shortcut action |
+|-------|--------------------------|
+| Session start | Check Shortcut (stories-search) BEFORE any decision |
+| Story created | Add 11 build checklist tasks via `stories-add-task` + estimate + labels scope/type/area |
+| Start `/refine` | `workflow_state_id: 500000007` (To Do) + label `scope:refined` |
+| Start `/build` | `workflow_state_id: 500000008` (In Progress) + label `scope:building` |
+| Start `/validate` | `workflow_state_id: 500000009` (In Review) + label `scope:testing` |
+| All ACs pass | `workflow_state_id: 500000010` (Done) + label `scope:validated` |
+| Each build step done | `stories-update-task isCompleted: true` (check off immediately) |
+| PR created | `stories-add-external-link` with GitHub URL + **always output the PR URL to the user** |
+| PR merged | `workflow_state_id: 500000010` + check all linked tickets |
 
 ## Acceptance criteria format (unified)
 

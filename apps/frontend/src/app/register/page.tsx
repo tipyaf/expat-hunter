@@ -1,6 +1,8 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
+import { PasswordInput } from '@/components/ui/password-input'
+import { SocialAuthButton } from '@/components/ui/social-auth-button'
 import { ApiError, useAuth } from '@/contexts/auth-context'
 import Link from 'next/link'
 import { type FormEvent, useState } from 'react'
@@ -84,16 +86,14 @@ export default function RegisterPage() {
             <label htmlFor="password" className="block text-sm font-medium mb-1">
               {t('passwordLabel')}
             </label>
-            <input
+            <PasswordInput
               id="password"
-              type="password"
               required
               minLength={8}
               value={password}
               onChange={(e) => {
                 setPassword(e.target.value)
               }}
-              className="w-full rounded-lg border border-[var(--color-border)] bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
               placeholder={t('passwordPlaceholder')}
             />
           </div>
@@ -124,6 +124,21 @@ export default function RegisterPage() {
             {t('login')}
           </Link>
         </p>
+
+        <div className="mt-6 flex items-center gap-3">
+          <div className="h-px flex-1 bg-[var(--color-border)]" />
+          <span className="text-xs text-[var(--color-text-muted)]">{t('orContinueWith')}</span>
+          <div className="h-px flex-1 bg-[var(--color-border)]" />
+        </div>
+        <div className="mt-4">
+          <SocialAuthButton
+            provider="google"
+            label={t('continueWithGoogle')}
+            onClick={() => {
+              window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/api/auth/google`
+            }}
+          />
+        </div>
       </div>
     </div>
   )

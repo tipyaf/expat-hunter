@@ -32,6 +32,7 @@ export default defineConfig({
     () => import('@adonisjs/i18n/i18n_provider'),
     () => import('@adonisjs/shield/shield_provider'),
     () => import('@adonisjs/static/static_provider'),
+    () => import('@adonisjs/ally/ally_provider')
   ],
 
   /*

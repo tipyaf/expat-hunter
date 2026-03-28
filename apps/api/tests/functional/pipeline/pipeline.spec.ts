@@ -1,3 +1,4 @@
+import { TEST_USER_PASSWORD, ensureTestUserPremium } from '#tests/helpers/credentials'
 import db from '@adonisjs/lucid/services/db'
 import type { ApiClient } from '@japa/api-client'
 import { test } from '@japa/runner'
@@ -8,15 +9,17 @@ const PIPELINE_URL = '/api/pipeline'
 
 const testUser = {
   email: 'pipeline-test@example.com',
-  password: 'password123',
+  password: TEST_USER_PASSWORD,
   fullName: 'Pipeline Test User',
 }
 
 async function createAuthenticatedUser(client: ApiClient) {
   const response = await client.post(`${AUTH_URL}/register`).json(testUser)
+  const userId = response.body().user.id as string
+  await ensureTestUserPremium(userId)
   return {
     token: response.body().token as string,
-    userId: response.body().user.id as string,
+    userId,
   }
 }
 

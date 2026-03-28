@@ -9,7 +9,11 @@ export type { SourcingRun } from './types/sourcing'
 export { SourcingStatus } from './types/sourcing'
 export type { PipelineColumn } from './types/pipeline'
 export { PIPELINE_COLUMNS, STATUS_TO_COLUMN } from './types/pipeline'
-export type { ApiResponse, PaginatedResponse } from './types/api-responses'
+export type { ApiResponse, PaginatedResponse, QuotaInfo } from './types/api-responses'
+
+// Plans
+export type { UserPlan, QuotaType } from './constants/plans'
+export { PLAN_FREE, PLAN_PREMIUM, FREE_QUOTAS } from './constants/plans'
 
 // Constants
 export {

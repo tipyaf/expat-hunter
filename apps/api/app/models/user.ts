@@ -6,6 +6,8 @@ import hash from '@adonisjs/core/services/hash'
 import { BaseModel, beforeCreate, column, hasOne } from '@adonisjs/lucid/orm'
 import type { HasOne } from '@adonisjs/lucid/types/relations'
 import type { DateTime } from 'luxon'
+import { PLAN_PREMIUM } from '@expat-hunter/shared'
+import type { UserPlan } from '@expat-hunter/shared'
 import CandidateProfile from '#models/candidate_profile'
 import FollowUpSequence from '#models/follow_up_sequence'
 
@@ -24,7 +26,10 @@ export default class User extends compose(BaseModel, AuthFinder) {
   declare email: string
 
   @column({ serializeAs: null })
-  declare password: string
+  declare password: string | null
+
+  @column()
+  declare googleId: string | null
 
   @column()
   declare fullName: string
@@ -33,7 +38,14 @@ export default class User extends compose(BaseModel, AuthFinder) {
   declare locale: string
 
   @column()
+  declare plan: UserPlan
+
+  @column()
   declare isAdmin: boolean
+
+  get isPremium(): boolean {
+    return this.plan === PLAN_PREMIUM
+  }
 
   @column.dateTime()
   declare emailVerifiedAt: DateTime | null

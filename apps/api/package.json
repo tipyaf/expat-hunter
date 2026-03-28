@@ -32,9 +32,11 @@
     "#start/*": "./start/*.js",
     "#migrations/*": "./database/migrations/*.js",
     "#seeders/*": "./database/seeders/*.js",
-    "#factories/*": "./database/factories/*.js"
+    "#factories/*": "./database/factories/*.js",
+    "#tests/*": "./tests/*.js"
   },
   "dependencies": {
+    "@adonisjs/ally": "^6.0.0",
     "@adonisjs/auth": "^10.0.0",
     "@adonisjs/core": "^7.1.1",
     "@adonisjs/cors": "^3.0.0",
@@ -43,6 +45,7 @@
     "@adonisjs/mail": "^10.0.1",
     "@adonisjs/shield": "^9.0.0",
     "@adonisjs/static": "^2.0.1",
+    "@expat-hunter/shared": "workspace:^",
     "@poppinss/ts-exec": "^1.4.4",
     "@vinejs/vine": "^4.3.0",
     "bcrypt": "^6.0.0",

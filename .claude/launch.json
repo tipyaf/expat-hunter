@@ -6,7 +6,14 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
       "port": 3000,
-      "cwd": "apps/frontend"
+      "cwd": "apps/frontend",
+      "autoPort": true
+    },
+    {
+      "name": "wireframes",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8090", "-d", "specs/wireframes"],
+      "port": 8090
     }
   ]
 }

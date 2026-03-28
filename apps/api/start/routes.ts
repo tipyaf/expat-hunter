@@ -42,6 +42,8 @@ router
     router.post('reset-password', [AuthController, 'resetPassword'])
     router.post('verify-email', [AuthController, 'verifyEmail'])
     router.post('resend-verification', [AuthController, 'resendVerification']).use(middleware.auth())
+    router.get('google', [AuthController, 'googleRedirect'])
+    router.get('google/callback', [AuthController, 'googleCallback'])
   })
   .prefix('/api/auth')
 
@@ -214,11 +216,6 @@ router
   .use(middleware.auth())
 
 router
-  .post('/api/admin/refresh-visa-registries', [EnrichmentController, 'refreshVisaRegistries'])
-  .use(middleware.auth())
-  .use(middleware.admin())
-
-router
   .patch('/api/admin/settings/emails', [SendingSettingsController, 'updateAdminLimits'])
   .use(middleware.auth())
   .use(middleware.admin())
@@ -227,6 +224,7 @@ router
   .group(() => {
     router.get('/', [AiSettingsController, 'listUsers'])
     router.patch('/:id/admin', [AiSettingsController, 'toggleAdmin'])
+    router.patch('/:id/plan', [AiSettingsController, 'togglePlan'])
   })
   .prefix('/api/admin/users')
   .use(middleware.auth())

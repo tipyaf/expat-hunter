@@ -4,6 +4,13 @@ import type { ChatContext, ChatMessage, ChatMode } from '@/hooks/use-chat'
 import { useTranslations } from 'next-intl'
 import { useEffect, useRef, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
+import { ChatLinkRenderer } from './chat-link-renderer'
+
+interface ChatQuota {
+  used: number
+  limit: number | null
+  remaining: number | null
+}
 
 interface ChatPanelProps {
   messages: ChatMessage[]
@@ -12,6 +19,7 @@ interface ChatPanelProps {
   onClear: () => void
   onClose: () => void
   context: ChatContext
+  quota?: ChatQuota | null
 }
 
 const PAGE_SUGGESTIONS: Record<string, string[]> = {
@@ -89,6 +97,7 @@ export function ChatPanel({
   onClear,
   onClose,
   context,
+  quota,
 }: ChatPanelProps) {
   const t = useTranslations('chat')
   const [input, setInput] = useState('')
@@ -213,7 +222,7 @@ export function ChatPanel({
             >
               {msg.role === 'assistant' ? (
                 <div className="prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5 prose-headings:my-2 prose-pre:my-2 prose-a:text-primary text-[var(--color-text-main)] prose-strong:text-[var(--color-text-main)] prose-headings:text-[var(--color-text-main)]">
-                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  <ReactMarkdown components={{ a: ChatLinkRenderer }}>{msg.content}</ReactMarkdown>
                 </div>
               ) : (
                 <p className="whitespace-pre-wrap">{msg.content}</p>
@@ -253,6 +262,24 @@ export function ChatPanel({
 
       {/* Input */}
       <div className="border-t border-[var(--color-border)] p-3">
+        {/* Quota counter for free users */}
+        {quota && quota.remaining !== null && (
+          <div className={`mb-2 text-xs text-center ${quota.remaining <= 3 ? 'text-[var(--color-error)] font-medium' : 'text-[var(--color-text-muted)]'}`}>
+            {quota.remaining > 0
+              ? t('quotaRemaining', { remaining: quota.remaining, limit: quota.limit })
+              : t('quotaExhausted')}
+          </div>
+        )}
+        {quota && quota.remaining === 0 ? (
+          <div className="text-center py-2">
+            <a
+              href="/upgrade"
+              className="inline-flex items-center gap-2 rounded-[var(--radius-md)] bg-gradient-to-r from-amber-400 to-orange-500 px-4 py-2 text-sm font-semibold text-white shadow-md hover:shadow-lg transition-shadow"
+            >
+              {t('upgradeForChat')}
+            </a>
+          </div>
+        ) : (
         <div className="flex items-end gap-2">
           <textarea
             ref={textareaRef}
@@ -288,6 +315,7 @@ export function ChatPanel({
             </svg>
           </button>
         </div>
+        )}
       </div>
     </div>
   )

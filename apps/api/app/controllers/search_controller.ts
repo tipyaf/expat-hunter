@@ -1,5 +1,7 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import SearchOrchestratorService from '#services/search_orchestrator_service'
+import SearchRun from '#models/search_run'
+import logger from '@adonisjs/core/services/logger'
 // Register scrapers on first import
 import '../scrapers/register.js'
 
@@ -8,10 +10,13 @@ export default class SearchController {
 
   /**
    * POST /api/recherche — Launch the full automated search flow.
+   *
+   * Returns immediately with the searchRunId. The pipeline runs in
+   * the background. Frontend polls GET /api/recherche/:id/progress.
    */
   async launch({ auth, request, response }: HttpContext) {
     const user = auth.getUserOrFail()
-    const { country, sector, sources } = request.only(['country', 'sector', 'sources'])
+    const { country, sector, sources, city, includeHr } = request.only(['country', 'sector', 'sources', 'city', 'includeHr'])
 
     if (!country || typeof country !== 'string' || country.length < 2) {
       return response.badRequest({
@@ -22,15 +27,34 @@ export default class SearchController {
       })
     }
 
-    const result = await this.searchService.launch(user.id, {
+    // Create the search run record upfront so we can return its ID immediately
+    const searchRun = await SearchRun.create({
+      userId: user.id,
+      country: country.toUpperCase(),
+      sector: sector ?? null,
+      status: 'pending',
+      contactsFound: 0,
+      contactsRelevant: 0,
+      emailsGenerated: 0,
+      contactsExcludedCooldown: 0,
+      progressPercent: 0,
+    })
+
+    // Fire-and-forget: run pipeline in background, catch errors to update status
+    this.searchService.launchFromRun(searchRun, user.id, {
       country: country.toUpperCase(),
       sector: sector ?? undefined,
       sourceNames: Array.isArray(sources) ? sources : undefined,
+      city: city ?? undefined,
+      includeHr: includeHr === true,
+    }).catch((error) => {
+      logger.error('Background search %s failed: %s', searchRun.id, error instanceof Error ? error.message : error)
     })
 
+    // Return immediately — frontend polls progress
     return response.ok({
-      data: result,
-      message: `Recherche terminée : ${result.contactsFound} contacts, ${result.contactsRelevant} pertinents, ${result.emailsGenerated} emails générés`,
+      data: { searchRunId: searchRun.id },
+      message: 'Search launched',
     })
   }
 

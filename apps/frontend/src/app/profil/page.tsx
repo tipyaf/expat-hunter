@@ -2,15 +2,23 @@
 
 import { Sidebar } from '@/components/layout/sidebar'
 import { Button } from '@/components/ui/button'
+import { CountrySelect } from '@/components/ui/country-select'
 import { TagInput } from '@/components/ui/tag-input'
+import { ProactiveTip } from '@/components/ui/proactive-tip'
 import { useAuth } from '@/contexts/auth-context'
 import { type UpdateProfileData, useProfile } from '@/hooks/use-profile'
+import { apiClient } from '@/lib/api-client'
 import { useRouter } from 'next/navigation'
 import { type FormEvent, useCallback, useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 
+interface ContextualTip {
+  message: string
+  cta?: { label: string; href: string }
+}
+
 export default function ProfilePage() {
-  const { user, isLoading: authLoading } = useAuth()
+  const { user, token, isLoading: authLoading } = useAuth()
   const { profile, isLoading: profileLoading, updateProfile, uploadCv } = useProfile()
   const router = useRouter()
   const t = useTranslations('profile')
@@ -24,6 +32,7 @@ export default function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
+  const [profileTip, setProfileTip] = useState<ContextualTip | null>(null)
 
   useEffect(() => {
     if (profile) {
@@ -34,6 +43,14 @@ export default function ProfilePage() {
       setTargetRoles(profile.targetRoles)
     }
   }, [profile])
+
+  useEffect(() => {
+    if (!token) return
+    apiClient
+      .get<{ data: ContextualTip }>('/api/tips/contextual?page=profile', { token })
+      .then((res) => setProfileTip(res.data))
+      .catch(() => {})
+  }, [token])
 
   const handleSubmit = useCallback(
     async (e: FormEvent) => {
@@ -112,7 +129,7 @@ export default function ProfilePage() {
   }
 
   if (!profile?.onboardingCompleted) {
-    router.push('/profil/setup')
+    router.push('/onboarding')
     return null
   }
 
@@ -125,6 +142,36 @@ export default function ProfilePage() {
           <p className="text-[var(--color-text-muted)]">{t('subtitle')}</p>
         </div>
         <div className="flex-1 overflow-y-auto px-4 md:px-8 pb-8">
+
+        {/* Completion gauge */}
+        {profile && (
+          <div className="mb-6 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-4">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium">
+                {t('completionGauge', { pct: profile.completionPercentage })}
+              </span>
+              <span className="text-sm font-bold text-primary">{profile.completionPercentage}%</span>
+            </div>
+            <div className="w-full bg-[var(--color-border)] rounded-full h-2">
+              <div
+                className="bg-primary h-2 rounded-full transition-all duration-500"
+                style={{ width: `${profile.completionPercentage}%` }}
+              />
+            </div>
+            {profile.completionPercentage < 100 && (
+              <p className="text-xs text-[var(--color-text-muted)] mt-2">
+                {t('completeProfile')}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Profile contextual tip */}
+        {profileTip && (
+          <div className="mb-6">
+            <ProactiveTip message={profileTip.message} cta={profileTip.cta} />
+          </div>
+        )}
 
         {message && (
           <div className="mb-6 rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700">
@@ -165,12 +212,10 @@ export default function ProfilePage() {
               />
             </div>
 
-            <TagInput
+            <CountrySelect
               label={t('targetCountriesLabel')}
               value={targetCountries}
               onChange={setTargetCountries}
-              placeholder="NZ, AU, CA..."
-              maxLength={3}
             />
 
             <TagInput

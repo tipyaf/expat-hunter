@@ -27,57 +27,57 @@ features:
   - id: "candidate-profile"
     name: "Candidate Profile"
     priority: "must-have"
-    status: "pending"
+    status: "validated"
     cycles: 1
-    story_file: ""
+    story_file: "specs/stories/candidate-profile.yaml"
     depends_on: []
-    started_at: ""
-    validated_at: ""
-    notes: "User configures CV, skills, experience, target country/sector/role"
+    started_at: "2026-03-17"
+    validated_at: "2026-03-25"
+    notes: "Retrospective validation. All 14 ACs pass. 238/240 tests pass (2 failures = port conflict with running dev server, not code issues). Requires Node >= 22 (Japa 5.3.0)."
 
   - id: "contact-sourcing"
     name: "Contact Sourcing"
     priority: "must-have"
-    status: "pending"
+    status: "validated"
     cycles: 1
-    story_file: ""
+    story_file: "specs/stories/contact-sourcing.yaml"
     depends_on: ["candidate-profile"]
-    started_at: ""
-    validated_at: ""
-    notes: "Pluggable scrapers per country/source, anti-detection, dedup"
+    started_at: "2026-03-17"
+    validated_at: "2026-03-25"
+    notes: "Retrospective validation. All 13 ACs pass. 238/240 tests pass (2 failures = port conflict, not code). 5 scrapers extend BaseScraper, ScraperRegistry pluggable, no raw SQL."
 
   - id: "ai-relevance-analysis"
     name: "AI Relevance Analysis"
     priority: "must-have"
-    status: "pending"
+    status: "validated"
     cycles: 1
-    story_file: ""
+    story_file: "specs/stories/ai-relevance-analysis.yaml"
     depends_on: ["candidate-profile", "contact-sourcing"]
-    started_at: ""
-    validated_at: ""
-    notes: "Score 0-100, explanation, recommendation, OpenRouter"
+    started_at: "2026-03-17"
+    validated_at: "2026-03-25"
+    notes: "Retrospective validation. All 12 ACs pass. OpenRouter env-based, batch error-tolerant, userOverride supported."
 
   - id: "personalized-emailing"
     name: "Personalized Emailing"
     priority: "must-have"
-    status: "pending"
+    status: "validated"
     cycles: 1
-    story_file: ""
+    story_file: "specs/stories/personalized-emailing.yaml"
     depends_on: ["ai-relevance-analysis"]
-    started_at: ""
-    validated_at: ""
-    notes: "AI-generated emails, Gmail API, follow-up sequences"
+    started_at: "2026-03-17"
+    validated_at: "2026-03-25"
+    notes: "Retrospective validation. Fixed AC-SEC-PE-03: imapPassword + smtpPassword now encrypted via AdonisJS encryption service. All 12 ACs pass."
 
   - id: "pipeline-dashboard"
     name: "Pipeline Dashboard"
     priority: "must-have"
-    status: "pending"
+    status: "validated"
     cycles: 1
-    story_file: ""
+    story_file: "specs/stories/pipeline-dashboard.yaml"
     depends_on: ["contact-sourcing"]
-    started_at: ""
-    validated_at: ""
-    notes: "Kanban view, drag & drop, filters, counters"
+    started_at: "2026-03-17"
+    validated_at: "2026-03-25"
+    notes: "Retrospective validation. All 11 ACs pass. 6-column kanban, drag & drop, ContactCard with relevance/email/visa badges."
 
   # === SHOULD-HAVE ===
 
@@ -85,7 +85,7 @@ features:
     name: "Signal Detection"
     priority: "should-have"
     status: "pending"
-    cycles: 1
+    cycles: 0
     story_file: ""
     depends_on: ["contact-sourcing"]
     started_at: ""
@@ -96,7 +96,7 @@ features:
     name: "Multi-Country Support"
     priority: "should-have"
     status: "pending"
-    cycles: 1
+    cycles: 0
     story_file: ""
     depends_on: ["contact-sourcing"]
     started_at: ""
@@ -109,7 +109,7 @@ features:
     name: "LinkedIn Messaging"
     priority: "nice-to-have"
     status: "pending"
-    cycles: 1
+    cycles: 0
     story_file: ""
     depends_on: ["contact-sourcing"]
     started_at: ""
@@ -120,7 +120,7 @@ features:
     name: "Multi-Users"
     priority: "nice-to-have"
     status: "pending"
-    cycles: 1
+    cycles: 0
     story_file: ""
     depends_on: []
     started_at: ""
@@ -131,7 +131,7 @@ features:
     name: "Expat Assistance"
     priority: "nice-to-have"
     status: "pending"
-    cycles: 1
+    cycles: 0
     story_file: ""
     depends_on: []
     started_at: ""
@@ -142,7 +142,7 @@ features:
     name: "Interview Preparation"
     priority: "nice-to-have"
     status: "pending"
-    cycles: 1
+    cycles: 0
     story_file: ""
     depends_on: ["candidate-profile"]
     started_at: ""
@@ -153,7 +153,7 @@ features:
     name: "Mobile App"
     priority: "nice-to-have"
     status: "pending"
-    cycles: 1
+    cycles: 0
     story_file: ""
     depends_on: ["pipeline-dashboard"]
     started_at: ""
@@ -164,25 +164,80 @@ features:
     name: "Analytics Dashboard"
     priority: "nice-to-have"
     status: "pending"
-    cycles: 1
+    cycles: 0
     story_file: ""
     depends_on: ["personalized-emailing"]
     started_at: ""
     validated_at: ""
     notes: "Response rates, best channels, message optimization"
 
-  # === TECHNICAL STORIES ===
-
-  - id: "sc-30"
-    name: "Fix visa check NZ — Playwright-based scraping via external server"
-    priority: "should-have"
+  - id: "contact-detail-panel"
+    name: "Contact Detail Panel"
+    priority: "must-have"
     status: "validated"
     cycles: 1
-    story_file: "specs/stories/sc-30.yaml"
+    story_file: "specs/stories/contact-detail-panel.yaml"
+    depends_on: ["pipeline-dashboard"]
+    started_at: "2026-03-25"
+    validated_at: "2026-03-25"
+    notes: "All 10 ACs pass. 0 TS errors. 2 new files (panel 270L, hook 109L). page.tsx 415L (15L over limit — pre-existing). No security issues."
+
+  - id: "sc-216"
+    name: "Close scraper session after search"
+    priority: "bug"
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/sc-216.yaml"
     depends_on: []
+    started_at: "2026-03-26"
+    validated_at: "2026-03-26"
+    notes: "close(sessionId) added to PlaywrightClient; scrapeNzPage() wrapped in try/finally. 13 unit tests pass. All 6 AC verify commands pass. PR #70."
+
+  - id: "sc-336"
+    name: "Centralize hardcoded test credentials (API + e2e)"
+    priority: "chore"
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/sc-336.yaml"
+    depends_on: []
+    started_at: "2026-03-26"
+    validated_at: "2026-03-27"
+    notes: "Merges sc-461. e2e/fixtures/seed.ts reads E2E_USER_EMAIL + E2E_USER_PASSWORD from env. API functional tests already used credentials.ts helper. All 7 ACs pass. 0 TS errors. PR #81 merged."
+
+  - id: "sc-340"
+    name: "fix: resolve pre-existing TypeScript errors (profile, contact, routes)"
+    priority: "bug"
+    status: "validated"
+    cycles: 0
+    story_file: "specs/stories/sc-340.yaml"
+    depends_on: []
+    started_at: "2026-03-26"
+    validated_at: "2026-03-27"
+    notes: "Done in Shortcut (state synced 2026-03-27)."
+
+  - id: "sc-446"
+    name: "e2e: audit and complete frontend test coverage"
+    priority: "high"
+    status: "building"
+    cycles: 1
+    story_file: "specs/stories/sc-446.yaml"
+    depends_on: []
+    started_at: "2026-03-27"
+    validated_at: ""
+    notes: "5 new specs written (login-flow, contact-detail-panel, password-toggle, chat-links, oauth). 26 passed, 8 skipped (no contacts in test data). 35 pre-existing failures tracked in sc-461. CLAUDE.md updated with e2e rules and merge blocker."
+
+  - id: "sc-461"
+    name: "fix: e2e specs with hardcoded credentials fail"
+    priority: "bug"
+    status: "pending"
+    cycles: 0
+    story_file: ""
+    depends_on: ["sc-446"]
     started_at: ""
     validated_at: ""
-    notes: "Replace broken direct API call with Playwright scraping. POC proven by n8n workflow 8sRbC6W5Z0sSHr62."
+    notes: "35 pre-existing failures in epic1/epic2/epic8/reset-password specs using ya.net@hotmail.fr. Found during sc-446 audit."
+
+  # === TECHNICAL STORIES ===
 
   - id: "sc-191"
     name: "Backend unit & functional tests — password reset flow"
@@ -206,13 +261,137 @@ features:
     validated_at: "2026-03-25"
     notes: "15 unit tests (ProfileService) + 8 new functional tests. Total 39 profile tests, all pass."
 
-  - id: "sc-205"
-    name: "Smart visa cache — store expiryDateOfAccreditation and re-scrape only when expired"
+  - id: "sc-353"
+    name: "Password fields show/hide toggle"
+    priority: "feature"
+    status: "validated"
+    cycles: 0
+    story_file: "specs/stories/sc-353.yaml"
+    depends_on: []
+    started_at: "2026-03-26"
+    validated_at: "2026-03-26"
+    validated_at: ""
+    notes: "PasswordInput component with Eye/EyeOff toggle. Replaces all 6 password fields across 4 pages. i18n keys added to en.json + fr.json."
+
+  - id: "sc-335"
+    name: "Chat: render internal navigation links as clickable"
+    priority: "feature"
+    status: "validated"
+    cycles: 0
+    story_file: "specs/stories/sc-335.yaml"
+    depends_on: []
+    started_at: "2026-03-26"
+    validated_at: "2026-03-26"
+    notes: "ChatLinkRenderer component: / paths → Next.js Link, http/https → <a target=_blank rel=noopener noreferrer>. Security: reject javascript:/data: URIs. APP_FAQ rewritten with 7 markdown links. All 8 ACs pass. 0 TS errors. PR #75."
+
+  - id: "sc-352"
+    name: "TypeScript interface optional property audit"
+    priority: "tech-debt"
+    status: "validated"
+    cycles: 0
+    story_file: "specs/stories/sc-352.yaml"
+    depends_on: []
+    started_at: "2026-03-26"
+    validated_at: "2026-03-26"
+    notes: "Replaced ?: with | null for nullable DB fields across 5 shared type files. Fixed Contact.userOverride: boolean. Created stacks/typescript.md. Updated stack profiles and framework template. All 11 ACs pass. PR #73."
+
+  - id: "sc-446"
+    name: "e2e: audit and complete frontend test coverage"
+    priority: "chore"
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/sc-446.yaml"
+    depends_on: []
+    started_at: "2026-03-27"
+    validated_at: "2026-03-27"
+    notes: "5 e2e specs added (contact-detail, email-settings, chat, password-toggle, source-management). E2e rules scoped to web-only projects in CLAUDE.md. PR #80 merged."
+
+  - id: "sc-398"
+    name: "Fix: chat falls back to support mode when OpenRouter unavailable"
+    priority: "bug"
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/sc-398.yaml"
+    depends_on: []
+    started_at: "2026-03-26"
+    validated_at: "2026-03-27"
+    notes: "getExpertResponse() now falls back to getSupportResponse() when OpenRouter client is null, with logger.warn. Hardcoded error kept as last resort. All 5 ACs pass. 0 TS errors. PR #77 merged."
+
+  - id: "sc-399"
+    name: "Fix: user account wiped from dev DB when tests run"
+    priority: "high"
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/sc-399.yaml"
+    depends_on: []
+    started_at: "2026-03-26"
+    validated_at: "2026-03-26"
+    notes: "Guard in bin/test.ts: assert NODE_ENV=test + DB_DATABASE ends with _test. Ensures functional tests cannot run against expat_hunter_dev. All 5 ACs pass. 0 TS errors. PR #78."
+
+  - id: "sc-422"
+    name: "Sign in with Google (OAuth)"
     priority: "should-have"
     status: "validated"
     cycles: 1
-    story_file: "specs/stories/sc-205.yaml"
-    depends_on: ["sc-30"]
-    started_at: "2026-03-25"
-    validated_at: "2026-03-25"
-    notes: "Dynamic TTL = days until expiresAt (fallback 30). Add visaSponsorExpiresAt to Company. Migration 29. PR #64 validated — all 11 ACs PASS."
+    story_file: "specs/stories/sc-422.yaml"
+    depends_on: []
+    started_at: "2026-03-26"
+    validated_at: "2026-03-27"
+    notes: "Google OAuth via @adonisjs/ally. googleId column added, password nullable. encodeURIComponent fix for token in redirect URL. loginWithToken() error handling added. All 15 ACs pass. 0 TS errors. PR #79."
+
+  # === PREMIUM & FREE FEATURES (Epic sc-431) ===
+
+  - id: "sc-431-1"
+    name: "Premium/Free: data model + PlanGuard middleware"
+    priority: "must-have"
+    status: "refined"
+    cycles: 0
+    story_file: "specs/stories/sc-431-1.yaml"
+    depends_on: []
+    started_at: ""
+    validated_at: ""
+    notes: "Foundation: plan column on User, PlanGuard middleware, shared constants FREE_QUOTAS. Shortcut sc-473."
+
+  - id: "sc-431-2"
+    name: "Premium/Free: quota tracking + enforcement"
+    priority: "must-have"
+    status: "refined"
+    cycles: 0
+    story_file: "specs/stories/sc-431-2.yaml"
+    depends_on: ["sc-431-1"]
+    started_at: ""
+    validated_at: ""
+    notes: "UsageService, usage_counters table, sourcing/email enforcement, Hunter limit=5, AI analysis skip for free. Shortcut sc-474."
+
+  - id: "sc-431-3"
+    name: "Premium/Free: frontend premium badges, gated UI + upgrade page"
+    priority: "must-have"
+    status: "refined"
+    cycles: 0
+    story_file: "specs/stories/sc-431-3.yaml"
+    depends_on: ["sc-431-1"]
+    started_at: ""
+    validated_at: ""
+    notes: "PremiumBadge, PremiumGate, FakeContactRow, /upgrade page, kanban gate, sidebar CTA. Shortcut sc-475."
+
+  - id: "sc-431-4"
+    name: "Premium/Free: chat free mode (commercial tone + restrictions)"
+    priority: "must-have"
+    status: "refined"
+    cycles: 0
+    story_file: "specs/stories/sc-431-4.yaml"
+    depends_on: ["sc-431-1", "sc-431-2"]
+    started_at: ""
+    validated_at: ""
+    notes: "Free-mode system prompt, topic restriction, 15 question limit, counter UI. Shortcut sc-476."
+
+  - id: "sc-431-5"
+    name: "Premium/Free: admin panel user management"
+    priority: "must-have"
+    status: "refined"
+    cycles: 0
+    story_file: "specs/stories/sc-431-5.yaml"
+    depends_on: ["sc-431-1"]
+    started_at: ""
+    validated_at: ""
+    notes: "Admin page: list users, toggle premium/free, filter by plan. Shortcut sc-477."
