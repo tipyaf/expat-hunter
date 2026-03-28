@@ -41,6 +41,8 @@
     "hasAccount": "Déjà un compte ?",
     "login": "Se connecter",
     "emailConflict": "Cet email est déjà utilisé",
+    "orContinueWith": "Ou continuer avec",
+    "continueWithGoogle": "Continuer avec Google",
     "forgotPassword": "Mot de passe oublié ?",
     "forgotPasswordTitle": "Réinitialiser votre mot de passe",
     "sendResetLink": "Envoyer le lien",
