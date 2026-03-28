@@ -395,3 +395,14 @@ features:
     started_at: ""
     validated_at: ""
     notes: "Admin page: list users, toggle premium/free, filter by plan. Shortcut sc-477."
+
+  - id: "sc-489"
+    name: "fix: missing i18n keys for Google OAuth button"
+    priority: "bug"
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/sc-489.yaml"
+    depends_on: []
+    started_at: "2026-03-28"
+    validated_at: "2026-03-28"
+    notes: "Added auth.orContinueWith + auth.continueWithGoogle to en.json and fr.json. Root cause: sc-422. All 4 ACs pass. 8/8 e2e pass. PR #93."
