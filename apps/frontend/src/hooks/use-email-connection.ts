@@ -125,9 +125,10 @@ export function useEmailConnection(): UseEmailConnectionReturn {
   }, [token])
 
   const connectWithGoogle = useCallback(() => {
+    if (!token) return
     const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3333'
-    window.location.href = `${apiUrl}/api/email-connections/oauth/google`
-  }, [])
+    window.location.href = `${apiUrl}/api/email-connections/oauth/google?token=${encodeURIComponent(token)}`
+  }, [token])
 
   return {
     connection,

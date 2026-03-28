@@ -237,11 +237,14 @@ router
     router.post('/', [EmailConnectionsController, 'store'])
     router.delete('/', [EmailConnectionsController, 'destroy'])
     router.post('/test', [EmailConnectionsController, 'test'])
-    router.get('/oauth/google', [EmailOAuthController, 'googleRedirect'])
-    router.get('/oauth/google/callback', [EmailOAuthController, 'googleCallback'])
   })
   .prefix('/api/email-connections')
   .use(middleware.auth())
+
+// OAuth email routes — no auth middleware (browser redirects can't send Bearer token)
+// Auth is handled via token query param + httpOnly cookie round-trip
+router.get('/api/email-connections/oauth/google', [EmailOAuthController, 'googleRedirect'])
+router.get('/api/email-connections/oauth/google/callback', [EmailOAuthController, 'googleCallback'])
 
 router
   .get('/api/replies/unread-count', [ThreadController, 'unreadCount'])
