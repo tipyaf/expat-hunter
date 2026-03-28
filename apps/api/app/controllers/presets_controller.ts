@@ -3,6 +3,7 @@ import GenerationPreset from '#models/generation_preset'
 
 const VALID_LENGTHS = ['short', 'medium', 'long'] as const
 const VALID_FRAMEWORKS = ['aida', 'pas', 'bab', 'direct'] as const
+const MAX_CUSTOM_INSTRUCTIONS_LENGTH = 500
 
 export default class PresetsController {
   /**
@@ -40,6 +41,11 @@ export default class PresetsController {
     if (framework && !(VALID_FRAMEWORKS as readonly string[]).includes(framework)) {
       return response.unprocessableEntity({
         error: { code: 'INVALID_FRAMEWORK', message: `framework must be one of: ${VALID_FRAMEWORKS.join(', ')}` },
+      })
+    }
+    if (typeof customInstructions === 'string' && customInstructions.length > MAX_CUSTOM_INSTRUCTIONS_LENGTH) {
+      return response.unprocessableEntity({
+        error: { code: 'INSTRUCTIONS_TOO_LONG', message: `customInstructions must be ${MAX_CUSTOM_INSTRUCTIONS_LENGTH} characters or less` },
       })
     }
 
@@ -81,6 +87,22 @@ export default class PresetsController {
     const { name, length, framework, tone, language, customInstructions, isDefault } = request.only([
       'name', 'length', 'framework', 'tone', 'language', 'customInstructions', 'isDefault',
     ])
+
+    if (length !== undefined && !(VALID_LENGTHS as readonly string[]).includes(length)) {
+      return response.unprocessableEntity({
+        error: { code: 'INVALID_LENGTH', message: `length must be one of: ${VALID_LENGTHS.join(', ')}` },
+      })
+    }
+    if (framework !== undefined && !(VALID_FRAMEWORKS as readonly string[]).includes(framework)) {
+      return response.unprocessableEntity({
+        error: { code: 'INVALID_FRAMEWORK', message: `framework must be one of: ${VALID_FRAMEWORKS.join(', ')}` },
+      })
+    }
+    if (typeof customInstructions === 'string' && customInstructions.length > MAX_CUSTOM_INSTRUCTIONS_LENGTH) {
+      return response.unprocessableEntity({
+        error: { code: 'INSTRUCTIONS_TOO_LONG', message: `customInstructions must be ${MAX_CUSTOM_INSTRUCTIONS_LENGTH} characters or less` },
+      })
+    }
 
     if (isDefault && !preset.isDefault) {
       await GenerationPreset.query()

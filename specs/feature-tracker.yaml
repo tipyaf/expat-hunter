@@ -465,35 +465,35 @@ features:
   - id: "sc-549-1"
     name: "Unified email edit modal with AI assistance"
     priority: "feature"
-    status: "building"
-    cycles: 0
+    status: "validated"
+    cycles: 1
     story_file: "specs/stories/sc-549-1.yaml"
     depends_on: []
     started_at: "2026-03-28"
-    validated_at: ""
-    notes: "Replace inline edit + regenerate with unified modal. AI improve with instructions + full regenerate. Parent: sc-549. Shortcut sc-551."
+    validated_at: "2026-03-28"
+    notes: "Replace inline edit + regenerate with unified modal. All ACs pass. PR #99 merged. Parent: sc-549. Shortcut sc-551."
 
   - id: "sc-549-2"
     name: "Email templates — apply a template to a contact"
     priority: "feature"
-    status: "testing"
+    status: "validated"
     cycles: 1
     story_file: "specs/stories/sc-549-2.yaml"
     depends_on: ["sc-549-1"]
     started_at: "2026-03-28"
-    validated_at: ""
-    notes: "Template management page + selector in edit modal + backend templateId support. All 8 ACs pass. Parent: sc-549. Shortcut sc-552."
+    validated_at: "2026-03-28"
+    notes: "Template management page + selector in edit modal + backend templateId support. All 9 ACs pass. 8 e2e + 12 unit tests. PR #100. Parent: sc-549. Shortcut sc-552."
 
   - id: "sc-549-3"
     name: "Generation presets — customize tone/style"
     priority: "feature"
-    status: "testing"
+    status: "validated"
     cycles: 1
     story_file: "specs/stories/sc-549-3.yaml"
     depends_on: ["sc-549-1"]
     started_at: "2026-03-28"
-    validated_at: ""
-    notes: "Preset selector in modal + default preset in initial generation + tone/length/framework/language in system prompt. All 10 ACs pass. Parent: sc-549. Shortcut sc-553."
+    validated_at: "2026-03-28"
+    notes: "Preset selector in modal + default preset in initial generation + tone/length/framework/language in system prompt. All 10 ACs pass. 11 e2e + 12 unit tests. PR #101. Parent: sc-549. Shortcut sc-553."
 
   - id: "sc-550"
     name: "One-click email account connection via Google OAuth"
