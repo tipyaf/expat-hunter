@@ -2,9 +2,11 @@
 
 import { Button } from '@/components/ui/button'
 import type { Email } from '@/hooks/use-emails'
+import { usePresets } from '@/hooks/use-presets'
+import type { GenerationPreset } from '@/hooks/use-presets'
 import { useTemplates } from '@/hooks/use-templates'
 import type { EmailTemplate } from '@/hooks/use-templates'
-import { Sparkles, RefreshCw, FileText, X } from 'lucide-react'
+import { Sparkles, RefreshCw, FileText, Sliders, X } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useEffect, useState } from 'react'
 
@@ -13,21 +15,24 @@ interface EmailEditModalProps {
   isOpen: boolean
   onClose: () => void
   updateEmail: (emailId: string, data: { subject: string; body: string }) => Promise<Email | undefined>
-  onRegenerate: (emailId: string, options?: { instructions?: string; templateId?: string }) => Promise<Email | undefined>
+  onRegenerate: (emailId: string, options?: { instructions?: string; templateId?: string; presetId?: string }) => Promise<Email | undefined>
 }
 
 export function EmailEditModal({ email, isOpen, onClose, updateEmail, onRegenerate }: EmailEditModalProps) {
   const t = useTranslations('emails')
   const tc = useTranslations('common')
   const { templates } = useTemplates()
+  const { presets } = usePresets()
 
   const [subject, setSubject] = useState('')
   const [body, setBody] = useState('')
   const [instructions, setInstructions] = useState('')
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('')
+  const [selectedPresetId, setSelectedPresetId] = useState<string>('')
   const [isImproving, setIsImproving] = useState(false)
   const [isRegenerating, setIsRegenerating] = useState(false)
   const [isApplyingTemplate, setIsApplyingTemplate] = useState(false)
+  const [isApplyingPreset, setIsApplyingPreset] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
@@ -37,8 +42,10 @@ export function EmailEditModal({ email, isOpen, onClose, updateEmail, onRegenera
       setInstructions('')
       const defaultTemplate = templates.find((tpl: EmailTemplate) => tpl.isDefault)
       setSelectedTemplateId(defaultTemplate?.id ?? '')
+      const defaultPreset = presets.find((p: GenerationPreset) => p.isDefault)
+      setSelectedPresetId(defaultPreset?.id ?? '')
     }
-  }, [email, isOpen, templates])
+  }, [email, isOpen, templates, presets])
 
   useEffect(() => {
     if (!isOpen) return
@@ -51,7 +58,21 @@ export function EmailEditModal({ email, isOpen, onClose, updateEmail, onRegenera
 
   if (!isOpen || !email) return null
 
-  const isBusy = isImproving || isRegenerating || isApplyingTemplate || isSaving
+  const isBusy = isImproving || isRegenerating || isApplyingTemplate || isApplyingPreset || isSaving
+
+  const handleApplyPreset = async () => {
+    if (!selectedPresetId) return
+    setIsApplyingPreset(true)
+    try {
+      const updated = await onRegenerate(email.id, { presetId: selectedPresetId })
+      if (updated) {
+        setSubject(updated.subject)
+        setBody(updated.body)
+      }
+    } finally {
+      setIsApplyingPreset(false)
+    }
+  }
 
   const handleApplyTemplate = async () => {
     if (!selectedTemplateId) return
@@ -198,6 +219,41 @@ export function EmailEditModal({ email, isOpen, onClose, updateEmail, onRegenera
               >
                 <FileText className="w-3.5 h-3.5 mr-1.5" />
                 {isApplyingTemplate ? t('applyingTemplate') : t('applyTemplate')}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Preset selector */}
+        {presets.length > 0 && (
+          <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-light)] p-4 mb-4">
+            <label htmlFor="preset-select" className="block text-sm font-medium text-[var(--color-text-main)] mb-2">
+              <Sliders className="w-3.5 h-3.5 inline mr-1.5" />
+              {t('selectPreset')}
+            </label>
+            <div className="flex gap-2">
+              <select
+                id="preset-select"
+                value={selectedPresetId}
+                onChange={(e) => setSelectedPresetId(e.target.value)}
+                disabled={isBusy}
+                className="flex-1 rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm bg-[var(--color-surface-light)] text-[var(--color-text-main)] disabled:opacity-50"
+              >
+                <option value="">{t('noPreset')}</option>
+                {presets.map((p: GenerationPreset) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}{p.isDefault ? ' ★' : ''}
+                  </option>
+                ))}
+              </select>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => void handleApplyPreset()}
+                disabled={isBusy || !selectedPresetId}
+              >
+                <Sliders className="w-3.5 h-3.5 mr-1.5" />
+                {isApplyingPreset ? t('applyingPreset') : t('applyPreset')}
               </Button>
             </div>
           </div>

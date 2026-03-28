@@ -59,7 +59,7 @@ test.describe('Emails page', () => {
     }
   })
 
-  test('edit draft email inline', async ({ page }) => {
+  test('edit draft email opens modal with subject and body fields', async ({ page }) => {
     await page.goto('/emails')
     await page.waitForTimeout(1500)
 
@@ -67,25 +67,53 @@ test.describe('Emails page', () => {
     if (await editBtn.isVisible()) {
       await editBtn.click()
 
-      // Edit form should appear
-      const subjectInput = page.locator('input[type="text"]').first()
+      // Modal dialog should appear
+      const dialog = page.locator('[role="dialog"]')
+      await expect(dialog).toBeVisible({ timeout: 3_000 })
+
+      // Subject and body fields inside modal
+      const subjectInput = dialog.locator('#email-subject')
       await expect(subjectInput).toBeVisible()
 
-      const textarea = page.locator('textarea').first()
-      await expect(textarea).toBeVisible()
+      const bodyTextarea = dialog.locator('#email-body')
+      await expect(bodyTextarea).toBeVisible()
 
       // Modify subject
       await subjectInput.fill('Updated subject for E2E test')
 
       // Save
-      const saveBtn = page.getByRole('button', { name: /sauvegarder/i })
+      const saveBtn = dialog.getByRole('button', { name: /sauvegarder|save/i })
       await saveBtn.click()
 
-      // Verify edit form closes
-      await expect(subjectInput).not.toBeVisible({ timeout: 5_000 })
+      // Modal should close
+      await expect(dialog).not.toBeVisible({ timeout: 5_000 })
 
       // Verify updated text appears
       await expect(page.locator('text=Updated subject for E2E test')).toBeVisible()
+    }
+  })
+
+  test('edit modal shows AI instructions section', async ({ page }) => {
+    await page.goto('/emails')
+    await page.waitForTimeout(1500)
+
+    const editBtn = page.getByRole('button', { name: /modifier/i }).first()
+    if (await editBtn.isVisible()) {
+      await editBtn.click()
+
+      const dialog = page.locator('[role="dialog"]')
+      await expect(dialog).toBeVisible({ timeout: 3_000 })
+
+      // AI instructions textarea
+      await expect(dialog.locator('#ai-instructions')).toBeVisible()
+
+      // Improve with AI and regenerate buttons
+      await expect(dialog.getByRole('button', { name: /améliorer|improve/i })).toBeVisible()
+      await expect(dialog.getByRole('button', { name: /régénérer|regenerate/i })).toBeVisible()
+
+      // Close modal
+      await dialog.getByRole('button', { name: /annuler|cancel/i }).click()
+      await expect(dialog).not.toBeVisible({ timeout: 3_000 })
     }
   })
 
