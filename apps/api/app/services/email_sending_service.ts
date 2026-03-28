@@ -1,8 +1,12 @@
+import { createTransport } from 'nodemailer'
 import mail from '@adonisjs/mail/services/main'
 import { DateTime } from 'luxon'
 import EmailMessage from '#models/email_message'
 import Contact from '#models/contact'
+import EmailConnection, { CONNECTION_TYPE } from '#models/email_connection'
+import OAuthTokenService from '#services/oauth_token_service'
 import ContactMovementService from '#services/contact_movement_service'
+import logger from '@adonisjs/core/services/logger'
 
 export interface SendBatchResult {
   batchId: string
@@ -26,6 +30,8 @@ const batchProgressStore = new Map<string, BatchProgress>()
 
 export default class EmailSendingService {
   private movementService = new ContactMovementService()
+  private oauthTokenService = new OAuthTokenService()
+
   /**
    * Send all approved emails for a user in batch.
    * Returns a batchId for progress tracking.
@@ -58,7 +64,7 @@ export default class EmailSendingService {
     batchProgressStore.set(batchId, progress)
 
     // Send asynchronously — don't await here so the endpoint returns immediately
-    void this.processBatch(batchId, emails)
+    void this.processBatch(batchId, userId, emails)
 
     return { batchId, total: emails.length }
   }
@@ -72,9 +78,11 @@ export default class EmailSendingService {
 
   // ─── Private ────────────────────────────────────────────────────────────────
 
-  private async processBatch(batchId: string, emails: EmailMessage[]): Promise<void> {
+  private async processBatch(batchId: string, userId: string, emails: EmailMessage[]): Promise<void> {
     const progress = batchProgressStore.get(batchId)!
-    const errors: Array<{ emailId: string; reason: string }> = []
+
+    // Load user's email connection to determine auth method
+    const connection = await EmailConnection.findBy('userId', userId)
 
     for (const email of emails) {
       const contact = email.contact as Contact & { company?: { name: string } | null }
@@ -82,17 +90,11 @@ export default class EmailSendingService {
 
       if (!recipientEmail) {
         progress.failed++
-        errors.push({ emailId: email.id, reason: 'No email address on contact' })
         continue
       }
 
       try {
-        await mail.send((message) => {
-          message
-            .to(recipientEmail)
-            .subject(email.subject)
-            .text(email.body)
-        })
+        await this.sendSingleEmail(email, recipientEmail, connection)
 
         email.status = 'sent'
         email.sentAt = DateTime.now()
@@ -110,11 +112,67 @@ export default class EmailSendingService {
       } catch (err) {
         progress.failed++
         const reason = err instanceof Error ? err.message : 'Unknown error'
-        errors.push({ emailId: email.id, reason })
+        logger.error({ emailId: email.id, reason }, 'Failed to send email')
       }
     }
 
     progress.status = 'completed'
     progress.completedAt = DateTime.now().toISO()
+  }
+
+  private async sendSingleEmail(
+    email: EmailMessage,
+    recipientEmail: string,
+    connection: EmailConnection | null
+  ): Promise<void> {
+    if (connection?.connectionType === CONNECTION_TYPE.OAUTH) {
+      await this.sendViaOAuth(email, recipientEmail, connection)
+    } else {
+      await this.sendViaDefault(email, recipientEmail)
+    }
+  }
+
+  /**
+   * Send email using XOAUTH2 authentication (Google OAuth).
+   */
+  private async sendViaOAuth(
+    email: EmailMessage,
+    recipientEmail: string,
+    connection: EmailConnection
+  ): Promise<void> {
+    const accessToken = await this.oauthTokenService.ensureFreshToken(connection)
+
+    const transport = createTransport({
+      host: 'smtp.gmail.com',
+      port: 465,
+      secure: true,
+      auth: {
+        type: 'OAuth2',
+        user: connection.oauthEmail ?? connection.smtpUser,
+        accessToken,
+      },
+    })
+
+    await transport.sendMail({
+      from: connection.oauthEmail ?? connection.smtpUser,
+      to: recipientEmail,
+      subject: email.subject,
+      text: email.body,
+    })
+  }
+
+  /**
+   * Send email using default AdonisJS mailer (SMTP with password).
+   */
+  private async sendViaDefault(
+    email: EmailMessage,
+    recipientEmail: string
+  ): Promise<void> {
+    await mail.send((message) => {
+      message
+        .to(recipientEmail)
+        .subject(email.subject)
+        .text(email.body)
+    })
   }
 }

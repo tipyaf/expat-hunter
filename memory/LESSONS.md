@@ -46,9 +46,11 @@ Recurring failures and lessons learned across sessions. Every agent MUST read th
 6. Security audit done → check "Security audit"
 7. TS 0 errors → check "TypeScript: 0 errors"
 8. ACs verified → check "ACs verified"
-9. UI validated → check "UI validated visually"
-10. PR created → check "PR created" + link PR via `stories-add-external-link`
-11. feature-tracker.yaml → validated → check "feature-tracker.yaml updated"
+9. Zero console errors → check "Zero console errors/stacktraces"
+10. UI validated → check "UI validated visually"
+11. UX spec updated if new pages/flows → check "UX spec updated"
+12. PR created → check "PR created" + link PR via `stories-add-external-link`
+13. feature-tracker.yaml → validated → check "feature-tracker.yaml updated"
 Story and parent epic completion % update automatically in Shortcut.
 
 ### [Workflow] Always apply phase labels to every story

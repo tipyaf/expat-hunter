@@ -41,6 +41,8 @@
     "hasAccount": "Déjà un compte ?",
     "login": "Se connecter",
     "emailConflict": "Cet email est déjà utilisé",
+    "orContinueWith": "Ou continuer avec",
+    "continueWithGoogle": "Continuer avec Google",
     "forgotPassword": "Mot de passe oublié ?",
     "forgotPasswordTitle": "Réinitialiser votre mot de passe",
     "sendResetLink": "Envoyer le lien",
@@ -62,9 +64,7 @@
     "emailNotVerified": "Votre email n'est pas encore vérifié.",
     "resendVerification": "Renvoyer l'email de vérification",
     "verificationSent": "Email de vérification envoyé !",
-    "disposableEmail": "Les adresses email jetables ne sont pas autorisées. Veuillez utiliser un email permanent.",
-    "orContinueWith": "Ou continuer avec",
-    "continueWithGoogle": "Continuer avec Google"
+    "disposableEmail": "Les adresses email jetables ne sont pas autorisées. Veuillez utiliser un email permanent."
   },
   "dashboard": {
     "title": "Tableau de bord",
@@ -706,7 +706,22 @@
     "helpTitle": "Comment configurer ?",
     "helpGmail": "Pour Gmail : activez l'acc\u00e8s IMAP dans les param\u00e8tres Gmail (Param\u00e8tres > Transfert et POP/IMAP). Cr\u00e9ez un mot de passe d'application depuis votre compte Google (S\u00e9curit\u00e9 > Mots de passe des applications).",
     "helpOutlook": "Pour Outlook/Hotmail : utilisez votre adresse email et votre mot de passe. Si la double authentification est activ\u00e9e, cr\u00e9ez un mot de passe d'application.",
-    "helpGeneral": "Contactez votre fournisseur email si vous ne connaissez pas les param\u00e8tres IMAP/SMTP."
+    "helpGeneral": "Contactez votre fournisseur email si vous ne connaissez pas les paramètres IMAP/SMTP.",
+    "oauthSection": "Connexion rapide",
+    "oauthDescription": "Connectez votre compte Google en un clic pour envoyer et recevoir des emails en toute sécurité.",
+    "connectGoogle": "Se connecter avec Google",
+    "connectedAs": "Connecté en tant que",
+    "connectedVia": "via Google OAuth",
+    "disconnect": "Déconnecter",
+    "disconnectConfirm": "Êtes-vous sûr de vouloir déconnecter votre compte email ?",
+    "disconnected": "Compte email déconnecté",
+    "manualSection": "Configuration manuelle (IMAP/SMTP)",
+    "manualDescription": "Pour les fournisseurs non-Gmail ou les configurations SMTP personnalisées.",
+    "oauthConnected": "Compte Google connecté avec succès",
+    "oauthError": "Échec de la connexion du compte Google",
+    "oauthErrorAccessDenied": "L'accès a été refusé. Veuillez réessayer et accorder les permissions requises.",
+    "oauthErrorStateMismatch": "Vérification de sécurité échouée. Veuillez réessayer.",
+    "oauthErrorGeneric": "Une erreur est survenue. Veuillez réessayer."
   },
   "onboarding": {
     "title": "Bienvenue sur ExpatHunter",
