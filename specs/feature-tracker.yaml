@@ -494,3 +494,25 @@ features:
     started_at: "2026-03-28"
     validated_at: "2026-03-28"
     notes: "Preset selector in modal + default preset in initial generation + tone/length/framework/language in system prompt. All 10 ACs pass. 11 e2e + 12 unit tests. PR #101. Parent: sc-549. Shortcut sc-553."
+
+  - id: "sc-550"
+    name: "One-click email account connection via Google OAuth"
+    priority: "feature"
+    status: "building"
+    cycles: 0
+    story_file: "specs/stories/sc-550.yaml"
+    depends_on: []
+    started_at: "2026-03-28"
+    validated_at: ""
+    notes: "Google OAuth XOAUTH2 for email sending/receiving. Replaces manual IMAP/SMTP as default. Manual kept as secondary. Shortcut sc-550."
+
+  - id: "sc-554"
+    name: "Emails viewable and editable from contact detail panel"
+    priority: "feature"
+    status: "refined"
+    cycles: 0
+    story_file: "specs/stories/sc-554.yaml"
+    depends_on: ["sc-549-1", "sc-549-2"]
+    started_at: ""
+    validated_at: ""
+    notes: "Wire EmailEditModal + template selector into contact detail panel. Edit drafts + generate emails from contacts page. Shortcut sc-554."

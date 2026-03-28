@@ -46,9 +46,11 @@ Recurring failures and lessons learned across sessions. Every agent MUST read th
 6. Security audit done → check "Security audit"
 7. TS 0 errors → check "TypeScript: 0 errors"
 8. ACs verified → check "ACs verified"
-9. UI validated → check "UI validated visually"
-10. PR created → check "PR created" + link PR via `stories-add-external-link`
-11. feature-tracker.yaml → validated → check "feature-tracker.yaml updated"
+9. Zero console errors → check "Zero console errors/stacktraces"
+10. UI validated → check "UI validated visually"
+11. UX spec updated if new pages/flows → check "UX spec updated"
+12. PR created → check "PR created" + link PR via `stories-add-external-link`
+13. feature-tracker.yaml → validated → check "feature-tracker.yaml updated"
 Story and parent epic completion % update automatically in Shortcut.
 
 ### [Workflow] Always apply phase labels to every story
@@ -111,6 +113,11 @@ Use `stories-update labels:[{name: "scope:building"}]` at each transition.
 **Problem**: sc-216 — validator found console errors (`MISSING_MESSAGE: chat`, `auth.forgotPassword`) during the preview check and noted them as "pre-existing, not related to sc-216" without taking any action.
 **Root cause**: Agent treated pre-existing errors as acceptable background noise instead of actionable issues.
 **Rule**: ANY error found during validation (console errors, TypeScript errors, test failures) MUST result in one of two outcomes: 1) Fix it immediately in the current PR if small (< 30 min), 2) Create a Shortcut story for it if out of scope or complex. There is NO third option of "noting it and moving on". Ignoring an error is never acceptable.
+
+### [Git] NEVER target main with PRs — all work merges into develop
+**Problem**: sc-431 to sc-550 — ~40 PRs were merged directly into `main` while sc-549 went to `develop`. The two branches diverged massively, requiring a painful cherry-pick session (10 commits, 8 conflict resolutions) just to reunify them.
+**Root cause**: No branching model was defined. The agent defaulted to `--base main` for PRs. Some features went to `develop`, others to `main`, creating an unsynchronizable split.
+**Rule**: This project uses Git Flow. `main` = production (releases only). `develop` = integration (all feature work). EVERY PR MUST target `develop` via `gh pr create --base develop`. NEVER `--base main` except for release PRs. EVERY feature branch MUST start from `origin/develop`. See CLAUDE.md "Git branching model" section.
 
 ### [Quality] ALWAYS write unit tests before declaring done
 **Problem**: sc-60 — 4 services modified (visa_sponsor_registry, email_enricher, company_enricher, sourcing_service) with no unit tests. Caught in review by the user.
