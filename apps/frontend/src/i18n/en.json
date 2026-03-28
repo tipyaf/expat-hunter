@@ -530,6 +530,27 @@
     "dim_expatFriendly": "Expat-friendly",
     "dim_momentum": "Momentum"
   },
+  "contactPanel": {
+    "title": "Contact Details",
+    "close": "Close panel",
+    "viewLinkedin": "View LinkedIn",
+    "viewGithub": "View GitHub",
+    "aiAnalysis": "AI Analysis",
+    "notAnalyzed": "Not yet analyzed",
+    "emailHistory": "Email History",
+    "noEmails": "No emails sent yet",
+    "reply": "Reply",
+    "relevance_very_relevant": "Very Relevant",
+    "relevance_relevant": "Relevant",
+    "relevance_to_review": "To Review",
+    "relevance_not_relevant": "Not Relevant",
+    "email_draft": "Draft",
+    "email_approved": "Approved",
+    "email_sent": "Sent",
+    "email_opened": "Opened",
+    "email_replied": "Replied",
+    "email_bounced": "Bounced"
+  },
   "templates": {
     "title": "My email templates",
     "subtitle": "Create reusable templates for your outreach emails.",
