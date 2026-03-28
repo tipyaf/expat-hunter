@@ -5,11 +5,79 @@
  *         Preset dropdown shows user's presets
  *         Generate button works with preset selection
  *
- * Requires auth state (authenticated user with seeded contacts and presets).
+ * Self-seeding: creates its own company, contact (ai_recommendation='contact',
+ * no email), and generation preset via direct DB access before tests run.
+ * Cleans up after itself in afterAll.
  */
 import { test, expect } from '@playwright/test'
+import {
+  getE2eUserId,
+  seedCompany,
+  seedContact,
+  seedPreset,
+  cleanupE2eData,
+  upgradeUserToPremium,
+  type SeededContact,
+  type SeededPreset,
+} from '../fixtures/db'
 
 const BASE = 'http://localhost:3000'
+const DIALOG_TIMEOUT = 5_000
+const ELEMENT_TIMEOUT = 8_000
+
+let userId: string
+let contact: SeededContact
+let preset: SeededPreset
+
+test.beforeAll(async () => {
+  userId = await getE2eUserId()
+
+  // Clean up leftover data from previous runs
+  await cleanupE2eData(userId)
+
+  // Ensure the test user has premium access (pipeline is premium-only)
+  await upgradeUserToPremium(userId)
+
+  // Seed a company + contact with ai_recommendation='contact' (shows Generate button)
+  const company = await seedCompany('E2E Preset Test Corp')
+  contact = await seedContact(userId, company.id, {
+    fullName: 'E2E Preset Test Contact',
+    aiRecommendation: 'contact',
+    status: 'to_contact',
+  })
+
+  // Seed a generation preset
+  preset = await seedPreset(userId, {
+    name: 'E2E Test Preset',
+    isDefault: false,
+  })
+})
+
+test.afterAll(async () => {
+  if (userId) {
+    await cleanupE2eData(userId)
+  }
+})
+
+/**
+ * Helper: open the seeded contact's detail panel by clicking its card.
+ * Waits for the dialog and the "Générer un email" button to appear.
+ */
+async function openContactPanel(page: import('@playwright/test').Page) {
+  // Click on the seeded contact card by name
+  const card = page.locator('[draggable]', { hasText: 'E2E Preset Test Contact' })
+  await expect(card).toBeVisible({ timeout: ELEMENT_TIMEOUT })
+  await card.click()
+
+  const dialog = page.locator('[role="dialog"]')
+  await expect(dialog).toBeVisible({ timeout: DIALOG_TIMEOUT })
+
+  // Wait for the generate button to appear (content loads asynchronously)
+  const generateBtn = dialog.getByText(/Générer un email|Generate email/i)
+  await expect(generateBtn.first()).toBeVisible({ timeout: ELEMENT_TIMEOUT })
+
+  return { dialog, generateBtn }
+}
 
 test.describe('Contact preset selector (sc-584)', () => {
   test.beforeEach(async ({ page }) => {
@@ -19,116 +87,43 @@ test.describe('Contact preset selector (sc-584)', () => {
   })
 
   test('preset dropdown appears next to Generate button for contacts without emails', async ({ page }) => {
-    const cards = page.locator('[draggable="true"]')
-    const cardCount = await cards.count()
+    const { dialog } = await openContactPanel(page)
 
-    if (cardCount === 0) {
-      test.skip()
-      return
-    }
-
-    let found = false
-    for (let i = 0; i < Math.min(cardCount, 5); i++) {
-      await cards.nth(i).click()
-      const dialog = page.locator('[role="dialog"]')
-      await expect(dialog).toBeVisible({ timeout: 5000 })
-
-      const generateBtn = dialog.getByText(/Generate email|Générer un email/i)
-      if (await generateBtn.count() > 0) {
-        // Check for preset dropdown (select element with preset aria-label)
-        const presetSelect = dialog.locator('select[aria-label*="preset" i]')
-        const presetCount = await presetSelect.count()
-
-        if (presetCount > 0) {
-          await expect(presetSelect.first()).toBeVisible()
-          found = true
-        } else {
-          // No presets exist — dropdown is correctly hidden
-          found = true
-        }
-        break
-      }
-
-      await page.keyboard.press('Escape')
-      await expect(dialog).not.toBeVisible({ timeout: 3000 })
-    }
-
-    if (!found) {
-      test.skip()
-    }
+    // The preset select dropdown should be visible next to the generate button
+    const presetSelect = dialog.locator('select[aria-label*="preset" i]')
+    await expect(presetSelect.first()).toBeVisible({ timeout: ELEMENT_TIMEOUT })
   })
 
   test('preset dropdown contains preset options when presets exist', async ({ page }) => {
-    // First check if presets exist via the settings page
-    await page.goto(`${BASE}/parametres/presets`)
-    await page.waitForLoadState('networkidle')
-    await page.waitForTimeout(1000)
+    const { dialog } = await openContactPanel(page)
 
-    const presetItems = page.locator('[data-testid="preset-item"], .rounded-lg').filter({ hasText: /★|default/i })
-    const hasPresets = (await presetItems.count()) > 0
+    const presetSelect = dialog.locator('select[aria-label*="preset" i]')
+    await expect(presetSelect.first()).toBeVisible({ timeout: ELEMENT_TIMEOUT })
 
-    if (!hasPresets) {
-      test.skip()
-      return
-    }
+    // Verify it has options: default placeholder + at least our seeded preset
+    const options = presetSelect.locator('option')
+    expect(await options.count()).toBeGreaterThanOrEqual(2)
 
-    // Navigate to suivi and open a contact with generate button
-    await page.goto(`${BASE}/suivi`)
-    await page.waitForLoadState('networkidle')
-    await page.waitForTimeout(1500)
-
-    const cards = page.locator('[draggable="true"]')
-    const cardCount = await cards.count()
-
-    if (cardCount === 0) {
-      test.skip()
-      return
-    }
-
-    for (let i = 0; i < Math.min(cardCount, 5); i++) {
-      await cards.nth(i).click()
-      const dialog = page.locator('[role="dialog"]')
-      await expect(dialog).toBeVisible({ timeout: 5000 })
-
-      const generateBtn = dialog.getByText(/Generate email|Générer un email/i)
-      if (await generateBtn.count() > 0) {
-        const presetSelect = dialog.locator('select[aria-label*="preset" i]')
-        if (await presetSelect.count() > 0) {
-          // Verify it has options (default + at least one preset)
-          const options = presetSelect.locator('option')
-          expect(await options.count()).toBeGreaterThanOrEqual(2)
-        }
-        break
-      }
-
-      await page.keyboard.press('Escape')
-      await expect(dialog).not.toBeVisible({ timeout: 3000 })
-    }
+    // Verify our seeded preset name appears in the dropdown
+    const selectText = await presetSelect.textContent()
+    expect(selectText).toContain('E2E Test Preset')
   })
 
   test('generate email button is functional with preset selected', async ({ page }) => {
-    const cards = page.locator('[draggable="true"]')
-    const cardCount = await cards.count()
+    const { dialog, generateBtn } = await openContactPanel(page)
 
-    if (cardCount === 0) {
-      test.skip()
-      return
-    }
-
-    for (let i = 0; i < Math.min(cardCount, 5); i++) {
-      await cards.nth(i).click()
-      const dialog = page.locator('[role="dialog"]')
-      await expect(dialog).toBeVisible({ timeout: 5000 })
-
-      const generateBtn = dialog.getByText(/Generate email|Générer un email/i)
-      if (await generateBtn.count() > 0) {
-        // The generate button should be enabled
-        await expect(generateBtn.first()).toBeEnabled()
-        break
+    // Select our seeded preset in the dropdown by value (preset ID)
+    const presetSelect = dialog.locator('select[aria-label*="preset" i]')
+    if (await presetSelect.count() > 0) {
+      // Use value-based selection since label regex is not supported
+      const presetOption = presetSelect.locator('option', { hasText: 'E2E Test Preset' }).first()
+      const presetValue = await presetOption.getAttribute('value')
+      if (presetValue) {
+        await presetSelect.selectOption(presetValue)
       }
-
-      await page.keyboard.press('Escape')
-      await expect(dialog).not.toBeVisible({ timeout: 3000 })
     }
+
+    // The generate button should be enabled and clickable
+    await expect(generateBtn.first()).toBeEnabled()
   })
 })
