@@ -105,5 +105,9 @@ export function useContactDetail(contactId: string | null) {
     }
   }, [contactId, fetchDetail])
 
-  return { contact, thread, isLoading, error }
+  const refetch = useCallback(() => {
+    if (contactId) void fetchDetail(contactId)
+  }, [contactId, fetchDetail])
+
+  return { contact, thread, isLoading, error, refetch }
 }

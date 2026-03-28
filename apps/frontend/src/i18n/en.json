@@ -567,7 +567,10 @@
     "email_sent": "Sent",
     "email_opened": "Opened",
     "email_replied": "Replied",
-    "email_bounced": "Bounced"
+    "email_bounced": "Bounced",
+    "editDraft": "Edit draft",
+    "generateEmail": "Generate email",
+    "generating": "Generating..."
   },
   "templates": {
     "title": "My email templates",
