@@ -55,4 +55,15 @@ test.describe('Auth guard — public routes accessible without login', () => {
     await expect(page).toHaveURL(`${BASE}/forgot-password`)
     await expect(page.locator('input[type="email"]')).toBeVisible()
   })
+
+  test('unauthenticated user on /login — floating chat button is NOT visible (sc-512)', async ({
+    page,
+  }) => {
+    await page.goto(`${BASE}/login`)
+    await page.waitForLoadState('networkidle')
+
+    // The floating chat button should not be rendered for unauthenticated users
+    const floatingBtn = page.locator('button[class*="rounded-full"][class*="fixed"]')
+    await expect(floatingBtn).not.toBeVisible({ timeout: 3_000 })
+  })
 })
