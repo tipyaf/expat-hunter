@@ -526,4 +526,4 @@ features:
     depends_on: ["sc-549-3", "sc-554"]
     started_at: "2026-03-28"
     validated_at: "2026-03-29"
-    notes: "Add preset dropdown to ContactDetailPanel generate button. Wire presetId through frontend hook and backend service. Covers /contacts and /suivi. All 7 ACs pass. 297 unit tests pass. PR #TBD."
+    notes: "Add preset dropdown to ContactDetailPanel generate button. Wire presetId through frontend hook and backend service. Covers /contacts and /suivi. All 7 ACs pass. 297 unit tests pass. PR #109."
