@@ -36,10 +36,16 @@ export interface EmailGenerationResult {
   body: string
 }
 
+export interface EmailTemplatePattern {
+  subjectPattern: string
+  bodyPattern: string
+}
+
 export interface EmailPromptOptions {
   type?: 'initial' | 'follow_up_1' | 'follow_up_2' | 'follow_up_3'
   previousEmail?: string
   instructions?: string
+  template?: EmailTemplatePattern
 }
 
 export function buildEmailPrompt(
@@ -84,9 +90,10 @@ Réponds UNIQUEMENT avec un objet JSON valide :
 - **Rôles visés** : ${candidate.targetRoles.join(', ') || 'Non renseignés'}
 ${candidate.cvSummary ? `- **Résumé** : ${candidate.cvSummary}` : ''}
 ${isFollowUp && options?.previousEmail ? `\n## Email précédent\n${options.previousEmail}` : ''}
+${options?.template ? `\n## Template à personnaliser\n**Sujet** : ${options.template.subjectPattern}\n**Corps** :\n${options.template.bodyPattern}` : ''}
 ${options?.instructions ? `\n## Instructions de l'utilisateur\n${options.instructions}` : ''}
 
-${isFollowUp ? 'Rédige une relance courte et naturelle.' : options?.instructions ? 'Améliore l\'email existant en suivant les instructions ci-dessus.' : 'Rédige un premier email de prise de contact.'}`,
+${isFollowUp ? 'Rédige une relance courte et naturelle.' : options?.template ? 'Personnalise le template ci-dessus pour ce contact en adaptant le contenu à son profil et son entreprise.' : options?.instructions ? 'Améliore l\'email existant en suivant les instructions ci-dessus.' : 'Rédige un premier email de prise de contact.'}`,
   }
 }
 

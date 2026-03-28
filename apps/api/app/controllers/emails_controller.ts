@@ -181,8 +181,13 @@ export default class EmailsController {
       ? rawInstructions.trim().slice(0, MAX_INSTRUCTIONS_LENGTH) || undefined
       : undefined
 
+    const rawTemplateId = request.input('templateId')
+    const templateId = typeof rawTemplateId === 'string' && rawTemplateId.trim()
+      ? rawTemplateId.trim()
+      : undefined
+
     const service = new EmailGenerationService()
-    const email = await service.regenerate(params.id, user.id, { instructions })
+    const email = await service.regenerate(params.id, user.id, { instructions, templateId })
 
     if (!email) {
       return response.badRequest({

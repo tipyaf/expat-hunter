@@ -476,13 +476,13 @@ features:
   - id: "sc-549-2"
     name: "Email templates — apply a template to a contact"
     priority: "feature"
-    status: "refined"
-    cycles: 0
+    status: "testing"
+    cycles: 1
     story_file: "specs/stories/sc-549-2.yaml"
     depends_on: ["sc-549-1"]
-    started_at: ""
+    started_at: "2026-03-28"
     validated_at: ""
-    notes: "Template management page + selector in edit modal. Backend CRUD already exists. Parent: sc-549. Shortcut sc-552."
+    notes: "Template management page + selector in edit modal + backend templateId support. All 8 ACs pass. Parent: sc-549. Shortcut sc-552."
 
   - id: "sc-549-3"
     name: "Generation presets — customize tone/style"
