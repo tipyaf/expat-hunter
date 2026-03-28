@@ -5,6 +5,7 @@ import Company from '#models/company'
 import Contact from '#models/contact'
 import SourcingRun from '#models/sourcing_run'
 import SourcingSource from '#models/sourcing_source'
+import { PLACEHOLDER_CONTACT_NAMES } from '@expat-hunter/shared'
 import type { RawContact, ScrapeParams } from '../scrapers/base_scraper.js'
 import { scraperRegistry } from '../scrapers/scraper_registry.js'
 import CacheService from './cache_service.js'
@@ -113,34 +114,8 @@ export default class SourcingService {
    * Generic contact names (not real person names) used for deduplication.
    * English-only for now — see US for i18n extension.
    */
-  private static readonly GENERIC_NAMES = new Set([
-    'hiring manager',
-    'contact',
-    'unknown',
-    'hr manager',
-    'recruiter',
-    'team',
-    'hiring',
-    'jobs',
-    'talent',
-    'recruitment',
-    'careers',
-    'hr',
-    'info',
-    'support',
-    'connect',
-    'admin',
-    'office',
-    'reception',
-    'enquiries',
-    'general',
-    'hello',
-    'apply',
-    'people',
-    'human resources',
-    'talent acquisition',
-    'people operations',
-  ])
+  /** Set built from shared constant for O(1) lookup during deduplication. */
+  private static readonly GENERIC_NAMES = new Set(PLACEHOLDER_CONTACT_NAMES)
 
   private isGenericName(name: string): boolean {
     return SourcingService.GENERIC_NAMES.has(name.toLowerCase().trim())

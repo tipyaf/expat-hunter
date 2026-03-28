@@ -4,6 +4,8 @@ import Contact from '#models/contact'
 import CandidateProfile from '#models/candidate_profile'
 import EmailMessage from '#models/email_message'
 import type { EmailType } from '#models/email_message'
+import EmailTemplate from '#models/email_template'
+import GenerationPreset from '#models/generation_preset'
 import User from '#models/user'
 import logger from '@adonisjs/core/services/logger'
 
@@ -39,6 +41,8 @@ export default class EmailGenerationService {
     }
 
     const candidate = this.buildCandidateData(user, profile)
+    const defaultPreset = await this.findDefaultPreset(userId)
+    const presetOptions = defaultPreset ? this.buildPresetOptions(defaultPreset) : undefined
     const batchSize = options?.batchSize ?? 10
 
     const query = Contact.query()
@@ -70,7 +74,7 @@ export default class EmailGenerationService {
 
       try {
         const contactData = this.buildContactData(contact)
-        const email = await this.composer.compose(contactData, candidate)
+        const email = await this.composer.compose(contactData, candidate, presetOptions ? { preset: presetOptions } : undefined)
 
         const message = await EmailMessage.create({
           contactId: contact.id,
@@ -115,7 +119,9 @@ export default class EmailGenerationService {
 
     const candidate = this.buildCandidateData(user, profile)
     const contactData = this.buildContactData(contact)
-    const email = await this.composer.compose(contactData, candidate)
+    const defaultPreset = await this.findDefaultPreset(userId)
+    const presetOptions = defaultPreset ? this.buildPresetOptions(defaultPreset) : undefined
+    const email = await this.composer.compose(contactData, candidate, presetOptions ? { preset: presetOptions } : undefined)
 
     return EmailMessage.create({
       contactId: contact.id,
@@ -126,7 +132,11 @@ export default class EmailGenerationService {
     })
   }
 
-  async regenerate(emailId: string, userId: string): Promise<EmailMessage | null> {
+  async regenerate(
+    emailId: string,
+    userId: string,
+    options?: { instructions?: string; templateId?: string; presetId?: string }
+  ): Promise<EmailMessage | null> {
     if (!this.composer.isConfigured) return null
 
     const email = await EmailMessage.query()
@@ -140,9 +150,31 @@ export default class EmailGenerationService {
     const profile = await CandidateProfile.query().where('userId', userId).first()
     if (!user || !profile) return null
 
+    let template: EmailTemplate | null = null
+    if (options?.templateId) {
+      template = await EmailTemplate.query()
+        .where('id', options.templateId)
+        .where('userId', userId)
+        .first()
+    }
+
+    let preset: GenerationPreset | null = null
+    if (options?.presetId) {
+      preset = await GenerationPreset.query()
+        .where('id', options.presetId)
+        .where('userId', userId)
+        .first()
+    }
+
     const candidate = this.buildCandidateData(user, profile)
     const contactData = this.buildContactData(email.contact)
-    const result = await this.composer.compose(contactData, candidate)
+    const result = await this.composer.compose(contactData, candidate, {
+      instructions: options?.instructions,
+      template: template
+        ? { subjectPattern: template.subjectPattern, bodyPattern: template.bodyPattern }
+        : undefined,
+      preset: preset ? this.buildPresetOptions(preset) : undefined,
+    })
 
     email.subject = result.subject
     email.body = result.body
@@ -169,6 +201,23 @@ export default class EmailGenerationService {
       companySector: contact.company.sector,
       companyCountry: contact.company.country,
       companyCity: contact.company.city,
+    }
+  }
+
+  private async findDefaultPreset(userId: string): Promise<GenerationPreset | null> {
+    return GenerationPreset.query()
+      .where('userId', userId)
+      .where('isDefault', true)
+      .first()
+  }
+
+  private buildPresetOptions(preset: GenerationPreset) {
+    return {
+      tone: preset.tone,
+      length: preset.length,
+      framework: preset.framework,
+      language: preset.language,
+      customInstructions: preset.customInstructions ?? undefined,
     }
   }
 }

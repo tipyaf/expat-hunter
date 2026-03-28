@@ -2,6 +2,12 @@ import type { HttpContext } from '@adonisjs/core/http'
 import Contact from '#models/contact'
 import ExpatScoringService from '#services/expat_scoring_service'
 import type { ExpatScoreResult } from '#services/expat_scoring_service'
+import { PLACEHOLDER_CONTACT_NAMES } from '@expat-hunter/shared'
+
+/** Convert "hiring manager" → "Hiring Manager" for case-variant matching. */
+function titleCase(s: string): string {
+  return s.replace(/\b\w/g, (c) => c.toUpperCase())
+}
 
 const VALID_STATUSES = [
   'identified', 'analyzed', 'to_contact', 'contacted',
@@ -21,6 +27,7 @@ export default class ContactsController {
 
     const query = Contact.query()
       .where('userId', user.id)
+      .whereNotIn('fullName', [...PLACEHOLDER_CONTACT_NAMES, ...PLACEHOLDER_CONTACT_NAMES.map(titleCase)])
       .preload('company')
       .orderBy('createdAt', 'desc')
 

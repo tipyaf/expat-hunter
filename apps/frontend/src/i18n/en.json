@@ -237,7 +237,23 @@
     "status_sent": "Sent",
     "status_opened": "Opened",
     "status_replied": "Replied",
-    "status_bounced": "Bounced"
+    "status_bounced": "Bounced",
+    "editEmail": "Edit email",
+    "improveWithAi": "Improve with AI",
+    "regenerateCompletely": "Regenerate",
+    "instructionsPlaceholder": "e.g. Make it more casual, mention my React experience...",
+    "improving": "Improving...",
+    "regenerating": "Regenerating...",
+    "aiInstructions": "AI instructions",
+    "closeModal": "Close",
+    "selectTemplate": "Apply a template",
+    "noTemplate": "No template",
+    "applyTemplate": "Apply",
+    "applyingTemplate": "Applying...",
+    "selectPreset": "Generation preset",
+    "noPreset": "No preset",
+    "applyPreset": "Apply",
+    "applyingPreset": "Applying..."
   },
   "pipeline": {
     "title": "Pipeline",
@@ -388,7 +404,9 @@
     "logout": "Sign out",
     "openMenu": "Open menu",
     "closeMenu": "Close menu",
-    "upgrade": "Upgrade to Premium"
+    "upgrade": "Upgrade to Premium",
+    "templates": "Templates",
+    "presets": "Presets"
   },
   "search": {
     "title": "Automated Search",
@@ -529,6 +547,27 @@
     "dim_hiring": "Hiring",
     "dim_expatFriendly": "Expat-friendly",
     "dim_momentum": "Momentum"
+  },
+  "contactPanel": {
+    "title": "Contact Details",
+    "close": "Close panel",
+    "viewLinkedin": "View LinkedIn",
+    "viewGithub": "View GitHub",
+    "aiAnalysis": "AI Analysis",
+    "notAnalyzed": "Not yet analyzed",
+    "emailHistory": "Email History",
+    "noEmails": "No emails sent yet",
+    "reply": "Reply",
+    "relevance_very_relevant": "Very Relevant",
+    "relevance_relevant": "Relevant",
+    "relevance_to_review": "To Review",
+    "relevance_not_relevant": "Not Relevant",
+    "email_draft": "Draft",
+    "email_approved": "Approved",
+    "email_sent": "Sent",
+    "email_opened": "Opened",
+    "email_replied": "Replied",
+    "email_bounced": "Bounced"
   },
   "templates": {
     "title": "My email templates",

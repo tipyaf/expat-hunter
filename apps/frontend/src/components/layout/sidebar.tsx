@@ -12,6 +12,8 @@ import {
   Crown,
   UserCircle,
   Settings,
+  FileText,
+  Sliders,
   Cpu,
   UsersRound,
   LogOut,
@@ -54,6 +56,8 @@ export function Sidebar() {
   const secondaryNav: NavItem[] = [
     { label: t('profile'), href: '/profil', icon: UserCircle },
     { label: t('settings'), href: '/parametres', icon: Settings },
+    { label: t('templates'), href: '/parametres/templates', icon: FileText },
+    { label: t('presets'), href: '/parametres/presets', icon: Sliders },
   ]
 
   const adminNav: NavItem[] = user?.isAdmin

@@ -29,3 +29,5 @@ export {
   getCountryByCode,
   getCountryCodes,
 } from './constants/countries'
+export type { PlaceholderContactName } from './constants/contacts'
+export { PLACEHOLDER_CONTACT_NAMES } from './constants/contacts'

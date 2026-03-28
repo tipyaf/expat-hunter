@@ -5,6 +5,7 @@ import {
   type CandidateForEmail,
   type ContactForEmail,
   type EmailGenerationResult,
+  type EmailPromptOptions,
 } from '#ai/prompts/email_prompt'
 
 export class EmailComposer {
@@ -21,7 +22,7 @@ export class EmailComposer {
   async compose(
     contact: ContactForEmail,
     candidate: CandidateForEmail,
-    options?: { type?: 'initial' | 'follow_up_1' | 'follow_up_2' | 'follow_up_3'; previousEmail?: string }
+    options?: EmailPromptOptions
   ): Promise<EmailGenerationResult> {
     const { system, user } = buildEmailPrompt(contact, candidate, options)
 

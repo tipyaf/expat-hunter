@@ -36,26 +36,79 @@ export interface EmailGenerationResult {
   body: string
 }
 
+export interface EmailTemplatePattern {
+  subjectPattern: string
+  bodyPattern: string
+}
+
+export interface PresetPromptOptions {
+  tone?: string
+  length?: 'short' | 'medium' | 'long'
+  framework?: 'aida' | 'pas' | 'bab' | 'direct'
+  language?: string
+  customInstructions?: string
+}
+
+export interface EmailPromptOptions {
+  type?: 'initial' | 'follow_up_1' | 'follow_up_2' | 'follow_up_3'
+  previousEmail?: string
+  instructions?: string
+  template?: EmailTemplatePattern
+  preset?: PresetPromptOptions
+}
+
+const LENGTH_CONSTRAINTS: Record<string, string> = {
+  short: '80 mots maximum',
+  medium: '150 mots maximum',
+  long: '250 mots maximum',
+}
+
+const FRAMEWORK_INSTRUCTIONS: Record<string, string> = {
+  aida: "Structure l'email selon le framework AIDA : Attention (accroche), Interest (intérêt), Desire (envie), Action (call-to-action).",
+  pas: "Structure l'email selon le framework PAS : Problem (problème identifié), Agitate (amplification), Solution (proposition).",
+  bab: "Structure l'email selon le framework BAB : Before (situation actuelle), After (vision idéale), Bridge (comment y arriver).",
+  direct: '',
+}
+
+function buildToneInstruction(preset?: PresetPromptOptions): string {
+  if (!preset?.tone || preset.tone === 'professional') {
+    return 'Ton professionnel mais chaleureux, pas corporate'
+  }
+  const toneMap: Record<string, string> = {
+    friendly: 'Ton amical et décontracté, comme un message entre collègues',
+    direct: 'Ton direct et concis, va droit au but sans fioritures',
+    enthusiastic: 'Ton enthousiaste et énergique, montre de la passion',
+  }
+  return toneMap[preset.tone] ?? `Ton ${preset.tone}`
+}
+
 export function buildEmailPrompt(
   contact: ContactForEmail,
   candidate: CandidateForEmail,
-  options?: { type?: 'initial' | 'follow_up_1' | 'follow_up_2' | 'follow_up_3'; previousEmail?: string }
+  options?: EmailPromptOptions
 ): { system: string; user: string } {
   const isFollowUp = options?.type && options.type !== 'initial'
+  const preset = options?.preset
+  const lengthConstraint = LENGTH_CONSTRAINTS[preset?.length ?? 'medium'] ?? LENGTH_CONSTRAINTS.medium
+  const toneInstruction = buildToneInstruction(preset)
+  const frameworkInstruction = FRAMEWORK_INSTRUCTIONS[preset?.framework ?? 'direct'] ?? ''
+  const emailLanguage = preset?.language === 'fr' ? 'FRANÇAIS' : 'ANGLAIS'
 
   return {
     system: `Tu es un expert en prospection d'emploi à l'international. Tu rédiges des emails courts, humains et personnalisés pour des candidats qui contactent directement des responsables d'équipes opérationnelles (PAS les RH).
 
 Règles strictes :
-- L'email doit être en ANGLAIS (communication professionnelle internationale)
-- Maximum 150 mots pour le corps de l'email
-- Ton professionnel mais chaleureux, pas corporate
+- L'email doit être en ${emailLanguage} (communication professionnelle internationale)
+- ${lengthConstraint} pour le corps de l'email
+- ${toneInstruction}
 - Pas de formules génériques ("I hope this email finds you well", "Dear Sir/Madam")
 - Mentionne le rôle du contact et son entreprise naturellement
 - Mets en avant 2-3 compétences pertinentes du candidat par rapport au contexte
 - Termine par une question ouverte ou une proposition concrète
 - Le sujet doit être court et accrocheur (max 60 caractères)${getCulturalInstruction(contact.companyCountry)}
 ${isFollowUp ? '- C\'est une RELANCE, sois plus bref et mentionne l\'email précédent' : ''}
+${frameworkInstruction ? `- ${frameworkInstruction}` : ''}
+${preset?.customInstructions ? `- Instructions supplémentaires : ${preset.customInstructions}` : ''}
 
 Réponds UNIQUEMENT avec un objet JSON valide :
 {
@@ -78,8 +131,10 @@ Réponds UNIQUEMENT avec un objet JSON valide :
 - **Rôles visés** : ${candidate.targetRoles.join(', ') || 'Non renseignés'}
 ${candidate.cvSummary ? `- **Résumé** : ${candidate.cvSummary}` : ''}
 ${isFollowUp && options?.previousEmail ? `\n## Email précédent\n${options.previousEmail}` : ''}
+${options?.template ? `\n## Template à personnaliser\n**Sujet** : ${options.template.subjectPattern}\n**Corps** :\n${options.template.bodyPattern}` : ''}
+${options?.instructions ? `\n## Instructions de l'utilisateur\n${options.instructions}` : ''}
 
-${isFollowUp ? 'Rédige une relance courte et naturelle.' : 'Rédige un premier email de prise de contact.'}`,
+${isFollowUp ? 'Rédige une relance courte et naturelle.' : options?.template ? 'Personnalise le template ci-dessus pour ce contact en adaptant le contenu à son profil et son entreprise.' : options?.instructions ? 'Améliore l\'email existant en suivant les instructions ci-dessus.' : 'Rédige un premier email de prise de contact.'}`,
   }
 }
 

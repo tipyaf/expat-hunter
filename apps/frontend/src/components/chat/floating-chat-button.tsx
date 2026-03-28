@@ -1,6 +1,7 @@
 'use client'
 
 import { ChatPanel } from '@/components/chat/chat-panel'
+import { useAuth } from '@/contexts/auth-context'
 import { useChat } from '@/hooks/use-chat'
 import { useTranslations } from 'next-intl'
 import { usePathname } from 'next/navigation'
@@ -17,10 +18,13 @@ function getPageFromPathname(pathname: string): string {
 }
 
 export function FloatingChatButton() {
+  const { user } = useAuth()
   const t = useTranslations('chat')
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
   const { messages, isLoading, sendMessage, clearMessages, quota } = useChat()
+
+  if (!user) return null
 
   const page = getPageFromPathname(pathname)
   const context = { page }

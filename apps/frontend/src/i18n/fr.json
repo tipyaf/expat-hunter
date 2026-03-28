@@ -237,7 +237,23 @@
     "status_sent": "Envoyé",
     "status_opened": "Ouvert",
     "status_replied": "Répondu",
-    "status_bounced": "Rejeté"
+    "status_bounced": "Rejeté",
+    "editEmail": "Modifier l'email",
+    "improveWithAi": "Améliorer avec l'IA",
+    "regenerateCompletely": "Régénérer",
+    "instructionsPlaceholder": "ex. Rends-le plus décontracté, mentionne mon expérience React...",
+    "improving": "Amélioration en cours...",
+    "regenerating": "Régénération en cours...",
+    "aiInstructions": "Instructions IA",
+    "closeModal": "Fermer",
+    "selectTemplate": "Appliquer un template",
+    "noTemplate": "Aucun template",
+    "applyTemplate": "Appliquer",
+    "applyingTemplate": "Application...",
+    "selectPreset": "Preset de génération",
+    "noPreset": "Aucun preset",
+    "applyPreset": "Appliquer",
+    "applyingPreset": "Application..."
   },
   "pipeline": {
     "title": "Pipeline",
@@ -388,7 +404,9 @@
     "logout": "Se déconnecter",
     "openMenu": "Ouvrir le menu",
     "closeMenu": "Fermer le menu",
-    "upgrade": "Passer à Premium"
+    "upgrade": "Passer à Premium",
+    "templates": "Templates",
+    "presets": "Presets"
   },
   "search": {
     "title": "Recherche automatisée",
@@ -529,6 +547,27 @@
     "dim_hiring": "Recrutement",
     "dim_expatFriendly": "Expat-friendly",
     "dim_momentum": "Momentum"
+  },
+  "contactPanel": {
+    "title": "Détails du contact",
+    "close": "Fermer le panneau",
+    "viewLinkedin": "Voir LinkedIn",
+    "viewGithub": "Voir GitHub",
+    "aiAnalysis": "Analyse IA",
+    "notAnalyzed": "Pas encore analysé",
+    "emailHistory": "Historique des emails",
+    "noEmails": "Aucun email envoyé",
+    "reply": "Réponse",
+    "relevance_very_relevant": "Très pertinent",
+    "relevance_relevant": "Pertinent",
+    "relevance_to_review": "À examiner",
+    "relevance_not_relevant": "Non pertinent",
+    "email_draft": "Brouillon",
+    "email_approved": "Approuvé",
+    "email_sent": "Envoyé",
+    "email_opened": "Ouvert",
+    "email_replied": "Répondu",
+    "email_bounced": "Rebondi"
   },
   "templates": {
     "title": "Mes templates d'emails",
