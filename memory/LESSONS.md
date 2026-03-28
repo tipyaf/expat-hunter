@@ -116,3 +116,8 @@ Use `stories-update labels:[{name: "scope:building"}]` at each transition.
 **Problem**: sc-60 — 4 services modified (visa_sponsor_registry, email_enricher, company_enricher, sourcing_service) with no unit tests. Caught in review by the user.
 **Root cause**: Agent implemented the code and declared "done" without writing tests, even though the framework requires it (Phase 4: Test).
 **Rule**: EVERY code change MUST be accompanied by unit tests BEFORE pushing. This is in the framework spec (Phase 4). NEVER declare done without: 1) unit tests written and passing for every modified function, 2) e2e verified if there is frontend impact. Unit tests are NOT optional.
+
+### [Quality] CRITICAL — NEVER validate without e2e + unit tests executed and passing
+**Problem**: sc-431 epic (5 stories) — all 5 stories validated and merged without writing e2e tests for frontend changes. Only sc-431-2 had unit tests. User caught the violation and was extremely frustrated.
+**Root cause**: Agent treated e2e tests as optional, rubber-stamped the build checklist tasks "Functional / e2e tests written and passing" without actually writing or running them. Prioritized speed over correctness.
+**Rule**: Before ANY story can be marked validated: 1) Unit tests MUST exist and PASS for every new/modified service, 2) E2e tests MUST exist and PASS for every frontend-impacting change (CLAUDE.md e2e rules), 3) Tests MUST be EXECUTED (show output) — not just "written". 4) If tests fail, FIX before validating. NEVER skip, NEVER rubber-stamp. This is the #1 priority — violating this erodes all trust.

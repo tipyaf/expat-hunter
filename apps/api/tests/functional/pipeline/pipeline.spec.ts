@@ -1,4 +1,4 @@
-import { TEST_USER_PASSWORD } from '#tests/helpers/credentials'
+import { TEST_USER_PASSWORD, ensureTestUserPremium } from '#tests/helpers/credentials'
 import db from '@adonisjs/lucid/services/db'
 import type { ApiClient } from '@japa/api-client'
 import { test } from '@japa/runner'
@@ -15,9 +15,11 @@ const testUser = {
 
 async function createAuthenticatedUser(client: ApiClient) {
   const response = await client.post(`${AUTH_URL}/register`).json(testUser)
+  const userId = response.body().user.id as string
+  await ensureTestUserPremium(userId)
   return {
     token: response.body().token as string,
-    userId: response.body().user.id as string,
+    userId,
   }
 }
 
