@@ -96,11 +96,12 @@ export function useEmails(filters?: { status?: string; contactId?: string }) {
     return res.data
   }, [token])
 
-  const regenerate = useCallback(async (emailId: string, options?: { instructions?: string; templateId?: string }) => {
+  const regenerate = useCallback(async (emailId: string, options?: { instructions?: string; templateId?: string; presetId?: string }) => {
     if (!token) return
     const body: Record<string, string> = {}
     if (options?.instructions) body.instructions = options.instructions
     if (options?.templateId) body.templateId = options.templateId
+    if (options?.presetId) body.presetId = options.presetId
     const res = await apiClient.post<EmailResponse>(`/api/emails/${emailId}/regenerate`, body, { token })
     setEmails((prev) => prev.map((e) => (e.id === emailId ? res.data : e)))
     return res.data

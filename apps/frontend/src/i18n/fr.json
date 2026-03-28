@@ -249,7 +249,11 @@
     "selectTemplate": "Appliquer un template",
     "noTemplate": "Aucun template",
     "applyTemplate": "Appliquer",
-    "applyingTemplate": "Application..."
+    "applyingTemplate": "Application...",
+    "selectPreset": "Preset de génération",
+    "noPreset": "Aucun preset",
+    "applyPreset": "Appliquer",
+    "applyingPreset": "Application..."
   },
   "pipeline": {
     "title": "Pipeline",
@@ -401,7 +405,8 @@
     "openMenu": "Ouvrir le menu",
     "closeMenu": "Fermer le menu",
     "upgrade": "Passer à Premium",
-    "templates": "Templates"
+    "templates": "Templates",
+    "presets": "Presets"
   },
   "search": {
     "title": "Recherche automatisée",
