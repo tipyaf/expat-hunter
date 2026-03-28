@@ -241,11 +241,44 @@ export default function PipelinePage() {
 
   const { isFree } = usePlan()
 
+  const kanbanMockup = (
+    <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="shrink-0 px-4 md:px-8 pt-8 pb-4 pl-16 md:pl-8 bg-[var(--color-bg-light)]">
+        <h1 className="text-3xl font-bold text-primary">{t('title')}</h1>
+        <p className="text-[var(--color-text-muted)] mt-1">{t('subtitle')}</p>
+      </div>
+      <div className="flex-1 overflow-x-auto px-4 md:px-8 pb-8">
+        <div className="flex gap-4 h-full min-w-max">
+          {Object.entries(COLUMN_COLORS).map(([key, color]) => (
+            <div key={key} className={`w-72 flex flex-col rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] border-t-4 ${color}`}>
+              <div className="p-3 border-b border-[var(--color-border)]">
+                <h3 className="font-medium text-sm capitalize">{key.replace('_', ' ')}</h3>
+                <span className="text-xs text-[var(--color-text-muted)]">0</span>
+              </div>
+              <div className="flex-1 p-3 space-y-2">
+                {[1, 2].map((i) => (
+                  <div key={i} className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] p-3 opacity-30">
+                    <div className="h-3 w-24 bg-[var(--color-border)] rounded mb-2" />
+                    <div className="h-2 w-32 bg-[var(--color-border)] rounded mb-1" />
+                    <div className="h-2 w-20 bg-[var(--color-border)] rounded" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+
   return (
     <div className="flex h-dvh overflow-hidden">
       <Sidebar />
       <main id="main-content" className="flex-1 flex flex-col overflow-hidden">
-        <PremiumGate>
+        {isFree ? (
+          <PremiumGate>{kanbanMockup}</PremiumGate>
+        ) : (
+        <>
         <div className="shrink-0 px-4 md:px-8 pt-8 pb-4 pl-16 md:pl-8 bg-[var(--color-bg-light)]">
           <div className="flex items-start justify-between mb-2">
             <div>
@@ -328,7 +361,8 @@ export default function PipelinePage() {
             </div>
           )}
         </div>
-        </PremiumGate>
+        </>
+        )}
       </main>
 
       {/* Contact detail panel */}

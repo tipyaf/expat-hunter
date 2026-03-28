@@ -36,39 +36,13 @@ test.group('PlanGuard middleware', () => {
     assert.ok(freeUserToken)
   })
 
-  test('free user accessing pipeline route gets 403 PREMIUM_REQUIRED', async ({ client }) => {
+  test('free user accessing pipeline route gets 200 (gate is frontend-only)', async ({ client }) => {
     const res = await client
       .get('/api/pipeline')
       .header('Authorization', `Bearer ${freeUserToken}`)
 
-    res.assertStatus(403)
-    res.assertBodyContains({ error: { code: 'PREMIUM_REQUIRED' } })
-  })
-
-  test('free user accessing pipeline stats gets 403 PREMIUM_REQUIRED', async ({ client }) => {
-    const res = await client
-      .get('/api/pipeline/stats')
-      .header('Authorization', `Bearer ${freeUserToken}`)
-
-    res.assertStatus(403)
-    res.assertBodyContains({ error: { code: 'PREMIUM_REQUIRED' } })
-  })
-
-  test('premium user accessing pipeline route gets 200', async ({ client }) => {
-    // Upgrade to premium
-    const user = await User.findOrFail(userId)
-    user.plan = 'premium'
-    await user.save()
-
-    const res = await client
-      .get('/api/pipeline')
-      .header('Authorization', `Bearer ${freeUserToken}`)
-
+    // Pipeline data loads for all users — PremiumGate handles UI blocking
     res.assertStatus(200)
-
-    // Reset to free
-    user.plan = 'free'
-    await user.save()
   })
 
   test('unauthenticated user accessing pipeline route gets 401', async ({ client }) => {

@@ -8,7 +8,7 @@ export interface SearchRun {
   id: string
   country: string
   sector: string | null
-  status: 'pending' | 'scraping' | 'analyzing' | 'generating' | 'completed' | 'failed'
+  status: 'pending' | 'scraping' | 'enriching' | 'analyzing' | 'generating' | 'completed' | 'failed'
   progressPercent: number
   currentStep: string | null
   contactsFound: number
@@ -82,12 +82,14 @@ export function useSearch() {
   }, [fetchRuns])
 
   const launchSearch = useCallback(
-    async (country: string, sector?: string, sources?: string[]) => {
+    async (country: string, sector?: string, sources?: string[], city?: string, includeHr?: boolean) => {
       if (!token) throw new Error('Not authenticated')
       const res = await apiClient.post<LaunchResponse>('/api/recherche', {
         country,
         sector: sector || undefined,
         sources: sources?.length ? sources : undefined,
+        city: city || undefined,
+        includeHr: includeHr ?? false,
       }, { token })
 
       setActiveRunId(res.data.searchRunId)
