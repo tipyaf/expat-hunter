@@ -6,6 +6,7 @@ import EmailSendingService from '#services/email_sending_service'
 import UsageService from '#services/usage_service'
 
 const VALID_STATUSES = ['draft', 'approved', 'sent', 'opened', 'replied', 'bounced']
+const MAX_INSTRUCTIONS_LENGTH = 500
 
 export default class EmailsController {
   private usageService = new UsageService()
@@ -172,11 +173,16 @@ export default class EmailsController {
   /**
    * POST /api/emails/:id/regenerate — Regenerate a draft email with AI.
    */
-  async regenerate({ auth, params, response }: HttpContext) {
+  async regenerate({ auth, params, request, response }: HttpContext) {
     const user = auth.getUserOrFail()
 
+    const rawInstructions = request.input('instructions')
+    const instructions = typeof rawInstructions === 'string'
+      ? rawInstructions.trim().slice(0, MAX_INSTRUCTIONS_LENGTH) || undefined
+      : undefined
+
     const service = new EmailGenerationService()
-    const email = await service.regenerate(params.id, user.id)
+    const email = await service.regenerate(params.id, user.id, { instructions })
 
     if (!email) {
       return response.badRequest({

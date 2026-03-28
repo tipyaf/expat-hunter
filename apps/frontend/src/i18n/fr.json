@@ -237,7 +237,15 @@
     "status_sent": "Envoyé",
     "status_opened": "Ouvert",
     "status_replied": "Répondu",
-    "status_bounced": "Rejeté"
+    "status_bounced": "Rejeté",
+    "editEmail": "Modifier l'email",
+    "improveWithAi": "Améliorer avec l'IA",
+    "regenerateCompletely": "Régénérer",
+    "instructionsPlaceholder": "ex. Rends-le plus décontracté, mentionne mon expérience React...",
+    "improving": "Amélioration en cours...",
+    "regenerating": "Régénération en cours...",
+    "aiInstructions": "Instructions IA",
+    "closeModal": "Fermer"
   },
   "pipeline": {
     "title": "Pipeline",
