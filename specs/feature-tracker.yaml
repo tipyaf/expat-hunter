@@ -487,13 +487,13 @@ features:
   - id: "sc-549-3"
     name: "Generation presets — customize tone/style"
     priority: "feature"
-    status: "refined"
-    cycles: 0
+    status: "testing"
+    cycles: 1
     story_file: "specs/stories/sc-549-3.yaml"
     depends_on: ["sc-549-1"]
-    started_at: ""
+    started_at: "2026-03-28"
     validated_at: ""
-    notes: "Preset management page + selector in modal + default preset auto-applied in initial generation. Backend CRUD already exists. Parent: sc-549. Shortcut sc-553."
+    notes: "Preset selector in modal + default preset in initial generation + tone/length/framework/language in system prompt. All 10 ACs pass. Parent: sc-549. Shortcut sc-553."
 
   - id: "sc-550"
     name: "One-click email account connection via Google OAuth"

@@ -186,8 +186,13 @@ export default class EmailsController {
       ? rawTemplateId.trim()
       : undefined
 
+    const rawPresetId = request.input('presetId')
+    const presetId = typeof rawPresetId === 'string' && rawPresetId.trim()
+      ? rawPresetId.trim()
+      : undefined
+
     const service = new EmailGenerationService()
-    const email = await service.regenerate(params.id, user.id, { instructions, templateId })
+    const email = await service.regenerate(params.id, user.id, { instructions, templateId, presetId })
 
     if (!email) {
       return response.badRequest({
