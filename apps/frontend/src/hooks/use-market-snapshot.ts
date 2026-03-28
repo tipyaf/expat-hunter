@@ -32,7 +32,9 @@ export function useMarketSnapshot(country: string | null, sector?: string | null
     }
 
     try {
-      setIsLoading(true)
+      // Only show loading spinner on initial load (no existing snapshot)
+      // On subsequent fetches, keep showing the old snapshot to avoid flashing
+      if (!snapshot) setIsLoading(true)
       setError(null)
       const params = new URLSearchParams({ country })
       if (sector) params.set('sector', sector)
@@ -47,6 +49,7 @@ export function useMarketSnapshot(country: string | null, sector?: string | null
     } finally {
       setIsLoading(false)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, country, sector])
 
   useEffect(() => {

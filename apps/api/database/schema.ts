@@ -550,8 +550,25 @@ export class SourcingSourceSchema extends BaseModel {
   declare updatedAt: DateTime
 }
 
+export class UsageCounterSchema extends BaseModel {
+  static $columns = ['count', 'counterType', 'createdAt', 'id', 'updatedAt', 'userId'] as const
+  $columns = UsageCounterSchema.$columns
+  @column()
+  declare count: number
+  @column()
+  declare counterType: string
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column({ isPrimary: true })
+  declare id: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare userId: string
+}
+
 export class UserSchema extends BaseModel {
-  static $columns = ['createdAt', 'email', 'emailVerifiedAt', 'fullName', 'googleId', 'id', 'isAdmin', 'locale', 'password', 'updatedAt'] as const
+  static $columns = ['createdAt', 'email', 'emailVerifiedAt', 'fullName', 'googleId', 'id', 'isAdmin', 'locale', 'password', 'plan', 'updatedAt'] as const
   $columns = UserSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -571,6 +588,8 @@ export class UserSchema extends BaseModel {
   declare locale: string
   @column({ serializeAs: null })
   declare password: string | null
+  @column()
+  declare plan: string
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime | null
 }

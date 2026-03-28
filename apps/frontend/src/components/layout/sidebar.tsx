@@ -1,6 +1,7 @@
 'use client'
 
 import { useAuth } from '@/contexts/auth-context'
+import { useDashboard } from '@/hooks/use-dashboard'
 import { usePlan } from '@/hooks/use-plan'
 import {
   Home,
@@ -8,6 +9,7 @@ import {
   Users,
   Mail,
   Kanban,
+  Crown,
   UserCircle,
   Settings,
   Cpu,
@@ -15,7 +17,6 @@ import {
   LogOut,
   Menu,
   X,
-  Crown,
 } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -27,21 +28,26 @@ interface NavItem {
   label: string
   href: string
   icon: LucideIcon
+  badge?: number
 }
 
 export function Sidebar() {
   const pathname = usePathname()
   const { user, logout } = useAuth()
   const { isFree } = usePlan()
+  const { actions } = useDashboard()
   const t = useTranslations('sidebar')
   const tc = useTranslations('common')
   const [isOpen, setIsOpen] = useState(false)
 
+  const emailBadge = actions.find((a) => a.type === 'emails_to_validate')?.count ?? 0
+  const replyBadge = actions.find((a) => a.type === 'replies_received')?.count ?? 0
+
   const mainNav: NavItem[] = [
     { label: t('dashboard'), href: '/', icon: Home },
     { label: t('search'), href: '/recherche', icon: Search },
-    { label: t('contacts'), href: '/contacts', icon: Users },
-    { label: t('emails'), href: '/emails', icon: Mail },
+    { label: t('contacts'), href: '/contacts', icon: Users, badge: replyBadge },
+    { label: t('emails'), href: '/emails', icon: Mail, badge: emailBadge },
     { label: t('tracking'), href: '/suivi', icon: Kanban },
   ]
 
@@ -75,7 +81,12 @@ export function Sidebar() {
         }`}
       >
         <Icon className="h-[18px] w-[18px] shrink-0" aria-hidden="true" />
-        {item.label}
+        <span className="flex-1">{item.label}</span>
+        {item.badge != null && item.badge > 0 && (
+          <span className="ml-auto flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-white">
+            {item.badge > 99 ? '99+' : item.badge}
+          </span>
+        )}
       </Link>
     )
   }
