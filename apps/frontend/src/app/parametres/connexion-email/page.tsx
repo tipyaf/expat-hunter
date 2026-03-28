@@ -5,8 +5,8 @@ import { PasswordInput } from '@/components/ui/password-input'
 import { useAuth } from '@/contexts/auth-context'
 import { useEmailConnection, type EmailConnectionPayload } from '@/hooks/use-email-connection'
 import { useTranslations } from 'next-intl'
-import { useState, useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useState, useEffect, useRef } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 
 const EMAIL_PROVIDERS = [
   { id: 'gmail', name: 'Gmail', imapHost: 'imap.gmail.com', imapPort: 993, smtpHost: 'smtp.gmail.com', smtpPort: 587 },
@@ -20,6 +20,8 @@ export default function EmailConnectionPage() {
   const t = useTranslations('emailConnection')
   const tc = useTranslations('common')
   const searchParams = useSearchParams()
+  const router = useRouter()
+  const oauthHandled = useRef(false)
 
   const {
     connection,
@@ -51,15 +53,19 @@ export default function EmailConnectionPage() {
 
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null)
 
-  // Handle OAuth callback query params
+  // Handle OAuth callback query params — run once only
   useEffect(() => {
+    if (oauthHandled.current) return
     const oauth = searchParams.get('oauth')
     const reason = searchParams.get('reason')
 
     if (oauth === 'success') {
+      oauthHandled.current = true
       setMessage({ text: t('oauthConnected'), type: 'success' })
       refresh()
+      router.replace('/parametres/connexion-email')
     } else if (oauth === 'error') {
+      oauthHandled.current = true
       const errorKey =
         reason === 'access_denied'
           ? 'oauthErrorAccessDenied'
@@ -67,8 +73,9 @@ export default function EmailConnectionPage() {
             ? 'oauthErrorStateMismatch'
             : 'oauthErrorGeneric'
       setMessage({ text: t(errorKey), type: 'error' })
+      router.replace('/parametres/connexion-email')
     }
-  }, [searchParams, t, refresh])
+  }, [searchParams, t, refresh, router])
 
   useEffect(() => {
     if (connection && !isOAuth) {
