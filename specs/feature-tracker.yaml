@@ -421,13 +421,13 @@ features:
   - id: "sc-512"
     name: "fix: hide chat button when user is not authenticated"
     priority: "chore"
-    status: "refined"
-    cycles: 0
+    status: "validated"
+    cycles: 1
     story_file: "specs/stories/sc-512.yaml"
     depends_on: []
     started_at: "2026-03-28"
-    validated_at: ""
-    notes: "FloatingChatButton: return null if !user via useAuth(). No path-based exclusion needed."
+    validated_at: "2026-03-28"
+    notes: "All 4 ACs pass. E2e test added. PR #95 merged."
 
   - id: "sc-535"
     name: "chore: add zero-console-errors validation gate to framework and project"
