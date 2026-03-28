@@ -47,6 +47,7 @@ export default class AuthController {
         fullName: user.fullName,
         locale: user.locale,
         isAdmin: user.isAdmin ?? false,
+        plan: user.plan ?? 'free',
         emailVerified: false,
       },
       token: token.value?.release(),
@@ -66,6 +67,7 @@ export default class AuthController {
         fullName: user.fullName,
         locale: user.locale,
         isAdmin: user.isAdmin ?? false,
+        plan: user.plan ?? 'free',
         emailVerified: user.isEmailVerified,
       },
       token: token.value?.release(),
@@ -88,6 +90,7 @@ export default class AuthController {
       fullName: user.fullName,
       locale: user.locale,
       isAdmin: user.isAdmin ?? false,
+      plan: user.plan ?? 'free',
       emailVerified: user.isEmailVerified,
       createdAt: user.createdAt,
     }
