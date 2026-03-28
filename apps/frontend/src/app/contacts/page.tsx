@@ -3,6 +3,7 @@
 import { Sidebar } from '@/components/layout/sidebar'
 import { Button } from '@/components/ui/button'
 import { ConfidenceScore } from '@/components/ui/confidence-score'
+import { ContactDetailPanel } from '@/components/ui/contact-detail-panel'
 import { FakeContactRow } from '@/components/ui/fake-contact-row'
 import { PremiumBadge } from '@/components/ui/premium-badge'
 import { useAuth } from '@/contexts/auth-context'
@@ -49,6 +50,7 @@ export default function ContactsPage() {
     status: statusFilter || undefined,
   })
   const [updatingId, setUpdatingId] = useState<string | null>(null)
+  const [selectedContactId, setSelectedContactId] = useState<string | null>(null)
 
   const { isAnalyzing, lastResult, stats, error: analysisError, runAnalysis, fetchStats } = useAnalysis()
   const [analysisMessage, setAnalysisMessage] = useState<string | null>(null)
@@ -200,7 +202,8 @@ export default function ContactsPage() {
                   return (
                     <div
                       key={contact.id}
-                      className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-4 shadow-sm"
+                      onClick={() => setSelectedContactId(contact.id)}
+                      className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-4 shadow-sm cursor-pointer hover:border-primary/40 transition-colors"
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
@@ -245,6 +248,7 @@ export default function ContactsPage() {
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-primary hover:underline"
+                                onClick={(e) => e.stopPropagation()}
                               >
                                 LinkedIn
                               </a>
@@ -267,6 +271,7 @@ export default function ContactsPage() {
                           <select
                             value={contact.status}
                             onChange={(e) => void handleStatusChange(contact.id, e.target.value as ContactStatus)}
+                            onClick={(e) => e.stopPropagation()}
                             disabled={updatingId === contact.id}
                             className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-light)] text-[var(--color-text-main)] px-2 py-1 text-xs disabled:opacity-50"
                           >
@@ -339,6 +344,10 @@ export default function ContactsPage() {
           )}
         </div>
       </main>
+      <ContactDetailPanel
+        contactId={selectedContactId}
+        onClose={() => setSelectedContactId(null)}
+      />
     </div>
   )
 }
