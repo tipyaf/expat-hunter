@@ -82,8 +82,13 @@ export function ContactDetailPanel({ contactId, onClose }: ContactDetailPanelPro
 
   const handleGenerateEmail = useCallback(async () => {
     if (!contactId) return
-    await generate({ contactIds: [contactId] })
-    refetch()
+    try {
+      await generate({ contactIds: [contactId] })
+    } catch {
+      // generate() manages its own isGenerating state
+    } finally {
+      refetch()
+    }
   }, [contactId, generate, refetch])
 
   useEffect(() => {
@@ -95,11 +100,11 @@ export function ContactDetailPanel({ contactId, onClose }: ContactDetailPanelPro
   useEffect(() => {
     if (!contactId) return
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape' && !isModalOpen) onClose()
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [contactId, onClose])
+  }, [contactId, onClose, isModalOpen])
 
   if (!contactId) return null
 
