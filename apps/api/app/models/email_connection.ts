@@ -5,9 +5,26 @@ import { DateTime } from 'luxon'
 import encryption from '@adonisjs/core/services/encryption'
 import User from './user.js'
 
+export const CONNECTION_TYPE = {
+  MANUAL: 'manual',
+  OAUTH: 'oauth',
+} as const
+
+export const OAUTH_PROVIDER = {
+  GOOGLE: 'google',
+} as const
+
+export type ConnectionType = (typeof CONNECTION_TYPE)[keyof typeof CONNECTION_TYPE]
+export type OAuthProvider = (typeof OAUTH_PROVIDER)[keyof typeof OAUTH_PROVIDER]
+
 const encryptedColumn = {
   prepare: (value: string) => encryption.encrypt(value),
   consume: (value: string) => encryption.decrypt<string>(value) ?? value,
+}
+
+const nullableEncryptedColumn = {
+  prepare: (value: string | null) => (value ? encryption.encrypt(value) : null),
+  consume: (value: string | null) => (value ? encryption.decrypt<string>(value) ?? value : null),
 }
 
 export default class EmailConnection extends BaseModel {
@@ -18,6 +35,24 @@ export default class EmailConnection extends BaseModel {
 
   @column()
   declare userId: string
+
+  @column()
+  declare connectionType: ConnectionType
+
+  @column()
+  declare oauthProvider: OAuthProvider | null
+
+  @column(nullableEncryptedColumn)
+  declare oauthAccessToken: string | null
+
+  @column(nullableEncryptedColumn)
+  declare oauthRefreshToken: string | null
+
+  @column.dateTime()
+  declare oauthExpiresAt: DateTime | null
+
+  @column()
+  declare oauthEmail: string | null
 
   @column()
   declare imapHost: string
@@ -63,5 +98,14 @@ export default class EmailConnection extends BaseModel {
     if (!connection.id) {
       connection.id = randomUUID()
     }
+  }
+
+  get isOAuth(): boolean {
+    return this.connectionType === CONNECTION_TYPE.OAUTH
+  }
+
+  get isTokenExpired(): boolean {
+    if (!this.oauthExpiresAt) return true
+    return this.oauthExpiresAt < DateTime.now()
   }
 }

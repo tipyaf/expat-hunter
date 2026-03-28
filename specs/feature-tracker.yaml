@@ -399,11 +399,11 @@ features:
   - id: "sc-550"
     name: "One-click email account connection via Google OAuth"
     priority: "feature"
-    status: "refined"
+    status: "building"
     cycles: 0
     story_file: "specs/stories/sc-550.yaml"
     depends_on: []
-    started_at: ""
+    started_at: "2026-03-28"
     validated_at: ""
     notes: "Google OAuth XOAUTH2 for email sending/receiving. Replaces manual IMAP/SMTP as default. Manual kept as secondary. Shortcut sc-550."
 

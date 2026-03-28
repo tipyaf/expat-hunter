@@ -7,6 +7,9 @@ import { useCallback, useEffect, useState } from 'react'
 export interface EmailConnection {
   id: string
   userId: string
+  connectionType: 'manual' | 'oauth'
+  oauthProvider: 'google' | null
+  oauthEmail: string | null
   imapHost: string
   imapPort: number
   imapUser: string
@@ -38,9 +41,12 @@ interface UseEmailConnectionReturn {
   isLoading: boolean
   isSaving: boolean
   isTesting: boolean
+  isOAuth: boolean
   save: (payload: EmailConnectionPayload) => Promise<void>
   remove: () => Promise<void>
+  disconnect: () => Promise<void>
   testConnection: () => Promise<{ success: boolean; message: string }>
+  connectWithGoogle: () => void
   refresh: () => void
 }
 
@@ -50,6 +56,8 @@ export function useEmailConnection(): UseEmailConnectionReturn {
   const [isLoading, setIsLoading] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isTesting, setIsTesting] = useState(false)
+
+  const isOAuth = connection?.connectionType === 'oauth'
 
   const fetch = useCallback(async () => {
     if (!token) return
@@ -95,6 +103,10 @@ export function useEmailConnection(): UseEmailConnectionReturn {
     setConnection(null)
   }, [token])
 
+  const disconnect = useCallback(async (): Promise<void> => {
+    await remove()
+  }, [remove])
+
   const testConnection = useCallback(async (): Promise<{ success: boolean; message: string }> => {
     if (!token) return { success: false, message: 'Not authenticated' }
     setIsTesting(true)
@@ -112,14 +124,22 @@ export function useEmailConnection(): UseEmailConnectionReturn {
     }
   }, [token])
 
+  const connectWithGoogle = useCallback(() => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3333'
+    window.location.href = `${apiUrl}/api/email-connections/oauth/google`
+  }, [])
+
   return {
     connection,
     isLoading,
     isSaving,
     isTesting,
+    isOAuth,
     save,
     remove,
+    disconnect,
     testConnection,
+    connectWithGoogle,
     refresh: () => { void fetch() },
   }
 }

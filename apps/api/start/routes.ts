@@ -21,6 +21,7 @@ const BlockedEntitiesController = () => import('#controllers/blocked_entities_co
 const ChatController = () => import('#controllers/chat_controller')
 const ThreadController = () => import('#controllers/thread_controller')
 const EmailConnectionsController = () => import('#controllers/email_connections_controller')
+const EmailOAuthController = () => import('#controllers/email_oauth_controller')
 const OnboardingController = () => import('#controllers/onboarding_controller')
 const NotificationsController = () => import('#controllers/notifications_controller')
 
@@ -236,6 +237,8 @@ router
     router.post('/', [EmailConnectionsController, 'store'])
     router.delete('/', [EmailConnectionsController, 'destroy'])
     router.post('/test', [EmailConnectionsController, 'test'])
+    router.get('/oauth/google', [EmailOAuthController, 'googleRedirect'])
+    router.get('/oauth/google/callback', [EmailOAuthController, 'googleCallback'])
   })
   .prefix('/api/email-connections')
   .use(middleware.auth())
