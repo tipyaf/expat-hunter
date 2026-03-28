@@ -157,6 +157,76 @@ test.group('POST /api/recherche — validation', (group) => {
 })
 
 // ---------------------------------------------------------------------------
+// POST /api/recherche — async launch behavior
+// ---------------------------------------------------------------------------
+test.group('POST /api/recherche — async launch', () => {
+
+  const asyncTestUser = {
+    email: 'async-search-test@example.com',
+    password: TEST_USER_PASSWORD,
+    fullName: 'Async Search Test',
+  }
+
+  test('returns immediately with searchRunId (not blocking)', async ({ client, assert }) => {
+    const { token } = await createUser(client, asyncTestUser)
+
+    const start = Date.now()
+    const response = await client
+      .post(SEARCH_URL)
+      .header('Authorization', `Bearer ${token}`)
+      .json({ country: 'NZ' })
+
+    const elapsed = Date.now() - start
+
+    response.assertStatus(200)
+    const body = response.body()
+    assert.property(body.data, 'searchRunId')
+    assert.isString(body.data.searchRunId)
+
+    // Should return in under 5 seconds (not wait for pipeline to finish)
+    assert.isBelow(elapsed, 5000, 'Response took too long — launch should be async')
+  })
+
+  test('search run is created in DB with status pending', async ({ client, assert }) => {
+    const { token } = await createUser(client, asyncTestUser)
+
+    const response = await client
+      .post(SEARCH_URL)
+      .header('Authorization', `Bearer ${token}`)
+      .json({ country: 'NZ' })
+
+    response.assertStatus(200)
+    const searchRunId = response.body().data.searchRunId
+
+    // Check in DB
+    const run = await db.from('search_runs').where('id', searchRunId).first()
+    assert.isNotNull(run)
+    assert.oneOf(run.status, ['pending', 'scraping', 'enriching', 'analyzing', 'generating', 'completed', 'failed'])
+  })
+
+  test('progress endpoint returns status for created search run', async ({ client, assert }) => {
+    const { token } = await createUser(client, asyncTestUser)
+
+    const launchRes = await client
+      .post(SEARCH_URL)
+      .header('Authorization', `Bearer ${token}`)
+      .json({ country: 'NZ' })
+
+    const searchRunId = launchRes.body().data.searchRunId
+
+    const progressRes = await client
+      .get(`${SEARCH_URL}/${searchRunId}/progress`)
+      .header('Authorization', `Bearer ${token}`)
+
+    progressRes.assertStatus(200)
+    const data = progressRes.body().data
+    assert.property(data, 'status')
+    assert.property(data, 'progressPercent')
+    assert.property(data, 'contactsFound')
+  })
+})
+
+// ---------------------------------------------------------------------------
 // GET /api/recherche/:id/progress
 // ---------------------------------------------------------------------------
 test.group('GET /api/recherche/:id/progress', (group) => {
