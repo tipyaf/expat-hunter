@@ -449,7 +449,18 @@ features:
     depends_on: []
     started_at: "2026-03-28"
     validated_at: ""
-    notes: "contactPanel namespace missing from en.json + fr.json. 19 keys added. All 4 ACs pass."
+    notes: "contactPanel namespace missing from en.json + fr.json. 19 keys added. All 4 ACs pass. PR #97 merged."
+
+  - id: "sc-548"
+    name: "fix: contact detail panel not accessible from contacts page"
+    priority: "bug"
+    status: "testing"
+    cycles: 1
+    story_file: "specs/stories/sc-548.yaml"
+    depends_on: []
+    started_at: "2026-03-28"
+    validated_at: ""
+    notes: "Wire ContactDetailPanel into contacts/page.tsx. Same pattern as suivi/page.tsx. All 5 ACs pass."
 
   - id: "sc-550"
     name: "One-click email account connection via Google OAuth"
