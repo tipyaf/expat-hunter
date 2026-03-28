@@ -20,7 +20,7 @@ export function FloatingChatButton() {
   const t = useTranslations('chat')
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
-  const { messages, isLoading, sendMessage, clearMessages } = useChat()
+  const { messages, isLoading, sendMessage, clearMessages, quota } = useChat()
 
   const page = getPageFromPathname(pathname)
   const context = { page }
@@ -35,6 +35,7 @@ export function FloatingChatButton() {
           onClear={clearMessages}
           onClose={() => setIsOpen(false)}
           context={context}
+          quota={quota}
         />
       )}
 

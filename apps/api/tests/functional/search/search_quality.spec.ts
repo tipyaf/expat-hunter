@@ -1,4 +1,4 @@
-import { TEST_USER_PASSWORD } from '#tests/helpers/credentials'
+import { TEST_USER_PASSWORD, ensureTestUserPremium } from '#tests/helpers/credentials'
 /**
  * E2E test: Search quality validation.
  *
@@ -24,6 +24,7 @@ async function createUserWithProfile(client: ApiClient) {
   const response = await client.post(`${AUTH_URL}/register`).json(testUser)
   const token = response.body().token as string
   const userId = response.body().user.id as string
+  await ensureTestUserPremium(userId)
 
   await db.table('candidate_profiles').insert({
     id: crypto.randomUUID(),
