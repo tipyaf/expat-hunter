@@ -2,7 +2,9 @@
 
 import { Button } from '@/components/ui/button'
 import type { Email } from '@/hooks/use-emails'
-import { Sparkles, RefreshCw, X } from 'lucide-react'
+import { useTemplates } from '@/hooks/use-templates'
+import type { EmailTemplate } from '@/hooks/use-templates'
+import { Sparkles, RefreshCw, FileText, X } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useEffect, useState } from 'react'
 
@@ -11,18 +13,21 @@ interface EmailEditModalProps {
   isOpen: boolean
   onClose: () => void
   updateEmail: (emailId: string, data: { subject: string; body: string }) => Promise<Email | undefined>
-  onRegenerate: (emailId: string, options?: { instructions?: string }) => Promise<Email | undefined>
+  onRegenerate: (emailId: string, options?: { instructions?: string; templateId?: string }) => Promise<Email | undefined>
 }
 
 export function EmailEditModal({ email, isOpen, onClose, updateEmail, onRegenerate }: EmailEditModalProps) {
   const t = useTranslations('emails')
   const tc = useTranslations('common')
+  const { templates } = useTemplates()
 
   const [subject, setSubject] = useState('')
   const [body, setBody] = useState('')
   const [instructions, setInstructions] = useState('')
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('')
   const [isImproving, setIsImproving] = useState(false)
   const [isRegenerating, setIsRegenerating] = useState(false)
+  const [isApplyingTemplate, setIsApplyingTemplate] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
@@ -30,8 +35,10 @@ export function EmailEditModal({ email, isOpen, onClose, updateEmail, onRegenera
       setSubject(email.subject)
       setBody(email.body)
       setInstructions('')
+      const defaultTemplate = templates.find((tpl: EmailTemplate) => tpl.isDefault)
+      setSelectedTemplateId(defaultTemplate?.id ?? '')
     }
-  }, [email, isOpen])
+  }, [email, isOpen, templates])
 
   useEffect(() => {
     if (!isOpen) return
@@ -44,7 +51,21 @@ export function EmailEditModal({ email, isOpen, onClose, updateEmail, onRegenera
 
   if (!isOpen || !email) return null
 
-  const isBusy = isImproving || isRegenerating || isSaving
+  const isBusy = isImproving || isRegenerating || isApplyingTemplate || isSaving
+
+  const handleApplyTemplate = async () => {
+    if (!selectedTemplateId) return
+    setIsApplyingTemplate(true)
+    try {
+      const updated = await onRegenerate(email.id, { templateId: selectedTemplateId })
+      if (updated) {
+        setSubject(updated.subject)
+        setBody(updated.body)
+      }
+    } finally {
+      setIsApplyingTemplate(false)
+    }
+  }
 
   const handleSave = async () => {
     setIsSaving(true)
@@ -146,6 +167,41 @@ export function EmailEditModal({ email, isOpen, onClose, updateEmail, onRegenera
             className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm bg-[var(--color-surface-light)] text-[var(--color-text-main)] disabled:opacity-50 resize-y"
           />
         </div>
+
+        {/* Template selector */}
+        {templates.length > 0 && (
+          <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-light)] p-4 mb-4">
+            <label htmlFor="template-select" className="block text-sm font-medium text-[var(--color-text-main)] mb-2">
+              <FileText className="w-3.5 h-3.5 inline mr-1.5" />
+              {t('selectTemplate')}
+            </label>
+            <div className="flex gap-2">
+              <select
+                id="template-select"
+                value={selectedTemplateId}
+                onChange={(e) => setSelectedTemplateId(e.target.value)}
+                disabled={isBusy}
+                className="flex-1 rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm bg-[var(--color-surface-light)] text-[var(--color-text-main)] disabled:opacity-50"
+              >
+                <option value="">{t('noTemplate')}</option>
+                {templates.map((tpl: EmailTemplate) => (
+                  <option key={tpl.id} value={tpl.id}>
+                    {tpl.name}{tpl.isDefault ? ' ★' : ''}
+                  </option>
+                ))}
+              </select>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => void handleApplyTemplate()}
+                disabled={isBusy || !selectedTemplateId}
+              >
+                <FileText className="w-3.5 h-3.5 mr-1.5" />
+                {isApplyingTemplate ? t('applyingTemplate') : t('applyTemplate')}
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* AI assistance section */}
         <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-light)] p-4 mb-4">
