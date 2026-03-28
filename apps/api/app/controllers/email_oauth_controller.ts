@@ -1,5 +1,6 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import { Secret } from '@adonisjs/core/helpers'
+import { DateTime } from 'luxon'
 import env from '#start/env'
 import EmailConnection, { CONNECTION_TYPE, OAUTH_PROVIDER } from '#models/email_connection'
 import User from '#models/user'
@@ -82,6 +83,11 @@ export default class EmailOAuthController {
 
     const googleUser = await google.user()
 
+    // Convert JS Date from ally to Luxon DateTime for AdonisJS model
+    const expiresAt = googleUser.token.expiresAt
+      ? DateTime.fromJSDate(googleUser.token.expiresAt as unknown as Date)
+      : DateTime.now().plus({ hours: 1 })
+
     // Upsert: one connection per user
     let connection = await EmailConnection.findBy('userId', user.id)
 
@@ -90,7 +96,7 @@ export default class EmailOAuthController {
       connection.oauthProvider = OAUTH_PROVIDER.GOOGLE
       connection.oauthAccessToken = googleUser.token.token
       connection.oauthRefreshToken = googleUser.token.refreshToken ?? connection.oauthRefreshToken
-      connection.oauthExpiresAt = googleUser.token.expiresAt
+      connection.oauthExpiresAt = expiresAt
       connection.oauthEmail = googleUser.email ?? null
       connection.isActive = true
       await connection.save()
@@ -101,7 +107,7 @@ export default class EmailOAuthController {
         oauthProvider: OAUTH_PROVIDER.GOOGLE,
         oauthAccessToken: googleUser.token.token,
         oauthRefreshToken: googleUser.token.refreshToken,
-        oauthExpiresAt: googleUser.token.expiresAt,
+        oauthExpiresAt: expiresAt,
         oauthEmail: googleUser.email ?? null,
         isActive: true,
         imapHost: '',
