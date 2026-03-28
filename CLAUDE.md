@@ -228,7 +228,7 @@ Never end a session with a ticket in "In Review" whose PR is already merged.
 | Event | Required Shortcut action |
 |-------|--------------------------|
 | Session start | Check Shortcut (stories-search) BEFORE any decision |
-| Story created | Add 11 build checklist tasks via `stories-add-task` + estimate + labels scope/type/area |
+| Story created | Add 13 build checklist tasks via `stories-add-task` + estimate + labels scope/type/area |
 | Start `/refine` | `workflow_state_id: 500000007` (To Do) + label `scope:refined` |
 | Start `/build` | `workflow_state_id: 500000008` (In Progress) + label `scope:building` |
 | Start `/validate` | `workflow_state_id: 500000009` (In Review) + label `scope:testing` |
