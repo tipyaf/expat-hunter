@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { X, Linkedin, Github, Mail, Building2, MapPin, Globe, Pencil, Sparkles } from 'lucide-react'
+import { X, Linkedin, Github, Mail, Building2, MapPin, Globe, Pencil, Sparkles, Sliders } from 'lucide-react'
 import { ScoreBreakdown } from '@/components/ui/score-breakdown'
 import { VisaSponsorBadge } from '@/components/ui/visa-sponsor-badge'
 import { EmailEditModal } from '@/components/emails/email-edit-modal'
@@ -10,6 +10,8 @@ import { useContactDetail } from '@/hooks/use-contact-detail'
 import type { EmailEntry } from '@/hooks/use-contact-detail'
 import { useEmails, useEmailGeneration } from '@/hooks/use-emails'
 import type { Email } from '@/hooks/use-emails'
+import { usePresets } from '@/hooks/use-presets'
+import type { GenerationPreset } from '@/hooks/use-presets'
 
 const AI_RECOMMENDATION_CONTACT = 'contact'
 const DRAFT_STATUS = 'draft'
@@ -47,9 +49,19 @@ export function ContactDetailPanel({ contactId, onClose }: ContactDetailPanelPro
   const { contact, thread, isLoading, error, refetch } = useContactDetail(contactId)
   const { updateEmail, regenerate } = useEmails()
   const { isGenerating, generate } = useEmailGeneration()
+  const { presets } = usePresets()
   const closeRef = useRef<HTMLButtonElement>(null)
   const [editingEmail, setEditingEmail] = useState<Email | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedPresetId, setSelectedPresetId] = useState<string>('')
+
+  // Auto-select default preset when presets load
+  useEffect(() => {
+    if (presets.length > 0 && !selectedPresetId) {
+      const defaultPreset = presets.find((p: GenerationPreset) => p.isDefault)
+      setSelectedPresetId(defaultPreset?.id ?? '')
+    }
+  }, [presets, selectedPresetId])
 
   useEffect(() => {
     if (contactId) {
@@ -101,13 +113,16 @@ export function ContactDetailPanel({ contactId, onClose }: ContactDetailPanelPro
   const handleGenerateEmail = useCallback(async () => {
     if (!contactId) return
     try {
-      await generate({ contactIds: [contactId] })
+      await generate({
+        contactIds: [contactId],
+        presetId: selectedPresetId || undefined,
+      })
     } catch {
       // generate() manages its own isGenerating state
     } finally {
       refetch()
     }
-  }, [contactId, generate, refetch])
+  }, [contactId, generate, refetch, selectedPresetId])
 
   if (!contactId) return null
 
@@ -272,15 +287,36 @@ export function ContactDetailPanel({ contactId, onClose }: ContactDetailPanelPro
                     <p className="text-xs text-[var(--color-text-muted)]">{t('noEmails')}</p>
 
                     {showGenerateButton && (
-                      <button
-                        type="button"
-                        onClick={handleGenerateEmail}
-                        disabled={isGenerating}
-                        className="flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-main)] hover:bg-[var(--color-bg-light)] transition-colors disabled:opacity-50"
-                      >
-                        <Sparkles className="h-3 w-3" />
-                        {isGenerating ? t('generating') : t('generateEmail')}
-                      </button>
+                      <div className="space-y-2">
+                        {presets.length > 0 && (
+                          <div className="flex items-center gap-1.5">
+                            <Sliders className="h-3 w-3 text-[var(--color-text-muted)] shrink-0" />
+                            <select
+                              value={selectedPresetId}
+                              onChange={(e) => setSelectedPresetId(e.target.value)}
+                              disabled={isGenerating}
+                              aria-label={t('selectPreset')}
+                              className="flex-1 rounded-lg border border-[var(--color-border)] px-2 py-1 text-xs bg-[var(--color-surface-light)] text-[var(--color-text-main)] disabled:opacity-50"
+                            >
+                              <option value="">{t('defaultPreset')}</option>
+                              {presets.map((p: GenerationPreset) => (
+                                <option key={p.id} value={p.id}>
+                                  {p.name}{p.isDefault ? ' ★' : ''}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                        )}
+                        <button
+                          type="button"
+                          onClick={handleGenerateEmail}
+                          disabled={isGenerating}
+                          className="flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-main)] hover:bg-[var(--color-bg-light)] transition-colors disabled:opacity-50"
+                        >
+                          <Sparkles className="h-3 w-3" />
+                          {isGenerating ? t('generating') : t('generateEmail')}
+                        </button>
+                      </div>
                     )}
                   </div>
                 ) : (

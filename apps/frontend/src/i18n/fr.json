@@ -570,7 +570,9 @@
     "email_bounced": "Rebondi",
     "editDraft": "Modifier le brouillon",
     "generateEmail": "Générer un email",
-    "generating": "Génération en cours..."
+    "generating": "Génération en cours...",
+    "selectPreset": "Choisir un preset de génération",
+    "defaultPreset": "Preset par défaut"
   },
   "templates": {
     "title": "Mes templates d'emails",

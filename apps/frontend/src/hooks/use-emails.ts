@@ -153,13 +153,14 @@ export function useEmailGeneration() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [lastResult, setLastResult] = useState<GenerationResult | null>(null)
 
-  const generate = useCallback(async (options?: { contactIds?: string[]; batchSize?: number }) => {
+  const generate = useCallback(async (options?: { contactIds?: string[]; batchSize?: number; presetId?: string }) => {
     if (!token) throw new Error('Not authenticated')
     setIsGenerating(true)
     try {
       const res = await apiClient.post<GenerateResponse>('/api/emails/generate', {
         contactIds: options?.contactIds,
         batchSize: options?.batchSize,
+        presetId: options?.presetId,
       }, { token })
       setLastResult(res.data)
       return res.data

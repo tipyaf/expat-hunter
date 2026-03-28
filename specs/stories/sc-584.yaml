@@ -1,0 +1,122 @@
+# =============================================================================
+# STORY FILE — sc-584: Preset selector for initial email generation
+# =============================================================================
+# This is the BUILD CONTRACT. The developer implements exactly this.
+# The validator checks exactly this. Nothing more, nothing less.
+# =============================================================================
+
+story:
+  id: "sc-584"
+  name: "Preset selector for initial email generation"
+  type: "feature"
+  priority: "medium"
+  estimate: 2  # S — small feature, < 2h
+  created_at: "2026-03-28"
+
+  user_story: >
+    As a user,
+    I want to choose a generation preset before generating an initial email for a contact,
+    so that the AI uses my preferred tone, length, framework, and language from the start
+    instead of always falling back to the default preset.
+
+  context: >
+    Generation presets (sc-549-3) are fully implemented: CRUD API, management page, and
+    preset selector inside EmailEditModal for regeneration. However, the initial email
+    generation flow (contact detail panel "Generate Email" button) always uses the backend
+    default preset with no user choice. This story adds a preset dropdown next to the
+    Generate button in ContactDetailPanel, and wires the presetId through the frontend hook
+    and backend service. Since ContactDetailPanel is shared between /contacts and /suivi,
+    both pages benefit automatically.
+
+scope:
+  included:
+    - "Backend: emails_controller.ts generate() accepts optional presetId from request body"
+    - "Backend: email_generation_service.ts generateForContacts() accepts optional presetId, loads that preset instead of default when provided"
+    - "Frontend: use-emails.ts useEmailGeneration().generate() accepts optional presetId"
+    - "Frontend: contact-detail-panel.tsx adds preset dropdown next to Generate Email button"
+    - "i18n keys for preset selector in contact panel (en.json + fr.json)"
+  excluded:
+    - "EmailEditModal preset selector (already done in sc-549-3)"
+    - "Preset CRUD / management page (already done in sc-549-3)"
+    - "Bulk generation from emails page (separate story if needed)"
+    - "Changes to GenerationPreset model or PresetsController"
+
+files:
+  to_modify:
+    - path: "apps/api/app/controllers/emails_controller.ts"
+      description: "Extract optional presetId from request body in generate(), pass to service"
+    - path: "apps/api/app/services/email_generation_service.ts"
+      description: "generateForContacts() accepts optional presetId in options. When provided, load that preset (scoped to userId) instead of findDefaultPreset(). Fallback to default if presetId not provided."
+    - path: "apps/frontend/src/hooks/use-emails.ts"
+      description: "useEmailGeneration().generate() accepts optional presetId in options, sends it in POST body"
+    - path: "apps/frontend/src/components/ui/contact-detail-panel.tsx"
+      description: "Add usePresets() hook, preset dropdown (visible when presets exist and generate button is shown), pass selected presetId to generate()"
+    - path: "apps/frontend/src/i18n/en.json"
+      description: "Add contactPanel.selectPreset and contactPanel.defaultPreset keys"
+    - path: "apps/frontend/src/i18n/fr.json"
+      description: "Same keys in French"
+  to_read:
+    - path: "apps/api/app/models/generation_preset.ts"
+      description: "Understand preset model for userId scoping"
+    - path: "apps/frontend/src/hooks/use-presets.ts"
+      description: "Understand existing hook API for loading presets"
+
+dependencies:
+  - "sc-549-3 (generation presets must exist — model, API, frontend hook)"
+  - "sc-554 (contact detail panel with email generation button must exist)"
+
+acceptance_criteria:
+  - id: "AC-FUNC-584-01"
+    type: "FUNC"
+    description: "Given I'm in the contact detail panel for a contact with no emails / When presets exist / Then I see a preset dropdown next to the Generate button"
+    verify: "grep -q 'preset' apps/frontend/src/components/ui/contact-detail-panel.tsx"
+    tier: 1
+
+  - id: "AC-FUNC-584-02"
+    type: "FUNC"
+    description: "Given I select a preset and click Generate / Then the frontend sends presetId in the POST /api/emails/generate body"
+    verify: "grep -q 'presetId' apps/frontend/src/hooks/use-emails.ts"
+    tier: 1
+
+  - id: "AC-FUNC-584-03"
+    type: "FUNC"
+    description: "Given the backend receives presetId in generate / Then it loads that preset and uses it instead of the default"
+    verify: "grep -c 'presetId' apps/api/app/services/email_generation_service.ts | awk '$1 >= 2'"
+    tier: 1
+
+  - id: "AC-FUNC-584-04"
+    type: "FUNC"
+    description: "Given no preset is selected (no presetId sent) / Then the default preset is used (backward compatible)"
+    verify: "grep -q 'findDefaultPreset' apps/api/app/services/email_generation_service.ts"
+    tier: 1
+
+  - id: "AC-SEC-584-01"
+    type: "SEC"
+    description: "Preset loaded in generate flow is scoped to the current user (userId filter in query)"
+    verify: "grep 'userId' apps/api/app/services/email_generation_service.ts | grep -c 'preset' | awk '$1 >= 1'"
+    tier: 1
+
+  - id: "AC-BP-584-01"
+    type: "BP"
+    description: "i18n keys for preset selector in contact panel exist in both en.json and fr.json"
+    verify: "grep -q 'selectPreset' apps/frontend/src/i18n/en.json && grep -q 'selectPreset' apps/frontend/src/i18n/fr.json"
+    tier: 1
+
+  - id: "AC-BP-584-02"
+    type: "BP"
+    description: "TypeScript: 0 errors in frontend"
+    verify: "cd /Volumes/Samsung_T5/dev/expat-hunter && node_modules/.bin/tsc --noEmit -p apps/frontend/tsconfig.json 2>&1 | grep -c 'error TS' | grep -q '^0$'"
+    tier: 1
+
+edge_cases:
+  - "No presets created → dropdown hidden, generate uses backend default (backward compatible)"
+  - "Default preset exists → auto-selected in dropdown"
+  - "User selects a specific preset → presetId sent to API"
+  - "User clears preset selection → no presetId sent, falls back to default"
+  - "Preset deleted between selection and click → backend returns 404 or falls back to default gracefully"
+
+technical_notes:
+  - "ContactDetailPanel is shared between /contacts and /suivi — both benefit automatically"
+  - "The usePresets() hook already exists from sc-549-3 — just import and use"
+  - "Backend preset loading already exists in regenerate flow — reuse findDefaultPreset() pattern"
+  - "GenerationPreset.query().where('id', presetId).where('userId', userId).first() for safe loading"
