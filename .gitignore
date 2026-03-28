@@ -43,3 +43,6 @@ test-results/
 
 # claude
 /.mcp.json
+
+# Git worktrees (parallel work isolation)
+.worktrees/
