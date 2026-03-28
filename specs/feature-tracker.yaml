@@ -432,13 +432,13 @@ features:
   - id: "sc-535"
     name: "chore: add zero-console-errors validation gate to framework and project"
     priority: "chore"
-    status: "refined"
-    cycles: 0
+    status: "validated"
+    cycles: 1
     story_file: "specs/stories/sc-535.yaml"
     depends_on: []
     started_at: "2026-03-28"
-    validated_at: ""
-    notes: "Framework submodule (validator.md + story-template.yaml) + CLAUDE.md checklist + LESSONS.md. 2 repos, 2 commits."
+    validated_at: "2026-03-28"
+    notes: "All 7 ACs pass. PR #94 merged. Framework submodule committed + pushed."
 
   - id: "sc-550"
     name: "One-click email account connection via Google OAuth"
