@@ -509,10 +509,10 @@ features:
   - id: "sc-554"
     name: "Emails viewable and editable from contact detail panel"
     priority: "feature"
-    status: "refined"
-    cycles: 0
+    status: "building"
+    cycles: 1
     story_file: "specs/stories/sc-554.yaml"
     depends_on: ["sc-549-1", "sc-549-2"]
-    started_at: ""
+    started_at: "2026-03-28"
     validated_at: ""
     notes: "Wire EmailEditModal + template selector into contact detail panel. Edit drafts + generate emails from contacts page. Shortcut sc-554."

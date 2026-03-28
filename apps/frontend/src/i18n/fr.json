@@ -567,7 +567,10 @@
     "email_sent": "Envoyé",
     "email_opened": "Ouvert",
     "email_replied": "Répondu",
-    "email_bounced": "Rebondi"
+    "email_bounced": "Rebondi",
+    "editDraft": "Modifier le brouillon",
+    "generateEmail": "Générer un email",
+    "generating": "Génération en cours..."
   },
   "templates": {
     "title": "Mes templates d'emails",

@@ -1,11 +1,18 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
-import { X, Linkedin, Github, Mail, Building2, MapPin, Globe } from 'lucide-react'
+import { X, Linkedin, Github, Mail, Building2, MapPin, Globe, Pencil, Sparkles } from 'lucide-react'
 import { ScoreBreakdown } from '@/components/ui/score-breakdown'
 import { VisaSponsorBadge } from '@/components/ui/visa-sponsor-badge'
+import { EmailEditModal } from '@/components/emails/email-edit-modal'
 import { useContactDetail } from '@/hooks/use-contact-detail'
+import type { EmailEntry } from '@/hooks/use-contact-detail'
+import { useEmails, useEmailGeneration } from '@/hooks/use-emails'
+import type { Email } from '@/hooks/use-emails'
+
+const AI_RECOMMENDATION_CONTACT = 'contact'
+const DRAFT_STATUS = 'draft'
 
 interface ContactDetailPanelProps {
   contactId: string | null
@@ -37,8 +44,12 @@ function emailStatusClass(status: string): string {
 export function ContactDetailPanel({ contactId, onClose }: ContactDetailPanelProps) {
   const t = useTranslations('contactPanel')
   const tc = useTranslations('common')
-  const { contact, thread, isLoading, error } = useContactDetail(contactId)
+  const { contact, thread, isLoading, error, refetch } = useContactDetail(contactId)
+  const { updateEmail, regenerate } = useEmails()
+  const { isGenerating, generate } = useEmailGeneration()
   const closeRef = useRef<HTMLButtonElement>(null)
+  const [editingEmail, setEditingEmail] = useState<Email | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   useEffect(() => {
     if (contactId) {
@@ -49,15 +60,61 @@ export function ContactDetailPanel({ contactId, onClose }: ContactDetailPanelPro
   useEffect(() => {
     if (!contactId) return
     const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape' && !isModalOpen) onClose()
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [contactId, onClose])
+  }, [contactId, onClose, isModalOpen])
+
+  /** Convert a thread EmailEntry to the Email type expected by EmailEditModal */
+  const toEmail = useCallback((entry: EmailEntry): Email => ({
+    id: entry.id,
+    contactId: contactId ?? '',
+    subject: entry.subject,
+    body: entry.body,
+    type: entry.type,
+    status: entry.status,
+    sentAt: entry.sentAt,
+    scheduledAt: null,
+    contact: contact ? {
+      id: contact.id,
+      fullName: contact.fullName,
+      role: contact.role,
+      email: contact.email,
+      company: contact.company ? { id: contact.company.id, name: contact.company.name } : null,
+    } : null,
+    createdAt: entry.createdAt,
+    updatedAt: entry.createdAt,
+  }), [contactId, contact])
+
+  const handleEditDraft = useCallback((entry: EmailEntry) => {
+    setEditingEmail(toEmail(entry))
+    setIsModalOpen(true)
+  }, [toEmail])
+
+  const handleModalClose = useCallback(() => {
+    setIsModalOpen(false)
+    setEditingEmail(null)
+    refetch()
+  }, [refetch])
+
+  const handleGenerateEmail = useCallback(async () => {
+    if (!contactId) return
+    try {
+      await generate({ contactIds: [contactId] })
+    } catch {
+      // generate() manages its own isGenerating state
+    } finally {
+      refetch()
+    }
+  }, [contactId, generate, refetch])
 
   if (!contactId) return null
 
   const hasAiAnalysis = contact?.relevanceLabel || contact?.relevanceReason || contact?.scoreBreakdown
+  const hasNoEmails = !thread || (thread.emails.length === 0 && thread.replies.length === 0)
+  const showGenerateButton = hasNoEmails
+    && contact?.aiRecommendation === AI_RECOMMENDATION_CONTACT
 
   return (
     <div className="fixed inset-0 z-40 flex justify-end">
@@ -204,17 +261,31 @@ export function ContactDetailPanel({ contactId, onClose }: ContactDetailPanelPro
                 )}
               </section>
 
-              {/* Email thread */}
+              {/* Email thread — includes template selector from EmailEditModal (sc-549-2) */}
               <section>
                 <h3 className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-muted)] mb-2">
                   {t('emailHistory')}
                 </h3>
 
-                {(!thread || (thread.emails.length === 0 && thread.replies.length === 0)) ? (
-                  <p className="text-xs text-[var(--color-text-muted)]">{t('noEmails')}</p>
+                {hasNoEmails ? (
+                  <div className="space-y-2">
+                    <p className="text-xs text-[var(--color-text-muted)]">{t('noEmails')}</p>
+
+                    {showGenerateButton && (
+                      <button
+                        type="button"
+                        onClick={handleGenerateEmail}
+                        disabled={isGenerating}
+                        className="flex items-center gap-1.5 rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-text-main)] hover:bg-[var(--color-bg-light)] transition-colors disabled:opacity-50"
+                      >
+                        <Sparkles className="h-3 w-3" />
+                        {isGenerating ? t('generating') : t('generateEmail')}
+                      </button>
+                    )}
+                  </div>
                 ) : (
                   <div className="space-y-2">
-                    {thread.emails.map((email) => (
+                    {thread?.emails.map((email) => (
                       <div
                         key={email.id}
                         className="rounded-lg border border-[var(--color-border)] p-3 text-xs"
@@ -223,9 +294,21 @@ export function ContactDetailPanel({ contactId, onClose }: ContactDetailPanelPro
                           <span className="font-medium text-[var(--color-text-main)] truncate">
                             {email.subject}
                           </span>
-                          <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${emailStatusClass(email.status)}`}>
-                            {t(`email_${email.status}`)}
-                          </span>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {email.status === DRAFT_STATUS && (
+                              <button
+                                type="button"
+                                onClick={() => handleEditDraft(email)}
+                                aria-label={t('editDraft')}
+                                className="rounded p-1 text-[var(--color-text-muted)] hover:bg-[var(--color-bg-light)] transition-colors"
+                              >
+                                <Pencil className="h-3 w-3" />
+                              </button>
+                            )}
+                            <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${emailStatusClass(email.status)}`}>
+                              {t(`email_${email.status}`)}
+                            </span>
+                          </div>
                         </div>
                         {email.sentAt && (
                           <p className="text-[var(--color-text-muted)]">
@@ -235,7 +318,7 @@ export function ContactDetailPanel({ contactId, onClose }: ContactDetailPanelPro
                       </div>
                     ))}
 
-                    {thread.replies.map((reply) => (
+                    {thread?.replies.map((reply) => (
                       <div
                         key={reply.id}
                         className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-light)] p-3 text-xs"
@@ -265,6 +348,15 @@ export function ContactDetailPanel({ contactId, onClose }: ContactDetailPanelPro
           )}
         </div>
       </div>
+
+      {/* Email Edit Modal — includes template selector from sc-549-2 */}
+      <EmailEditModal
+        email={editingEmail}
+        isOpen={isModalOpen}
+        onClose={handleModalClose}
+        updateEmail={updateEmail}
+        onRegenerate={regenerate}
+      />
     </div>
   )
 }
