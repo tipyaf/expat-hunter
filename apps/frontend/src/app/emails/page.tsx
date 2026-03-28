@@ -1,10 +1,11 @@
 'use client'
 
+import { EmailEditModal } from '@/components/emails/email-edit-modal'
 import { Sidebar } from '@/components/layout/sidebar'
 import { Button } from '@/components/ui/button'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
 import { useAuth } from '@/contexts/auth-context'
-import { EMAIL_STATUSES, useEmailGeneration, useEmails } from '@/hooks/use-emails'
+import { EMAIL_STATUSES, useEmailGeneration, useEmails, type Email } from '@/hooks/use-emails'
 import { useTranslations } from 'next-intl'
 import { useEffect, useRef, useState } from 'react'
 import { CheckSquare, Send, Square, X } from 'lucide-react'
@@ -43,9 +44,7 @@ export default function EmailsPage() {
   const { isGenerating, generate } = useEmailGeneration()
 
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null)
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [editSubject, setEditSubject] = useState('')
-  const [editBody, setEditBody] = useState('')
+  const [editingEmail, setEditingEmail] = useState<Email | null>(null)
   const [actionId, setActionId] = useState<string | null>(null)
 
   // Batch selection
@@ -96,11 +95,6 @@ export default function EmailsPage() {
   const handleReject = async (id: string) => {
     setActionId(id)
     try { await reject(id) } finally { setActionId(null) }
-  }
-
-  const handleRegenerate = async (id: string) => {
-    setActionId(id)
-    try { await regenerate(id) } finally { setActionId(null) }
   }
 
   const handleApproveAllDrafts = async () => {
@@ -154,12 +148,6 @@ export default function EmailsPage() {
   }
 
   useEffect(() => () => { if (pollRef.current) clearInterval(pollRef.current) }, [])
-
-  const startEditing = (email: { id: string; subject: string; body: string }) => {
-    setEditingId(email.id)
-    setEditSubject(email.subject)
-    setEditBody(email.body)
-  }
 
   const draftCount = emails.filter((e) => e.status === 'draft').length
   const approvedCount = emails.filter((e) => e.status === 'approved').length
@@ -332,15 +320,7 @@ export default function EmailsPage() {
                               <div className="flex gap-1 shrink-0">
                                 <button
                                   type="button"
-                                  onClick={() => void handleRegenerate(email.id)}
-                                  disabled={actionId === email.id}
-                                  className="rounded-lg border border-[var(--color-border)] px-2 py-1 text-xs hover:bg-[var(--color-bg-light)] disabled:opacity-50"
-                                >
-                                  {t('regenerate')}
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => startEditing(email)}
+                                  onClick={() => setEditingEmail(email)}
                                   className="rounded-lg border border-[var(--color-border)] px-2 py-1 text-xs hover:bg-[var(--color-bg-light)]"
                                 >
                                   {t('edit')}
@@ -365,47 +345,10 @@ export default function EmailsPage() {
                             )}
                           </div>
 
-                          {editingId === email.id ? (
-                            <div className="space-y-2">
-                              <input
-                                type="text"
-                                value={editSubject}
-                                onChange={(e) => setEditSubject(e.target.value)}
-                                className="w-full rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-sm font-medium bg-[var(--color-surface-light)]"
-                              />
-                              <textarea
-                                value={editBody}
-                                onChange={(e) => setEditBody(e.target.value)}
-                                rows={6}
-                                className="w-full rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm bg-[var(--color-surface-light)]"
-                              />
-                              <div className="flex gap-2">
-                                <Button
-                                  size="sm"
-                                  onClick={async () => {
-                                    await updateEmail(email.id, { subject: editSubject, body: editBody })
-                                    setEditingId(null)
-                                  }}
-                                >
-                                  {tc('save')}
-                                </Button>
-                                <button
-                                  type="button"
-                                  onClick={() => setEditingId(null)}
-                                  className="rounded-lg border border-[var(--color-border)] px-3 py-1 text-xs"
-                                >
-                                  {tc('cancel')}
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            <>
-                              <h3 className="font-medium text-[var(--color-text-main)] mb-2">{email.subject}</h3>
-                              <p className="text-sm text-[var(--color-text-muted)] whitespace-pre-wrap line-clamp-4">
-                                {email.body}
-                              </p>
-                            </>
-                          )}
+                          <h3 className="font-medium text-[var(--color-text-main)] mb-2">{email.subject}</h3>
+                          <p className="text-sm text-[var(--color-text-muted)] whitespace-pre-wrap line-clamp-4">
+                            {email.body}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -479,6 +422,18 @@ export default function EmailsPage() {
             </div>
           </div>
         )}
+
+        {/* Email edit modal */}
+        <EmailEditModal
+          email={editingEmail}
+          isOpen={editingEmail !== null}
+          onClose={() => setEditingEmail(null)}
+          updateEmail={async (emailId, data) => {
+            const updated = await updateEmail(emailId, data)
+            return updated
+          }}
+          onRegenerate={regenerate}
+        />
 
         {/* Send confirmation modal */}
         <ConfirmModal

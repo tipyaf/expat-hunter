@@ -126,7 +126,11 @@ export default class EmailGenerationService {
     })
   }
 
-  async regenerate(emailId: string, userId: string): Promise<EmailMessage | null> {
+  async regenerate(
+    emailId: string,
+    userId: string,
+    options?: { instructions?: string }
+  ): Promise<EmailMessage | null> {
     if (!this.composer.isConfigured) return null
 
     const email = await EmailMessage.query()
@@ -142,7 +146,9 @@ export default class EmailGenerationService {
 
     const candidate = this.buildCandidateData(user, profile)
     const contactData = this.buildContactData(email.contact)
-    const result = await this.composer.compose(contactData, candidate)
+    const result = await this.composer.compose(contactData, candidate, {
+      instructions: options?.instructions,
+    })
 
     email.subject = result.subject
     email.body = result.body

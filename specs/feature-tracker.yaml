@@ -410,13 +410,13 @@ features:
   - id: "sc-496"
     name: "fix: filter out Hiring Manager placeholder contacts from display"
     priority: "bug"
-    status: "refined"
-    cycles: 0
+    status: "validated"
+    cycles: 1
     story_file: "specs/stories/sc-496.yaml"
     depends_on: []
     started_at: "2026-03-28"
-    validated_at: ""
-    notes: "Filter at API level (contacts_controller). PLACEHOLDER_CONTACT_NAMES in shared package. Placeholders kept in DB for enrichment."
+    validated_at: "2026-03-28"
+    notes: "Filter at API level (contacts_controller). PLACEHOLDER_CONTACT_NAMES in shared package. Placeholders kept in DB for enrichment. All ACs pass. PR #96 merged."
 
   - id: "sc-512"
     name: "fix: hide chat button when user is not authenticated"
@@ -443,21 +443,54 @@ features:
   - id: "sc-547"
     name: "fix: add missing i18n keys for contact detail panel"
     priority: "bug"
-    status: "testing"
+    status: "validated"
     cycles: 1
     story_file: "specs/stories/sc-547.yaml"
     depends_on: []
     started_at: "2026-03-28"
-    validated_at: ""
+    validated_at: "2026-03-28"
     notes: "contactPanel namespace missing from en.json + fr.json. 19 keys added. All 4 ACs pass. PR #97 merged."
 
   - id: "sc-548"
     name: "fix: contact detail panel not accessible from contacts page"
     priority: "bug"
-    status: "testing"
+    status: "validated"
     cycles: 1
     story_file: "specs/stories/sc-548.yaml"
     depends_on: []
     started_at: "2026-03-28"
+    validated_at: "2026-03-28"
+    notes: "Wire ContactDetailPanel into contacts/page.tsx. Same pattern as suivi/page.tsx. All 5 ACs pass. PR #98 merged."
+
+  - id: "sc-549-1"
+    name: "Unified email edit modal with AI assistance"
+    priority: "feature"
+    status: "building"
+    cycles: 0
+    story_file: "specs/stories/sc-549-1.yaml"
+    depends_on: []
+    started_at: "2026-03-28"
     validated_at: ""
-    notes: "Wire ContactDetailPanel into contacts/page.tsx. Same pattern as suivi/page.tsx. All 5 ACs pass."
+    notes: "Replace inline edit + regenerate with unified modal. AI improve with instructions + full regenerate. Parent: sc-549. Shortcut sc-551."
+
+  - id: "sc-549-2"
+    name: "Email templates — apply a template to a contact"
+    priority: "feature"
+    status: "refined"
+    cycles: 0
+    story_file: "specs/stories/sc-549-2.yaml"
+    depends_on: ["sc-549-1"]
+    started_at: ""
+    validated_at: ""
+    notes: "Template management page + selector in edit modal. Backend CRUD already exists. Parent: sc-549. Shortcut sc-552."
+
+  - id: "sc-549-3"
+    name: "Generation presets — customize tone/style"
+    priority: "feature"
+    status: "refined"
+    cycles: 0
+    story_file: "specs/stories/sc-549-3.yaml"
+    depends_on: ["sc-549-1"]
+    started_at: ""
+    validated_at: ""
+    notes: "Preset management page + selector in modal + default preset auto-applied in initial generation. Backend CRUD already exists. Parent: sc-549. Shortcut sc-553."
