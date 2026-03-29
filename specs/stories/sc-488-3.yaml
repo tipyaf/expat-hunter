@@ -1,0 +1,154 @@
+# ============================================================================
+# STORY: sc-488-3 — Unit tests for I/O services + missing controller tests
+# ============================================================================
+
+story:
+  id: "sc-488-3"
+  title: "Write unit tests for I/O services and missing controller functional tests"
+  parent_spec: "specs/expat-hunter.yaml"
+  status: "refined"
+  size: "M"
+  refined_at: "2026-03-29"
+  refined_by: "refinement"
+
+user_story: >
+  As a developer, I want unit tests for I/O-heavy services (email, IMAP, notifications)
+  and functional tests for untested controllers, so that the entire backend has baseline coverage.
+
+scope:
+  files_to_create:
+    - "apps/api/tests/unit/services/email_sending_service.spec.ts — batch logic, progress tracking"
+    - "apps/api/tests/unit/services/email_verification_service.spec.ts — token expiry, validation"
+    - "apps/api/tests/unit/services/sending_settings_service.spec.ts — validation logic"
+    - "apps/api/tests/unit/services/imap_sync_service.spec.ts — event detection, auto-move"
+    - "apps/api/tests/unit/services/notification_service.spec.ts — event emission"
+    - "apps/api/tests/functional/presets/presets.spec.ts — presets CRUD"
+    - "apps/api/tests/functional/templates/templates.spec.ts — templates CRUD"
+    - "apps/api/tests/functional/tips/tips.spec.ts — tips endpoint"
+  files_to_modify: []
+  files_to_read:
+    - "apps/api/app/services/email_sending_service.ts"
+    - "apps/api/app/services/email_verification_service.ts"
+    - "apps/api/app/services/sending_settings_service.ts"
+    - "apps/api/app/services/imap_sync_service.ts"
+    - "apps/api/app/services/notification_service.ts"
+    - "apps/api/app/controllers/presets_controller.ts"
+    - "apps/api/app/controllers/templates_controller.ts"
+    - "apps/api/app/controllers/tips_controller.ts"
+
+acceptance_criteria:
+
+  functional:
+    - id: "AC-FUNC-488-3-01"
+      description: "Given email_sending_service / When running tests / Then batch ID generation and progress tracking are tested"
+      verify: "test -f apps/api/tests/unit/services/email_sending_service.spec.ts && grep -c 'test\\|it(' apps/api/tests/unit/services/email_sending_service.spec.ts | awk '{if($1>=3) print \"PASS\"; else print \"FAIL\"}'"
+      tier: 1
+
+    - id: "AC-FUNC-488-3-02"
+      description: "Given email_verification_service / When running tests / Then token expiry and validation logic are tested"
+      verify: "test -f apps/api/tests/unit/services/email_verification_service.spec.ts && grep -q 'expir\\|valid\\|token' apps/api/tests/unit/services/email_verification_service.spec.ts && echo PASS"
+      tier: 1
+
+    - id: "AC-FUNC-488-3-03"
+      description: "Given sending_settings_service / When running tests / Then validateFollowUps and toMinDays are tested"
+      verify: "test -f apps/api/tests/unit/services/sending_settings_service.spec.ts && grep -q 'validateFollowUps\\|toMinDays' apps/api/tests/unit/services/sending_settings_service.spec.ts && echo PASS"
+      tier: 1
+
+    - id: "AC-FUNC-488-3-04"
+      description: "Given imap_sync_service / When running tests / Then detectEvent keyword matching and autoMoveContact status mapping are tested"
+      verify: "test -f apps/api/tests/unit/services/imap_sync_service.spec.ts && grep -q 'detectEvent\\|autoMoveContact\\|interview\\|rejection' apps/api/tests/unit/services/imap_sync_service.spec.ts && echo PASS"
+      tier: 1
+
+    - id: "AC-FUNC-488-3-05"
+      description: "Given presets controller / When running functional tests / Then CRUD operations are tested (list, create, update, delete)"
+      verify: "test -f apps/api/tests/functional/presets/presets.spec.ts && grep -c 'test\\|it(' apps/api/tests/functional/presets/presets.spec.ts | awk '{if($1>=4) print \"PASS\"; else print \"FAIL\"}'"
+      tier: 1
+
+    - id: "AC-FUNC-488-3-06"
+      description: "Given templates controller / When running functional tests / Then CRUD operations are tested"
+      verify: "test -f apps/api/tests/functional/templates/templates.spec.ts && grep -c 'test\\|it(' apps/api/tests/functional/templates/templates.spec.ts | awk '{if($1>=4) print \"PASS\"; else print \"FAIL\"}'"
+      tier: 1
+
+    - id: "AC-FUNC-488-3-07"
+      description: "Given all new tests / When running the full test suite / Then all tests pass"
+      verify: "cd apps/api && NODE_ENV=test DB_DATABASE=expat_hunter_test node --loader ts-node/esm bin/test.ts --tags=unit 2>&1 | tail -5"
+      tier: 2
+
+  security:
+    - id: "AC-SEC-488-3-01"
+      description: "Given functional controller tests / When testing endpoints / Then all requests include auth token (no unauth access to protected routes)"
+      verify: "grep -rn 'client.get\\|client.post\\|client.put\\|client.delete' apps/api/tests/functional/presets/ apps/api/tests/functional/templates/ apps/api/tests/functional/tips/ | grep -v 'loginAs\\|withGuard\\|auth\\|token\\|/api/auth' | wc -l | awk '{if($1==0) print \"PASS\"; else print \"FAIL: unauthenticated requests found\"}'"
+      tier: 1
+
+  best_practices:
+    - id: "AC-BP-488-3-01"
+      description: "Given all new tests / When reviewing / Then tests call real production code, not just fixture shapes"
+      verify: "grep -rn 'import.*from.*app/services\\|import.*from.*app/controllers' apps/api/tests/unit/services/email_sending_service.spec.ts apps/api/tests/unit/services/imap_sync_service.spec.ts | wc -l | awk '{if($1>=2) print \"PASS\"; else print \"FAIL\"}'"
+      tier: 1
+
+edge_cases:
+  - description: "Email sending with no SMTP/OAuth configured"
+    handling: "Test that service throws appropriate error or returns failure status"
+  - description: "IMAP sync with empty mailbox"
+    handling: "Test detectEvent returns null/empty for no matching keywords"
+  - description: "Presets/templates CRUD with missing required fields"
+    handling: "Functional tests verify 422 response for invalid input"
+
+test_intentions:
+  - function: "SendingSettingsService.toMinDays"
+    description: "Convert follow-up delay to days"
+    inputs:
+      value: 3
+      unit: "weeks"
+    oracle:
+      final: "toMinDays(3, 'weeks') = 3 * 7 = 21"
+    assertions:
+      - "result == 21"
+    edge_cases:
+      - description: "Hours unit"
+        inputs: { value: 48, unit: "hours" }
+        oracle: { final: "toMinDays(48, 'hours') = 48 / 24 = 2" }
+        assertions: ["result == 2"]
+
+  - function: "ImapSyncService.detectEvent"
+    description: "Detect interview keyword in email body"
+    inputs:
+      body: "We would like to invite you for an interview next Tuesday"
+    oracle:
+      final: "contains 'interview' → event = 'interview'"
+    assertions:
+      - "result == 'interview'"
+    edge_cases:
+      - description: "No matching keyword"
+        inputs: { body: "Thank you for your application" }
+        oracle: { final: "no keyword match → event = null" }
+        assertions: ["result == null"]
+
+depends_on: ["sc-488-1"]
+
+notes: |
+  I/O services need heavy mocking (SMTP, IMAP, Playwright).
+  Focus on testable logic branches, not integration testing.
+
+  For controller functional tests:
+  - Use existing patterns from apps/api/tests/functional/emails/emails.spec.ts
+  - All endpoints require auth — use loginAs helper
+  - Test happy path + validation errors (422) + not found (404)
+
+  playwright_client is excluded — it's a thin HTTP wrapper with no business logic.
+  notification_service is excluded — it's a pure event emitter with no observable behavior.
+
+definition_of_done:
+  - "All AC verify: commands pass"
+  - "No TypeScript errors (node ace build)"
+  - "All unit tests pass (new + existing)"
+  - "PR merged into develop"
+  - "Shortcut story moved to Done"
+
+closing_ac:
+  - id: "AC-BP-488-3-DONE"
+    type: "BP"
+    description: |
+      PR is merged into develop — story closure gate.
+    verify: "gh pr list --state merged --base develop --json title | grep -q 'sc-488-3'"
+    tier: 1

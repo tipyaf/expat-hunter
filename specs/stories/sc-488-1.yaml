@@ -1,0 +1,93 @@
+# ============================================================================
+# STORY: sc-488-1 — Fix test runner + audit existing test quality
+# ============================================================================
+
+story:
+  id: "sc-488-1"
+  title: "Fix test runner + audit existing test quality"
+  parent_spec: "specs/expat-hunter.yaml"
+  status: "refined"
+  size: "S"
+  refined_at: "2026-03-29"
+  refined_by: "refinement"
+
+user_story: >
+  As a developer, I want the test runner to work correctly and have a clear picture
+  of which tests are relevant, so that I can trust the test suite and identify gaps.
+
+scope:
+  files_to_create: []
+  files_to_modify:
+    - "packages/shared/tsconfig.json — fix module resolution for test runner"
+    - "apps/api/tests/ — fix any broken imports if needed"
+  files_to_read:
+    - "apps/api/tests/unit/**/*.spec.ts — audit existing tests"
+    - "apps/api/app/services/*.ts — compare tested vs untested"
+    - "packages/shared/src/index.ts — check exports"
+
+acceptance_criteria:
+
+  functional:
+    - id: "AC-FUNC-488-1-01"
+      description: "Given the project / When running unit tests / Then all unit tests execute without module resolution errors"
+      verify: "cd apps/api && NODE_ENV=test DB_DATABASE=expat_hunter_test node --loader ts-node/esm bin/test.ts --tags=unit 2>&1 | grep -v 'ERR_MODULE_NOT_FOUND'"
+      tier: 2
+
+    - id: "AC-FUNC-488-1-02"
+      description: "Given existing unit tests / When running the suite / Then at least 250 tests pass (current baseline ~297)"
+      verify: "cd apps/api && NODE_ENV=test DB_DATABASE=expat_hunter_test node --loader ts-node/esm bin/test.ts --tags=unit 2>&1 | grep -E '(passed|tests)'"
+      tier: 2
+
+    - id: "AC-FUNC-488-1-03"
+      description: "Given all services / When auditing coverage / Then a list of untested services is documented in the PR description"
+      verify: "bash -c 'for f in apps/api/app/services/*.ts; do base=$(basename \"$f\" .ts); if ! find apps/api/tests -name \"*${base}*\" 2>/dev/null | grep -q .; then echo \"UNTESTED: $base\"; fi; done | wc -l | grep -E \"^[0-9]+$\"'"
+      tier: 1
+
+  security: []
+
+  best_practices:
+    - id: "AC-BP-488-1-01"
+      description: "Given all existing tests / When reviewing / Then no test only asserts fixture shapes without calling real production code"
+      verify: "grep -rn 'expect.*toEqual.*{' apps/api/tests/unit/ | grep -v 'result\\|response\\|output\\|score\\|data' | wc -l"
+      tier: 1
+
+    - id: "AC-BP-488-1-02"
+      description: "Given all test files / When checking / Then no tests use .skip() or .todo() without a BUG: comment"
+      verify: "grep -rn '\\.skip\\|test\\.todo\\|it\\.todo' apps/api/tests/ | grep -v 'BUG:' | wc -l"
+      tier: 1
+
+edge_cases:
+  - description: "Shared package might need build step before tests can import it"
+    handling: "Check if tsc build is needed for packages/shared, add prebuild script if so"
+  - description: "Some tests may depend on database state (functional tests)"
+    handling: "Audit focuses on unit tests only — functional tests are separate"
+
+test_intentions: []
+
+depends_on: []
+
+notes: |
+  Current blocker: `Cannot find module '.../types/contact'` when running tests.
+  Root cause likely: packages/shared needs to be built (tsc) before API tests can import it.
+  Alternative: tsconfig paths or ts-node configuration fix.
+
+  Audit checklist:
+  - Do tests call real production code? (Rule 1 from test-quality.md)
+  - Are mocks based on backend response shapes? (Rule 3)
+  - Do numeric assertions have ORACLE comments? (Rule 2)
+  - Are there skip/todo without BUG comments? (Rule 5)
+
+definition_of_done:
+  - "All AC verify: commands pass"
+  - "No TypeScript errors (node ace build)"
+  - "All unit tests pass"
+  - "PR merged into develop"
+  - "Shortcut story moved to Done"
+
+closing_ac:
+  - id: "AC-BP-488-1-DONE"
+    type: "BP"
+    description: |
+      PR is merged into develop — story closure gate.
+    verify: "gh pr list --state merged --base develop --json title | grep -q 'sc-488-1'"
+    tier: 1

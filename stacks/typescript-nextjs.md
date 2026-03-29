@@ -2,6 +2,7 @@
 
 > Stack profile for ExpatHunter frontend. This is the coding and security contract for all frontend code.
 > See also: [stacks/typescript.md](./typescript.md) for shared TypeScript conventions (type system rules, naming, anti-patterns).
+> See also: [stacks/web-standards.md](./web-standards.md) for foundational web principles (HTML semantics, CSS, a11y, performance, security).
 
 ## Coding Best Practices
 
@@ -87,9 +88,39 @@
 - Dark mode: `class` strategy (`dark:` prefix), toggle via CSS class on `<html>`
 - Default to system preference, user override stored in localStorage + settings API
 
+### Component Architecture: Smart vs Dumb
+
+**Dumb Components** (aka Presentational / UI primitives) — `components/ui/`
+- **Pure display**: receive data via props, emit events via callbacks — NO business logic
+- **No API calls**, no direct store access, no side effects
+- **Fully reusable**: work in any context without modification
+- **Stateless** (or local UI state only — e.g., open/closed toggle)
+- **Examples**: `Button`, `Card`, `Badge`, `DataTable`, `EmptyState`, `StatusBadge`, `Modal`, `FormField`
+
+**Smart Components** (aka Container / Feature components) — `components/{feature}/`
+- **Orchestrate**: fetch data, manage state, handle business logic
+- **Compose dumb components**: pass data down as props, wire callbacks
+- **Feature-scoped**: tied to a specific feature or page
+- **Examples**: `SourcingLauncher`, `PipelineBoard`, `ContactDetailPanel`
+
+| Rule | Detail |
+|------|--------|
+| **Reuse before create** | Before creating a component, search `components/ui/` for an existing one. If a similar component exists, extend it via props — do NOT create a duplicate. |
+| **Extract on second use** | When the same UI pattern appears in 2+ places, extract it into `components/ui/` immediately. Two copies = tech debt. |
+| **Dumb = zero imports from features** | A dumb component MUST NOT import from `components/{feature}/`, `hooks/use{Feature}`, or API clients. If it needs data, it receives it via props. |
+| **Smart = no JSX duplication** | A smart component MUST NOT duplicate UI markup that already exists in a dumb component. Compose, don't copy. |
+| **Props over context for dumb** | Dumb components receive everything via props. React Context is for smart components and cross-cutting concerns (theme, auth, i18n). |
+| **Max 2 levels of prop drilling** | If props pass through 2+ intermediaries unchanged, extract a custom hook or use Context. |
+| **One component per file** | Exceptions: small internal helper components that are not exported. |
+
+### Duplication Anti-patterns (BANNED)
+- Copy-pasting a component and tweaking styles → **extract shared component with variant props**
+- Two buttons with different styles → **one `Button` with `variant` prop**
+- Same card layout in 3 features → **one `Card` in `components/ui/`**
+- Same empty state in multiple lists → **one `EmptyState` with `title`/`description`/`action` props**
+- Same form field + label + error pattern → **one `FormField` wrapper**
+
 ### Component Guidelines
-- UI primitives (`components/ui/`): stateless, fully configurable via props
-- Feature components: compose UI primitives, manage local state
 - Consistent spacing: use Tailwind spacing scale (4px base)
 - Consistent border radius: sm(4px), md(8px), lg(12px), full(9999px)
 - All interactive elements: visible focus ring (2px primary, offset 2px)

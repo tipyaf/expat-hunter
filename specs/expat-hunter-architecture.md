@@ -854,7 +854,104 @@ push → lint (biome) → test (japa + vitest) → build → deploy (SSH + PM2 r
 
 ---
 
-## 10. Mapping Pipeline UX → Données
+## 10. Shared Component Inventory (UI)
+
+> Reference for refinement agent (component reuse audit) and developer agent (reuse check before creating).
+> Directory: `apps/frontend/src/components/ui/`
+
+```yaml
+shared_components:
+  directory: "apps/frontend/src/components/ui/"
+  components:
+    - name: "Button"
+      path: "button.tsx"
+      variants: ["primary", "secondary", "danger", "ghost"]
+
+    - name: "ConfidenceScore"
+      path: "confidence-score.tsx"
+      purpose: "Display AI confidence score as a visual indicator"
+
+    - name: "ConfirmModal"
+      path: "confirm-modal.tsx"
+      purpose: "Reusable confirmation dialog with title/message/actions"
+
+    - name: "ContactDetailPanel"
+      path: "contact-detail-panel.tsx"
+      purpose: "Slide-over panel showing full contact details, emails, and actions"
+      note: "Smart component (fetches data internally) — check before duplicating"
+
+    - name: "ContactSourceBadge"
+      path: "contact-source-badge.tsx"
+      purpose: "Badge indicating contact source (LinkedIn, Hunter, manual)"
+
+    - name: "CountrySelect"
+      path: "country-select.tsx"
+      purpose: "Searchable country dropdown input"
+
+    - name: "EmailStatusBadge"
+      path: "email-status-badge.tsx"
+      purpose: "Badge for email delivery/open/click status"
+
+    - name: "EmptyState"
+      path: "empty-state.tsx"
+      props: ["title", "description", "action"]
+      purpose: "Empty state placeholder with optional CTA — use for all empty lists"
+
+    - name: "FakeContactRow"
+      path: "fake-contact-row.tsx"
+      purpose: "Skeleton row for loading states in contact lists"
+
+    - name: "MarketSnapshot"
+      path: "market-snapshot.tsx"
+      purpose: "Dashboard card showing key market metrics"
+
+    - name: "NotificationToast"
+      path: "notification-toast.tsx"
+      purpose: "Ephemeral toast notification"
+
+    - name: "PasswordInput"
+      path: "password-input.tsx"
+      purpose: "Input with show/hide password toggle"
+
+    - name: "PremiumBadge"
+      path: "premium-badge.tsx"
+      purpose: "Visual indicator for premium-only features"
+
+    - name: "PremiumGate"
+      path: "premium-gate.tsx"
+      purpose: "Wrapper that blocks content behind premium paywall"
+
+    - name: "ProactiveTip"
+      path: "proactive-tip.tsx"
+      purpose: "Contextual coaching tip card"
+
+    - name: "ProgressBarMultiStep"
+      path: "progress-bar-multi-step.tsx"
+      purpose: "Step-by-step progress bar for multi-phase flows"
+
+    - name: "ScoreBreakdown"
+      path: "score-breakdown.tsx"
+      purpose: "Detailed breakdown of AI scoring dimensions"
+
+    - name: "SearchProgressModal"
+      path: "search-progress-modal.tsx"
+      purpose: "Modal showing live sourcing/search progress"
+      note: "Being split in sc-599-1 — will likely extract sub-components"
+
+    - name: "SocialAuthButton"
+      path: "social-auth-button.tsx"
+      purpose: "OAuth provider button (Google, LinkedIn)"
+
+    - name: "TagInput"
+      path: "tag-input.tsx"
+      purpose: "Multi-value tag input with add/remove"
+
+    - name: "VisaSponsorBadge"
+      path: "visa-sponsor-badge.tsx"
+      purpose: "Badge indicating company is a known visa sponsor"
+```
+
+## 11. Mapping Pipeline UX → Données
 
 | Colonne Kanban | Statuts Contact | Transition |
 |----------------|-----------------|------------|
