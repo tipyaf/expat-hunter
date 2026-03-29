@@ -1,7 +1,7 @@
 # CLAUDE.md — Rules for Claude Code
 
 ## Context
-This project uses the **ai-spec-driven-generator** framework v3.0.9 (in `framework/`).
+This project uses the **ai-spec-driven-generator** framework v3.0.10 (in `framework/`).
 You must follow a structured, phase-based process with human validation, persistent memory, and machine-verifiable acceptance criteria.
 
 ## Fundamental Principles
@@ -138,6 +138,7 @@ PHASE 5 — RELEASE — ✅ Human
 | **Implementation manifest** | Scope control — developer declares files before coding, reviewer verifies git diff matches |
 | **Code review hook** | Automated Pass 2 — `stacks/hooks/code_review.py` runs anti-patterns + external checks |
 | **Enforcement scripts** | Quality gates — `scripts/check_*.py` block commits on violations |
+| **Build state (gates)** | Per-feature gate results (validation, code review, security, test quality, scope) persisted in manifest — agents resume from last state between sessions |
 
 ## Phase guards
 
