@@ -140,7 +140,7 @@ export default class EmailsController {
    */
   async generate({ auth, request, response }: HttpContext) {
     const user = auth.getUserOrFail()
-    const { contactIds, batchSize } = request.only(['contactIds', 'batchSize'])
+    const { contactIds, batchSize, presetId } = request.only(['contactIds', 'batchSize', 'presetId'])
 
     // Quota check: emails
     const emailCheck = await this.usageService.checkQuota(user.id, user.plan, 'emails')
@@ -153,11 +153,13 @@ export default class EmailsController {
 
     const MAX_BATCH = 50
     const safeBatch = batchSize ? Math.min(Math.max(1, Math.floor(Number(batchSize) || 10)), MAX_BATCH) : undefined
+    const safePresetId = typeof presetId === 'string' && presetId.trim() ? presetId.trim() : undefined
 
     const service = new EmailGenerationService()
     const result = await service.generateForContacts(user.id, {
       contactIds: contactIds ?? undefined,
       batchSize: safeBatch,
+      presetId: safePresetId,
     })
 
     // Increment email counter by number generated

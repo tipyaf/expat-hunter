@@ -25,7 +25,7 @@ export default class EmailGenerationService {
 
   async generateForContacts(
     userId: string,
-    options?: { contactIds?: string[]; batchSize?: number }
+    options?: { contactIds?: string[]; batchSize?: number; presetId?: string }
   ): Promise<GenerationResult> {
     if (!this.composer.isConfigured) {
       logger.warn('EmailGenerationService: OpenRouter not configured, skipping')
@@ -41,8 +41,10 @@ export default class EmailGenerationService {
     }
 
     const candidate = this.buildCandidateData(user, profile)
-    const defaultPreset = await this.findDefaultPreset(userId)
-    const presetOptions = defaultPreset ? this.buildPresetOptions(defaultPreset) : undefined
+    const preset = options?.presetId
+      ? await this.findPresetById(options.presetId, userId)
+      : await this.findDefaultPreset(userId)
+    const presetOptions = preset ? this.buildPresetOptions(preset) : undefined
     const batchSize = options?.batchSize ?? 10
 
     const query = Contact.query()
@@ -202,6 +204,13 @@ export default class EmailGenerationService {
       companyCountry: contact.company.country,
       companyCity: contact.company.city,
     }
+  }
+
+  private async findPresetById(presetId: string, userId: string): Promise<GenerationPreset | null> {
+    return GenerationPreset.query()
+      .where('id', presetId)
+      .where('userId', userId)
+      .first()
   }
 
   private async findDefaultPreset(userId: string): Promise<GenerationPreset | null> {

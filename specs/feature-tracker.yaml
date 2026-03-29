@@ -509,10 +509,21 @@ features:
   - id: "sc-554"
     name: "Emails viewable and editable from contact detail panel"
     priority: "feature"
-    status: "building"
+    status: "validated"
     cycles: 1
     story_file: "specs/stories/sc-554.yaml"
     depends_on: ["sc-549-1", "sc-549-2"]
     started_at: "2026-03-28"
-    validated_at: ""
-    notes: "Wire EmailEditModal + template selector into contact detail panel. Edit drafts + generate emails from contacts page. Shortcut sc-554."
+    validated_at: "2026-03-28"
+    notes: "Wire EmailEditModal + template selector into contact detail panel. Edit drafts + generate emails from contacts page. PR #107. Shortcut sc-554."
+
+  - id: "sc-584"
+    name: "Preset selector for initial email generation"
+    priority: "feature"
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/sc-584.yaml"
+    depends_on: ["sc-549-3", "sc-554"]
+    started_at: "2026-03-28"
+    validated_at: "2026-03-29"
+    notes: "Add preset dropdown to ContactDetailPanel generate button. Wire presetId through frontend hook and backend service. Covers /contacts and /suivi. All 7 ACs pass. 297 unit tests pass. PR #109."

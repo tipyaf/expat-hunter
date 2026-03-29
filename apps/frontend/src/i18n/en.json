@@ -570,7 +570,9 @@
     "email_bounced": "Bounced",
     "editDraft": "Edit draft",
     "generateEmail": "Generate email",
-    "generating": "Generating..."
+    "generating": "Generating...",
+    "selectPreset": "Select a generation preset",
+    "defaultPreset": "Default preset"
   },
   "templates": {
     "title": "My email templates",

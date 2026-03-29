@@ -88,6 +88,62 @@ test.group('EmailGenerationService — constructor & configuration checks', () =
   })
 })
 
+test.group('EmailGenerationService — presetId option', () => {
+  test('generateForContacts accepts presetId in options without error when not configured', async ({
+    assert,
+  }) => {
+    const mockComposer = {
+      isConfigured: false,
+      compose: async () => ({ subject: 'test', body: 'test' }),
+    } as any
+
+    const service = new EmailGenerationService(mockComposer)
+    const result = await service.generateForContacts('fake-user-id', {
+      contactIds: ['id-1'],
+      presetId: 'some-preset-id',
+    })
+
+    assert.equal(result.generated, 0)
+    assert.equal(result.errors, 0)
+    assert.deepEqual(result.emailIds, [])
+  })
+
+  test('generateForContacts accepts presetId alongside batchSize', async ({
+    assert,
+  }) => {
+    const mockComposer = {
+      isConfigured: false,
+      compose: async () => ({ subject: 'test', body: 'test' }),
+    } as any
+
+    const service = new EmailGenerationService(mockComposer)
+    const result = await service.generateForContacts('fake-user-id', {
+      batchSize: 3,
+      presetId: 'preset-123',
+    })
+
+    assert.equal(result.generated, 0)
+    assert.deepEqual(result.emailIds, [])
+  })
+
+  test('generateForContacts works without presetId (backward compatible)', async ({
+    assert,
+  }) => {
+    const mockComposer = {
+      isConfigured: false,
+      compose: async () => ({ subject: 'test', body: 'test' }),
+    } as any
+
+    const service = new EmailGenerationService(mockComposer)
+    const result = await service.generateForContacts('fake-user-id', {
+      contactIds: ['id-1'],
+    })
+
+    assert.equal(result.generated, 0)
+    assert.deepEqual(result.emailIds, [])
+  })
+})
+
 test.group('EmailGenerationService — GenerationResult shape', () => {
   test('result object has all required fields', async ({ assert }) => {
     const mockComposer = {
