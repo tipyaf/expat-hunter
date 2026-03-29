@@ -1,0 +1,174 @@
+# ============================================================================
+# STORY: sc-599-1 — Frontend code audit + refactor
+# ============================================================================
+
+story:
+  id: "sc-599-1"
+  title: "Frontend best practices audit and refactor"
+  parent_spec: "specs/expat-hunter.yaml"
+  status: "refined"
+  size: "L"
+  refined_at: "2026-03-29"
+  refined_by: "refinement"
+
+user_story: >
+  As a developer, I want the frontend codebase to respect best practices
+  (file size limits, no magic values, i18n compliance, proper error handling),
+  so that the code is maintainable and consistent.
+
+scope:
+  files_to_create:
+    - "apps/web/src/constants/ui.ts — extracted magic numbers (timeouts, polling intervals, thresholds)"
+  files_to_modify:
+    - "apps/web/src/app/onboarding/page.tsx — split into subcomponents (<400L)"
+    - "apps/web/src/app/suivi/page.tsx — split into subcomponents (<400L)"
+    - "apps/web/src/app/emails/page.tsx — split into subcomponents (<400L)"
+    - "apps/web/src/app/parametres/page.tsx — split into subcomponents (<400L)"
+    - "apps/web/src/app/parametres/connexion-email/page.tsx — split (<400L)"
+    - "apps/web/src/components/ui/search-progress-modal.tsx — split (<400L)"
+    - "apps/web/src/components/chat/chat-panel.tsx — extract PAGE_SUGGESTIONS to i18n, fix magic numbers"
+    - "apps/web/src/app/recherche/error.tsx — replace hardcoded French with i18n"
+    - "apps/web/src/hooks/use-search.ts — replace hardcoded French error with i18n"
+    - "apps/web/src/app/contacts/page.tsx — fix silent catch"
+    - "apps/web/src/hooks/use-emails.ts — fix silent catch"
+    - "apps/web/src/app/profil/page.tsx — fix silent catches, extract magic timeouts"
+    - "apps/web/src/app/recherche/page.tsx — extract COUNTRY_CODES to constants, fix silent catch"
+    - "apps/web/src/components/ui/score-breakdown.tsx — extract threshold constants"
+    - "i18n/en.json — add missing keys (errors, chat suggestions)"
+    - "i18n/fr.json — add missing keys (errors, chat suggestions)"
+  files_to_read:
+    - "apps/web/src/lib/i18n.ts — understand i18n setup"
+    - "stacks/typescript-nextjs.md — stack profile reference"
+
+components:
+  reuse:
+    - name: "EmptyState"
+      path: "apps/frontend/src/components/ui/empty-state.tsx"
+      note: "Use for empty list states inside extracted sub-components"
+    - name: "ProgressBarMultiStep"
+      path: "apps/frontend/src/components/ui/progress-bar-multi-step.tsx"
+      note: "Reuse inside onboarding sub-components if step progress needed"
+    - name: "ConfirmModal"
+      path: "apps/frontend/src/components/ui/confirm-modal.tsx"
+      note: "Check before creating any new confirmation dialog in split pages"
+  create:
+    - name: "Sub-components from onboarding/page.tsx"
+      type: smart
+      reason: "475L page split — feature-specific containers, not reusable across features"
+    - name: "Sub-components from suivi/page.tsx"
+      type: smart
+      reason: "455L page split — feature-specific"
+    - name: "Sub-components from emails/page.tsx"
+      type: smart
+      reason: "453L page split — feature-specific"
+    - name: "Sub-components from parametres/page.tsx"
+      type: smart
+      reason: "437L page split — feature-specific"
+    - name: "Sub-components from search-progress-modal.tsx"
+      type: dumb
+      reason: "UI modal with steps — sub-components are likely presentational, could be added to components/ui/"
+
+acceptance_criteria:
+
+  functional:
+    - id: "AC-FUNC-599-1-01"
+      description: "Given all frontend files / When checking line count / Then no file exceeds 400 lines"
+      verify: "find apps/web/src -name '*.tsx' -o -name '*.ts' | xargs wc -l | awk '$1 > 400 && !/total/ {print \"VIOLATION: \" $2 \" (\" $1 \"L)\"}' | wc -l | awk '{if($1==0) print \"PASS\"; else print \"FAIL\"}'"
+      tier: 1
+
+    - id: "AC-FUNC-599-1-02"
+      description: "Given all frontend source / When searching for magic numbers / Then no raw timeout/interval values exist in component logic (3000, 5000, 8000, 1500)"
+      verify: "grep -rn 'setTimeout.*[0-9]\\{4,\\}\\|setInterval.*[0-9]\\{4,\\}' apps/web/src/app/ apps/web/src/components/ apps/web/src/hooks/ --include='*.tsx' --include='*.ts' | grep -v 'constants\\|config\\|TIMEOUT\\|INTERVAL\\|DELAY' | wc -l | awk '{if($1==0) print \"PASS\"; else print \"FAIL\"}'"
+      tier: 1
+
+    - id: "AC-FUNC-599-1-03"
+      description: "Given chat-panel.tsx / When checking PAGE_SUGGESTIONS / Then all suggestions use i18n t() function, not hardcoded French strings"
+      verify: "grep -c 'Améliorer\\|Meilleur moment\\|Comment relancer' apps/web/src/components/chat/chat-panel.tsx | awk '{if($1==0) print \"PASS\"; else print \"FAIL: hardcoded French strings remain\"}'"
+      tier: 1
+
+    - id: "AC-FUNC-599-1-04"
+      description: "Given recherche/error.tsx / When checking text / Then all user-facing text uses i18n t() function"
+      verify: "grep -c 'Erreur sur la page\\|Réessayer' apps/web/src/app/recherche/error.tsx | awk '{if($1==0) print \"PASS\"; else print \"FAIL\"}'"
+      tier: 1
+
+    - id: "AC-FUNC-599-1-05"
+      description: "Given use-search.ts / When checking error messages / Then all error strings use i18n t() function"
+      verify: "grep -c 'Erreur lors du chargement' apps/web/src/hooks/use-search.ts | awk '{if($1==0) print \"PASS\"; else print \"FAIL\"}'"
+      tier: 1
+
+    - id: "AC-FUNC-599-1-06"
+      description: "Given all frontend source / When searching for silent catches / Then no empty catch blocks or catch(() => {}) exist"
+      verify: "grep -rn 'catch.*{\\s*}\\|catch.*=>.*{}\\|catch {' apps/web/src/ --include='*.tsx' --include='*.ts' | grep -v 'test\\|spec\\|node_modules' | wc -l | awk '{if($1==0) print \"PASS\"; else print \"FAIL\"}'"
+      tier: 1
+
+    - id: "AC-FUNC-599-1-07"
+      description: "Given all frontend source / When searching for inline styles / Then no style={{}} remains (use Tailwind classes instead)"
+      verify: "grep -rn 'style={{' apps/web/src/ --include='*.tsx' | grep -v 'node_modules' | wc -l | awk '{if($1==0) print \"PASS\"; else print \"FAIL\"}'"
+      tier: 1
+
+    - id: "AC-FUNC-599-1-08"
+      description: "Given the refactored pages / When building / Then TypeScript compiles with 0 errors"
+      verify: "cd apps/web && npx tsc --noEmit 2>&1 | grep -c 'error TS' | awk '{if($1==0) print \"PASS\"; else print \"FAIL\"}'"
+      tier: 1
+
+  security: []
+
+  best_practices:
+    - id: "AC-BP-599-1-01"
+      description: "Given split components / When reviewing / Then each extracted component has a single responsibility and is under 200 lines"
+      verify: "find apps/web/src/components -name '*.tsx' -newer apps/web/src/app/page.tsx | xargs wc -l 2>/dev/null | awk '$1 > 200 && !/total/ {count++} END {if(count>0) print \"FAIL: \" count \" new files >200L\"; else print \"PASS\"}'"
+      tier: 1
+
+    - id: "AC-BP-599-1-02"
+      description: "Given all frontend source / When checking / Then no explicit 'any' type exists"
+      verify: "grep -rn ': any\\b\\|as any\\b' apps/web/src/ --include='*.ts' --include='*.tsx' | grep -v 'node_modules\\|.d.ts' | wc -l | awk '{if($1==0) print \"PASS\"; else print \"FAIL\"}'"
+      tier: 1
+
+edge_cases:
+  - description: "Splitting pages may break existing e2e tests"
+    handling: "Run e2e suite after refactor, fix any broken selectors"
+  - description: "Some inline styles are dynamic (progress bar width)"
+    handling: "Use Tailwind arbitrary values [width:calc()] or CSS variables for dynamic widths"
+  - description: "i18n keys added must exist in both en.json and fr.json"
+    handling: "Verify both files have identical key sets"
+
+test_intentions: []
+
+depends_on: []
+
+notes: |
+  Audit findings (all violations to fix):
+
+  FILES >400L (6): onboarding/page.tsx (475), suivi/page.tsx (455), emails/page.tsx (453),
+  parametres/page.tsx (437), parametres/connexion-email/page.tsx (424), search-progress-modal.tsx (418)
+
+  MAGIC NUMBERS (15+): timeouts (3000, 5000, 8000ms), polling (1500ms),
+  color thresholds (70, 45), animation delays (0, 150, 300ms)
+  → Extract to apps/web/src/constants/ui.ts
+
+  MAGIC STRINGS / i18n (4): recherche/error.tsx, use-search.ts, chat-panel.tsx PAGE_SUGGESTIONS,
+  contacts/page.tsx COUNTRY_CODES → move to i18n or constants
+
+  SILENT CATCHES (8+): contacts/page.tsx, use-emails.ts, profil/page.tsx, recherche/page.tsx,
+  onboarding/page.tsx → add console.error or toast notification
+
+  INLINE STYLES (6): progress bars, animation delays
+  → Replace with Tailwind arbitrary values or CSS variables
+
+  SRP VIOLATIONS (4 pages): onboarding, suivi, emails, search-progress-modal
+  → Split into focused sub-components
+
+definition_of_done:
+  - "All AC verify: commands pass"
+  - "No TypeScript errors (tsc --noEmit)"
+  - "All e2e tests pass (no regressions)"
+  - "PR merged into develop"
+  - "Shortcut story moved to Done"
+
+closing_ac:
+  - id: "AC-BP-599-1-DONE"
+    type: "BP"
+    description: |
+      PR is merged into develop — story closure gate.
+    verify: "gh pr list --state merged --base develop --json title | grep -q 'sc-599-1'"
+    tier: 1
