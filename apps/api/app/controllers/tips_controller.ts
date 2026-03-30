@@ -14,30 +14,38 @@ export default class TipsController {
     const status = request.input('status', null) as string | null
     const country = request.input('country', null) as string | null
     const contactId = request.input('contactId', null) as string | null
+    const locale = user.locale ?? 'fr'
 
     if (page === 'kanban') {
-      const tip = this.tipsService.getKanbanTip(status)
+      const tip = await this.tipsService.getKanbanTip(status, locale)
       return response.ok({ data: tip })
     }
 
     if (page === 'thread') {
-      const tip = this.tipsService.getThreadTip(contactId ?? undefined, country ?? undefined)
+      const tip = await this.tipsService.getThreadTip(
+        contactId ?? undefined,
+        country ?? undefined,
+        locale
+      )
       return response.ok({ data: tip })
     }
 
     if (page === 'profile') {
       const profile = await this.profileService.getOrCreateProfile(user)
-      const tip = this.tipsService.getProfileTip({
-        skills: profile.skills,
-        experienceYears: profile.experienceYears,
-        targetCountries: profile.targetCountries,
-      })
+      const tip = await this.tipsService.getProfileTip(
+        {
+          skills: profile.skills,
+          experienceYears: profile.experienceYears,
+          targetCountries: profile.targetCountries,
+        },
+        locale
+      )
       return response.ok({ data: tip })
     }
 
     // Default: dashboard
     const stats = await this.dashboardService.getStats(user.id)
-    const tip = this.tipsService.getDashboardTip(stats)
+    const tip = await this.tipsService.getDashboardTip(stats, locale)
     return response.ok({ data: tip })
   }
 }

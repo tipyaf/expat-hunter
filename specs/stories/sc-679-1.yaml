@@ -1,0 +1,176 @@
+story:
+  id: "sc-679-1"
+  title: "AI-generated contextual tips with locale support"
+  parent_spec: "specs/expat-hunter.yaml"
+  status: "refined"
+  size: "M"
+  refined_at: "2026-03-30"
+  refined_by: "refinement"
+
+user_story: >
+  As a user with English selected in settings,
+  I want the dashboard/profile/suivi/thread tips to be generated in English by the AI,
+  so that the entire interface is consistently in my preferred language.
+
+scope:
+  files_to_create:
+    - path: "apps/api/app/constants/locale.ts"
+      purpose: "LOCALE_NAMES map — locale code → full language name injected into AI prompts. Single source of truth for both TipsService and ChatAssistantService."
+
+  files_to_modify:
+    - path: "apps/api/app/services/cache_service.ts"
+      reason: "Add 'tip' to EntityType with DEFAULT_TTL_DAYS = 30"
+    - path: "apps/api/app/services/tips_service.ts"
+      reason: "Rewrite as async — calls OpenRouter with user context + locale. Fallback to static strings on OpenRouter failure. Cache 30 days per {page}::{locale}::{contextHash}."
+    - path: "apps/api/app/controllers/tips_controller.ts"
+      reason: "Pass user.locale to every TipsService method call"
+    - path: "apps/api/tests/unit/services/tips_service.spec.ts"
+      reason: "Mock OpenRouter client, add locale-specific assertions (EN + FR), update existing tests to pass locale param"
+
+  files_to_read:
+    - path: "apps/api/app/services/chat_assistant_service.ts"
+      reason: "Pattern reference for OpenRouterClient.forFeature() + fallback"
+    - path: "apps/api/app/services/cache_service.ts"
+      reason: "getOrFetch() signature and EntityType pattern"
+    - path: "apps/api/ai/openrouter_client.ts"
+      reason: "OpenRouterClient API"
+
+acceptance_criteria:
+  functional:
+    - id: "AC-FUNC-679-1-01"
+      description: "Given any page tip request / When TipsService is called / Then it calls OpenRouterClient with a prompt that includes the user context and the full language name"
+      verify: "grep -n 'OpenRouter\\|openrouter\\|async' apps/api/app/services/tips_service.ts | head -8"
+      tier: 1
+
+    - id: "AC-FUNC-679-1-02"
+      description: "Given locale='en' / When a tip is generated / Then the prompt contains 'English' (or the mapped language name) from LOCALE_NAMES"
+      verify: "grep -n 'LOCALE_NAMES\\|localeToLanguage\\|language.*name' apps/api/app/services/tips_service.ts | head -5"
+      tier: 1
+
+    - id: "AC-FUNC-679-1-03"
+      description: "Given TipsController.contextual() / When any page is requested / Then user.locale is passed to the TipsService method"
+      verify: "grep 'user.locale' apps/api/app/controllers/tips_controller.ts"
+      tier: 1
+
+    - id: "AC-FUNC-679-1-04"
+      description: "Given a tip is generated / When cached / Then it is stored with a 30-day TTL and key {page}::{locale}::{contextHash}"
+      verify: "grep -E '30|tip.*ttl|ttl.*30|DEFAULT_TTL' apps/api/app/services/cache_service.ts apps/api/app/services/tips_service.ts | head -5"
+      tier: 1
+
+    - id: "AC-FUNC-679-1-05"
+      description: "Given a cached tip exists for the same context+locale / When requested again / Then the cached version is returned (no new OpenRouter call)"
+      verify: "grep -n 'getOrFetch\\|fromCache\\|cache' apps/api/app/services/tips_service.ts | head -5"
+      tier: 1
+
+    - id: "AC-FUNC-679-1-06"
+      description: "Given OpenRouter is unavailable (client returns null or throws) / When a tip is requested / Then the static fallback tip is returned without error"
+      verify: "grep -n 'fallback\\|catch\\|static\\|null' apps/api/app/services/tips_service.ts | head -8"
+      tier: 1
+
+    - id: "AC-FUNC-679-1-07"
+      description: "Given locale='en' / When getDashboardTip is called with 0 contacts / Then the returned message is in English (unit test with mocked OpenRouter)"
+      verify: "NODE_ENV=test DB_DATABASE=expat_hunter_test ~/.nvm/versions/node/v22.22.1/bin/node --import tsx apps/api/bin/test.ts unit 2>&1 | grep -E 'TipsService|tips.*pass|passing' | tail -5"
+      tier: 2
+
+  security:
+    - id: "AC-SEC-679-1-01"
+      description: "The locale value is sanitized before injection into the AI prompt — trimmed, max 10 chars, alphanumeric+hyphen only — prevents prompt injection via locale parameter"
+      verify: "grep -E 'trim|slice|replace|sanitize|alphanum|maxLength.*10|locale.*10' apps/api/app/services/tips_service.ts apps/api/app/constants/locale.ts | head -5"
+      tier: 1
+
+    - id: "AC-SEC-679-1-02"
+      description: "Unknown locale code not present in LOCALE_NAMES falls back to 'fr' (French) — no crash, no raw locale injected into prompt"
+      verify: "grep -E \"LOCALE_NAMES\\[|?? 'French'|?? 'fr'|fallback.*French\" apps/api/app/services/tips_service.ts apps/api/app/constants/locale.ts | head -5"
+      tier: 1
+
+  best_practices:
+    - id: "AC-BP-679-1-01"
+      description: "LOCALE_NAMES is a single exported constant in apps/api/app/constants/locale.ts — both TipsService and ChatAssistantService (sc-679-2) import from there"
+      verify: "grep 'LOCALE_NAMES' apps/api/app/constants/locale.ts apps/api/app/services/tips_service.ts | head -5"
+      tier: 1
+
+    - id: "AC-BP-679-1-02"
+      description: "The tips system prompt is a named constant (not an inline template literal scattered in each method)"
+      verify: "grep -E '^const TIPS_SYSTEM|^const.*PROMPT' apps/api/app/services/tips_service.ts"
+      tier: 1
+
+    - id: "AC-BP-679-1-03"
+      description: "TipsService stays under 400 lines after the rewrite"
+      verify: "wc -l apps/api/app/services/tips_service.ts | awk '{print ($1 <= 400)}' | grep -q 1"
+      tier: 1
+
+edge_cases:
+  - description: "Unknown locale (e.g. 'de', 'es')"
+    handling: "LOCALE_NAMES lookup returns undefined → fallback to French. Static fallback also used so no empty response."
+
+  - description: "OpenRouter rate-limited or down"
+    handling: "catch block returns static tip for the same page/context. Log warning. No 500 to client."
+
+  - description: "Context hash collision (two different stat sets hash identically)"
+    handling: "Acceptable — tip still relevant, 30-day TTL ensures eventual refresh. Hash just needs to be stable, not collision-proof."
+
+  - description: "Empty stats (brand new user: 0 contacts, 0 emails)"
+    handling: "Context is valid — generates an onboarding tip. Cache key includes the zero values."
+
+  - description: "Very long AI response (model outputs 5+ sentences)"
+    handling: "Prompt instructs 'max 2 sentences'. If response is longer, it is still stored and displayed as-is (not truncated)."
+
+test_intentions:
+  - function: "getLocaleLanguageName"
+    description: "LOCALE_NAMES lookup returns correct language name or fallback"
+    inputs:
+      locale_known: "en"
+      locale_unknown: "de"
+    oracle:
+      final: "LOCALE_NAMES['en'] = 'English' | LOCALE_NAMES['de'] = undefined → fallback 'French'"
+    assertions:
+      - "LOCALE_NAMES['en'] === 'English'"
+      - "LOCALE_NAMES['fr'] === 'French'"
+      - "(LOCALE_NAMES['de'] ?? 'French') === 'French'"
+    edge_cases:
+      - description: "Empty string locale"
+        inputs: { locale: "" }
+        oracle: { final: "LOCALE_NAMES[''] = undefined → 'French'" }
+        assertions: ["fallback returns 'French'"]
+      - description: "Uppercase locale 'EN'"
+        inputs: { locale: "EN" }
+        oracle: { final: "LOCALE_NAMES['EN'] = undefined → 'French' (map uses lowercase keys)" }
+        assertions: ["fallback returns 'French'"]
+
+  - function: "buildContextHash"
+    description: "Same stats produce same hash; different stats produce different hash"
+    inputs:
+      stats_a: { contacts: 5, emailsSent: 3, responseRate: 10, replies: 0, interviews: 0 }
+      stats_b: { contacts: 5, emailsSent: 3, responseRate: 10, replies: 0, interviews: 0 }
+      stats_c: { contacts: 10, emailsSent: 0, responseRate: 0, replies: 0, interviews: 0 }
+    oracle:
+      final: "hash(stats_a) === hash(stats_b) | hash(stats_a) !== hash(stats_c)"
+    assertions:
+      - "buildContextHash(stats_a) === buildContextHash(stats_b)"
+      - "buildContextHash(stats_a) !== buildContextHash(stats_c)"
+
+depends_on: []
+
+notes: |
+  Pattern to follow for OpenRouter call: see chat_assistant_service.ts getSupportResponse().
+  Use OpenRouterClient.forFeature('tips') — may need to add 'tips' to the feature list in openrouter_client.ts or reuse 'chat_assistant'.
+  Cache entity type 'tip' must be added to EntityType in cache_service.ts and DEFAULT_TTL_DAYS set to 30.
+  Context hash: use crypto.createHash('sha256').update(JSON.stringify(sortedContext)).digest('hex').slice(0, 16)
+  Prompt instruction: "Generate ONE short tip (max 2 sentences). Respond in {languageName}. Be specific and actionable."
+
+definition_of_done:
+  - "All AC verify: commands pass"
+  - "No TypeScript errors (npx tsc --noEmit)"
+  - "All unit tests pass"
+  - "Zero console errors/stacktraces"
+  - "PR merged into develop"
+  - "Shortcut story moved to Done"
+
+closing_ac:
+  - id: "AC-BP-679-1-DONE"
+    type: "BP"
+    description: |
+      PR is merged into develop — story closure gate.
+      After this passes, the validator MUST move the Shortcut story to Done (state 500000010).
+    verify: "gh pr list --state merged --base develop --json title | grep -q 'sc-679-1'"
+    tier: 1

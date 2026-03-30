@@ -1,13 +1,14 @@
 import ExternalCache from '#models/external_cache'
 import { DateTime } from 'luxon'
 
-export type EntityType = 'company' | 'contact' | 'market' | 'visa'
+export type EntityType = 'company' | 'contact' | 'market' | 'visa' | 'tip'
 
 const DEFAULT_TTL_DAYS: Record<EntityType, number> = {
   company: 30,
   contact: 14,
   market: 7,
   visa: 90,
+  tip: 30,
 }
 
 export default class CacheService {
