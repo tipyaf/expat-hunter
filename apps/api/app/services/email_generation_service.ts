@@ -185,6 +185,26 @@ export default class EmailGenerationService {
     return email
   }
 
+  /**
+   * Approve multiple draft emails for a given user.
+   * Returns the number of emails approved.
+   */
+  async approveBatchDrafts(emailIds: string[], userId: string): Promise<number> {
+    const emails = await EmailMessage.query()
+      .whereIn('id', emailIds)
+      .where('status', 'draft')
+      .whereHas('contact', (q) => q.where('userId', userId))
+
+    let approved = 0
+    for (const email of emails) {
+      email.status = 'approved'
+      await email.save()
+      approved++
+    }
+
+    return approved
+  }
+
   private buildCandidateData(user: User, profile: CandidateProfile): CandidateForEmail {
     return {
       fullName: user.fullName,

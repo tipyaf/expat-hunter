@@ -1,6 +1,7 @@
 import dns from 'node:dns/promises'
 import env from '#start/env'
 import CacheService from '#services/cache_service'
+import type Contact from '#models/contact'
 import type { EmailSource } from '#models/contact'
 
 export interface EmailEnrichmentResult {
@@ -9,6 +10,12 @@ export interface EmailEnrichmentResult {
   confidence: number
   status: 'verified' | 'probable' | 'unknown'
   alternatives: string[]
+}
+
+export interface BatchEnrichmentResult {
+  contactId: string
+  enriched: boolean
+  source: string | null
 }
 
 interface HunterFinderResponse {
@@ -62,6 +69,73 @@ export default class EmailEnricher {
       status: 'probable',
       alternatives: patterns.slice(1),
     }
+  }
+
+  /**
+   * Enrich emails for multiple contacts with concurrency limit.
+   */
+  async enrichBatch(contacts: Contact[]): Promise<BatchEnrichmentResult[]> {
+    const CONCURRENCY_LIMIT = 3
+    const results: BatchEnrichmentResult[] = []
+
+    const chunks = this.chunk(contacts, CONCURRENCY_LIMIT)
+    for (const chunk of chunks) {
+      await Promise.all(
+        chunk.map(async (contact) => {
+          if (contact.email && contact.emailStatus === 'verified') {
+            results.push({ contactId: contact.id, enriched: false, source: contact.emailSource })
+            return
+          }
+
+          const domain =
+            contact.company?.domain ?? this.extractDomain(contact.company?.website ?? '')
+
+          if (!domain) {
+            results.push({ contactId: contact.id, enriched: false, source: null })
+            return
+          }
+
+          try {
+            const result = await this.enrich(contact.fullName, domain)
+            if (result.email) {
+              contact.email = result.email
+              contact.emailSource = result.source
+              contact.emailConfidence = result.confidence
+              contact.emailStatus = result.status
+              contact.emailAlternatives =
+                result.alternatives.length > 0 ? result.alternatives : null
+              await contact.save()
+            }
+            results.push({ contactId: contact.id, enriched: !!result.email, source: result.source })
+          } catch {
+            results.push({ contactId: contact.id, enriched: false, source: null })
+          }
+        })
+      )
+    }
+
+    return results
+  }
+
+  /**
+   * Extract root domain from a website URL.
+   */
+  extractDomain(website: string): string {
+    if (!website) return ''
+    try {
+      const url = new URL(website.startsWith('http') ? website : `https://${website}`)
+      return url.hostname.replace(/^www\./, '')
+    } catch {
+      return ''
+    }
+  }
+
+  private chunk<T>(arr: T[], size: number): T[][] {
+    const chunks: T[][] = []
+    for (let i = 0; i < arr.length; i += size) {
+      chunks.push(arr.slice(i, i + size))
+    }
+    return chunks
   }
 
   private async tryHunter(firstName: string, lastName: string, domain: string): Promise<string | null> {

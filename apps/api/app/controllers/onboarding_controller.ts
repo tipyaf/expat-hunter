@@ -3,6 +3,7 @@ import vine from '@vinejs/vine'
 import ProfileService from '#services/profile_service'
 import ChatAssistantService from '#services/chat_assistant_service'
 
+
 const step1Schema = vine.compile(
   vine.object({
     step: vine.literal(1),
@@ -111,27 +112,10 @@ export default class OnboardingController {
         updateData.preferences = payload.data.preferences as Record<string, unknown>
       }
 
-      let profile = await this.profileService.updateProfile(user, updateData)
+      await this.profileService.updateProfile(user, updateData)
 
-      // Mark onboarding as completed
-      profile.onboardingCompleted = true
-      await profile.save()
-
-      // Create follow-up sequence if needed (reuse existing logic)
-      try {
-        const { default: FollowUpSequence } = await import('#models/follow_up_sequence')
-        const existingSequence = await FollowUpSequence.findBy('userId', user.id)
-        if (!existingSequence) {
-          await FollowUpSequence.create({
-            userId: user.id,
-            delayDays1: 3,
-            delayDays2: 7,
-            delayDays3: 14,
-          })
-        }
-      } catch {
-        // Non-critical
-      }
+      // Mark onboarding as completed + create follow-up sequence
+      const profile = await this.profileService.markOnboardingCompleted(user)
 
       return response.ok({
         step: 3,

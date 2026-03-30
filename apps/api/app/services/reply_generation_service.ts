@@ -1,6 +1,7 @@
 import OpenRouterClient from '#ai/openrouter_client'
 import type EmailReply from '#models/email_reply'
 import type EmailMessage from '#models/email_message'
+import { AI_TEMPERATURE_DEFAULT, AI_MAX_TOKENS_SHORT } from '../constants/ai.js'
 
 export default class ReplyGenerationService {
   async generateReply(params: {
@@ -42,8 +43,8 @@ Keep it under 200 words. Return only the email body text, no subject line.`
     try {
       return await client.chat({
         messages: [{ role: 'user', content: prompt }],
-        temperature: 0.5,
-        maxTokens: 512,
+        temperature: AI_TEMPERATURE_DEFAULT,
+        maxTokens: AI_MAX_TOKENS_SHORT,
       })
     } catch {
       return language === 'fr'

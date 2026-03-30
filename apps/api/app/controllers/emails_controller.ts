@@ -1,6 +1,5 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import EmailMessage from '#models/email_message'
-import Contact from '#models/contact'
 import EmailGenerationService from '#services/email_generation_service'
 import EmailSendingService from '#services/email_sending_service'
 import UsageService from '#services/usage_service'
@@ -248,17 +247,8 @@ export default class EmailsController {
       return response.badRequest({ error: { code: 'INVALID_IDS', message: 'emailIds must be a non-empty array' } })
     }
 
-    const emails = await EmailMessage.query()
-      .whereIn('id', emailIds)
-      .where('status', 'draft')
-      .whereHas('contact', (q) => q.where('userId', user.id))
-
-    let approved = 0
-    for (const email of emails) {
-      email.status = 'approved'
-      await email.save()
-      approved++
-    }
+    const service = new EmailGenerationService()
+    const approved = await service.approveBatchDrafts(emailIds, user.id)
 
     return response.ok({ data: { approved } })
   }
