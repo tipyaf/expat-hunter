@@ -1,6 +1,7 @@
 import CandidateProfile from '#models/candidate_profile'
 import FollowUpSequence from '#models/follow_up_sequence'
 import type User from '#models/user'
+import { DEFAULT_FOLLOW_UP_DELAYS } from '../constants/onboarding.js'
 
 interface UpdateProfileData {
   skills?: string[]
@@ -72,6 +73,32 @@ export default class ProfileService {
     }
 
     await profile.save()
+    return profile
+  }
+
+  /**
+   * Mark onboarding as completed and create default follow-up sequence if needed.
+   * Used by onboarding step 3 completion.
+   */
+  async markOnboardingCompleted(user: User): Promise<CandidateProfile> {
+    const profile = await this.getOrCreateProfile(user)
+    profile.onboardingCompleted = true
+    await profile.save()
+
+    try {
+      const existingSequence = await FollowUpSequence.findBy('userId', user.id)
+      if (!existingSequence) {
+        await FollowUpSequence.create({
+          userId: user.id,
+          delayDays1: DEFAULT_FOLLOW_UP_DELAYS[0],
+          delayDays2: DEFAULT_FOLLOW_UP_DELAYS[1],
+          delayDays3: DEFAULT_FOLLOW_UP_DELAYS[2],
+        })
+      }
+    } catch {
+      // Non-critical: follow-up sequence creation failure should not block onboarding
+    }
+
     return profile
   }
 

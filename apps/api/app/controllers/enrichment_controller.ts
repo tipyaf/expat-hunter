@@ -22,14 +22,14 @@ export default class EnrichmentController {
       return response.ok({ message: 'Email already verified', contact: this.serialize(contact) })
     }
 
-    const company = contact.company
-    const domain = company?.domain ?? this.extractDomain(company?.website ?? '')
+    const enricher = new EmailEnricher()
+    const domain =
+      contact.company?.domain ?? enricher.extractDomain(contact.company?.website ?? '')
 
     if (!domain) {
       return response.unprocessableEntity({ error: 'No domain available for enrichment' })
     }
 
-    const enricher = new EmailEnricher()
     const result = await enricher.enrich(contact.fullName, domain)
 
     if (result.email) {
@@ -56,51 +56,15 @@ export default class EnrichmentController {
       return response.badRequest({ error: 'contactIds must be a non-empty array' })
     }
 
-    const ids = contactIds.slice(0, 50)
+    const MAX_BATCH_SIZE = 50
+    const ids = contactIds.slice(0, MAX_BATCH_SIZE)
     const contacts = await Contact.query()
       .whereIn('id', ids)
       .where('userId', user.id)
       .preload('company')
 
     const enricher = new EmailEnricher()
-    const results: Array<{ contactId: string; enriched: boolean; source: string | null }> = []
-
-    // Process with concurrency limit of 3
-    const chunks = this.chunk(contacts, 3)
-    for (const chunk of chunks) {
-      await Promise.all(
-        chunk.map(async (contact) => {
-          if (contact.email && contact.emailStatus === 'verified') {
-            results.push({ contactId: contact.id, enriched: false, source: contact.emailSource })
-            return
-          }
-
-          const domain =
-            contact.company?.domain ?? this.extractDomain(contact.company?.website ?? '')
-
-          if (!domain) {
-            results.push({ contactId: contact.id, enriched: false, source: null })
-            return
-          }
-
-          try {
-            const result = await enricher.enrich(contact.fullName, domain)
-            if (result.email) {
-              contact.email = result.email
-              contact.emailSource = result.source
-              contact.emailConfidence = result.confidence
-              contact.emailStatus = result.status
-              contact.emailAlternatives =
-                result.alternatives.length > 0 ? result.alternatives : null
-              await contact.save()
-            }
-            results.push({ contactId: contact.id, enriched: !!result.email, source: result.source })
-          } catch {
-            results.push({ contactId: contact.id, enriched: false, source: null })
-          }
-        })
-      )
-    }
+    const results = await enricher.enrichBatch(contacts)
 
     const enrichedCount = results.filter((r) => r.enriched).length
     return response.ok({ total: results.length, enriched: enrichedCount, results })
@@ -182,16 +146,6 @@ export default class EnrichmentController {
     })
   }
 
-  private extractDomain(website: string): string {
-    if (!website) return ''
-    try {
-      const url = new URL(website.startsWith('http') ? website : `https://${website}`)
-      return url.hostname.replace(/^www\./, '')
-    } catch {
-      return ''
-    }
-  }
-
   private serialize(contact: Contact) {
     return {
       id: contact.id,
@@ -200,13 +154,5 @@ export default class EnrichmentController {
       emailConfidence: contact.emailConfidence,
       emailStatus: contact.emailStatus,
     }
-  }
-
-  private chunk<T>(arr: T[], size: number): T[][] {
-    const chunks: T[][] = []
-    for (let i = 0; i < arr.length; i += size) {
-      chunks.push(arr.slice(i, i + size))
-    }
-    return chunks
   }
 }

@@ -1,5 +1,6 @@
 import { test } from '@japa/runner'
 import VisaSponsorRegistryService from '#services/visa_sponsor_registry'
+import VisaNzService from '#services/visa_nz_service'
 import PlaywrightClient from '#services/playwright_client'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -83,6 +84,13 @@ function mockPlaywrightClient(options: {
   } as unknown as PlaywrightClient
 }
 
+/**
+ * Access the inner NZ service from the facade for test mocking.
+ */
+function getNzService(service: VisaSponsorRegistryService): VisaNzService {
+  return (service as any).nzService
+}
+
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
 test.group('VisaSponsorRegistryService — NZ Playwright scraping (unit)', () => {
@@ -91,13 +99,13 @@ test.group('VisaSponsorRegistryService — NZ Playwright scraping (unit)', () =>
       { employerName: 'Datacom Systems Limited', tradingName: 'Datacom' },
     ])
     const service = new VisaSponsorRegistryService()
-    ;(service as any).playwrightClient = mockPlaywrightClient({
+    const nz = getNzService(service)
+    ;(nz as any).playwrightClient = mockPlaywrightClient({
       networkBody: body,
       networkStatusCode: statusCode,
     })
-    ;(service as any).nzWaitAfterClickMs = 0
-    // Bypass cache
-    ;(service as any).cacheService = {
+    ;(nz as any).nzWaitAfterClickMs = 0
+    ;(nz as any).cacheService = {
       getOrFetch: async (_s: string, _t: string, _k: string, fn: () => Promise<unknown>) => ({
         data: await fn(),
         fromCache: false,
@@ -116,12 +124,13 @@ test.group('VisaSponsorRegistryService — NZ Playwright scraping (unit)', () =>
   test('returns not_found for unknown company', async ({ assert }) => {
     const { body, statusCode } = buildEmptyNzApiBody()
     const service = new VisaSponsorRegistryService()
-    ;(service as any).playwrightClient = mockPlaywrightClient({
+    const nz = getNzService(service)
+    ;(nz as any).playwrightClient = mockPlaywrightClient({
       networkBody: body,
       networkStatusCode: statusCode,
     })
-    ;(service as any).nzWaitAfterClickMs = 0
-    ;(service as any).cacheService = {
+    ;(nz as any).nzWaitAfterClickMs = 0
+    ;(nz as any).cacheService = {
       getOrFetch: async (_s: string, _t: string, _k: string, fn: () => Promise<unknown>) => ({
         data: await fn(),
         fromCache: false,
@@ -136,11 +145,11 @@ test.group('VisaSponsorRegistryService — NZ Playwright scraping (unit)', () =>
 
   test('returns unknown when Playwright server is unavailable', async ({ assert }) => {
     const service = new VisaSponsorRegistryService()
-    ;(service as any).playwrightClient = mockPlaywrightClient({ throwOnNavigate: true })
-    ;(service as any).nzWaitAfterClickMs = 0
-    ;(service as any).cacheService = {
+    const nz = getNzService(service)
+    ;(nz as any).playwrightClient = mockPlaywrightClient({ throwOnNavigate: true })
+    ;(nz as any).nzWaitAfterClickMs = 0
+    ;(nz as any).cacheService = {
       getOrFetch: async (_s: string, _t: string, _k: string, fn: () => Promise<unknown>) => {
-        // Let the error bubble so checkNZ catches it
         const data = await fn()
         return { data, fromCache: false }
       },
@@ -154,12 +163,13 @@ test.group('VisaSponsorRegistryService — NZ Playwright scraping (unit)', () =>
 
   test('returns unknown when no network requests intercepted', async ({ assert }) => {
     const service = new VisaSponsorRegistryService()
-    ;(service as any).playwrightClient = mockPlaywrightClient({
+    const nz = getNzService(service)
+    ;(nz as any).playwrightClient = mockPlaywrightClient({
       sessionId: 'test-session',
       networkBody: undefined, // no requests captured
     })
-    ;(service as any).nzWaitAfterClickMs = 0
-    ;(service as any).cacheService = {
+    ;(nz as any).nzWaitAfterClickMs = 0
+    ;(nz as any).cacheService = {
       getOrFetch: async (_s: string, _t: string, _k: string, fn: () => Promise<unknown>) => ({
         data: await fn(),
         fromCache: false,
@@ -168,7 +178,6 @@ test.group('VisaSponsorRegistryService — NZ Playwright scraping (unit)', () =>
 
     const result = await service.checkNZ('Datacom')
 
-    // No network body → not_found (page loaded but no API call captured)
     assert.oneOf(result.status, ['not_found', 'unknown'])
   })
 
@@ -180,12 +189,13 @@ test.group('VisaSponsorRegistryService — NZ Playwright scraping (unit)', () =>
       },
     ])
     const service = new VisaSponsorRegistryService()
-    ;(service as any).playwrightClient = mockPlaywrightClient({
+    const nz = getNzService(service)
+    ;(nz as any).playwrightClient = mockPlaywrightClient({
       networkBody: body,
       networkStatusCode: statusCode,
     })
-    ;(service as any).nzWaitAfterClickMs = 0
-    ;(service as any).cacheService = {
+    ;(nz as any).nzWaitAfterClickMs = 0
+    ;(nz as any).cacheService = {
       getOrFetch: async (_s: string, _t: string, _k: string, fn: () => Promise<unknown>) => ({
         data: await fn(),
         fromCache: false,
@@ -202,9 +212,10 @@ test.group('VisaSponsorRegistryService — NZ Playwright scraping (unit)', () =>
     assert,
   }) => {
     const service = new VisaSponsorRegistryService()
+    const nz = getNzService(service)
     const { body } = buildNzApiBody([{ employerName: 'Spark New Zealand' }])
 
-    const result = (service as any).parseNzApiResponse(body, 200, 'spark new zealand')
+    const result = nz.parseNzApiResponse(body, 200, 'spark new zealand')
 
     assert.equal(result.status, 'accredited')
     assert.equal(result.matchedName, 'Spark New Zealand')
@@ -216,8 +227,9 @@ test.group('VisaSponsorRegistryService — NZ Playwright scraping (unit)', () =>
       { employerName: 'Spark New Zealand', expiryDateOfAccreditation: futureDate },
     ])
     const service = new VisaSponsorRegistryService()
+    const nz = getNzService(service)
 
-    const result = (service as any).parseNzApiResponse(body, statusCode, 'spark new zealand')
+    const result = nz.parseNzApiResponse(body, statusCode, 'spark new zealand')
 
     assert.equal(result.status, 'accredited')
     assert.equal(result.expiresAt, futureDate)
@@ -231,14 +243,15 @@ test.group('VisaSponsorRegistryService — NZ Playwright scraping (unit)', () =>
       { employerName: 'Spark New Zealand', expiryDateOfAccreditation: futureDate },
     ])
     const service = new VisaSponsorRegistryService()
-    ;(service as any).playwrightClient = mockPlaywrightClient({
+    const nz = getNzService(service)
+    ;(nz as any).playwrightClient = mockPlaywrightClient({
       networkBody: body,
       networkStatusCode: statusCode,
     })
-    ;(service as any).nzWaitAfterClickMs = 0
+    ;(nz as any).nzWaitAfterClickMs = 0
 
     let capturedTtl: number | ((data: unknown) => number) | undefined
-    ;(service as any).cacheService = {
+    ;(nz as any).cacheService = {
       getOrFetch: async (
         _s: string,
         _t: string,
@@ -254,7 +267,6 @@ test.group('VisaSponsorRegistryService — NZ Playwright scraping (unit)', () =>
     await service.checkNZ('Spark New Zealand')
 
     assert.isFunction(capturedTtl, 'TTL should be a function for dynamic computation')
-    // Call the TTL function with a result that has the future expiresAt
     const ttlValue = (capturedTtl as (data: unknown) => number)({ expiresAt: futureDate })
     assert.isAbove(ttlValue, 1, 'Dynamic TTL should exceed 1 day for a future expiry date')
   })
@@ -262,7 +274,8 @@ test.group('VisaSponsorRegistryService — NZ Playwright scraping (unit)', () =>
   test('close() is called even when click() throws mid-scrape', async ({ assert }) => {
     let closeCalled = false
     const service = new VisaSponsorRegistryService()
-    ;(service as any).playwrightClient = {
+    const nz = getNzService(service)
+    ;(nz as any).playwrightClient = {
       ...mockPlaywrightClient({ sessionId: 'test-session' }),
       click: async () => {
         throw new Error('click failed')
@@ -272,8 +285,8 @@ test.group('VisaSponsorRegistryService — NZ Playwright scraping (unit)', () =>
         assert.equal(sid, 'test-session')
       },
     }
-    ;(service as any).nzWaitAfterClickMs = 0
-    ;(service as any).cacheService = {
+    ;(nz as any).nzWaitAfterClickMs = 0
+    ;(nz as any).cacheService = {
       getOrFetch: async (_s: string, _t: string, _k: string, fn: () => Promise<unknown>) => ({
         data: await fn(),
         fromCache: false,
@@ -288,14 +301,15 @@ test.group('VisaSponsorRegistryService — NZ Playwright scraping (unit)', () =>
   test('dynamic TTL falls back to 30 days when expiresAt is absent', async ({ assert }) => {
     const { body, statusCode } = buildNzApiBody([{ employerName: 'Datacom Systems Limited' }])
     const service = new VisaSponsorRegistryService()
-    ;(service as any).playwrightClient = mockPlaywrightClient({
+    const nz = getNzService(service)
+    ;(nz as any).playwrightClient = mockPlaywrightClient({
       networkBody: body,
       networkStatusCode: statusCode,
     })
-    ;(service as any).nzWaitAfterClickMs = 0
+    ;(nz as any).nzWaitAfterClickMs = 0
 
     let capturedTtl: number | ((data: unknown) => number) | undefined
-    ;(service as any).cacheService = {
+    ;(nz as any).cacheService = {
       getOrFetch: async (
         _s: string,
         _t: string,
@@ -311,15 +325,12 @@ test.group('VisaSponsorRegistryService — NZ Playwright scraping (unit)', () =>
     await service.checkNZ('Datacom')
 
     assert.isFunction(capturedTtl)
-    // No expiresAt → fallback 30 days
     const ttlValue = (capturedTtl as (data: unknown) => number)({ status: 'accredited' })
     assert.equal(ttlValue, 30)
   })
 })
 
 // ─── Integration test against the real site ──────────────────────────────────
-// These tests require PLAYWRIGHT_SERVER_URL + PLAYWRIGHT_SERVER_TOKEN to be set.
-// They validate that results match what the real immigration.govt.nz site returns.
 
 test.group('VisaSponsorRegistryService — NZ real-site integration', (group) => {
   const hasCredentials =
@@ -331,7 +342,8 @@ test.group('VisaSponsorRegistryService — NZ real-site integration', (group) =>
 
   test('Datacom is accredited on immigration.govt.nz', async ({ assert }) => {
     const service = new VisaSponsorRegistryService()
-    ;(service as any).cacheService = {
+    const nz = getNzService(service)
+    ;(nz as any).cacheService = {
       getOrFetch: async (_s: string, _t: string, _k: string, fn: () => Promise<unknown>) => ({
         data: await fn(),
         fromCache: false,
@@ -351,7 +363,8 @@ test.group('VisaSponsorRegistryService — NZ real-site integration', (group) =>
 
   test('FakeCompanyXYZ999 is not found on immigration.govt.nz', async ({ assert }) => {
     const service = new VisaSponsorRegistryService()
-    ;(service as any).cacheService = {
+    const nz = getNzService(service)
+    ;(nz as any).cacheService = {
       getOrFetch: async (_s: string, _t: string, _k: string, fn: () => Promise<unknown>) => ({
         data: await fn(),
         fromCache: false,
@@ -369,7 +382,8 @@ test.group('VisaSponsorRegistryService — NZ real-site integration', (group) =>
 
   test('Spark NZ is accredited on immigration.govt.nz', async ({ assert }) => {
     const service = new VisaSponsorRegistryService()
-    ;(service as any).cacheService = {
+    const nz = getNzService(service)
+    ;(nz as any).cacheService = {
       getOrFetch: async (_s: string, _t: string, _k: string, fn: () => Promise<unknown>) => ({
         data: await fn(),
         fromCache: false,

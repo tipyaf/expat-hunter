@@ -11,6 +11,7 @@
 import CacheService from '#services/cache_service'
 import OpenRouterClient from '#ai/openrouter_client'
 import env from '#start/env'
+import { AI_MAX_TOKENS_SHORT } from '../constants/ai.js'
 
 export interface CompanyContextData {
   culture: string | null
@@ -169,7 +170,7 @@ export default class ContextEnrichmentService {
     expatFriendlySignals: string[]
     aboutSummary: string | null
   }> {
-    const client = new OpenRouterClient({ model: 'openai/gpt-4o-mini', maxTokens: 512 })
+    const client = new OpenRouterClient({ model: 'openai/gpt-4o-mini', maxTokens: AI_MAX_TOKENS_SHORT })
     if (!client.isConfigured) {
       return { culture: null, techStack: [], expatFriendlySignals: [], aboutSummary: null }
     }
