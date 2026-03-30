@@ -9,6 +9,7 @@ import { useMarketSnapshot } from '@/hooks/use-market-snapshot'
 import { useSearch, type SearchRun } from '@/hooks/use-search'
 import { useTranslations } from 'next-intl'
 import { useRouter } from 'next/navigation'
+import { TOAST_DISMISS_MS } from '@/constants/ui'
 import { useEffect, useRef, useState } from 'react'
 
 const COUNTRY_CODES = ['NZ', 'AU', 'CA', 'UK', 'US', 'SG', 'MY', 'PH', 'ID', 'TH', 'HK'] as const
@@ -54,8 +55,8 @@ export default function SearchPage() {
         const defaults = await getDefaults()
         if (defaults.country) setCountry(defaults.country)
         if (defaults.sector) setSector(defaults.sector)
-      } catch {
-        // Ignore errors, keep defaults
+      } catch (error) {
+        console.error('Failed to load search defaults:', error)
       }
     }
     void loadDefaults()
@@ -95,7 +96,7 @@ export default function SearchPage() {
   // Auto-dismiss toast
   useEffect(() => {
     if (!toast) return
-    const timer = setTimeout(() => setToast(null), 8000)
+    const timer = setTimeout(() => setToast(null), TOAST_DISMISS_MS)
     return () => clearTimeout(timer)
   }, [toast])
 

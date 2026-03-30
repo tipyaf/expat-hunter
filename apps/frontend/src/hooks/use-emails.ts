@@ -67,8 +67,8 @@ export function useEmails(filters?: { status?: string; contactId?: string }) {
       setEmails(res.data)
       setMeta(res.meta)
       setPage(pageNum)
-    } catch {
-      // Error handled silently
+    } catch (error) {
+      console.error('Failed to fetch emails:', error)
     } finally {
       setIsLoading(false)
     }
@@ -135,7 +135,8 @@ export function useEmails(filters?: { status?: string; contactId?: string }) {
         completedAt: string | null
       } }>(`/api/emails/send-batch/${batchId}/progress`, { token })
       return res.data
-    } catch {
+    } catch (error) {
+      console.error('Failed to fetch batch progress:', error)
       return null
     }
   }, [token])

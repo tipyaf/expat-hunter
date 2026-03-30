@@ -33,8 +33,9 @@ export function usePresets() {
       setIsLoading(true)
       const res = await apiClient.get<PresetsResponse>('/api/presets', { token })
       setPresets(res.data)
-    } catch { /* silent */ }
-    finally { setIsLoading(false) }
+    } catch (error) {
+      console.error('Failed to fetch presets:', error)
+    } finally { setIsLoading(false) }
   }, [token])
 
   const create = async (data: Omit<GenerationPreset, 'id' | 'createdAt' | 'updatedAt'>) => {

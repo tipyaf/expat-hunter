@@ -75,7 +75,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         })
         setUser(userData)
         setToken(accessToken)
-      } catch {
+      } catch (error) {
+        console.error('Failed to fetch authenticated user:', error)
         clearAuth()
       }
     },
@@ -134,8 +135,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (token) {
         await apiClient.post('/api/auth/logout', undefined, { token })
       }
-    } catch {
-      // Ignore errors on logout
+    } catch (error) {
+      console.error('Logout request failed:', error)
     } finally {
       clearAuth()
       router.push('/login')
@@ -149,7 +150,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const userData = await apiClient.get<User>('/api/auth/me', { token: accessToken })
         setUser(userData)
         router.push('/')
-      } catch {
+      } catch (error) {
+        console.error('OAuth login with token failed:', error)
         clearAuth()
         router.push('/login?error=oauth_failed')
       }

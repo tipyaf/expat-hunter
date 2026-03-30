@@ -17,7 +17,17 @@
     "tagHint": "Press Enter or comma to add",
     "skipToContent": "Skip to main content",
     "edit": "Edit",
-    "delete": "Delete"
+    "delete": "Delete",
+    "retry": "Retry"
+  },
+  "errors": {
+    "loadingSearches": "Error loading searches",
+    "loadingContacts": "Error loading contacts",
+    "loadingProfile": "Error loading profile",
+    "loadingRuns": "Error loading sourcing runs",
+    "loadingMarketSnapshot": "Error loading market snapshot",
+    "analysis": "Error during analysis",
+    "searchPage": "Error on search page"
   },
   "auth": {
     "loginTitle": "Sign in to your account",
@@ -662,7 +672,25 @@
     "errorMessage": "Sorry, an error occurred. Please try again.",
     "welcomeMessage": "Hello! I'm your ExpatHunter assistant. Ask me anything about the app or your job search abroad.",
     "actionRegenerate": "Regenerate",
-    "actionChangeTone": "Change tone"
+    "actionChangeTone": "Change tone",
+    "suggestion_emails_1": "Improve the tone of my emails",
+    "suggestion_emails_2": "Best time to send",
+    "suggestion_emails_3": "How to personalize my follow-ups?",
+    "suggestion_suivi_1": "Tips to prepare for my interview",
+    "suggestion_suivi_2": "How to follow up after silence?",
+    "suggestion_suivi_3": "What to do after receiving an offer?",
+    "suggestion_contacts_1": "What do you know about this company?",
+    "suggestion_contacts_2": "Do they sponsor visas?",
+    "suggestion_contacts_3": "How to contact this person?",
+    "suggestion_recherche_1": "Best sectors in NZ?",
+    "suggestion_recherche_2": "Tech salaries in Auckland?",
+    "suggestion_recherche_3": "How to optimize my search?",
+    "suggestion_default_1": "How to launch a search?",
+    "suggestion_default_2": "How to send emails?",
+    "suggestion_default_3": "How does the kanban work?",
+    "quotaRemaining": "{remaining}/{limit} questions remaining",
+    "quotaExhausted": "You have used all your free questions",
+    "upgradeForChat": "Upgrade for unlimited chat"
   },
   "thread": {
     "title": "Exchanges",

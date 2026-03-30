@@ -529,28 +529,18 @@ features:
     notes: "Add preset dropdown to ContactDetailPanel generate button. Wire presetId through frontend hook and backend service. Covers /contacts and /suivi. All 7 ACs pass. 297 unit tests pass. PR #109."
 
   # === TEST AUDIT (Epic sc-488) ===
-
-  - id: "sc-488-1"
-    name: "Fix test runner + audit existing test quality"
-    priority: "chore"
-    status: "refined"
-    cycles: 0
-    story_file: "specs/stories/sc-488-1.yaml"
-    depends_on: []
-    started_at: ""
-    validated_at: ""
-    notes: "Fix shared package module resolution. Run full suite. Audit test quality (fixtures vs real code, ORACLE blocks, skip/todo). Parent: sc-488."
+  # sc-488-1 merged into sc-488-2 (shared package builds, no blocker)
 
   - id: "sc-488-2"
-    name: "Unit tests for core business logic services"
+    name: "Audit test quality + unit tests for core business logic services"
     priority: "chore"
     status: "refined"
     cycles: 0
     story_file: "specs/stories/sc-488-2.yaml"
-    depends_on: ["sc-488-1"]
+    depends_on: []
     started_at: ""
     validated_at: ""
-    notes: "7 new test files: expat_scoring, dashboard, contact_movement, cv_parser, chat_assistant, reply_generation, tips. Parent: sc-488."
+    notes: "Merged sc-488-1. Audit existing tests + 7 new test files: expat_scoring, dashboard, contact_movement, cv_parser, chat_assistant, reply_generation, tips. Re-refined 2026-03-30."
 
   - id: "sc-488-3"
     name: "Unit tests for I/O services + controller functional tests"
@@ -558,23 +548,23 @@ features:
     status: "refined"
     cycles: 0
     story_file: "specs/stories/sc-488-3.yaml"
-    depends_on: ["sc-488-1"]
+    depends_on: ["sc-488-2"]
     started_at: ""
     validated_at: ""
-    notes: "5 unit test files (email_sending, email_verification, sending_settings, imap_sync, notification) + 3 functional test files (presets, templates, tips controllers). Parent: sc-488."
+    notes: "5 unit test files (email_sending, email_verification, sending_settings, imap_sync, notification) + 3 functional test files (presets, templates, tips controllers). Re-refined 2026-03-30."
 
   # === CODE AUDIT + REFACTOR (Epic sc-599) ===
 
   - id: "sc-599-1"
     name: "Frontend best practices audit and refactor"
     priority: "tech-debt"
-    status: "refined"
-    cycles: 0
+    status: "validated"
+    cycles: 1
     story_file: "specs/stories/sc-599-1.yaml"
     depends_on: []
-    started_at: ""
-    validated_at: ""
-    notes: "6 files >400L to split, 15+ magic numbers, 4 i18n violations, 8+ silent catches, 6 inline styles. Parent: sc-599."
+    started_at: "2026-03-30"
+    validated_at: "2026-03-30"
+    notes: "All ACs pass. 6 files split (14 sub-components), 47 catches fixed, 11 French strings i18n'd, constants extracted. PR #112."
 
   - id: "sc-599-2"
     name: "Backend best practices audit and refactor"
@@ -585,4 +575,4 @@ features:
     depends_on: []
     started_at: ""
     validated_at: ""
-    notes: "2 files >400L (visa_sponsor_registry 863L, search_orchestrator 475L), 8 functions >40L, 3 SRP violations, 4 controllers with business logic. Parent: sc-599."
+    notes: "2 files >400L (visa_sponsor_registry 863L, search_orchestrator 475L), 9 magic numbers, 5 controller logic violations, 1 explicit any. Re-refined 2026-03-30."

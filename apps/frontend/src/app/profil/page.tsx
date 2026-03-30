@@ -49,7 +49,7 @@ export default function ProfilePage() {
     apiClient
       .get<{ data: ContextualTip }>('/api/tips/contextual?page=profile', { token })
       .then((res) => setProfileTip(res.data))
-      .catch(() => {})
+      .catch((error) => { console.error('Failed to fetch contextual tip:', error) })
   }, [token])
 
   const handleSubmit = useCallback(
