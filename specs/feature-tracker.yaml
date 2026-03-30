@@ -582,11 +582,14 @@ features:
   - id: "sc-679-1"
     name: "AI-generated contextual tips with locale support"
     priority: "must-have"
-    status: "refined"
-    cycles: 0
+    status: "validated"
+    cycles: 1
     story_file: "specs/stories/sc-679-1.yaml"
     depends_on: []
     refined_at: "2026-03-30"
+    started_at: "2026-03-30"
+    validated_at: "2026-03-30"
+    notes: "LOCALE_NAMES constant, TipsService async rewrite (OpenRouter + 30d cache), CacheService 'tip' EntityType, TipsController locale passthrough. 478 unit tests pass. PR #117."
 
   - id: "sc-679-2"
     name: "Chat assistant and market snapshot locale support"

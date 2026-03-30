@@ -9,6 +9,13 @@ import {
   AI_MAX_TOKENS_SHORT,
   AI_MAX_TOKENS_LONG,
 } from '../constants/ai.js'
+import { LOCALE_NAMES } from '../constants/locale.js'
+
+const LOCALE_FALLBACK_LANGUAGE = 'French'
+
+function getLanguageName(locale: string): string {
+  return LOCALE_NAMES[locale?.trim().slice(0, 10) ?? ''] ?? LOCALE_FALLBACK_LANGUAGE
+}
 
 export type ChatMode = 'support' | 'expert' | 'mixed'
 
@@ -187,8 +194,10 @@ export default class ChatAssistantService {
   private async getSupportResponse(
     message: string,
     history: ChatMessage[],
-    isPremium: boolean = true
+    isPremium: boolean = true,
+    locale: string = 'fr'
   ): Promise<string> {
+    const languageName = getLanguageName(locale)
     // Try FAQ first
     const faqAnswer = findFaqMatch(message)
     if (faqAnswer) {
@@ -208,17 +217,18 @@ export default class ChatAssistantService {
           ? `\n\nIMPORTANT — Ton commercial subtil : L'utilisateur est en mode gratuit. De manière naturelle et discrète (pas à chaque réponse), mentionne les avantages Premium quand c'est pertinent. Par exemple : "Avec Premium, vous pourriez aussi bénéficier de l'analyse IA de pertinence" ou "Les membres Premium ont accès au suivi kanban complet". Ne sois jamais insistant ou agressif dans tes suggestions.`
           : ''
 
-        const systemPrompt = `Tu es l'assistant support d'ExpatHunter, une plateforme de recherche d'emploi à l'international.
-Réponds en français de manière concise et utile. Aide l'utilisateur à utiliser l'application.
-Si tu ne connais pas la réponse, dis-le honnêtement.
+        const systemPrompt = `You are the ExpatHunter support assistant, a platform for international job search.
+Respond concisely and helpfully. Help the user understand and use the application.
+If you do not know the answer, say so honestly.
+Respond in ${languageName}.
 
-Fonctionnalités principales de l'app :
-- Recherche : lancer des recherches de contacts (recruteurs, managers) par pays/secteur
-- Contacts : liste des contacts trouvés avec enrichissement email
-- Emails : génération et envoi d'emails de prospection personnalisés
-- Kanban (Suivi) : suivi du pipeline de candidature (6 étapes)
-- Dashboard : statistiques globales
-- Paramètres : templates, presets de génération, paramètres d'envoi${freeUserTone}`
+Main app features:
+- Search: find contacts (recruiters, managers) by country and sector
+- Contacts: list of found contacts with email enrichment
+- Emails: generate and send personalised prospecting emails
+- Kanban (Suivi): track your application pipeline (6 stages)
+- Dashboard: global statistics
+- Settings: email templates, generation presets, sending settings${freeUserTone}`
 
         const messages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
           { role: 'system', content: systemPrompt },
@@ -242,8 +252,10 @@ Fonctionnalités principales de l'app :
     message: string,
     context: ChatContext,
     history: ChatMessage[],
-    userProfile?: { cvText?: string; skills?: string[]; experienceYears?: number }
+    userProfile?: { cvText?: string; skills?: string[]; experienceYears?: number },
+    locale: string = 'fr'
   ): Promise<string> {
+    const languageName = getLanguageName(locale)
     let client: OpenRouterClient | null = null
     try {
       client = await OpenRouterClient.forFeature('chat_assistant')
@@ -253,7 +265,7 @@ Fonctionnalités principales de l'app :
     if (!client) {
       logger.warn('OpenRouter unavailable for chat_assistant — falling back to support mode')
       try {
-        return await this.getSupportResponse(message, history)
+        return await this.getSupportResponse(message, history, true, locale)
       } catch {
         return 'The AI expert assistant is not configured. Please contact the administrator to enable this feature.'
       }
@@ -319,7 +331,7 @@ Fonctionnalités principales de l'app :
 
     const systemPrompt = `You are an expert in professional immigration and international recruitment, specialized in English-speaking markets (New Zealand, Australia, Canada, UK).
 You help ExpatHunter users in their international job search.
-Respond in the user's language with precise, concrete, and actionable advice.
+Respond in ${languageName}. Be precise, concrete, and actionable.
 Current page: ${context.page}${context.companyName ? `\nCompany: ${context.companyName}` : ''}${context.country ? `\nTarget country: ${context.country}` : ''}${contextData}${profileContext}`
 
     try {
@@ -344,7 +356,8 @@ Current page: ${context.page}${context.companyName ? `\nCompany: ${context.compa
     message: string,
     context: ChatContext,
     userProfile?: { cvText?: string; skills?: string[]; experienceYears?: number },
-    plan?: UserPlan
+    plan?: UserPlan,
+    locale: string = 'fr'
   ): Promise<ChatResponse> {
     const history = this.getHistory(sessionId)
     const mode = detectIntent(message)
@@ -363,15 +376,15 @@ Current page: ${context.page}${context.companyName ? `\nCompany: ${context.compa
     }
 
     if (mode === 'support') {
-      responseText = await this.getSupportResponse(message, history, isPremium)
+      responseText = await this.getSupportResponse(message, history, isPremium, locale)
     } else if (mode === 'expert') {
-      responseText = await this.getExpertResponse(message, context, history, userProfile)
+      responseText = await this.getExpertResponse(message, context, history, userProfile, locale)
     } else {
       // mixed: try expert first, fall back to support
-      responseText = await this.getExpertResponse(message, context, history, userProfile)
+      responseText = await this.getExpertResponse(message, context, history, userProfile, locale)
       // If expert returned the "not configured" message, try support instead
       if (responseText.includes('is not configured')) {
-        responseText = await this.getSupportResponse(message, history, isPremium)
+        responseText = await this.getSupportResponse(message, history, isPremium, locale)
       }
     }
 

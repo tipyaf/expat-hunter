@@ -53,7 +53,7 @@ test.group('MarketSnapshotService', (group) => {
     const cacheEntry = await ExternalCache.query()
       .where('source', 'market_snapshot')
       .where('entityType', 'market')
-      .where('entityKey', 'ca::all')
+      .where('entityKey', 'ca::all::fr')
       .first()
 
     assert.isNotNull(cacheEntry)
@@ -72,7 +72,7 @@ test.group('MarketSnapshotService', (group) => {
 
     const cacheEntry = await ExternalCache.query()
       .where('source', 'market_snapshot')
-      .where('entityKey', 'nz::technology')
+      .where('entityKey', 'nz::technology::fr')
       .first()
 
     assert.isNotNull(cacheEntry)

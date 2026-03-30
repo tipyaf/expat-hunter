@@ -64,7 +64,8 @@ export default class ChatController {
           country: payload.country,
         },
         userProfile,
-        user.plan
+        user.plan,
+        user.locale ?? 'fr'
       )
 
       // Increment chat question counter
