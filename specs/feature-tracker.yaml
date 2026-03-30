@@ -594,8 +594,11 @@ features:
   - id: "sc-679-2"
     name: "Chat assistant and market snapshot locale support"
     priority: "must-have"
-    status: "refined"
-    cycles: 0
+    status: "validated"
+    cycles: 1
     story_file: "specs/stories/sc-679-2.yaml"
     depends_on: ["sc-679-1"]
     refined_at: "2026-03-30"
+    started_at: "2026-03-30"
+    validated_at: "2026-03-30"
+    notes: "LOCALE_NAMES shared constant. ChatAssistantService + ChatController locale passthrough. MarketSnapshotService bilingual data (EN for NZ/AU/CA/UK/US, FR fallback for others). MarketController ?lang whitelist sanitization. use-market-snapshot.ts passes useLocale(). 478 tests pass. PR #118."
