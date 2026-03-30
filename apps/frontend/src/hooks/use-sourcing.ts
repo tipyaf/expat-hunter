@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/contexts/auth-context'
 import { apiClient } from '@/lib/api-client'
+import { useTranslations } from 'next-intl'
 import { useCallback, useEffect, useState } from 'react'
 
 export interface SourcingRun {
@@ -64,6 +65,7 @@ interface RunSourcingResponse {
 
 export function useSourcing() {
   const { token } = useAuth()
+  const tErrors = useTranslations('errors')
   const [runs, setRuns] = useState<SourcingRun[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -78,8 +80,9 @@ export function useSourcing() {
       setError(null)
       const res = await apiClient.get<RunsResponse>('/api/sourcing/runs', { token })
       setRuns(res.data)
-    } catch {
-      setError('Erreur lors du chargement des runs')
+    } catch (error) {
+      console.error('Failed to fetch sourcing runs:', error)
+      setError(tErrors('loadingRuns'))
     } finally {
       setIsLoading(false)
     }

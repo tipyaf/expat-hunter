@@ -27,8 +27,9 @@ export function useTemplates() {
       setIsLoading(true)
       const res = await apiClient.get<TemplatesResponse>('/api/templates', { token })
       setTemplates(res.data)
-    } catch { /* silent */ }
-    finally { setIsLoading(false) }
+    } catch (error) {
+      console.error('Failed to fetch templates:', error)
+    } finally { setIsLoading(false) }
   }, [token])
 
   const create = async (data: Pick<EmailTemplate, 'name' | 'subjectPattern' | 'bodyPattern' | 'isDefault'>) => {

@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/contexts/auth-context'
 import { apiClient } from '@/lib/api-client'
+import { useTranslations } from 'next-intl'
 import { useCallback, useState } from 'react'
 
 export interface AnalysisResult {
@@ -29,6 +30,7 @@ interface AnalysisStatsResponse {
 
 export function useAnalysis() {
   const { token } = useAuth()
+  const tErrors = useTranslations('errors')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [lastResult, setLastResult] = useState<AnalysisResult | null>(null)
   const [stats, setStats] = useState<AnalysisStats | null>(null)
@@ -51,7 +53,7 @@ export function useAnalysis() {
         setLastResult(res.data)
         return res.data
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Erreur lors de l\'analyse'
+        const message = err instanceof Error ? err.message : tErrors('analysis')
         setError(message)
         throw err
       } finally {
@@ -79,8 +81,8 @@ export function useAnalysis() {
     try {
       const res = await apiClient.get<AnalysisStatsResponse>('/api/analysis/stats', { token })
       setStats(res.data)
-    } catch {
-      // Silently fail — stats are non-critical
+    } catch (error) {
+      console.error('Failed to fetch analysis stats:', error)
     }
   }, [token])
 

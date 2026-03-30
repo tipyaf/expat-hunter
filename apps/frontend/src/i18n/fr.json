@@ -17,7 +17,17 @@
     "tagHint": "Appuyez sur Entrée ou virgule pour ajouter",
     "skipToContent": "Aller au contenu principal",
     "edit": "Modifier",
-    "delete": "Supprimer"
+    "delete": "Supprimer",
+    "retry": "Réessayer"
+  },
+  "errors": {
+    "loadingSearches": "Erreur lors du chargement des recherches",
+    "loadingContacts": "Erreur lors du chargement des contacts",
+    "loadingProfile": "Erreur lors du chargement du profil",
+    "loadingRuns": "Erreur lors du chargement des runs",
+    "loadingMarketSnapshot": "Erreur lors du chargement du snapshot marché",
+    "analysis": "Erreur lors de l'analyse",
+    "searchPage": "Erreur sur la page recherche"
   },
   "auth": {
     "loginTitle": "Connectez-vous à votre compte",
@@ -662,7 +672,25 @@
     "errorMessage": "Désolé, une erreur est survenue. Veuillez réessayer.",
     "welcomeMessage": "Bonjour ! Je suis votre assistant ExpatHunter. Posez-moi des questions sur l'app ou sur votre recherche d'emploi à l'étranger.",
     "actionRegenerate": "Regénérer",
-    "actionChangeTone": "Changer le ton"
+    "actionChangeTone": "Changer le ton",
+    "suggestion_emails_1": "Améliorer le ton de mes emails",
+    "suggestion_emails_2": "Meilleur moment pour envoyer",
+    "suggestion_emails_3": "Comment personnaliser mes relances ?",
+    "suggestion_suivi_1": "Conseils pour préparer mon entretien",
+    "suggestion_suivi_2": "Comment relancer après silence ?",
+    "suggestion_suivi_3": "Que faire après une offre reçue ?",
+    "suggestion_contacts_1": "Que sais-tu sur cette entreprise ?",
+    "suggestion_contacts_2": "Sponsorise-t-elle les visas ?",
+    "suggestion_contacts_3": "Comment contacter ce profil ?",
+    "suggestion_recherche_1": "Meilleurs secteurs en NZ ?",
+    "suggestion_recherche_2": "Salaires en tech à Auckland ?",
+    "suggestion_recherche_3": "Comment optimiser ma recherche ?",
+    "suggestion_default_1": "Comment lancer une recherche ?",
+    "suggestion_default_2": "Comment envoyer des emails ?",
+    "suggestion_default_3": "Comment fonctionne le kanban ?",
+    "quotaRemaining": "{remaining}/{limit} questions restantes",
+    "quotaExhausted": "Vous avez utilisé toutes vos questions gratuites",
+    "upgradeForChat": "Passer en Premium pour un chat illimité"
   },
   "thread": {
     "title": "Échanges",

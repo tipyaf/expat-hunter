@@ -60,8 +60,8 @@ export default function AiSettingsPage() {
       setSettings(res.data)
       const cacheRes = await apiClient.get<{ data: typeof cacheStats }>('/api/admin/ai-settings/cache/stats', { token })
       setCacheStats(cacheRes.data)
-    } catch {
-      // 403 = not admin
+    } catch (error) {
+      console.error('Failed to fetch AI settings:', error)
     } finally {
       setIsLoading(false)
     }
@@ -75,7 +75,8 @@ export default function AiSettingsPage() {
       const cacheRes = await apiClient.get<{ data: typeof cacheStats }>('/api/admin/ai-settings/cache/stats', { token })
       setCacheStats(cacheRes.data)
       setMessage(t('cachePurged'))
-    } catch {
+    } catch (error) {
+      console.error('Failed to purge AI cache:', error)
       setMessage(t('settingError'))
     } finally {
       setPurging(false)
@@ -106,7 +107,8 @@ export default function AiSettingsPage() {
       setMessage(t('settingSaved'))
       setEditingKey(null)
       fetchSettings()
-    } catch {
+    } catch (error) {
+      console.error('Failed to save AI setting:', error)
       setMessage(t('settingError'))
     } finally {
       setSaving(false)
@@ -304,7 +306,8 @@ export default function AiSettingsPage() {
                       try {
                         await updateAdminLimits(emailLimitsForm)
                         setMessage(t('emailLimitsSaved'))
-                      } catch {
+                      } catch (error) {
+                        console.error('Failed to save email limits:', error)
                         setMessage(tc('error'))
                       } finally {
                         setSavingEmailLimits(false)

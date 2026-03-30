@@ -71,8 +71,8 @@ export default function ContactsPage() {
     setUpdatingId(contactId)
     try {
       await updateStatus(contactId, newStatus)
-    } catch {
-      // Error handled silently for now
+    } catch (error) {
+      console.error('Failed to update contact status:', error)
     } finally {
       setUpdatingId(null)
     }

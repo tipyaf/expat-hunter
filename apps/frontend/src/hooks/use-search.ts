@@ -2,7 +2,9 @@
 
 import { useAuth } from '@/contexts/auth-context'
 import { apiClient } from '@/lib/api-client'
+import { useTranslations } from 'next-intl'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { SEARCH_POLL_INTERVAL_MS } from '@/constants/ui'
 
 export interface SearchRun {
   id: string
@@ -53,6 +55,7 @@ interface DefaultsResponse {
 
 export function useSearch() {
   const { token } = useAuth()
+  const tErrors = useTranslations('errors')
   const [runs, setRuns] = useState<SearchRun[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -70,12 +73,13 @@ export function useSearch() {
       setError(null)
       const res = await apiClient.get<RunsResponse>('/api/recherche', { token })
       setRuns(res.data)
-    } catch {
-      setError('Erreur lors du chargement des recherches')
+    } catch (error) {
+      console.error('Failed to fetch search runs:', error)
+      setError(tErrors('loadingSearches'))
     } finally {
       setIsLoading(false)
     }
-  }, [token])
+  }, [token, tErrors])
 
   useEffect(() => {
     void fetchRuns()
@@ -128,7 +132,7 @@ export function useSearch() {
     }
 
     void poll()
-    pollingRef.current = setInterval(() => void poll(), 2000)
+    pollingRef.current = setInterval(() => void poll(), SEARCH_POLL_INTERVAL_MS)
 
     return () => {
       if (pollingRef.current) {

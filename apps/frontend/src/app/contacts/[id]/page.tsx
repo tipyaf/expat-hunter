@@ -39,7 +39,7 @@ export default function ContactDetailPage({ params }: { params: Promise<{ id: st
     apiClient
       .get<{ data: ContactDetail }>(`/api/contacts/${id}`, { token })
       .then((res) => setContact(res.data))
-      .catch(() => {})
+      .catch((error) => { console.error('Failed to fetch contact detail:', error) })
       .finally(() => setIsLoading(false))
   }, [token, id])
 

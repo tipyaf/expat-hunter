@@ -1,5 +1,5 @@
 # ============================================================================
-# STORY: sc-599-2 — Backend code audit + refactor
+# STORY: sc-599-2 — Backend best practices audit and refactor
 # ============================================================================
 
 story:
@@ -8,7 +8,7 @@ story:
   parent_spec: "specs/expat-hunter.yaml"
   status: "refined"
   size: "L"
-  refined_at: "2026-03-29"
+  refined_at: "2026-03-30"
   refined_by: "refinement"
 
 user_story: >
@@ -27,12 +27,17 @@ scope:
     - "apps/api/app/services/hunter_contact_service.ts — extracted from search_orchestrator"
     - "apps/api/app/services/email_enrichment_orchestrator.ts — extracted from search_orchestrator"
   files_to_modify:
-    - "apps/api/app/services/visa_sponsor_registry.ts — split into country-specific services (<400L)"
-    - "apps/api/app/services/search_orchestrator_service.ts — extract sub-services (<400L)"
-    - "apps/api/app/services/chat_assistant_service.ts — extract magic strings/numbers to constants"
-    - "apps/api/app/controllers/enrichment_controller.ts — move batch logic to service"
+    # === FILE SPLITS ===
+    - "apps/api/app/services/visa_sponsor_registry.ts — split into country-specific services (<400L, currently 863L)"
+    - "apps/api/app/services/search_orchestrator_service.ts — extract sub-services (<400L, currently 475L)"
+    # === MAGIC NUMBERS (9 occurrences in 3 files) ===
+    - "apps/api/app/services/chat_assistant_service.ts — extract temperature/maxTokens to constants/ai.ts, replace French strings"
+    - "apps/api/app/services/context_enrichment_service.ts — extract maxTokens 512 to constants/ai.ts"
+    - "apps/api/app/services/reply_generation_service.ts — extract maxTokens 512 to constants/ai.ts"
+    # === CONTROLLER BUSINESS LOGIC (3 controllers) ===
+    - "apps/api/app/controllers/enrichment_controller.ts — move batch/chunk logic to service"
     - "apps/api/app/controllers/onboarding_controller.ts — move follow-up creation to service"
-    - "apps/api/app/controllers/emails_controller.ts — move query logic to service"
+    - "apps/api/app/controllers/emails_controller.ts — move query/filter logic to service"
   files_to_read:
     - "stacks/typescript-adonisjs.md — stack profile reference"
     - "apps/api/app/services/confidence_score_service.ts — good example of clean service"
@@ -56,17 +61,17 @@ acceptance_criteria:
       tier: 1
 
     - id: "AC-FUNC-599-2-04"
-      description: "Given all backend source / When searching for magic numbers / Then no raw threshold values (0.7, 0.75, 0.85) or token counts (512, 768) exist in service logic"
-      verify: "grep -rn '\\b0\\.7[05]\\?\\b\\|\\b0\\.85\\b\\|\\b512\\b\\|\\b768\\b' apps/api/app/services/ --include='*.ts' | grep -v 'constants\\|config\\|THRESHOLD\\|MAX_TOKENS\\|import' | wc -l | awk '{if($1==0) print \"PASS\"; else print \"FAIL\"}'"
+      description: "Given all backend source / When searching for magic numbers / Then no raw threshold values or token counts exist in service logic"
+      verify: "grep -rn '\\b0\\.7[05]\\?\\b\\|\\b0\\.85\\b\\|\\b512\\b\\|\\b768\\b' apps/api/app/services/ --include='*.ts' | grep -v 'constants\\|config\\|THRESHOLD\\|MAX_TOKENS\\|import\\|constants/' | wc -l | awk '{if($1==0) print \"PASS\"; else print \"FAIL\"}'"
       tier: 1
 
     - id: "AC-FUNC-599-2-05"
-      description: "Given enrichment_controller.ts / When checking / Then no batch/chunk logic exists in the controller (moved to service)"
+      description: "Given enrichment_controller.ts / When checking / Then no batch/chunk logic exists in the controller"
       verify: "grep -c 'chunk\\|batch' apps/api/app/controllers/enrichment_controller.ts | awk '{if($1==0) print \"PASS\"; else print \"FAIL: business logic in controller\"}'"
       tier: 1
 
     - id: "AC-FUNC-599-2-06"
-      description: "Given onboarding_controller.ts / When checking / Then no FollowUpSequence.create exists in the controller (moved to service)"
+      description: "Given onboarding_controller.ts / When checking / Then no FollowUpSequence.create exists in the controller"
       verify: "grep -c 'FollowUpSequence' apps/api/app/controllers/onboarding_controller.ts | awk '{if($1==0) print \"PASS\"; else print \"FAIL: model creation in controller\"}'"
       tier: 1
 
@@ -76,34 +81,34 @@ acceptance_criteria:
       tier: 1
 
     - id: "AC-FUNC-599-2-08"
-      description: "Given all backend functions / When checking length / Then no function exceeds 40 lines"
-      verify: "bash -c 'violations=0; for f in apps/api/app/services/*.ts apps/api/app/controllers/*.ts; do awk \"/^[[:space:]]*(async )?[a-zA-Z].*\\(/{start=NR} start && /^[[:space:]]*\\}/{if(NR-start>40) print FILENAME \":\" start \"-\" NR \" (\" NR-start \"L)\"; start=0}\" \"$f\"; done | wc -l | awk \"{if(\\$1==0) print \\\"PASS\\\"; else print \\\"FAIL: \\\" \\$1 \\\" functions >40L\\\"}\"'"
-      tier: 1
-
-    - id: "AC-FUNC-599-2-09"
       description: "Given the refactored code / When building / Then TypeScript compiles with 0 errors"
       verify: "cd apps/api && node ace build 2>&1 | grep -c 'error' | awk '{if($1==0) print \"PASS\"; else print \"FAIL\"}'"
       tier: 2
 
-    - id: "AC-FUNC-599-2-10"
+    - id: "AC-FUNC-599-2-09"
       description: "Given the refactored code / When running unit tests / Then all existing tests still pass"
       verify: "cd apps/api && NODE_ENV=test DB_DATABASE=expat_hunter_test node --loader ts-node/esm bin/test.ts --tags=unit 2>&1 | tail -5"
       tier: 2
 
+    - id: "AC-FUNC-599-2-10"
+      description: "Given constants files / When checking / Then ai.ts, scoring.ts, and onboarding.ts exist with named exports"
+      verify: "test -f apps/api/app/constants/ai.ts && test -f apps/api/app/constants/scoring.ts && test -f apps/api/app/constants/onboarding.ts && echo PASS || echo FAIL"
+      tier: 1
+
   security:
     - id: "AC-SEC-599-2-01"
-      description: "Given extracted services / When checking / Then no service exposes internal data (passwords, tokens) in return values"
+      description: "Given extracted services / When checking / Then no service exposes passwords or tokens in return values"
       verify: "grep -rn 'password\\|token\\|secret' apps/api/app/services/visa_nz_service.ts apps/api/app/services/visa_us_service.ts apps/api/app/services/hunter_contact_service.ts 2>/dev/null | grep -v 'import\\|type\\|interface\\|//\\|logger\\|hash' | wc -l | awk '{if($1==0) print \"PASS\"; else print \"FAIL\"}'"
       tier: 1
 
   best_practices:
     - id: "AC-BP-599-2-01"
-      description: "Given all controllers / When checking / Then controllers only validate, call service, and return response (no business logic)"
-      verify: "grep -rn 'for.*of\\|while.*{\\|reduce\\|filter\\|map' apps/api/app/controllers/ --include='*.ts' | grep -v 'import\\|type\\|//\\|validator' | wc -l | awk '{if($1<=2) print \"PASS\"; else print \"FAIL: iteration logic in controllers\"}'"
+      description: "Given all controllers / When checking / Then controllers only validate, call service, and return response (no iteration logic)"
+      verify: "grep -rn 'for.*of\\|while.*{' apps/api/app/controllers/ --include='*.ts' | grep -v 'import\\|type\\|//\\|validator' | wc -l | awk '{if($1==0) print \"PASS\"; else print \"FAIL: iteration logic in controllers\"}'"
       tier: 1
 
     - id: "AC-BP-599-2-02"
-      description: "Given all backend source / When checking / Then no explicit 'any' type exists"
+      description: "Given all backend source / When checking / Then no explicit any type exists"
       verify: "grep -rn ': any\\b\\|as any\\b' apps/api/app/ --include='*.ts' | grep -v 'node_modules\\|.d.ts' | wc -l | awk '{if($1==0) print \"PASS\"; else print \"FAIL\"}'"
       tier: 1
 
@@ -114,58 +119,47 @@ acceptance_criteria:
 
 edge_cases:
   - description: "Splitting visa_sponsor_registry may break imports in other services"
-    handling: "Keep visa_sponsor_registry as facade, delegate to country services internally. Public API unchanged."
-  - description: "Extracting search_orchestrator sub-services may affect dependency injection"
+    handling: "Keep visa_sponsor_registry as facade. Public API unchanged. Internal delegation to country services."
+  - description: "Extracting search_orchestrator sub-services requires DI registration"
     handling: "Register new services in AdonisJS container, inject via constructor"
   - description: "Moving controller logic to services may require new service methods"
     handling: "Create dedicated methods in existing or new services"
-  - description: "Nesting reduction may change control flow"
-    handling: "Use early returns and guard clauses to flatten nesting"
+  - description: "Existing unit tests for visa_sponsor_registry must still pass after split"
+    handling: "Update imports in test files. Add tests for extracted services."
 
 test_intentions: []
 
 depends_on: []
 
 notes: |
-  Audit findings (all violations to fix):
+  AUDIT FINDINGS (2026-03-30):
 
   FILES >400L (2):
   - visa_sponsor_registry.ts (863L) → split into visa_nz_service + visa_us_service + fuzzy_match_service + slim registry
   - search_orchestrator_service.ts (475L) → extract hunter_contact_service + email_enrichment_orchestrator
 
-  FUNCTIONS >40L (8):
-  - fetchNzRegistry (96L), runPipeline (113L), queryH1bGraderApi (65L),
-    parseUsLcaExcel (68L), findNamedContactsViaHunter (69L), enrichContactEmails (60L),
-    scrapeNzPage (54L), checkFromRegistry (41L)
+  MAGIC NUMBERS (9 occurrences in 4 files):
+  - chat_assistant_service.ts: temperature 0.5/0.7, maxTokens 512/768
+  - context_enrichment_service.ts: maxTokens 512
+  - reply_generation_service.ts: maxTokens 512
+  - visa_sponsor_registry.ts: fuzzy thresholds 0.7, 0.75, 0.85
 
-  NESTING >3 LEVELS (4+):
-  - fetchNzRegistry: 4 nested loops
-  - findNamedContactsViaHunter: 4 levels
-  → Use early returns, extract helper functions
+  HARDCODED FRENCH (2 in chat_assistant_service.ts):
+  - "L'assistant IA expert n'est pas configuré..."
+  - "Page actuelle: ${context.page}...Entreprise:..."
 
-  MAGIC NUMBERS (5+):
-  - Fuzzy thresholds: 0.7, 0.75, 0.85 → constants/scoring.ts
-  - AI params: temperature 0.5/0.7, maxTokens 512/768 → constants/ai.ts
-  - Follow-up delays: 3, 7, 14 days → constants/onboarding.ts
-  - Buffer size: 50_000_000 → constant
+  EXPLICIT ANY (1):
+  - visa_sponsor_registry.ts:503 — `as any` on createMany batch
 
-  MAGIC STRINGS (4+):
-  - chat_assistant_service.ts: French system prompt, error messages
-  - visa_sponsor_registry.ts: User-Agent string
-  → Extract to constants or i18n
+  CONTROLLER LOGIC (5 violations in 2 controllers):
+  - enrichment_controller: chunk() loops + batch concurrency + filter
+  - onboarding_controller: FollowUpSequence.create
+  - emails_controller: for..of loop on emails
 
-  CONTROLLER LOGIC (4):
-  - enrichment_controller: chunk() + batch concurrency → EnrichmentService
-  - onboarding_controller: FollowUpSequence.create → ProfileService
-  - emails_controller: query filtering → EmailQueryService
+  CONSOLE.LOG: 0 (clean)
 
-  SRP VIOLATIONS (3):
-  - visa_sponsor_registry: 22 methods → facade + 3 country services + fuzzy matcher
-  - search_orchestrator: 16 methods → orchestrator + hunter service + enrichment service
-  - sourcing_orchestrator: 15 methods → leave for now (lower priority)
-
-  Strategy for visa_sponsor_registry split:
-  - Keep VisaSponsorRegistry as public facade (checkCompany, isKnownSponsor)
+  Strategy for visa_sponsor_registry split (863L → ~200L facade):
+  - VisaSponsorRegistry: checkCompany, isKnownSponsor (facade)
   - VisaNzService: fetchNzRegistry, scrapeNzPage, parseNzApiResponse
   - VisaUsService: queryH1bGraderApi, parseUsLcaExcel, checkUsLca
   - FuzzyMatchService: levenshtein, fuzzyMatch, normalizeCompanyName

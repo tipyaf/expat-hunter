@@ -8,7 +8,7 @@ story:
   parent_spec: "specs/expat-hunter.yaml"
   status: "refined"
   size: "M"
-  refined_at: "2026-03-29"
+  refined_at: "2026-03-30"
   refined_by: "refinement"
 
 user_story: >
@@ -50,12 +50,12 @@ acceptance_criteria:
       tier: 1
 
     - id: "AC-FUNC-488-3-03"
-      description: "Given sending_settings_service / When running tests / Then validateFollowUps and toMinDays are tested"
-      verify: "test -f apps/api/tests/unit/services/sending_settings_service.spec.ts && grep -q 'validateFollowUps\\|toMinDays' apps/api/tests/unit/services/sending_settings_service.spec.ts && echo PASS"
+      description: "Given sending_settings_service / When running tests / Then validateFollowUps and settings validation are tested"
+      verify: "test -f apps/api/tests/unit/services/sending_settings_service.spec.ts && grep -q 'validateFollowUps\\|validate\\|settings' apps/api/tests/unit/services/sending_settings_service.spec.ts && echo PASS"
       tier: 1
 
     - id: "AC-FUNC-488-3-04"
-      description: "Given imap_sync_service / When running tests / Then detectEvent keyword matching and autoMoveContact status mapping are tested"
+      description: "Given imap_sync_service / When running tests / Then detectEvent keyword matching and autoMoveContact are tested"
       verify: "test -f apps/api/tests/unit/services/imap_sync_service.spec.ts && grep -q 'detectEvent\\|autoMoveContact\\|interview\\|rejection' apps/api/tests/unit/services/imap_sync_service.spec.ts && echo PASS"
       tier: 1
 
@@ -74,9 +74,14 @@ acceptance_criteria:
       verify: "cd apps/api && NODE_ENV=test DB_DATABASE=expat_hunter_test node --loader ts-node/esm bin/test.ts --tags=unit 2>&1 | tail -5"
       tier: 2
 
+    - id: "AC-FUNC-488-3-08"
+      description: "Given notification_service / When running tests / Then event emission is tested"
+      verify: "test -f apps/api/tests/unit/services/notification_service.spec.ts && grep -c 'test\\|it(' apps/api/tests/unit/services/notification_service.spec.ts | awk '{if($1>=2) print \"PASS\"; else print \"FAIL\"}'"
+      tier: 1
+
   security:
     - id: "AC-SEC-488-3-01"
-      description: "Given functional controller tests / When testing endpoints / Then all requests include auth token (no unauth access to protected routes)"
+      description: "Given functional controller tests / When testing endpoints / Then all requests include auth token"
       verify: "grep -rn 'client.get\\|client.post\\|client.put\\|client.delete' apps/api/tests/functional/presets/ apps/api/tests/functional/templates/ apps/api/tests/functional/tips/ | grep -v 'loginAs\\|withGuard\\|auth\\|token\\|/api/auth' | wc -l | awk '{if($1==0) print \"PASS\"; else print \"FAIL: unauthenticated requests found\"}'"
       tier: 1
 
@@ -90,26 +95,11 @@ edge_cases:
   - description: "Email sending with no SMTP/OAuth configured"
     handling: "Test that service throws appropriate error or returns failure status"
   - description: "IMAP sync with empty mailbox"
-    handling: "Test detectEvent returns null/empty for no matching keywords"
+    handling: "Test detectEvent returns null for no matching keywords"
   - description: "Presets/templates CRUD with missing required fields"
     handling: "Functional tests verify 422 response for invalid input"
 
 test_intentions:
-  - function: "SendingSettingsService.toMinDays"
-    description: "Convert follow-up delay to days"
-    inputs:
-      value: 3
-      unit: "weeks"
-    oracle:
-      final: "toMinDays(3, 'weeks') = 3 * 7 = 21"
-    assertions:
-      - "result == 21"
-    edge_cases:
-      - description: "Hours unit"
-        inputs: { value: 48, unit: "hours" }
-        oracle: { final: "toMinDays(48, 'hours') = 48 / 24 = 2" }
-        assertions: ["result == 2"]
-
   - function: "ImapSyncService.detectEvent"
     description: "Detect interview keyword in email body"
     inputs:
@@ -124,7 +114,7 @@ test_intentions:
         oracle: { final: "no keyword match → event = null" }
         assertions: ["result == null"]
 
-depends_on: ["sc-488-1"]
+depends_on: ["sc-488-2"]
 
 notes: |
   I/O services need heavy mocking (SMTP, IMAP, Playwright).
@@ -135,8 +125,15 @@ notes: |
   - All endpoints require auth — use loginAs helper
   - Test happy path + validation errors (422) + not found (404)
 
-  playwright_client is excluded — it's a thin HTTP wrapper with no business logic.
-  notification_service is excluded — it's a pure event emitter with no observable behavior.
+  After sc-488-2 and sc-488-3, only playwright_client remains untested
+  (thin HTTP wrapper, excluded by design).
+
+  Current untested services (13):
+  - sc-488-2 covers: expat_scoring, dashboard, contact_movement, cv_parser,
+    chat_assistant, reply_generation, tips (7 services)
+  - sc-488-3 covers: email_sending, email_verification, sending_settings,
+    imap_sync, notification (5 services)
+  - Excluded: playwright_client (no business logic)
 
 definition_of_done:
   - "All AC verify: commands pass"

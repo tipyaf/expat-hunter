@@ -1,19 +1,21 @@
 # ============================================================================
 # STORY: sc-488-2 — Unit tests for core business logic services
+# (includes sc-488-1 audit — merged)
 # ============================================================================
 
 story:
   id: "sc-488-2"
-  title: "Write unit tests for core business logic services"
+  title: "Audit test quality + write unit tests for core business logic services"
   parent_spec: "specs/expat-hunter.yaml"
   status: "refined"
   size: "L"
-  refined_at: "2026-03-29"
+  refined_at: "2026-03-30"
   refined_by: "refinement"
 
 user_story: >
   As a developer, I want comprehensive unit tests for all services containing
-  business logic, so that regressions are caught before deployment.
+  business logic, and a clear audit of existing test quality,
+  so that regressions are caught before deployment and the test suite is trustworthy.
 
 scope:
   files_to_create:
@@ -24,7 +26,8 @@ scope:
     - "apps/api/tests/unit/services/chat_assistant_service.spec.ts — intent detection, FAQ matching"
     - "apps/api/tests/unit/services/reply_generation_service.spec.ts — prompt construction"
     - "apps/api/tests/unit/services/tips_service.spec.ts — conditional tip logic"
-  files_to_modify: []
+  files_to_modify:
+    - "apps/api/tests/unit/ — fix any broken imports or skip/todo without BUG: comments (audit findings)"
   files_to_read:
     - "apps/api/app/services/expat_scoring_service.ts"
     - "apps/api/app/services/dashboard_service.ts"
@@ -38,18 +41,30 @@ scope:
 acceptance_criteria:
 
   functional:
+    # === AUDIT (ex sc-488-1) ===
+    - id: "AC-FUNC-488-2-00"
+      description: "Given existing unit tests / When running the suite / Then all tests execute without module resolution errors and pass"
+      verify: "cd apps/api && NODE_ENV=test DB_DATABASE=expat_hunter_test node --loader ts-node/esm bin/test.ts --tags=unit 2>&1 | tail -5"
+      tier: 2
+
+    - id: "AC-FUNC-488-2-00b"
+      description: "Given all existing test files / When checking / Then no tests use .skip() or .todo() without a BUG: comment"
+      verify: "grep -rn '\\.skip\\|test\\.todo\\|it\\.todo' apps/api/tests/ | grep -v 'BUG:' | wc -l | awk '{if($1==0) print \"PASS\"; else print \"FAIL\"}'"
+      tier: 1
+
+    # === NEW TESTS ===
     - id: "AC-FUNC-488-2-01"
       description: "Given expat_scoring_service / When running tests / Then scoreVisa, scoreRole, scoreHiring, scoreExpatFriendly, scoreMomentum each have at least 2 test cases"
       verify: "grep -c 'test\\|it(' apps/api/tests/unit/services/expat_scoring_service.spec.ts | awk '{if($1>=10) print \"PASS\"; else print \"FAIL: need 10+ tests\"}'"
       tier: 1
 
     - id: "AC-FUNC-488-2-02"
-      description: "Given dashboard_service / When running tests / Then response rate calculation and aggregation queries are tested"
+      description: "Given dashboard_service / When running tests / Then response rate calculation and aggregation are tested"
       verify: "test -f apps/api/tests/unit/services/dashboard_service.spec.ts && grep -q 'responseRate\\|response_rate\\|emailsSent\\|replies' apps/api/tests/unit/services/dashboard_service.spec.ts && echo PASS"
       tier: 1
 
     - id: "AC-FUNC-488-2-03"
-      description: "Given contact_movement_service / When running tests / Then isBlocked, getBlockedIds, toMinDays are tested with edge cases"
+      description: "Given contact_movement_service / When running tests / Then state transitions and edge cases are tested"
       verify: "test -f apps/api/tests/unit/services/contact_movement_service.spec.ts && grep -c 'test\\|it(' apps/api/tests/unit/services/contact_movement_service.spec.ts | awk '{if($1>=5) print \"PASS\"; else print \"FAIL\"}'"
       tier: 1
 
@@ -59,7 +74,7 @@ acceptance_criteria:
       tier: 1
 
     - id: "AC-FUNC-488-2-05"
-      description: "Given tips_service / When running tests / Then all 4 tip methods (dashboard, thread, profile, kanban) are tested with multiple stat variations"
+      description: "Given tips_service / When running tests / Then all 4 tip methods are tested with multiple stat variations"
       verify: "test -f apps/api/tests/unit/services/tips_service.spec.ts && grep -c 'test\\|it(' apps/api/tests/unit/services/tips_service.spec.ts | awk '{if($1>=8) print \"PASS\"; else print \"FAIL\"}'"
       tier: 1
 
@@ -71,6 +86,11 @@ acceptance_criteria:
     - id: "AC-FUNC-488-2-07"
       description: "Given cv_parser_service / When running tests / Then file type routing (PDF, DOCX, unsupported) is tested"
       verify: "test -f apps/api/tests/unit/services/cv_parser_service.spec.ts && grep -q 'pdf\\|docx\\|unsupported' apps/api/tests/unit/services/cv_parser_service.spec.ts && echo PASS"
+      tier: 1
+
+    - id: "AC-FUNC-488-2-08"
+      description: "Given reply_generation_service / When running tests / Then prompt construction with preset parameters is tested"
+      verify: "test -f apps/api/tests/unit/services/reply_generation_service.spec.ts && grep -c 'test\\|it(' apps/api/tests/unit/services/reply_generation_service.spec.ts | awk '{if($1>=3) print \"PASS\"; else print \"FAIL\"}'"
       tier: 1
 
   security: []
@@ -89,6 +109,11 @@ acceptance_criteria:
     - id: "AC-BP-488-2-03"
       description: "Given all new tests / When reviewing / Then no test uses .skip() or .todo() without a BUG: comment"
       verify: "grep -rn '\\.skip\\|test\\.todo' apps/api/tests/unit/services/expat_scoring_service.spec.ts apps/api/tests/unit/services/dashboard_service.spec.ts apps/api/tests/unit/services/tips_service.spec.ts | grep -v 'BUG:' | wc -l | awk '{if($1==0) print \"PASS\"; else print \"FAIL\"}'"
+      tier: 1
+
+    - id: "AC-BP-488-2-04"
+      description: "Given the audit / When listing untested services / Then the PR description documents which services remain untested (deferred to sc-488-3)"
+      verify: "bash -c 'for f in apps/api/app/services/*.ts; do base=$(basename \"$f\" .ts); if ! find apps/api/tests -name \"*${base}*\" 2>/dev/null | grep -q .; then echo \"UNTESTED: $base\"; fi; done | wc -l'"
       tier: 1
 
 edge_cases:
@@ -151,17 +176,27 @@ test_intentions:
         oracle: { final: "toMinDays(1, 'months') = 30" }
         assertions: ["result == 30"]
 
-depends_on: ["sc-488-1"]
+depends_on: []
 
 notes: |
+  MERGED: this story now includes the audit work from sc-488-1.
+  The shared package builds cleanly (dist/ exists). No module resolution blocker.
+
+  Current state (2026-03-30):
+  - 34 unit test files, ~463 test cases
+  - 13/34 services untested (38%)
+  - This story covers 7 of those 13 (core business logic)
+  - Remaining 6 (I/O services) are in sc-488-3
+
   Priority order for implementation:
-  1. expat_scoring_service — complex formulas, highest risk
-  2. tips_service — pure logic, no mocking needed, quick win
-  3. chat_assistant_service — string analysis, moderate complexity
-  4. contact_movement_service — state transitions
-  5. dashboard_service — DB aggregation (mock queries)
-  6. cv_parser_service — file routing
-  7. reply_generation_service — prompt templates
+  1. Run existing suite first, fix any skip/todo violations (audit)
+  2. expat_scoring_service — complex formulas, highest risk
+  3. tips_service — pure logic, no mocking needed, quick win
+  4. chat_assistant_service — string analysis, moderate complexity
+  5. contact_movement_service — state transitions
+  6. dashboard_service — DB aggregation (mock queries)
+  7. cv_parser_service — file routing
+  8. reply_generation_service — prompt templates
 
   Pattern: follow existing test style in confidence_score_service.spec.ts.
   All tests must use Japa test runner (not Vitest) for backend.

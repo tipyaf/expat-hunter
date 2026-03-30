@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/contexts/auth-context'
 import { apiClient } from '@/lib/api-client'
+import { useTranslations } from 'next-intl'
 import { useCallback, useEffect, useState } from 'react'
 
 export interface Contact {
@@ -56,6 +57,7 @@ export type ContactStatus = (typeof CONTACT_STATUSES)[number]
 
 export function useContacts(filters?: { status?: string; sourcingRunId?: string }) {
   const { token } = useAuth()
+  const tErrors = useTranslations('errors')
   const [contacts, setContacts] = useState<Contact[]>([])
   const [meta, setMeta] = useState<ContactsResponse['meta'] | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -81,8 +83,9 @@ export function useContacts(filters?: { status?: string; sourcingRunId?: string 
       setContacts(res.data)
       setMeta(res.meta)
       setPage(pageNum)
-    } catch {
-      setError('Erreur lors du chargement des contacts')
+    } catch (error) {
+      console.error('Failed to fetch contacts:', error)
+      setError(tErrors('loadingContacts'))
     } finally {
       setIsLoading(false)
     }

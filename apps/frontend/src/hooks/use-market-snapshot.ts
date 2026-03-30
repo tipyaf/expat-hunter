@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/contexts/auth-context'
 import { apiClient } from '@/lib/api-client'
+import { useTranslations } from 'next-intl'
 import { useCallback, useEffect, useState } from 'react'
 
 export interface MarketSnapshot {
@@ -21,6 +22,7 @@ interface SnapshotResponse {
 
 export function useMarketSnapshot(country: string | null, sector?: string | null) {
   const { token } = useAuth()
+  const tErrors = useTranslations('errors')
   const [snapshot, setSnapshot] = useState<MarketSnapshot | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -44,8 +46,9 @@ export function useMarketSnapshot(country: string | null, sector?: string | null
         { token },
       )
       setSnapshot(res.data)
-    } catch {
-      setError('Erreur lors du chargement du snapshot marché')
+    } catch (error) {
+      console.error('Failed to fetch market snapshot:', error)
+      setError(tErrors('loadingMarketSnapshot'))
     } finally {
       setIsLoading(false)
     }

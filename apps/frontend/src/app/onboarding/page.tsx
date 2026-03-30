@@ -1,14 +1,14 @@
 'use client'
 
-import { Button } from '@/components/ui/button'
-import { CountrySelect } from '@/components/ui/country-select'
-import { TagInput } from '@/components/ui/tag-input'
 import { useAuth } from '@/contexts/auth-context'
 import { apiClient } from '@/lib/api-client'
 import { useProfile } from '@/hooks/use-profile'
 import { useRouter } from 'next/navigation'
 import { type FormEvent, useCallback, useEffect, useRef, useState } from 'react'
 import { useTranslations } from 'next-intl'
+import { OnboardingStep1 } from './onboarding-step1'
+import { OnboardingStep2 } from './onboarding-step2'
+import { OnboardingStep3 } from './onboarding-step3'
 
 interface OnboardingStepResponse {
   step: number
@@ -33,6 +33,8 @@ interface RefineMessage {
   content: string
 }
 
+const TOTAL_STEPS = 3
+
 export default function OnboardingPage() {
   const { user, token, isLoading: authLoading } = useAuth()
   const { profile, isLoading: profileLoading, uploadCv, refetch } = useProfile()
@@ -41,33 +43,23 @@ export default function OnboardingPage() {
   const tc = useTranslations('common')
 
   const [currentStep, setCurrentStep] = useState(1)
-  const TOTAL_STEPS = 3
-
-  // Step 1 state
   const [fullName, setFullName] = useState('')
   const [targetCountries, setTargetCountries] = useState<string[]>([])
   const [targetSectors, setTargetSectors] = useState<string[]>([])
   const [targetRoles, setTargetRoles] = useState<string[]>([])
-
-  // Step 3 state
   const [experienceYears, setExperienceYears] = useState(0)
   const [skills, setSkills] = useState<string[]>([])
-
-  // CV state
   const [cvUploading, setCvUploading] = useState(false)
   const [cvMessage, setCvMessage] = useState('')
-  const hasCv = Boolean(profile?.cvText)
-
-  // Refine chat state
   const [refineMessages, setRefineMessages] = useState<RefineMessage[]>([])
   const [refineInput, setRefineInput] = useState('')
   const [refineSending, setRefineSending] = useState(false)
   const chatEndRef = useRef<HTMLDivElement>(null)
-
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState('')
 
-  // Pre-fill from existing profile
+  const hasCv = Boolean(profile?.cvText)
+
   useEffect(() => {
     if (profile) {
       setSkills(profile.skills)
@@ -79,19 +71,15 @@ export default function OnboardingPage() {
   }, [profile])
 
   useEffect(() => {
-    if (user) {
-      setFullName(user.fullName ?? '')
-    }
+    if (user) setFullName(user.fullName ?? '')
   }, [user])
 
-  // Redirect if already onboarded
   useEffect(() => {
     if (!authLoading && !profileLoading && profile?.onboardingCompleted) {
       router.replace('/')
     }
   }, [authLoading, profileLoading, profile, router])
 
-  // Scroll chat to bottom
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [refineMessages])
@@ -129,14 +117,12 @@ export default function OnboardingPage() {
       try {
         await apiClient.post<OnboardingStepResponse>(
           '/api/onboarding',
-          {
-            step: 1,
-            data: { fullName, targetCountries, targetSectors, targetRoles },
-          },
+          { step: 1, data: { fullName, targetCountries, targetSectors, targetRoles } },
           { token },
         )
         setCurrentStep(2)
-      } catch {
+      } catch (err) {
+        console.error('Onboarding step 1 failed:', err)
         setError(tc('genericError'))
       } finally {
         setIsSubmitting(false)
@@ -144,10 +130,6 @@ export default function OnboardingPage() {
     },
     [token, fullName, targetCountries, targetSectors, targetRoles, tc],
   )
-
-  const handleStep2Skip = useCallback(() => {
-    setCurrentStep(3)
-  }, [])
 
   const handleStep2Next = useCallback(async () => {
     if (!token) return
@@ -158,8 +140,8 @@ export default function OnboardingPage() {
         { step: 2, data: {} },
         { token },
       )
-    } catch {
-      // Non-critical
+    } catch (err) {
+      console.error('Onboarding step 2 failed:', err)
     } finally {
       setIsSubmitting(false)
     }
@@ -182,7 +164,8 @@ export default function OnboardingPage() {
           await refetch()
           router.replace('/')
         }
-      } catch {
+      } catch (err) {
+        console.error('Onboarding step 3 failed:', err)
         setError(tc('genericError'))
       } finally {
         setIsSubmitting(false)
@@ -206,7 +189,8 @@ export default function OnboardingPage() {
           { token },
         )
         setRefineMessages((prev) => [...prev, { role: 'assistant', content: res.message }])
-      } catch {
+      } catch (err) {
+        console.error('Onboarding refine failed:', err)
         setRefineMessages((prev) => [
           ...prev,
           { role: 'assistant', content: tc('genericError') },
@@ -231,13 +215,11 @@ export default function OnboardingPage() {
   return (
     <div className="min-h-screen bg-[var(--color-bg-light)] flex items-start justify-center py-12 px-4">
       <div className="w-full max-w-2xl">
-        {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-primary mb-2">{t('title')}</h1>
           <p className="text-[var(--color-text-muted)]">{t('subtitle')}</p>
         </div>
 
-        {/* Progress bar */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-[var(--color-text-muted)]">
@@ -262,212 +244,52 @@ export default function OnboardingPage() {
           </div>
         </div>
 
-        {/* Step 1 */}
         {currentStep === 1 && (
-          <form
+          <OnboardingStep1
+            fullName={fullName}
+            targetCountries={targetCountries}
+            targetSectors={targetSectors}
+            targetRoles={targetRoles}
+            isSubmitting={isSubmitting}
+            error={error}
+            onFullNameChange={setFullName}
+            onTargetCountriesChange={setTargetCountries}
+            onTargetSectorsChange={setTargetSectors}
+            onTargetRolesChange={setTargetRoles}
             onSubmit={handleStep1}
-            className="bg-[var(--color-surface-light)] rounded-xl border border-[var(--color-border)] p-6 space-y-5"
-          >
-            <h2 className="text-xl font-semibold">{t('step1Title')}</h2>
-
-            <div>
-              <label htmlFor="fullName" className="block text-sm font-medium mb-1">
-                {t('fullName')}
-              </label>
-              <input
-                id="fullName"
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                className="w-full rounded-lg border border-[var(--color-border)] bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
-                placeholder="Jean Dupont"
-              />
-            </div>
-
-            <CountrySelect
-              label={t('targetCountries')}
-              value={targetCountries}
-              onChange={setTargetCountries}
-            />
-
-            <TagInput
-              label={t('targetSectors')}
-              value={targetSectors}
-              onChange={setTargetSectors}
-              placeholder="Tech, Finance..."
-            />
-
-            <TagInput
-              label={t('targetRoles')}
-              value={targetRoles}
-              onChange={setTargetRoles}
-              placeholder="Backend Developer, CTO..."
-            />
-
-            {error && (
-              <p className="text-sm text-[var(--color-error)]">{error}</p>
-            )}
-
-            <div className="flex justify-end">
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? tc('saving') : t('next')}
-              </Button>
-            </div>
-          </form>
+          />
         )}
 
-        {/* Step 2 */}
         {currentStep === 2 && (
-          <div className="bg-[var(--color-surface-light)] rounded-xl border border-[var(--color-border)] p-6 space-y-5">
-            <h2 className="text-xl font-semibold">{t('step2Title')}</h2>
-
-            {hasCv ? (
-              <p className="text-sm text-primary font-medium">
-                {t('cvParsed')}
-              </p>
-            ) : (
-              <p className="text-sm text-[var(--color-text-muted)]">
-                {t('cvUpload')}
-              </p>
-            )}
-
-            {cvMessage && (
-              <p className="text-sm text-primary">{cvMessage}</p>
-            )}
-
-            <label
-              htmlFor="cv-onboarding"
-              className="inline-flex cursor-pointer items-center rounded-lg border border-[var(--color-border)] px-4 py-2 text-sm font-medium hover:bg-primary/5 transition-colors"
-            >
-              {cvUploading ? tc('saving') : t('cvUpload')}
-              <input
-                id="cv-onboarding"
-                type="file"
-                accept=".pdf,.txt"
-                onChange={handleCvUpload}
-                className="hidden"
-                disabled={cvUploading}
-              />
-            </label>
-
-            <div className="flex justify-between pt-2">
-              <button
-                type="button"
-                onClick={() => setCurrentStep(1)}
-                className="text-sm text-[var(--color-text-muted)] hover:text-primary"
-              >
-                {t('back')}
-              </button>
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={handleStep2Skip}
-                  className="text-sm text-[var(--color-text-muted)] hover:text-primary"
-                >
-                  {t('step2Skip')}
-                </button>
-                <Button type="button" onClick={handleStep2Next} disabled={isSubmitting}>
-                  {t('next')}
-                </Button>
-              </div>
-            </div>
-          </div>
+          <OnboardingStep2
+            hasCv={hasCv}
+            cvUploading={cvUploading}
+            cvMessage={cvMessage}
+            isSubmitting={isSubmitting}
+            onCvUpload={handleCvUpload}
+            onBack={() => setCurrentStep(1)}
+            onSkip={() => setCurrentStep(3)}
+            onNext={handleStep2Next}
+          />
         )}
 
-        {/* Step 3 */}
         {currentStep === 3 && (
-          <form
+          <OnboardingStep3
+            experienceYears={experienceYears}
+            skills={skills}
+            refineMessages={refineMessages}
+            refineInput={refineInput}
+            refineSending={refineSending}
+            chatEndRef={chatEndRef}
+            isSubmitting={isSubmitting}
+            error={error}
+            onExperienceChange={setExperienceYears}
+            onSkillsChange={setSkills}
+            onRefineInputChange={setRefineInput}
+            onRefineSubmit={handleRefineSubmit}
+            onBack={() => setCurrentStep(2)}
             onSubmit={handleStep3}
-            className="bg-[var(--color-surface-light)] rounded-xl border border-[var(--color-border)] p-6 space-y-5"
-          >
-            <h2 className="text-xl font-semibold">{t('step3Title')}</h2>
-
-            <div>
-              <label htmlFor="experienceYears" className="block text-sm font-medium mb-1">
-                {t('experienceYears')}
-              </label>
-              <input
-                id="experienceYears"
-                type="number"
-                min={0}
-                max={50}
-                value={experienceYears}
-                onChange={(e) => setExperienceYears(Number.parseInt(e.target.value, 10) || 0)}
-                className="w-full rounded-lg border border-[var(--color-border)] bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
-
-            <TagInput
-              label={t('skills')}
-              value={skills}
-              onChange={setSkills}
-              placeholder="TypeScript, React, Node.js..."
-            />
-
-            {/* IA Refinement chat */}
-            <div className="border border-[var(--color-border)] rounded-lg p-4">
-              <h3 className="text-sm font-semibold mb-1">{t('refineTitle')}</h3>
-              <p className="text-xs text-[var(--color-text-muted)] mb-3">{t('refineSubtitle')}</p>
-
-              <div className="min-h-[80px] max-h-48 overflow-y-auto space-y-2 mb-3">
-                {refineMessages.map((msg, i) => (
-                  <div
-                    key={i}
-                    className={`text-xs rounded-lg px-3 py-2 ${
-                      msg.role === 'user'
-                        ? 'bg-primary/10 text-primary ml-4'
-                        : 'bg-[var(--color-bg-light)] text-[var(--color-text)] mr-4'
-                    }`}
-                  >
-                    {msg.content}
-                  </div>
-                ))}
-                <div ref={chatEndRef} />
-              </div>
-
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={refineInput}
-                  onChange={(e) => setRefineInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault()
-                      void handleRefineSubmit(e as unknown as FormEvent)
-                    }
-                  }}
-                  placeholder="Demandez de l'aide à l'IA..."
-                  className="flex-1 rounded-lg border border-[var(--color-border)] bg-transparent px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-primary"
-                  disabled={refineSending}
-                />
-                <button
-                  type="button"
-                  onClick={(e) => void handleRefineSubmit(e as unknown as FormEvent)}
-                  disabled={refineSending || !refineInput.trim()}
-                  className="rounded-lg bg-primary/10 px-3 py-2 text-xs text-primary font-medium hover:bg-primary/20 disabled:opacity-50"
-                >
-                  →
-                </button>
-              </div>
-            </div>
-
-            {error && (
-              <p className="text-sm text-[var(--color-error)]">{error}</p>
-            )}
-
-            <div className="flex justify-between pt-2">
-              <button
-                type="button"
-                onClick={() => setCurrentStep(2)}
-                className="text-sm text-[var(--color-text-muted)] hover:text-primary"
-              >
-                {t('back')}
-              </button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? tc('saving') : t('finish')}
-              </Button>
-            </div>
-          </form>
+          />
         )}
       </div>
     </div>

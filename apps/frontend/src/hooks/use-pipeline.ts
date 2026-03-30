@@ -57,8 +57,8 @@ export function usePipeline() {
       setIsLoading(true)
       const res = await apiClient.get<BoardResponse>('/api/pipeline', { token })
       setColumns(res.data)
-    } catch {
-      // Error handled silently
+    } catch (error) {
+      console.error('Failed to fetch pipeline board:', error)
     } finally {
       setIsLoading(false)
     }
@@ -69,8 +69,8 @@ export function usePipeline() {
     try {
       const res = await apiClient.get<StatsResponse>('/api/pipeline/stats', { token })
       setStats(res.data)
-    } catch {
-      // Stats are non-critical
+    } catch (error) {
+      console.error('Failed to fetch pipeline stats:', error)
     }
   }, [token])
 

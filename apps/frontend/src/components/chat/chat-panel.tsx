@@ -22,32 +22,34 @@ interface ChatPanelProps {
   quota?: ChatQuota | null
 }
 
-const PAGE_SUGGESTIONS: Record<string, string[]> = {
-  emails: [
-    'Améliorer le ton de mes emails',
-    'Meilleur moment pour envoyer',
-    'Comment personnaliser mes relances ?',
-  ],
-  suivi: [
-    'Conseils pour préparer mon entretien',
-    'Comment relancer après silence ?',
-    'Que faire après une offre reçue ?',
-  ],
-  contacts: [
-    'Que sais-tu sur cette entreprise ?',
-    'Sponsorise-t-elle les visas ?',
-    'Comment contacter ce profil ?',
-  ],
-  recherche: [
-    'Meilleurs secteurs en NZ ?',
-    'Salaires en tech à Auckland ?',
-    'Comment optimiser ma recherche ?',
-  ],
-  default: [
-    'Comment lancer une recherche ?',
-    'Comment envoyer des emails ?',
-    'Comment fonctionne le kanban ?',
-  ],
+function getPageSuggestions(t: (key: string) => string): Record<string, string[]> {
+  return {
+    emails: [
+      t('suggestion_emails_1'),
+      t('suggestion_emails_2'),
+      t('suggestion_emails_3'),
+    ],
+    suivi: [
+      t('suggestion_suivi_1'),
+      t('suggestion_suivi_2'),
+      t('suggestion_suivi_3'),
+    ],
+    contacts: [
+      t('suggestion_contacts_1'),
+      t('suggestion_contacts_2'),
+      t('suggestion_contacts_3'),
+    ],
+    recherche: [
+      t('suggestion_recherche_1'),
+      t('suggestion_recherche_2'),
+      t('suggestion_recherche_3'),
+    ],
+    default: [
+      t('suggestion_default_1'),
+      t('suggestion_default_2'),
+      t('suggestion_default_3'),
+    ],
+  }
 }
 
 function ModeBadge({ mode }: { mode: ChatMode }) {
@@ -75,16 +77,13 @@ function LoadingDots() {
   return (
     <div className="flex items-center gap-1 px-4 py-2">
       <span
-        className="h-2 w-2 rounded-full bg-[var(--color-text-muted)] animate-bounce"
-        style={{ animationDelay: '0ms' }}
+        className="h-2 w-2 rounded-full bg-[var(--color-text-muted)] animate-bounce [animation-delay:0ms]"
       />
       <span
-        className="h-2 w-2 rounded-full bg-[var(--color-text-muted)] animate-bounce"
-        style={{ animationDelay: '150ms' }}
+        className="h-2 w-2 rounded-full bg-[var(--color-text-muted)] animate-bounce [animation-delay:150ms]"
       />
       <span
-        className="h-2 w-2 rounded-full bg-[var(--color-text-muted)] animate-bounce"
-        style={{ animationDelay: '300ms' }}
+        className="h-2 w-2 rounded-full bg-[var(--color-text-muted)] animate-bounce [animation-delay:300ms]"
       />
     </div>
   )
@@ -109,7 +108,8 @@ export function ChatPanel({
       ? (messages.findLast((m) => m.mode)?.mode ?? 'support')
       : 'support'
 
-  const suggestions = PAGE_SUGGESTIONS[context.page] ?? PAGE_SUGGESTIONS['default']
+  const pageSuggestions = getPageSuggestions(t)
+  const suggestions = pageSuggestions[context.page] ?? pageSuggestions['default']
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -266,7 +266,7 @@ export function ChatPanel({
         {quota && quota.remaining !== null && (
           <div className={`mb-2 text-xs text-center ${quota.remaining <= 3 ? 'text-[var(--color-error)] font-medium' : 'text-[var(--color-text-muted)]'}`}>
             {quota.remaining > 0
-              ? t('quotaRemaining', { remaining: quota.remaining, limit: quota.limit })
+              ? t('quotaRemaining', { remaining: quota.remaining, limit: quota.limit ?? 0 })
               : t('quotaExhausted')}
           </div>
         )}

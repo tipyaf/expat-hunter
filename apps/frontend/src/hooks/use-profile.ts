@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/contexts/auth-context'
 import { apiClient } from '@/lib/api-client'
+import { useTranslations } from 'next-intl'
 import { useCallback, useEffect, useState } from 'react'
 
 export interface CandidateProfile {
@@ -48,6 +49,7 @@ export interface UpdateProfileData {
 
 export function useProfile() {
   const { token } = useAuth()
+  const tErrors = useTranslations('errors')
   const [profile, setProfile] = useState<CandidateProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -62,8 +64,9 @@ export function useProfile() {
       setError(null)
       const res = await apiClient.get<ProfileResponse>('/api/profile', { token })
       setProfile(res.data)
-    } catch {
-      setError('Erreur lors du chargement du profil')
+    } catch (error) {
+      console.error('Failed to fetch profile:', error)
+      setError(tErrors('loadingProfile'))
     } finally {
       setIsLoading(false)
     }
