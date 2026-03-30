@@ -337,6 +337,7 @@ test.group('VisaSponsorRegistryService — NZ real-site integration', (group) =>
     !!process.env.PLAYWRIGHT_SERVER_URL && !!process.env.PLAYWRIGHT_SERVER_TOKEN
 
   group.tap((t) => {
+    // BUG: requires Playwright server credentials — skipped in CI until infra is provisioned
     if (!hasCredentials) t.skip(true, 'PLAYWRIGHT_SERVER_URL or PLAYWRIGHT_SERVER_TOKEN not set')
   })
 
