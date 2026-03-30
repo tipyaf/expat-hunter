@@ -1,0 +1,136 @@
+story:
+  id: "sc-679-2"
+  title: "Chat assistant and market snapshot locale support"
+  parent_spec: "specs/expat-hunter.yaml"
+  status: "refined"
+  size: "S"
+  refined_at: "2026-03-30"
+  refined_by: "refinement"
+
+user_story: >
+  As a user with English selected in settings,
+  I want the chat assistant responses and market snapshot content to be in English,
+  so that the entire interface is consistently in my preferred language.
+
+scope:
+  files_to_modify:
+    - path: "apps/api/app/constants/locale.ts"
+      reason: "Already created by sc-679-1 — verify LOCALE_NAMES exported correctly (read-only if sc-679-1 is merged first, modify if not)"
+    - path: "apps/api/app/services/chat_assistant_service.ts"
+      reason: "Add locale param to getSupportResponse() and getExpertResponse(). Inject language instruction from LOCALE_NAMES into both system prompts."
+    - path: "apps/api/app/controllers/chat_controller.ts"
+      reason: "Pass user.locale to chatService.chat()"
+    - path: "apps/api/app/services/market_snapshot_service.ts"
+      reason: "Add lang param to getSnapshot() and getStaticMarketData(). Add English translations of all static strings. Cache key includes lang."
+    - path: "apps/api/app/controllers/market_controller.ts"
+      reason: "Read ?lang query param (fallback: user.locale), pass to service"
+    - path: "apps/frontend/src/hooks/use-market-snapshot.ts"
+      reason: "Add lang query param derived from useLocale() (next-intl) to the GET /api/market/snapshot request"
+
+  files_to_read:
+    - path: "apps/api/app/constants/locale.ts"
+      reason: "Import LOCALE_NAMES (created by sc-679-1)"
+    - path: "apps/frontend/src/i18n/config.ts"
+      reason: "Supported locales list — use same values in ?lang param"
+
+acceptance_criteria:
+  functional:
+    - id: "AC-FUNC-679-2-01"
+      description: "Given locale='en' / When chat assistant getSupportResponse is called / Then the system prompt includes the language instruction derived from LOCALE_NAMES"
+      verify: "grep -n 'LOCALE_NAMES\\|language.*name\\|Respond in' apps/api/app/services/chat_assistant_service.ts | head -8"
+      tier: 1
+
+    - id: "AC-FUNC-679-2-02"
+      description: "Given locale='en' / When getExpertResponse is called / Then the existing 'Respond in the user\\'s language' instruction is replaced by an explicit locale-based instruction"
+      verify: "grep -n 'LOCALE_NAMES\\|Respond in.*English\\|languageName' apps/api/app/services/chat_assistant_service.ts | head -5"
+      tier: 1
+
+    - id: "AC-FUNC-679-2-03"
+      description: "Given a chat request / When the controller processes it / Then user.locale is passed to the chat service"
+      verify: "grep 'user.locale' apps/api/app/controllers/chat_controller.ts"
+      tier: 1
+
+    - id: "AC-FUNC-679-2-04"
+      description: "Given ?lang=en / When GET /api/market/snapshot is called / Then the response trend, bestPeriod, and insights are in English"
+      verify: "curl -s 'http://localhost:3333/api/market/snapshot?country=NZ&lang=en' -H 'Authorization: Bearer $TOKEN' | grep -iE 'demand|strong|february|march'"
+      tier: 2
+
+    - id: "AC-FUNC-679-2-05"
+      description: "Given no ?lang param / When GET /api/market/snapshot is called / Then user.locale is used as default language"
+      verify: "grep -n 'user.locale\\|lang.*locale\\|locale.*lang' apps/api/app/controllers/market_controller.ts | head -5"
+      tier: 1
+
+    - id: "AC-FUNC-679-2-06"
+      description: "Given locale='en' / When the frontend fetches the market snapshot / Then ?lang=en is included in the request URL"
+      verify: "grep -n 'lang\\|locale\\|useLocale' apps/frontend/src/hooks/use-market-snapshot.ts | head -8"
+      tier: 1
+
+    - id: "AC-FUNC-679-2-07"
+      description: "Given ?lang=fr / When GET /api/market/snapshot is called / Then the French static content is returned (non-regression)"
+      verify: "curl -s 'http://localhost:3333/api/market/snapshot?country=NZ&lang=fr' -H 'Authorization: Bearer $TOKEN' | grep -iE 'demande|forte|f.vrier'"
+      tier: 2
+
+  security:
+    - id: "AC-SEC-679-2-01"
+      description: "The lang query param is sanitized — only accepted values are those present in LOCALE_NAMES keys. Unknown values fall back to 'fr'. No injection possible."
+      verify: "grep -E 'LOCALE_NAMES\\[|lang.*fallback|includes.*lang|sanitize.*lang' apps/api/app/controllers/market_controller.ts apps/api/app/services/market_snapshot_service.ts | head -5"
+      tier: 1
+
+  best_practices:
+    - id: "AC-BP-679-2-01"
+      description: "Both chat_assistant_service.ts and market_snapshot_service.ts import LOCALE_NAMES from the shared constant — no duplication of the map"
+      verify: "grep 'constants/locale' apps/api/app/services/chat_assistant_service.ts apps/api/app/services/market_snapshot_service.ts | head -5"
+      tier: 1
+
+    - id: "AC-BP-679-2-02"
+      description: "Market snapshot static EN strings are structured in a bilingual object (not duplicated methods). Adding a 3rd language only requires adding a key."
+      verify: "grep -E 'fr:|en:|lang.*fr|lang.*en' apps/api/app/services/market_snapshot_service.ts | head -8"
+      tier: 1
+
+    - id: "AC-BP-679-2-03"
+      description: "market_snapshot_service.ts stays under 400 lines after adding EN strings"
+      verify: "wc -l apps/api/app/services/market_snapshot_service.ts | awk '{print ($1 <= 400)}' | grep -q 1"
+      tier: 1
+
+edge_cases:
+  - description: "?lang not provided by frontend"
+    handling: "MarketController reads user.locale as fallback. If user has no locale set, defaults to 'fr'."
+
+  - description: "Unknown ?lang value (e.g. 'de', 'es')"
+    handling: "Falls back to 'fr' static data. LOCALE_NAMES lookup undefined → default language."
+
+  - description: "Chat message sent in a language different from user.locale"
+    handling: "The explicit locale instruction in the system prompt takes precedence over detected message language."
+
+  - description: "Market snapshot EN static strings not yet written for a new country (e.g. MY, PH)"
+    handling: "Fall back to FR version for that country. Log a warning. No crash."
+
+test_intentions: []
+
+depends_on:
+  - "sc-679-1"
+
+notes: |
+  sc-679-2 MUST be built after sc-679-1 so LOCALE_NAMES constant is already available.
+  Market snapshot EN strings: translate only the text fields (trend, bestPeriod, insights[]).
+  Numbers (offers, salary) and hrefs are language-independent — keep as-is.
+  Chat: both getSupportResponse AND getExpertResponse need the locale param.
+  The existing getExpertResponse prompt already says "Respond in the user's language" — replace with
+  explicit: "Respond in ${languageName}." for deterministic behavior.
+
+definition_of_done:
+  - "All AC verify: commands pass"
+  - "No TypeScript errors (npx tsc --noEmit)"
+  - "All unit tests pass"
+  - "Zero console errors/stacktraces"
+  - "PR merged into develop"
+  - "Shortcut story moved to Done"
+
+closing_ac:
+  - id: "AC-BP-679-2-DONE"
+    type: "BP"
+    description: |
+      PR is merged into develop — story closure gate.
+      After this passes, the validator MUST move the Shortcut story to Done (state 500000010).
+    verify: "gh pr list --state merged --base develop --json title | grep -q 'sc-679-2'"
+    tier: 1

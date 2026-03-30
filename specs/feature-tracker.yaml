@@ -576,3 +576,23 @@ features:
     started_at: "2026-03-30"
     validated_at: "2026-03-30"
     notes: "visa_sponsor_registry 863L → 275L (+ 3 extracted services), search_orchestrator 475L → 255L, 9 magic numbers → constants, 3 controllers thinned, 0 explicit any. PR #113."
+
+  # === LOCALE SUPPORT FOR AI CONTENT (Epic sc-679) ===
+
+  - id: "sc-679-1"
+    name: "AI-generated contextual tips with locale support"
+    priority: "must-have"
+    status: "refined"
+    cycles: 0
+    story_file: "specs/stories/sc-679-1.yaml"
+    depends_on: []
+    refined_at: "2026-03-30"
+
+  - id: "sc-679-2"
+    name: "Chat assistant and market snapshot locale support"
+    priority: "must-have"
+    status: "refined"
+    cycles: 0
+    story_file: "specs/stories/sc-679-2.yaml"
+    depends_on: ["sc-679-1"]
+    refined_at: "2026-03-30"
