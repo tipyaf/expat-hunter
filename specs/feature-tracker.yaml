@@ -558,13 +558,13 @@ features:
   - id: "sc-599-1"
     name: "Frontend best practices audit and refactor"
     priority: "tech-debt"
-    status: "refined"
-    cycles: 0
+    status: "validated"
+    cycles: 1
     story_file: "specs/stories/sc-599-1.yaml"
     depends_on: []
-    started_at: ""
-    validated_at: ""
-    notes: "XL story. 6 files >400L, 47 silent catches, 11 hardcoded French strings, 11 inline styles, 2 magic numbers. Re-refined 2026-03-30."
+    started_at: "2026-03-30"
+    validated_at: "2026-03-30"
+    notes: "All ACs pass. 6 files split (14 sub-components), 47 catches fixed, 11 French strings i18n'd, constants extracted. PR #112."
 
   - id: "sc-599-2"
     name: "Backend best practices audit and refactor"
