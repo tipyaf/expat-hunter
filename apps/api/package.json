@@ -14,6 +14,7 @@
   },
   "imports": {
     "#ai/*": "./app/ai/*.js",
+    "#constants/*": "./app/constants/*.js",
     "#scrapers/*": "./app/scrapers/*.js",
     "#controllers/*": "./app/controllers/*.js",
     "#exceptions/*": "./app/exceptions/*.js",
@@ -51,6 +52,7 @@
     "bcrypt": "^6.0.0",
     "disposable-email-domains": "^1.0.62",
     "hot-hook": "^1.0.0",
+    "ioredis": "^5.10.1",
     "luxon": "^3.7.2",
     "node-html-parser": "^7.1.0",
     "nodemailer": "^8.0.4",

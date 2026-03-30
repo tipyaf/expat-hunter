@@ -28,7 +28,11 @@ export default function RegisterPage() {
       await register({ email, password, fullName, locale })
     } catch (err) {
       if (err instanceof ApiError) {
-        setError(err.status === 409 ? t('emailConflict') : err.message)
+        if (err.status === 429) {
+          setError(t('tooManyAttempts'))
+        } else {
+          setError(err.status === 409 ? t('emailConflict') : err.message)
+        }
       } else {
         setError(tc('genericError'))
       }
@@ -112,6 +116,19 @@ export default function RegisterPage() {
               <option value="fr">{t('localeFr')}</option>
               <option value="en">{t('localeEn')}</option>
             </select>
+          </div>
+          {/* Honeypot field — hidden from real users, filled by bots */}
+          <div className="absolute overflow-hidden" style={{ left: '-9999px', height: 0 }} aria-hidden="true">
+            <label htmlFor="website" className="sr-only">Website</label>
+            <input
+              id="website"
+              name="website"
+              type="text"
+              className="hidden"
+              tabIndex={-1}
+              autoComplete="off"
+              aria-hidden="true"
+            />
           </div>
           <Button type="submit" className="w-full" disabled={isSubmitting}>
             {isSubmitting ? t('registering') : t('register')}

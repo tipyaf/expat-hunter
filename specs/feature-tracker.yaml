@@ -602,3 +602,17 @@ features:
     started_at: "2026-03-30"
     validated_at: "2026-03-30"
     notes: "LOCALE_NAMES shared constant. ChatAssistantService + ChatController locale passthrough. MarketSnapshotService bilingual data (EN for NZ/AU/CA/UK/US, FR fallback for others). MarketController ?lang whitelist sanitization. use-market-snapshot.ts passes useLocale(). 478 tests pass. PR #118."
+
+  # === ANTI-BOT PROTECTION ===
+
+  - id: "sc-511"
+    name: "Anti-bot protection for account creation and login"
+    priority: "feature"
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/sc-511.yaml"
+    depends_on: []
+    refined_at: "2026-03-30"
+    started_at: "2026-03-30"
+    validated_at: "2026-03-30"
+    notes: "ioredis rate limiter (login 10/min, register 5/hr, forgot 3/hr), account lockout (5 fails → 15min), honeypot on register, frontend debounce. 11 unit + 5 functional tests. All Tier-1 ACs pass. 0 new TS errors."

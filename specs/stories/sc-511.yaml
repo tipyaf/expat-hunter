@@ -1,0 +1,166 @@
+story:
+  id: "sc-511"
+  title: "Anti-bot protection for account creation and login"
+  parent_spec: "specs/expat-hunter.yaml"
+  status: "refined"
+  size: "M"
+  refined_at: "2026-03-30"
+  refined_by: "refinement"
+
+user_story: >
+  As a system administrator,
+  I want public auth endpoints (register, login, forgot-password) to be protected against brute force,
+  credential stuffing, and automated account creation,
+  so that the platform remains secure without adding CAPTCHA friction for legitimate users.
+
+context: >
+  All public auth endpoints are currently unprotected — no rate limiting, no account lockout,
+  no honeypot. A bot can attempt unlimited logins or registrations. This story adds layered
+  server-side protection (rate limiting via @adonisjs/limiter, account lockout via Redis TTL,
+  honeypot on registration) and frontend hardening (submit debounce, localized error messages).
+
+scope:
+  files_to_create:
+    - path: "apps/api/app/middleware/rate_limiter_middleware.ts"
+      purpose: "AdonisJS limiter middleware — applies configurable rate limits per route group"
+    - path: "apps/api/config/limiter.ts"
+      purpose: "Limiter configuration — Redis store, default thresholds"
+    - path: "apps/api/app/constants/auth.ts"
+      purpose: "Named constants: LOGIN_RATE_LIMIT, REGISTER_RATE_LIMIT, FORGOT_PASSWORD_RATE_LIMIT, MAX_FAILED_LOGINS, LOCKOUT_DURATION_MINUTES"
+
+  files_to_modify:
+    - path: "apps/api/package.json"
+      reason: "Add @adonisjs/limiter dependency"
+    - path: "apps/api/adonisrc.ts"
+      reason: "Register limiter provider if required by @adonisjs/limiter"
+    - path: "apps/api/start/routes.ts"
+      reason: "Apply rate limiter middleware to auth route group (register, login, forgot-password, reset-password)"
+    - path: "apps/api/app/controllers/auth_controller.ts"
+      reason: "Add honeypot check in register (reject silently if website field filled), add account lockout check in login (Redis-based failed attempt counter)"
+    - path: "apps/api/app/validators/auth_validator.ts"
+      reason: "Add optional website field to registerValidator (honeypot)"
+    - path: "apps/frontend/src/app/login/page.tsx"
+      reason: "Disable submit button during request (debounce), show localized error on 429/423"
+    - path: "apps/frontend/src/app/register/page.tsx"
+      reason: "Add hidden honeypot field, disable submit during request, show localized error on 429"
+    - path: "apps/frontend/src/i18n/en.json"
+      reason: "Add auth.tooManyAttempts, auth.accountLocked, auth.tryAgainIn keys"
+    - path: "apps/frontend/src/i18n/fr.json"
+      reason: "Add auth.tooManyAttempts, auth.accountLocked, auth.tryAgainIn keys"
+
+  files_to_read:
+    - path: "apps/api/config/shield.ts"
+      reason: "Understand existing security middleware setup"
+    - path: "apps/api/adonisrc.ts"
+      reason: "Provider registration pattern"
+    - path: "apps/api/start/routes.ts"
+      reason: "Current route structure and middleware usage"
+
+acceptance_criteria:
+  functional:
+    - id: "AC-FUNC-SC511-01"
+      description: "Given a user submitting >10 login requests in 1 minute / When the 11th request is sent / Then HTTP 429 is returned with retryAfter header"
+      verify: "for i in $(seq 1 11); do curl -s -o /dev/null -w '%{http_code}\\n' -X POST http://localhost:3333/api/auth/login -H 'Content-Type: application/json' -d '{\"email\":\"bot@test.com\",\"password\":\"wrong\"}'; done | tail -1 | grep -q 429 && echo PASS || echo FAIL"
+      tier: 2
+
+    - id: "AC-FUNC-SC511-02"
+      description: "Given a user submitting >5 registration requests in 1 hour from the same IP / When the 6th request is sent / Then HTTP 429 is returned"
+      verify: "for i in $(seq 1 6); do curl -s -o /dev/null -w '%{http_code}\\n' -X POST http://localhost:3333/api/auth/register -H 'Content-Type: application/json' -d \"{\\\"email\\\":\\\"bot${i}@test.com\\\",\\\"password\\\":\\\"password123\\\",\\\"fullName\\\":\\\"Bot ${i}\\\"}\"; done | tail -1 | grep -q 429 && echo PASS || echo FAIL"
+      tier: 2
+
+    - id: "AC-FUNC-SC511-03"
+      description: "Given 5 consecutive failed login attempts for an email / When the 6th attempt is made (even with correct password) / Then HTTP 423 (Locked) is returned and user cannot log in for 15 minutes"
+      verify: "for i in $(seq 1 5); do curl -s -o /dev/null -X POST http://localhost:3333/api/auth/login -H 'Content-Type: application/json' -d '{\"email\":\"lock@test.com\",\"password\":\"wrong\"}'; done && curl -s -w '%{http_code}' -o /dev/null -X POST http://localhost:3333/api/auth/login -H 'Content-Type: application/json' -d '{\"email\":\"lock@test.com\",\"password\":\"correct\"}' | grep -q 423 && echo PASS || echo FAIL"
+      tier: 2
+
+    - id: "AC-FUNC-SC511-04"
+      description: "Given a registration form with a hidden website field / When a bot fills the honeypot field / Then the server returns HTTP 201 (fake success) but no user is created"
+      verify: "curl -s -w '%{http_code}' -X POST http://localhost:3333/api/auth/register -H 'Content-Type: application/json' -d '{\"email\":\"honeypot@test.com\",\"password\":\"password123\",\"fullName\":\"Bot\",\"website\":\"https://spam.com\"}' | grep -q 201 && echo PASS || echo FAIL"
+      tier: 2
+
+    - id: "AC-FUNC-SC511-05"
+      description: "Given the forgot-password endpoint / When >3 requests are sent in 1 hour from the same IP / Then HTTP 429 is returned"
+      verify: "for i in $(seq 1 4); do curl -s -o /dev/null -w '%{http_code}\\n' -X POST http://localhost:3333/api/auth/forgot-password -H 'Content-Type: application/json' -d '{\"email\":\"test@test.com\"}'; done | tail -1 | grep -q 429 && echo PASS || echo FAIL"
+      tier: 2
+
+    - id: "AC-FUNC-SC511-06"
+      description: "Given the frontend login page / When the user clicks submit / Then the button is disabled until the response arrives (no double-submit)"
+      verify: "grep -qE 'disabled.*isSubmitting|isSubmitting.*disabled|isLoading.*disabled|disabled.*isLoading|disabled.*loading|loading.*disabled' apps/frontend/src/app/login/page.tsx && echo PASS || echo FAIL"
+      tier: 1
+
+    - id: "AC-FUNC-SC511-07"
+      description: "Given a rate-limited response (429) or locked response (423) / When the user sees the error / Then a localized message is displayed in both EN and FR"
+      verify: "grep -q 'tooManyAttempts\\|rateLimited\\|tooManyRequests' apps/frontend/src/i18n/en.json && grep -q 'tooManyAttempts\\|rateLimited\\|tooManyRequests' apps/frontend/src/i18n/fr.json && echo PASS || echo FAIL"
+      tier: 1
+
+  security:
+    - id: "AC-SEC-SC511-01"
+      description: "Given rate limiting middleware / When building Redis keys / Then keys use only request.ip() — never user-supplied input (prevent key injection)"
+      verify: "grep -rn 'limiter\\|rateLimiter\\|throttle' apps/api/app/middleware/ apps/api/app/controllers/auth_controller.ts --include='*.ts' | grep -v 'request.ip\\|ctx.request.ip\\|getIp\\|ip()' | grep -cE 'email|body|params|query' | grep -q '^0$' && echo PASS || echo FAIL"
+      tier: 1
+
+    - id: "AC-SEC-SC511-02"
+      description: "Given the honeypot field on the registration form / When rendered / Then it is not visible to users (CSS hidden + aria-hidden + tabindex=-1)"
+      verify: "grep -A8 'website\\|honeypot' apps/frontend/src/app/register/page.tsx | grep -qE 'hidden|sr-only|display.*none|opacity.*0|absolute.*-left|overflow.*hidden' && echo PASS || echo FAIL"
+      tier: 1
+
+    - id: "AC-SEC-SC511-03"
+      description: "Given account lockout logic / When tracking failed attempts / Then the counter is stored in Redis with auto-expiring TTL (not in the database)"
+      verify: "grep -rn 'lockout\\|failedAttempts\\|login_attempts\\|failed_login' apps/api/app/ --include='*.ts' | grep -qiE 'redis|limiter|cache|store' && echo PASS || echo FAIL"
+      tier: 1
+
+    - id: "AC-SEC-SC511-04"
+      description: "Given rate limit or lockout error responses / When returned / Then they do not leak whether a user account exists"
+      verify: "grep -A5 '429\\|423\\|tooMany\\|locked' apps/api/app/controllers/auth_controller.ts | grep -vcE 'email.*exists|user.*found|account.*not|no.*user' | head -1 | awk '{print ($1 > 0) ? \"PASS\" : \"FAIL\"}'  "
+      tier: 1
+
+  best_practices:
+    - id: "AC-BP-SC511-01"
+      description: "Given all rate limit thresholds / When reviewing the code / Then they are defined as named constants in a constants file (no magic numbers)"
+      verify: "grep -rn 'LOGIN_RATE_LIMIT\\|REGISTER_RATE_LIMIT\\|FORGOT_PASSWORD_RATE_LIMIT\\|MAX_FAILED_LOGINS\\|LOCKOUT_DURATION' apps/api/app/constants/ --include='*.ts' | wc -l | awk '{print ($1 >= 5) ? \"PASS\" : \"FAIL\"}'"
+      tier: 1
+
+    - id: "AC-BP-SC511-02"
+      description: "Given the full codebase / When running TypeScript compilation / Then zero errors are produced"
+      verify: "cd /Volumes/Samsung_T5/dev/expat-hunter && pnpm --filter api exec tsc --noEmit 2>&1 | grep -c 'error TS' | grep -q '^0$' && echo PASS || echo FAIL"
+      tier: 1
+
+    - id: "AC-BP-SC511-03"
+      description: "Given rate limiter configuration / When Redis is unavailable / Then limiter fails open (allows the request) to avoid blocking legitimate users"
+      verify: "grep -rn 'failOpen\\|fail.*open\\|catch\\|fallback\\|allowOnError\\|skipOnError' apps/api/app/middleware/rate_limiter_middleware.ts apps/api/config/limiter.ts 2>/dev/null | grep -q '.' && echo PASS || echo FAIL"
+      tier: 1
+
+edge_cases:
+  - description: "Distributed attack — different IPs targeting the same account"
+    handling: "Account lockout is per-email (in addition to per-IP rate limiting), so distributed brute force is caught"
+  - description: "Legitimate user locked out after failed attempts"
+    handling: "15-minute auto-expiry via Redis TTL. Error message includes remaining lockout time."
+  - description: "Rate limit on shared IP (office, proxy)"
+    handling: "Thresholds are generous (10 login/min per IP). Account lockout is per-email, not per-IP."
+  - description: "Redis down"
+    handling: "Limiter fails open — allow the request rather than blocking legitimate users"
+  - description: "Honeypot false positive from screen readers or autofill"
+    handling: "Honeypot field uses aria-hidden=true, tabindex=-1, autocomplete=off to prevent accidental filling"
+  - description: "Successful login resets lockout counter"
+    handling: "On successful login, delete the Redis failed-attempts key for that email"
+
+dependencies:
+  runtime:
+    - "@adonisjs/limiter (to install)"
+    - "Redis (already running via docker-compose)"
+  features: []
+
+test_intentions: []
+# No computed values / formulas in this story — test_intentions is empty.
+# Tests will focus on integration: hitting rate limits, lockout triggers, honeypot rejection.
+
+components:
+  reuse: []
+  create: []
+  # No new UI components — modifications to existing login/register pages only.
+
+ux_ref: ""
+# No UX spec needed — changes are invisible (rate limiting) or minimal (error messages, disabled button).
+
+adr_required: false
+# Uses existing auth architecture. @adonisjs/limiter is a standard AdonisJS package, not an architectural decision.
