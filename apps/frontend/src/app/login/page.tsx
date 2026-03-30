@@ -26,7 +26,13 @@ export default function LoginPage() {
       await login(email, password)
     } catch (err) {
       if (err instanceof ApiError) {
-        setError(err.status === 400 ? t('invalidCredentials') : err.message)
+        if (err.status === 429) {
+          setError(t('tooManyAttempts'))
+        } else if (err.status === 423) {
+          setError(t('accountLocked'))
+        } else {
+          setError(err.status === 400 ? t('invalidCredentials') : err.message)
+        }
       } else {
         setError(tc('genericError'))
       }

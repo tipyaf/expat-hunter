@@ -1,5 +1,14 @@
 import router from '@adonisjs/core/services/router'
 import { middleware } from '#start/kernel'
+import { rateLimiter } from '#middleware/rate_limiter_middleware'
+import {
+  LOGIN_RATE_LIMIT,
+  LOGIN_RATE_WINDOW_SECONDS,
+  REGISTER_RATE_LIMIT,
+  REGISTER_RATE_WINDOW_SECONDS,
+  FORGOT_PASSWORD_RATE_LIMIT,
+  FORGOT_PASSWORD_RATE_WINDOW_SECONDS,
+} from '#constants/auth'
 
 const AuthController = () => import('#controllers/auth_controller')
 const ProfileController = () => import('#controllers/profile_controller')
@@ -35,12 +44,20 @@ router.get('/health', async () => {
 
 router
   .group(() => {
-    router.post('register', [AuthController, 'register'])
-    router.post('login', [AuthController, 'login'])
+    router
+      .post('register', [AuthController, 'register'])
+      .use(rateLimiter({ maxAttempts: REGISTER_RATE_LIMIT, windowSeconds: REGISTER_RATE_WINDOW_SECONDS, keyPrefix: 'register' }))
+    router
+      .post('login', [AuthController, 'login'])
+      .use(rateLimiter({ maxAttempts: LOGIN_RATE_LIMIT, windowSeconds: LOGIN_RATE_WINDOW_SECONDS, keyPrefix: 'login' }))
     router.post('logout', [AuthController, 'logout']).use(middleware.auth())
     router.get('me', [AuthController, 'me']).use(middleware.auth())
-    router.post('forgot-password', [AuthController, 'forgotPassword'])
-    router.post('reset-password', [AuthController, 'resetPassword'])
+    router
+      .post('forgot-password', [AuthController, 'forgotPassword'])
+      .use(rateLimiter({ maxAttempts: FORGOT_PASSWORD_RATE_LIMIT, windowSeconds: FORGOT_PASSWORD_RATE_WINDOW_SECONDS, keyPrefix: 'forgot' }))
+    router
+      .post('reset-password', [AuthController, 'resetPassword'])
+      .use(rateLimiter({ maxAttempts: FORGOT_PASSWORD_RATE_LIMIT, windowSeconds: FORGOT_PASSWORD_RATE_WINDOW_SECONDS, keyPrefix: 'reset' }))
     router.post('verify-email', [AuthController, 'verifyEmail'])
     router.post('resend-verification', [AuthController, 'resendVerification']).use(middleware.auth())
     router.get('google', [AuthController, 'googleRedirect'])

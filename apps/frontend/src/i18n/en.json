@@ -74,7 +74,9 @@
     "emailNotVerified": "Your email is not yet verified.",
     "resendVerification": "Resend verification email",
     "verificationSent": "Verification email sent!",
-    "disposableEmail": "Disposable email addresses are not allowed. Please use a permanent email."
+    "disposableEmail": "Disposable email addresses are not allowed. Please use a permanent email.",
+    "tooManyAttempts": "Too many attempts. Please wait a moment and try again.",
+    "accountLocked": "Account temporarily locked due to too many failed attempts. Please try again in a few minutes."
   },
   "dashboard": {
     "title": "Dashboard",

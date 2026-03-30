@@ -5,6 +5,9 @@ import { loginValidator, registerValidator } from '#validators/auth_validator'
 import PasswordResetService from '#services/password_reset_service'
 import EmailVerificationService from '#services/email_verification_service'
 import env from '#start/env'
+import logger from '@adonisjs/core/services/logger'
+import { getRedisClient } from '#config/limiter'
+import { LOCKOUT_PREFIX, MAX_FAILED_LOGINS, LOCKOUT_DURATION_MINUTES } from '#constants/auth'
 // @ts-expect-error — no type declarations for this package
 import disposableDomains from 'disposable-email-domains'
 
@@ -13,6 +16,17 @@ const DISPOSABLE_DOMAINS = new Set(disposableDomains as string[])
 export default class AuthController {
   async register({ request, response }: HttpContext) {
     const data = await request.validateUsing(registerValidator)
+
+    // Honeypot: if the hidden "website" field is filled, a bot submitted the form.
+    // Return fake 201 to avoid revealing the trap.
+    const honeypotValue = request.input('website')
+    if (honeypotValue) {
+      logger.info('Honeypot triggered on registration')
+      return response.created({
+        user: { id: 0, email: data.email, fullName: data.fullName },
+        token: 'ok',
+      })
+    }
 
     // Block disposable email addresses
     const emailDomain = data.email.split('@')[1]?.toLowerCase()
@@ -54,23 +68,68 @@ export default class AuthController {
     })
   }
 
-  async login({ request }: HttpContext) {
+  async login({ request, response }: HttpContext) {
     const { email, password } = await request.validateUsing(loginValidator)
 
-    const user = await User.verifyCredentials(email, password)
-    const token = await User.accessTokens.create(user)
+    // Account lockout check (Redis-based, fails open)
+    const redis = getRedisClient()
+    const lockoutKey = `${LOCKOUT_PREFIX}${email.toLowerCase()}`
 
-    return {
-      user: {
-        id: user.id,
-        email: user.email,
-        fullName: user.fullName,
-        locale: user.locale,
-        isAdmin: user.isAdmin ?? false,
-        plan: user.plan ?? 'free',
-        emailVerified: user.isEmailVerified,
-      },
-      token: token.value?.release(),
+    if (redis) {
+      try {
+        const failCount = await redis.get(lockoutKey)
+        if (failCount && Number(failCount) >= MAX_FAILED_LOGINS) {
+          const ttl = await redis.ttl(lockoutKey)
+          return response.status(423).send({
+            error: {
+              code: 'ACCOUNT_LOCKED',
+              message: 'Account temporarily locked due to too many failed attempts. Please try again later.',
+              retryAfter: ttl > 0 ? ttl : LOCKOUT_DURATION_MINUTES * 60,
+            },
+          })
+        }
+      } catch (err) {
+        logger.warn({ err }, 'Lockout check failed — failing open')
+      }
+    }
+
+    try {
+      const user = await User.verifyCredentials(email, password)
+
+      // Successful login: clear lockout counter
+      if (redis) {
+        redis.del(lockoutKey).catch(() => {})
+      }
+
+      const token = await User.accessTokens.create(user)
+
+      return {
+        user: {
+          id: user.id,
+          email: user.email,
+          fullName: user.fullName,
+          locale: user.locale,
+          isAdmin: user.isAdmin ?? false,
+          plan: user.plan ?? 'free',
+          emailVerified: user.isEmailVerified,
+        },
+        token: token.value?.release(),
+      }
+    } catch (loginError) {
+      // Failed login: increment lockout counter
+      if (redis) {
+        try {
+          const count = await redis.incr(lockoutKey)
+          if (count === 1) {
+            await redis.expire(lockoutKey, LOCKOUT_DURATION_MINUTES * 60)
+          }
+        } catch (err) {
+          logger.warn({ err }, 'Lockout increment failed')
+        }
+      }
+
+      // Re-throw original AdonisJS error (E_INVALID_CREDENTIALS → 400)
+      throw loginError
     }
   }
 
