@@ -603,6 +603,20 @@ features:
     validated_at: "2026-03-30"
     notes: "LOCALE_NAMES shared constant. ChatAssistantService + ChatController locale passthrough. MarketSnapshotService bilingual data (EN for NZ/AU/CA/UK/US, FR fallback for others). MarketController ?lang whitelist sanitization. use-market-snapshot.ts passes useLocale(). 478 tests pass. PR #118."
 
+  # === UX SPEC SYNC ===
+
+  - id: "sc-723"
+    name: "chore: sync UX spec wireframes with current implementation"
+    priority: "chore"
+    status: "testing"
+    cycles: 1
+    story_file: "specs/stories/sc-723.yaml"
+    depends_on: []
+    refined_at: "2026-03-31"
+    started_at: "2026-03-31"
+    validated_at: ""
+    notes: "Audited all 15+ pages. Updated specs/expat-hunter-ux.md: sidebar, suivi/pipeline, contacts, contact-detail (slide-over), parametres, admin pages, emails, templates, presets, recherche. PR #121."
+
   # === ANTI-BOT PROTECTION ===
 
   - id: "sc-511"
