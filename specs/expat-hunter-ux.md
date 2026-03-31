@@ -293,20 +293,26 @@ Le dark mode est active via la classe CSS `.dark` sur le `<html>`. Il est config
 
 **Role**: Navigation principale fixe a gauche
 
-**Wireframe**:
+**Wireframe** (mis a jour sc-723 — reflète l'implémentation actuelle):
 ```
 +----------------------------+
 |  ExpatHunter               |  <- Texte magenta bold
 |                            |
-| [bg] Tableau de bord       |  <- Actif : fond rose clair, texte violet, barre gauche 3px
+| [bg] Tableau de bord       |  <- Actif : fond rose clair, texte violet
 |  Q   Trouver des contacts  |  <- Icone + texte, gris quand inactif
 |  Ppl Mes contacts          |
-|  Env Mes emails            |
+|  Env Mes emails  [11]      |  <- Badge compteur si emails en attente
 |  Bar Suivi                 |
 |                            |
 |  --- separateur ---        |
 |  @   Mon profil            |
 |  Gear Parametres           |
+|  Doc  Templates            |  <- AJOUT : lien direct (pas sous Paramètres)
+|  Slid Presets              |  <- AJOUT : lien direct (pas sous Paramètres)
+|                            |
+|  ADMINISTRATION            |  <- Section admin (visible pour admin seulement)
+|  Gear Config. IA           |  <- /admin/ai-settings
+|  Usr  Utilisateurs         |  <- /admin/users
 |                            |
 +----------------------------+
 |  Nom Utilisateur           |  <- Texte noir bold
@@ -314,6 +320,9 @@ Le dark mode est active via la classe CSS `.dark` sur le `<html>`. Il est config
 |  [-> Se deconnecter]       |  <- Bouton outline
 +----------------------------+
 ```
+
+> **Note sc-723** : Templates et Presets sont des liens de niveau 1 dans la sidebar (pas imbriqués sous Paramètres).
+> La section ADMINISTRATION n'est visible que pour les utilisateurs admin.
 
 **Dimensions**: ~240px de large, hauteur 100vh, position fixed
 **Fond**: Blanc (#FFFFFF) avec bordure droite gris clair
@@ -365,10 +374,10 @@ Le dark mode est active via la classe CSS `.dark` sur le `<html>`. Il est config
 
 **Role**: Lancer des recherches automatisees de contacts
 
-**Wireframe**:
+**Wireframe** (mis a jour sc-723):
 ```
 +----------------------------------------------------------+
-|  Recherche automatisee                 [+ Nouvelle rech.] |
+|  Recherche automatisee                                   |
 |  Lancez une recherche et recuperez des contacts...       |
 |                                                          |
 |  +------------------------------------------------------+|
@@ -409,32 +418,61 @@ Le dark mode est active via la classe CSS `.dark` sur le `<html>`. Il est config
 
 **Formulaire**: 3 champs en ligne (pays dropdown, secteur texte, ville texte), checkbox, bouton primary
 
+> **Note sc-723** : Le bouton "+ Nouvelle recherche" en haut à droite prévu dans la spec originale
+> n'est pas implémenté. La recherche se fait directement via le formulaire "Nouvelle recherche".
+
 ### Composant: ContactsPage
 
 **Role**: Liste et gestion des contacts
 
-**Wireframe**:
+**Wireframe** (mis a jour sc-723 — reflète l'implémentation actuelle):
 ```
 +----------------------------------------------------------+
-|  Contacts                          [Analyser les contacts]|
-|  Gerez vos contacts et suivez votre pipeline.            |
+|  Contacts           [Analyser les contacts]  [N contacts  |
+|  Gerez vos contacts et suivez votre pipeline.   en att. d'analyse]|
 |                                                          |
-|  [Tous(42)] [Identifie] [Analyse] [A contacter]         |
+|  [* Tres pertinent (9)] [. Pertinent (2)]               |  <- Ligne 1: pertinence
+|  [? A verifier (28)] [x Non pertinent (61)]             |
+|                                                          |
+|  [Tous(110)] [Identifie] [Analyse] [A contacter]        |  <- Ligne 2: statut pipeline
 |  [Contacte] [Repondu] [Entretien] [Offre] [Rejete]      |
 |                                                          |
 |  +------------------------------------------------------+|
-|  | Nom    | Role    | Entreprise | Pertinence | Statut  ||
-|  |--------|---------|------------|------------|---------|
-|  | J.Smith| Eng Mgr | Xero       | [Tres pert]| Contacte||
-|  | M.Dupt | CTO     | Datacom    | [Pertinent]| A cont. ||
-|  | ...    | ...     | ...        | ...        | ...     ||
+|  | Tracey Banwell  [50%] [Analyse] [? 30]  [Analyse v] ||
+|  | Service Manager                                       ||
+|  | IHC · Auckland · Healthcare Services                 ||
+|  | "Bien que Tracey ait un role... (raison IA italic)"   ||
+|  | tracey.banwell@ihc.org.nz  Source: hunter_company    ||
+|  | [A verifier]              [Ignorer]                  ||
+|  +------------------------------------------------------+|
+|  | Aarthy Kanakasabai [49%] [Analyse] [x 25] [Analyse v]||
+|  | ...                                       [Ignorer]  ||
 |  +------------------------------------------------------+|
 |                                                          |
 |  OU: "Aucun contact trouve. Lancez un sourcing."         |
 +----------------------------------------------------------+
 ```
 
-**Filtres**: Pills horizontales, actif = fond colore + texte blanc, inactif = outline colore
+**Filtres ligne 1** (AJOUT — pertinence IA) :
+- `* Très pertinent (N)` — fond étoile, couleur primaire
+- `. Pertinent (N)` — fond cercle bleu
+- `? À vérifier (N)` — fond question orange
+- `x Non pertinent (N)` — fond croix rouge
+
+**Filtres ligne 2** (statut pipeline) :
+- Pills horizontales, actif = fond coloré + texte blanc, inactif = outline coloré
+- Tous | Identifié | Analysé | À contacter | Contacté | Répondu | Entretien | Offre | Rejeté
+
+**Cards contact** :
+- Nom (bold) + score confiance (badge cercle coloré) + badge statut + badge pertinence (icône + score)
+- Rôle
+- Entreprise · Ville · Secteur
+- Raison pertinence IA (italique, gris)
+- Email, source
+- Recommandation IA en lien (À vérifier / Contacter / Revoir / Ignorer)
+- Dropdown statut pipeline en haut à droite
+
+**Clic sur une card** → Ouvre le slide-over panel ContactDetail (voir section dédiée)
 
 ### Composant: EmailsPage
 
@@ -467,37 +505,57 @@ Le dark mode est active via la classe CSS `.dark` sur le `<html>`. Il est config
 
 **Role**: Vue kanban du pipeline de contacts
 
-**Wireframe**:
+**Wireframe** (mis a jour sc-723 — reflète l'implémentation actuelle):
 ```
 +----------------------------------------------------------+
 |  Pipeline                         N contacts au total     |
 |  Visualisez et gerez votre pipeline de contacts.         |
 |                                                          |
+|  [A contacter: 11]  [Identifie: 67]  [Analyse: 89]      |  <- Pills résumé
+|                                                          |
 |  Trouve  | A contac.| Contacte | En disc. | Entretien| Termine |
-|  (18)    | (7)      | (5)      | (2)      | (1)      | (1)     |
+|  (156)   | (11)     | (0)      | (0)      | (0)      | (0)     |
 |  -----   | -----    | -----    | -----    | -----    | -----   |
-|  +-----+ | +------+ | +------+ | +------+ | +------+ | +-----+ |
-|  |Smith| | |Dupont| | |Brown | | |Lee   | | |Wong  | | |Chen | |
-|  |EngMg| | |CTO   | | |VP Eng| | |TmLead| | |DirEng| | |PM   | |
-|  |Xero | | |Datcm | | |Spark | | |Trade | | |Rocket| | |Fish | |
-|  |[Tre]| | |[Pert]| | |[Cont]| | |[Disc]| | |[Entr]| | |[Off]| |
-|  +-----+ | +------+ | +------+ | +------+ | +------+ | +-----+ |
-|           |          |          |          |          |         |
+|  +-----+ | +------+ |                                          |
+|  |Trace| | |C...  | |   Aucun contact   ...                   |
+|  |[NP] | | |[TP]  | |                                         |
+|  |IHC  | | |IHC   | |                                         |
+|  |[V?] | | |[V✓]  | |                                         |
+|  |Hunt | | |Broul.| |                                         |
+|  |~40% | | |~40%  | |                                         |
+|  +-----+ | +------+ |                                         |
 +----------------------------------------------------------+
 ```
 
-**Colonnes**: Chacune avec en-tete colore (gradient subtil haut de colonne), compteur, cards
+**Colonnes**: Chacune avec bordure coloree en haut (simple, pas de gradient)
 
 | Colonne | Couleur barre haut |
 |---------|-------------------|
 | Trouve | Gris |
-| A contacter | Bleu |
-| Contacte | Indigo |
+| A contacter | Bleu (tirets) |
+| Contacte | Vert (implementation actuelle — spec originale: Indigo) |
 | En discussion | Violet |
 | Entretien | Rose/Magenta |
-| Termine | Ambre/Dore |
+| Termine | Vert (implementation actuelle — spec originale: Ambre/Dore) |
 
-**Cards contact**: Nom, role, entreprise, badge statut
+> **Note sc-723** : Contacté devrait être Indigo et Terminé devrait être Ambre/Doré selon le design system.
+> L'implémentation actuelle utilise Vert pour ces deux colonnes. A corriger dans une future story.
+
+**Cards contact** (implémentation actuelle — plus riches que le wireframe original) :
+- Badge pertinence (Très pertinent / Pertinent / Non pertinent / À vérifier)
+- Nom (peut être tronqué), rôle, entreprise · pays
+- Badge visa (✓ Visa / ⚠ Visa ?)
+- Email
+- Badge source (Hunter)
+- Score de probabilité (~Probable 40%)
+- Badge statut email (Brouillon si email en cours)
+
+**Pills résumé** (AJOUT non prévu dans spec originale) :
+- "À contacter: N" — contacts avec email en brouillon prêt
+- "Identifié: N" — contacts identifiés au total
+- "Analysé: N" — contacts analysés par l'IA
+
+**Empty state** : "Aucun contact" dans chaque colonne vide ✅
 
 ### Composant: OnboardingWizard
 
@@ -543,7 +601,7 @@ Le dark mode est active via la classe CSS `.dark` sur le `<html>`. Il est config
 
 **Role**: Configuration du compte et des preferences
 
-**Wireframe**:
+**Wireframe** (mis a jour sc-723 — reflète l'implémentation actuelle):
 ```
 +----------------------------------------------------------+
 |  Parametres                                              |
@@ -558,7 +616,7 @@ Le dark mode est active via la classe CSS `.dark` sur le `<html>`. Il est config
 |  | Sequences de relance                    3 maximum    ||
 |  | Definissez quand et combien de relances envoyer.     ||
 |  |                                                      ||
-|  | Relance 1    [7] [jour(s)   v]                       ||
+|  | Relance 1    [2] [jour(s)   v]                       ||  <- défaut: 2 jours
 |  | + Ajouter une relance                                ||
 |  +------------------------------------------------------+|
 |                                                          |
@@ -570,40 +628,21 @@ Le dark mode est active via la classe CSS `.dark` sur le `<html>`. Il est config
 |  |                                                      ||
 |  | Heures d'envoi                                       ||
 |  | De [08:00 v]  A [18:00 v]                            ||
-|  |                                                      ||
-|  | Fuseau horaire                                       ||
-|  | [Europe/Paris v]                                     ||
-|  +------------------------------------------------------+|
-|                                                          |
-|  +------------------------------------------------------+|
-|  | Personnalisation des emails                          ||
-|  |                                                      ||
-|  | > Mes templates                                  [>] ||
-|  |   Creez et gerez vos modeles d'emails                ||
-|  |                                                      ||
-|  | > Mes presets de generation                      [>] ||
-|  |   Configurez le ton, le format et les instructions   ||
-|  |                                                      ||
-|  | > Contacts et entreprises bloques                [>] ||
-|  |   Gerez les contacts et entreprises bloques          ||
-|  |                                                      ||
-|  | > Connexion email                                [>] ||
-|  |   Configurez IMAP/SMTP pour recevoir les reponses    ||
-|  +------------------------------------------------------+|
-|                                                          |
-|  +------------------------------------------------------+|
-|  | Langue                                               ||
-|  | [Francais v]                                         ||
-|  +------------------------------------------------------+|
-|                                                          |
-|  +------------------------------------------------------+|
-|  | Mode sombre                                          ||
-|  | [Automatique] [Clair] [Sombre]                       ||
 |  +------------------------------------------------------+|
 |                                                          |
 |  [Sauvegarder]                                           |
 +----------------------------------------------------------+
 ```
+
+> **Note sc-723 — Sections différées / manquantes** :
+> Les sections suivantes de la spec originale n'ont PAS été implémentées dans `/parametres` :
+> - **Fuseau horaire** : champ absent
+> - **Langue** : non implémentée dans les paramètres (sélectionnée à l'inscription seulement)
+> - **Mode sombre** : non implémenté dans les paramètres (suit le système)
+> - **Personnalisation des emails** : les liens vers Templates / Presets / Blocages / Connexion email
+>   ont été remplacés par des liens directs dans la sidebar
+>
+> Ces fonctionnalités sont à implémenter dans de futures stories si nécessaire.
 
 ### Composant: LoginPage
 
@@ -928,46 +967,35 @@ Le dark mode est active via la classe CSS `.dark` sur le `<html>`. Il est config
 
 ### Composant: EmailsPage (etat avec data)
 
-**Wireframe avec emails charges**:
+**Wireframe avec emails charges** (mis a jour sc-723):
 ```
 +----------------------------------------------------------+
-|  Emails                [Approuver tout (5)] [Envoyer     ||
-|  Gerez les emails...   tous (3)] [Generer des emails]    |
+|  Emails        [Tout approuver (11)]  [Generer des emails]|
+|  Gerez les emails generes par l'IA pour vos contacts.    |
 |                                                          |
-|  [message de feedback si present]                        |
+|  [Tous(11)] [Brouillon] [Approuve] [Envoye] ...         |
 |                                                          |
-|  [Barre de progression envoi si en cours]                |
-|  [============================] 8/12                     |
-|                                                          |
-|  [Tous(12)] [Brouillon] [Approuve] [Envoye] ...         |
-|                                                          |
-|  [ ] Selectionner tous les approuves                     |
+|  [ ] Selectionner les approuves                          |
 |                                                          |
 |  +------------------------------------------------------+|
-|  |[v]  [Brouillon]  initial                             ||
-|  |     A: John Smith -- Eng Manager @ Xero (john@xero)  ||
-|  |     [Regenerer] [Modifier] [Approuver] [Rejeter]     ||
-|  |                                                      ||
-|  |     Regarding your backend team at Xero              ||
-|  |     Hi John, I noticed Xero's engineering team...    ||
+|  |[ ]  [Brouillon]  initial                             ||
+|  |     A: Culley Angus -- CTO @ IHC (culley@ihc.org.nz)||
+|  |                        [Modifier] [Approuver] [Suppr]||
+|  |     Exploring Frontend Opportunities at IHC          ||
+|  |     Hi Culley, I'm Yannick...                        ||
 |  +------------------------------------------------------+|
-|  |[ ]  [Approuve]  initial                              ||
-|  |     A: Marie Dupont -- CTO @ Datacom (marie@dat)     ||
-|  |                                                      ||
-|  |     Your data engineering expertise at Datacom       ||
-|  |     Hi Marie, I noticed Datacom has been growing...  ||
+|  |[ ]  [Brouillon]  initial                             ||
+|  |     A: Tabitha Flack -- Principal Consultant @...    ||
+|  |                        [Modifier] [Approuver] [Suppr]||
+|  |     Exploring Frontend Opportunities Together        ||
+|  |     Hi Tabitha, I'm a Frontend Developer...          ||
 |  +------------------------------------------------------+|
-|                                                          |
-|  [< Precedent]  1 / 2  [Suivant >]                      |
-|                                                          |
-|  +======================================================+|
-|  ||  3 email(s) selectionne(s)                          |||
-|  ||            [Approuver selection] [Envoyer (2)] [x]  |||
-|  +======================================================+|
 +----------------------------------------------------------+
 ```
 
-**Barre d'actions batch**: Fixed en bas, fond sombre, texte clair, avec compteur + actions + bouton fermer
+> **Note sc-723** : Le bouton "Envoyer tous (N)" n'est pas implémenté (remplacé par "Tout approuver").
+> La barre d'actions batch fixe en bas n'est pas implémentée (actions inline sur chaque card).
+> La pagination n'est pas visible mais scroll infini possible.
 
 **Email en mode edition** (inline):
 ```
@@ -975,64 +1003,57 @@ Le dark mode est active via la classe CSS `.dark` sur le `<html>`. Il est config
   | [input sujet editable____________________________]   |
   | [textarea body editable                          ]   |
   | [                                                ]   |
-  | [                                                ]   |
   |                          [Sauvegarder] [Annuler]     |
   +------------------------------------------------------+
 ```
 
-### Composant: ContactDetailPage `/contacts/:id`
+### Composant: ContactDetailPanel (slide-over depuis /contacts)
 
-**Wireframe**:
+> **Note sc-723 — CHANGEMENT MAJEUR** : Le détail contact n'est PAS une page séparée `/contacts/:id`.
+> Il s'ouvre sous forme de **panneau slide-over** superposé à la page /contacts.
+
+**Wireframe** (mis a jour sc-723 — implémentation actuelle):
 ```
-+----------------------------------------------------------+
-|  John Smith                          [Identifie]          |
-|  Engineering Manager . Xero . Auckland                    |
-|  john.smith@xero.com                                     |
-|                                                          |
-|  [Informations]  [Fil de discussion]                     |
-|  ────────────────────────────────────                    |
-|                                                          |
-|  == Onglet Informations ==                               |
-|  +------------------------------------------------------+|
-|  | Informations du contact                              ||
-|  | Email        john.smith@xero.com                     ||
-|  | Entreprise   Xero                                    ||
-|  | Secteur      Tech                                    ||
-|  | Pays         NZ                                      ||
-|  +------------------------------------------------------+|
-|                                                          |
-|  == Onglet Fil de discussion (ThreadView) ==             |
-|  +------------------------------------------------------+|
-|  | Fil de discussion              [Synchroniser]        ||
-|  +------------------------------------------------------+|
-|  | Resume IA (si disponible)                            ||
-|  | "Contact interesse, a demande plus de details sur..." ||
-|  +------------------------------------------------------+|
-|  |                                                      ||
-|  | [NON LU] john@xero.com   [Entretien]   15 mars 2025 ||
-|  | Re: Regarding your backend team                      ||
-|  | Thanks for reaching out! I'd be happy to...          ||
-|  | [Voir plus]                                          ||
-|  | [Suggerer une reponse]                               ||
-|  |                                                      ||
-|  | +--------------------------------------------------+ ||
-|  | | Reponse suggeree par l'IA                        | ||
-|  | | Thank you for your interest, John. I would...    | ||
-|  | +--------------------------------------------------+ ||
-|  +------------------------------------------------------+|
-+----------------------------------------------------------+
++-- Contacts list (blurred) ---+-- Slide-over panel ----------+
+|                              |  Tracey Banwell          [x] |
+|  [list of contacts]          |                              |
+|                              |  Service Manager             |
+|                              |                              |
+|                              |  [IHC icon] IHC              |
+|                              |  [Visa ✓]                    |
+|                              |  [Pin] Auckland, NZ          |
+|                              |  [Globe] ihc.org.nz          |
+|                              |  [Mail] tracey.banwell@ihc   |
+|                              |                              |
+|                              |  ANALYSE IA                  |
+|                              |  [A examiner]                |
+|                              |  "Bien que Tracey ait..."    |
+|                              |                              |
+|                              |  Score expat                 |
+|                              |  [====30%=====...] 30/100    |
+|                              |                              |
+|                              |  HISTORIQUE DES EMAILS       |
+|                              |  Aucun email envoyé          |
++------------------------------+------------------------------+
 ```
 
-**Onglets**: "Informations" et "Fil de discussion" avec underline active primary
-**Replies**: Card avec bordure gauche primary si non lu, badge event (Entretien/Rejet/Offre/Demande info), bouton "Suggerer une reponse"
+**Sections du panneau** :
+1. Header : nom, rôle, bouton fermer [x]
+2. Infos entreprise : icône entreprise + nom, badge visa, ville+pays, site web, email
+3. ANALYSE IA : badge statut (À examiner / Pertinent / etc.), texte raison, barre "Score expat" (N/100)
+4. HISTORIQUE DES EMAILS : liste des emails envoyés ou "Aucun email envoyé"
+
+**Note** : La page `/contacts/:id` existe dans le routing mais redirige vers la liste.
+Le slide-over remplace l'ancienne spec "page full avec onglets Informations / Fil de discussion".
 
 ### Composant: ProfilPage `/profil`
 
-**Wireframe**:
+**Wireframe** (mis a jour sc-723):
 ```
 +----------------------------------------------------------+
 |  Mon profil                                              |
-|  Gerez vos informations et votre CV.                     |
+|  Mettez a jour vos informations pour ameliorer la        |
+|  pertinence du sourcing.                                 |
 |                                                          |
 |  +------------------------------------------------------+|
 |  | Completion du profil                          75%    ||
@@ -1066,11 +1087,14 @@ Le dark mode est active via la classe CSS `.dark` sur le `<html>`. Il est config
 
 ### Composant: TemplatesPage `/parametres/templates`
 
-**Wireframe**:
+> **Note sc-723** : Accessible directement depuis le lien sidebar "Templates" (pas sous Paramètres).
+
+**Wireframe** (mis a jour sc-723):
 ```
 +----------------------------------------------------------+
-|  Mes templates                     [+ Nouveau template]   |
-|  Creez et gerez vos modeles d'emails.                    |
+|  Mes templates d'emails            [+ Nouveau template]   |
+|  Creez des modeles reutilisables pour vos emails de      |
+|  prospection.                                            |
 |                                                          |
 |  [Formulaire inline si creation/edition active]          |
 |  +------------------------------------------------------+|
@@ -1113,11 +1137,14 @@ Le dark mode est active via la classe CSS `.dark` sur le `<html>`. Il est config
 
 ### Composant: PresetsPage `/parametres/presets`
 
-**Wireframe**:
+> **Note sc-723** : Accessible directement depuis le lien sidebar "Presets" (pas sous Paramètres).
+
+**Wireframe** (mis a jour sc-723):
 ```
 +----------------------------------------------------------+
-|  Presets de generation              [+ Nouveau preset]    |
-|  Configurez le ton, le format et les instructions IA.    |
+|  Mes presets de generation          [+ Nouveau preset]    |
+|  Configurez le ton, le format et les instructions pour   |
+|  la generation IA.                                       |
 |                                                          |
 |  [Formulaire inline si creation/edition active]          |
 |  +------------------------------------------------------+|
@@ -1226,65 +1253,61 @@ Le dark mode est active via la classe CSS `.dark` sur le `<html>`. Il est config
 
 ### Composant: AdminUsersPage `/admin/users`
 
-**Wireframe**:
+**Wireframe** (mis a jour sc-723 — reflète l'implémentation actuelle):
 ```
 +----------------------------------------------------------+
 |  Gestion des utilisateurs                                |
-|  Gerez les comptes et les roles.                         |
+|  Gerez les roles et les plans des utilisateurs.          |
+|                                                          |
+|  [Tous (4)]  [Gratuits (2)]  [Premium (2)]               |  <- Filtres plan
 |                                                          |
 |  +------------------------------------------------------+|
-|  | Nom             | Email                  | Admin     ||
-|  |-----------------|------------------------|-----------|
-|  | Yannick B.      | yannick@example.com    | [Admin]   ||
-|  | E2E Test User   | e2e@expathunter.test   | [User]    ||
+|  | Nom             | Email               | Plan | Role ||  |
+|  |-----------------|---------------------|------|------|  |
+|  | Profile Unit User| profile-unit@...   |Gratu | Util |  |
+|  | Yannick B.      | ya.b.net@gmail.com  |Premi | Adm. |  |
+|  | E2E Test User   | e2e-test@...        |Premi | Util |  |
+|  | E2E Reset User  | e2e-reset@...       |Gratu | Util |  |
 |  +------------------------------------------------------+|
 +----------------------------------------------------------+
 ```
 
-**Toggle admin**: Clic sur le badge bascule le role (disabled sur soi-meme)
+**Colonnes** : Nom, Email, Plan (badge Gratuit/Premium), Rôle (badge Admin/Utilisateur), Inscription (date)
+**Filtres plan** : Tous, Gratuits, Premium
 
 ### Composant: AdminAiSettingsPage `/admin/ai-settings`
 
-**Wireframe**:
+**Wireframe** (mis a jour sc-723 — reflète l'implémentation actuelle):
 ```
 +----------------------------------------------------------+
 |  Configuration IA                                        |
-|  Gerez les modeles et parametres d'intelligence artif.   |
+|  Configurez les modeles IA par fonctionnalite.           |
 |                                                          |
 |  +------------------------------------------------------+|
-|  | Defaut                              [Configurer]     ||
-|  | Modele: openai/gpt-4o-mini                           ||
-|  | Temperature: 0.3 | Max tokens: 1024                  ||
-|  | Active                                               ||
+|  | Par defaut                          [Configurer]     ||
+|  | Non configure (utilise les valeurs par defaut)        ||
 |  +------------------------------------------------------+|
 |  | Extraction CV                       [Configurer]     ||
-|  | Non configure                                        ||
+|  | Non configure (utilise les valeurs par defaut)        ||
 |  +------------------------------------------------------+|
 |  | Analyse de pertinence               [Configurer]     ||
-|  | Modele: openai/gpt-4o                                ||
-|  | Temperature: 0.1 | Max tokens: 2048                  ||
+|  | Non configure (utilise les valeurs par defaut)        ||
 |  +------------------------------------------------------+|
 |  | Generation d'emails                 [Configurer]     ||
-|  | ...                                                  ||
+|  | Non configure (utilise les valeurs par defaut)        ||
 |  +------------------------------------------------------+|
 |                                                          |
 |  +------------------------------------------------------+|
-|  | Cache IA                              [Purger]       ||
-|  | +----------+  +----------+                           ||
-|  | | Total    |  | Expires  |                           ||
-|  | |   245    |  |    12    |                           ||
-|  | +----------+  +----------+                           ||
-|  | Par type: relevance (120, ~3j), email (80, ~5j)      ||
-|  +------------------------------------------------------+|
-|                                                          |
-|  +------------------------------------------------------+|
-|  | Limites d'envoi email                                ||
-|  | Max relances      [3]                                ||
-|  | Delai min relance [1] [jours v]                      ||
+|  | Parametres d'envoi d'emails                          ||
+|  | Nombre max. de relances    [3]                       ||
+|  | Delai minimum entre relances [1] [jours v]           ||
 |  | [Sauvegarder]                                        ||
 |  +------------------------------------------------------+|
 +----------------------------------------------------------+
 ```
+
+> **Note sc-723** : La section "Cache IA" (total, expirés, purger) prévue dans la spec originale
+> n'a pas été implémentée. À créer dans une future story si nécessaire.
 
 ### Composant: SearchProgressModal
 
