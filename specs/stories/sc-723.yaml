@@ -1,0 +1,113 @@
+id: sc-723
+name: "chore: sync UX spec wireframes with current implementation"
+status: building
+type: chore
+area: frontend
+estimate: 3
+shortcut_url: "https://app.shortcut.com/expat-hunter/story/723"
+
+context: |
+  The UX spec (specs/expat-hunter-ux.md) was written during conception phase.
+  As the product evolved across 6 must-have features, several pages diverged
+  from their original wireframes. This story audits every page and updates the
+  spec to reflect the actual running app. No code changes — spec file only.
+
+scope:
+  files_to_modify:
+    - specs/expat-hunter-ux.md
+  files_to_create: []
+  excluded:
+    - "Any application code (apps/, packages/)"
+    - "Any test files"
+    - "Any config files"
+
+divergences_identified:
+  sidebar:
+    - "Templates and Presets are now top-level sidebar links (not nested under Paramètres)"
+    - "Admin section shows 'Config. IA' and 'Utilisateurs'"
+    - "Blocages and Connexion email NOT in sidebar (accessible via /parametres/blocages etc.)"
+
+  suivi_pipeline:
+    - "3 summary filter pills added under subtitle (À contacter, Identifié, Analysé counts)"
+    - "Column Contacté color: vert instead of indigo"
+    - "Column Terminé color: vert instead of ambre/doré"
+    - "Cards show: relevance badge, visa badge, Hunter badge, probability score, email, truncated names"
+    - "No gradient on column headers — simple colored top border only"
+
+  contacts_page:
+    - "Relevance filter row added: Très pertinent, Pertinent, À vérifier, Non pertinent"
+    - "Counter in top right: 'N contacts en attente d'analyse'"
+    - "Cards include: AI reason (italic), email, source, Ignorer/Contacter/Revoir links"
+    - "Status dropdown is per-card top-right"
+
+  contact_detail:
+    - "MAJOR: Implemented as slide-over panel on /contacts — NOT a separate page at /contacts/:id"
+    - "Panel shows: name, role, company+visa badge, location, website, email, AI analysis section, email history"
+    - "No tabs (Informations / Fil de discussion) — simplified single-view panel"
+    - "Score expat shown as progress bar (30/100)"
+    - "'Historique des emails' section replaces 'Fil de discussion'"
+
+  parametres_page:
+    - "MISSING: Langue section"
+    - "MISSING: Mode sombre toggle"
+    - "MISSING: Fuseau horaire field"
+    - "MISSING: Personnalisation des emails section (links to templates/presets/blocages/connexion-email)"
+    - "Relance default value is [2] jours, not [7] as in wireframe"
+
+  profil_page:
+    - "Subtitle changed: 'Mettez à jour vos informations pour améliorer la pertinence du sourcing.' (was: 'Gérez vos informations et votre CV.')"
+    - "Layout and content match otherwise"
+
+  admin_ai_settings:
+    - "MISSING: Cache IA section (total, expirés, purger, stats par type)"
+    - "Current content: 4 model sections (all 'Non configuré') + email limits section"
+
+  admin_users:
+    - "Table has Plan column (Gratuit/Premium badges) and Inscription date — not in original wireframe"
+    - "Filter pills: Tous, Gratuits, Premium"
+    - "Role shown as badge (Admin/Utilisateur) — not as toggle"
+
+  recherche_page:
+    - "No '+ Nouvelle recherche' button in top right (wireframe shows it)"
+    - "Rest matches wireframe accurately"
+
+  emails_page:
+    - "Mostly matches. 'Tout approuver (N)' button present"
+    - "Each card: [Modifier] [Approuver] [Supprimer] inline buttons (wireframe had batch actions bar)"
+
+acceptance_criteria:
+  - id: "AC-BP-SC723-01"
+    type: "BP"
+    description: "Given the UX spec / When reading the Sidebar section / Then it matches the actual sidebar (Templates + Presets as top-level, Admin section)"
+    verify: "grep -c 'Templates.*top-level\\|Presets.*top-level\\|top-level.*Templates\\|top-level.*Presets' specs/expat-hunter-ux.md || grep -c 'Templates' specs/expat-hunter-ux.md | grep -v '^0$'"
+    tier: 1
+
+  - id: "AC-BP-SC723-02"
+    type: "BP"
+    description: "Given the UX spec / When reading the PipelineBoard section / Then column colors match implementation (Contacté=vert, Terminé=vert)"
+    verify: "grep -c 'Vert\\|vert' specs/expat-hunter-ux.md"
+    tier: 1
+
+  - id: "AC-BP-SC723-03"
+    type: "BP"
+    description: "Given the UX spec / When reading the ContactDetail section / Then it documents the slide-over panel (not a full page)"
+    verify: "grep -c 'slide-over\\|panneau\\|panel' specs/expat-hunter-ux.md"
+    tier: 1
+
+  - id: "AC-BP-SC723-04"
+    type: "BP"
+    description: "Given the UX spec / When reading the Paramètres section / Then missing sections are noted as intentionally deferred"
+    verify: "grep -c 'differe\\|non implemente\\|manquant\\|absent' specs/expat-hunter-ux.md"
+    tier: 1
+
+  - id: "AC-BP-SC723-05"
+    type: "BP"
+    description: "Given the UX spec / When reading it end-to-end / Then no wireframe references a non-existent UI element without a note"
+    verify: "test -f specs/expat-hunter-ux.md && echo 'spec exists'"
+    tier: 1
+
+  - id: "AC-BP-SC723-DONE"
+    type: "BP"
+    description: "Shortcut ticket sc-723 is moved to Done after PR merge"
+    verify: "echo 'manual: move sc-723 to Done in Shortcut after merge'"
+    tier: 3
