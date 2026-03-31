@@ -14,6 +14,7 @@
     "test:api": "pnpm --filter @expat-hunter/api test",
     "test:frontend": "pnpm --filter @expat-hunter/frontend test",
     "test:e2e": "pnpm --filter @expat-hunter/e2e test",
+    "test:smoke": "pnpm --filter @expat-hunter/e2e exec playwright test --project=smoke",
     "db:migrate": "pnpm --filter @expat-hunter/api db:migrate",
     "db:seed": "pnpm --filter @expat-hunter/api db:seed",
     "db:reset": "pnpm --filter @expat-hunter/api db:reset"

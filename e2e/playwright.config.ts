@@ -28,6 +28,15 @@ export default defineConfig({
       },
       dependencies: ['setup'],
     },
+    {
+      name: 'smoke',
+      testMatch: /smoke\.spec\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        storageState: './fixtures/auth-state.json',
+      },
+      dependencies: ['setup'],
+    },
   ],
 
   webServer: [

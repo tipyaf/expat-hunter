@@ -617,6 +617,20 @@ features:
     validated_at: ""
     notes: "Audited all 15+ pages. Updated specs/expat-hunter-ux.md: sidebar, suivi/pipeline, contacts, contact-detail (slide-over), parametres, admin pages, emails, templates, presets, recherche. PR #121."
 
+  # === SMOKE TESTS ===
+
+  - id: "sc-462"
+    name: "chore: implement smoke test suite"
+    priority: "chore"
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/sc-462.yaml"
+    depends_on: []
+    refined_at: "2026-03-31"
+    started_at: "2026-03-31"
+    validated_at: "2026-03-31"
+    notes: "11/11 smoke tests pass in 19.6s. All 5 Tier-1 ACs pass. No anti-patterns. PR #122."
+
   # === ANTI-BOT PROTECTION ===
 
   - id: "sc-511"
