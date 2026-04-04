@@ -65,8 +65,11 @@ function ContactCard({
   return (
     <div
       draggable
+      role="button"
+      tabIndex={0}
       onDragStart={(e) => onDragStart(e, contact.id)}
       onClick={() => onCardClick(contact.id)}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onCardClick(contact.id) } }}
       className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-light)] p-3 shadow-sm cursor-pointer hover:shadow-md transition-shadow group"
     >
       {/* Name + relevance + block */}
@@ -166,6 +169,7 @@ export default function PipelinePage() {
     reason: '',
   })
   const [blocking, setBlocking] = useState(false)
+  const { isFree } = usePlan()
 
   // Contextual tip for kanban
   const [tip, setTip] = useState<{ message: string; cta?: { label: string; href: string } } | null>(null)
@@ -238,8 +242,6 @@ export default function PipelinePage() {
       setBlocking(false)
     }
   }
-
-  const { isFree } = usePlan()
 
   const kanbanMockup = (
     <div className="flex-1 flex flex-col overflow-hidden">
@@ -321,6 +323,9 @@ export default function PipelinePage() {
               {columns.map((col) => (
                 <div
                   key={col.key}
+                  role="group"
+                  tabIndex={0}
+                  aria-label={t(`col_${col.key}`)}
                   className={`flex flex-col min-w-0 min-h-0 rounded-xl border border-[var(--color-border)] border-t-4 ${COLUMN_COLORS[col.key] ?? 'border-t-gray-300'} bg-[var(--color-surface-light)] ${
                     dragOverCol === col.key ? 'ring-2 ring-primary/30' : ''
                   }`}

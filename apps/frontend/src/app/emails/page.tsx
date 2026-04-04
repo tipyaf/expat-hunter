@@ -201,7 +201,7 @@ export default function EmailsPage() {
           )}
 
           {/* Send progress */}
-          {sendProgress && sendProgress.status === 'running' && (
+          {sendProgress?.status === 'running' && (
             <div className="mb-4 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface-light)] px-4 py-3">
               <div className="flex items-center justify-between text-sm mb-2">
                 <span className="text-[var(--color-text-main)] font-medium">{t('sending')}</span>
@@ -244,13 +244,18 @@ export default function EmailsPage() {
 
         {/* Email list */}
         <div className="flex-1 overflow-y-auto px-4 md:px-8 pb-24">
-          {isLoading ? (
-            <p className="text-sm text-[var(--color-text-muted)] pt-4">{tc('loading')}</p>
-          ) : emails.length === 0 ? (
-            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-8 text-center mt-4">
-              <p className="text-[var(--color-text-muted)]">{t('noEmails')}</p>
-            </div>
-          ) : (
+          {(() => {
+            if (isLoading) {
+              return <p className="text-sm text-[var(--color-text-muted)] pt-4">{tc('loading')}</p>
+            }
+            if (emails.length === 0) {
+              return (
+                <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-8 text-center mt-4">
+                  <p className="text-[var(--color-text-muted)]">{t('noEmails')}</p>
+                </div>
+              )
+            }
+            return (
             <>
               {/* Select all row */}
               <div className="flex items-center gap-3 pt-4 pb-2">
@@ -380,7 +385,8 @@ export default function EmailsPage() {
                 </div>
               )}
             </>
-          )}
+            )
+          })()}
         </div>
 
         {/* Batch actions bar */}

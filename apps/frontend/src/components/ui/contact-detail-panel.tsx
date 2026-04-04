@@ -69,11 +69,10 @@ export function ContactDetailPanel({ contactId, onClose }: ContactDetailPanelPro
       />
 
       {/* Panel */}
-      <div
-        role="dialog"
-        aria-modal="true"
+      <dialog
+        open
         aria-label={contact?.fullName ?? t('title')}
-        className="relative z-50 flex h-full w-full max-w-md flex-col bg-[var(--color-surface-light)] shadow-[var(--shadow-lg)] overflow-hidden"
+        className="relative z-50 flex h-full w-full max-w-md flex-col bg-[var(--color-surface-light)] shadow-[var(--shadow-lg)] overflow-hidden p-0 m-0 border-none"
       >
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--color-border)] shrink-0">
@@ -264,7 +263,7 @@ export function ContactDetailPanel({ contactId, onClose }: ContactDetailPanelPro
             </>
           )}
         </div>
-      </div>
+      </dialog>
     </div>
   )
 }

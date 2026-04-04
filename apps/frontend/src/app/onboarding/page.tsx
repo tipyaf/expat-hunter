@@ -412,7 +412,7 @@ export default function OnboardingPage() {
               <div className="min-h-[80px] max-h-48 overflow-y-auto space-y-2 mb-3">
                 {refineMessages.map((msg, i) => (
                   <div
-                    key={i}
+                    key={`${msg.role}-${i}`}
                     className={`text-xs rounded-lg px-3 py-2 ${
                       msg.role === 'user'
                         ? 'bg-primary/10 text-primary ml-4'

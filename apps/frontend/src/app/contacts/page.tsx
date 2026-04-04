@@ -52,7 +52,7 @@ export default function ContactsPage() {
   const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null)
 
-  const { isAnalyzing, lastResult, stats, error: analysisError, runAnalysis, fetchStats } = useAnalysis()
+  const { isAnalyzing, stats, error: analysisError, runAnalysis, fetchStats } = useAnalysis()
   const [analysisMessage, setAnalysisMessage] = useState<string | null>(null)
 
   useEffect(() => {
@@ -188,13 +188,18 @@ export default function ContactsPage() {
 
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto px-4 md:px-8 pb-8">
-          {isLoading ? (
-            <p className="text-sm text-[var(--color-text-muted)]">{tc('loading')}</p>
-          ) : contacts.length === 0 ? (
-            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-8 text-center">
-              <p className="text-[var(--color-text-muted)]">{t('noContacts')}</p>
-            </div>
-          ) : (
+          {(() => {
+            if (isLoading) {
+              return <p className="text-sm text-[var(--color-text-muted)]">{tc('loading')}</p>
+            }
+            if (contacts.length === 0) {
+              return (
+                <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-8 text-center">
+                  <p className="text-[var(--color-text-muted)]">{t('noContacts')}</p>
+                </div>
+              )
+            }
+            return (
             <>
               <div className="space-y-3">
                 {contacts.map((contact) => {
@@ -202,7 +207,10 @@ export default function ContactsPage() {
                   return (
                     <div
                       key={contact.id}
+                      role="button"
+                      tabIndex={0}
                       onClick={() => setSelectedContactId(contact.id)}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedContactId(contact.id) } }}
                       className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-4 shadow-sm cursor-pointer hover:border-primary/40 transition-colors"
                     >
                       <div className="flex items-start justify-between gap-4">
@@ -254,17 +262,19 @@ export default function ContactsPage() {
                               </a>
                             )}
                             {user?.isAdmin && <span>{t('source')}: {contact.source}</span>}
-                            {contact.aiRecommendation && (
-                              <span className={`font-medium ${
+                            {contact.aiRecommendation && (() => {
+                              const recColor =
                                 contact.aiRecommendation === 'contact'
                                   ? 'text-green-600'
                                   : contact.aiRecommendation === 'skip'
                                     ? 'text-red-500'
                                     : 'text-yellow-600'
-                              }`}>
-                                {t(`rec_${contact.aiRecommendation}`)}
-                              </span>
-                            )}
+                              return (
+                                <span className={`font-medium ${recColor}`}>
+                                  {t(`rec_${contact.aiRecommendation}`)}
+                                </span>
+                              )
+                            })()}
                           </div>
                         </div>
                         <div className="shrink-0">
@@ -341,7 +351,8 @@ export default function ContactsPage() {
                 </div>
               )}
             </>
-          )}
+            )
+          })()}
         </div>
       </main>
       <ContactDetailPanel

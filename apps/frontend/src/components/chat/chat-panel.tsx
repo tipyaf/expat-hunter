@@ -135,9 +135,9 @@ export function ChatPanel({
   }
 
   return (
-    <div
-      className="fixed bottom-0 right-0 z-50 flex h-[600px] w-[380px] max-h-[90vh] flex-col rounded-tl-2xl rounded-bl-none shadow-2xl border border-[var(--color-border)] bg-[var(--color-bg-light)]"
-      role="dialog"
+    <dialog
+      open
+      className="fixed bottom-0 right-0 z-50 flex h-[600px] w-[380px] max-h-[90vh] flex-col rounded-tl-2xl rounded-bl-none shadow-2xl border border-[var(--color-border)] bg-[var(--color-bg-light)] p-0 m-0"
       aria-label={t('title')}
     >
       {/* Header */}
@@ -263,14 +263,14 @@ export function ChatPanel({
       {/* Input */}
       <div className="border-t border-[var(--color-border)] p-3">
         {/* Quota counter for free users */}
-        {quota && quota.remaining !== null && (
+        {quota?.remaining != null && (
           <div className={`mb-2 text-xs text-center ${quota.remaining <= 3 ? 'text-[var(--color-error)] font-medium' : 'text-[var(--color-text-muted)]'}`}>
             {quota.remaining > 0
               ? t('quotaRemaining', { remaining: quota.remaining, limit: quota.limit })
               : t('quotaExhausted')}
           </div>
         )}
-        {quota && quota.remaining === 0 ? (
+        {quota?.remaining === 0 ? (
           <div className="text-center py-2">
             <a
               href="/upgrade"
@@ -317,6 +317,6 @@ export function ChatPanel({
         </div>
         )}
       </div>
-    </div>
+    </dialog>
   )
 }
