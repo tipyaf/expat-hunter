@@ -1,0 +1,67 @@
+id: "sc-198"
+name: "test: complete backend test coverage for candidate-profile"
+type: "chore"
+status: "validated"
+shortcut_url: "https://app.shortcut.com/expat-hunter/story/198"
+
+scope:
+  - "apps/api/tests/functional/profile/profile.spec.ts"
+  - "apps/api/tests/unit/services/profile_service.spec.ts"
+
+context: |
+  The candidate-profile backend is fully implemented (ProfileService, ProfileController,
+  4 routes: GET/PUT /api/profile, POST /api/profile/cv, POST /api/profile/complete-onboarding).
+  16 functional tests exist and pass. This story completes coverage on:
+  - CV upload (real file, invalid extension)
+  - completionPercentage calculation
+  - ProfileService unit tests
+  - sendingSchedule and followUps validation edge cases
+
+acceptance_criteria:
+  - id: "AC-FUNC-SC198-01"
+    type: "FUNC"
+    description: "Unit test file exists for ProfileService"
+    verify: "test -f apps/api/tests/unit/services/profile_service.spec.ts && echo PASS || echo FAIL"
+    tier: 1
+
+  - id: "AC-FUNC-SC198-02"
+    type: "FUNC"
+    description: "Functional tests cover CV upload with a real .txt file"
+    verify: "grep -n 'txt\\|file.*upload\\|upload.*file\\|multipart' apps/api/tests/functional/profile/profile.spec.ts | head -5"
+    tier: 1
+
+  - id: "AC-FUNC-SC198-03"
+    type: "FUNC"
+    description: "Functional tests cover completionPercentage"
+    verify: "grep -c 'completionPercentage' apps/api/tests/functional/profile/profile.spec.ts"
+    tier: 1
+
+  - id: "AC-FUNC-SC198-04"
+    type: "FUNC"
+    description: "Unit tests cover getOrCreateProfile, updateProfile, completeOnboarding"
+    verify: "grep -c 'getOrCreateProfile\\|updateProfile\\|completeOnboarding' apps/api/tests/unit/services/profile_service.spec.ts"
+    tier: 1
+
+  - id: "AC-FUNC-SC198-05"
+    type: "FUNC"
+    description: "All unit tests pass"
+    verify: "cd apps/api && NODE_ENV=test node --import tsx/esm bin/test.ts --files 'tests/unit/services/profile_service.spec.ts' 2>&1 | grep -E 'PASSED|FAILED'"
+    tier: 2
+
+  - id: "AC-FUNC-SC198-06"
+    type: "FUNC"
+    description: "All functional profile tests pass (including new ones)"
+    verify: "cd apps/api && NODE_ENV=test node --import tsx/esm bin/test.ts --files 'tests/functional/profile/profile.spec.ts' 2>&1 | grep -E 'PASSED|FAILED'"
+    tier: 2
+
+  - id: "AC-SEC-SC198-01"
+    type: "SEC"
+    description: "CV upload requires authentication (route protected by auth middleware)"
+    verify: "grep -A 5 'prefix.*api/profile' apps/api/start/routes.ts | grep 'middleware.auth'"
+    tier: 1
+
+  - id: "AC-BP-SC198-01"
+    type: "BP"
+    description: "Test setup cleans DB before each test (no state leak)"
+    verify: "grep -c 'group.each.setup' apps/api/tests/unit/services/profile_service.spec.ts"
+    tier: 1

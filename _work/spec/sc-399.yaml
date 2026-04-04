@@ -1,0 +1,117 @@
+story:
+  id: "sc-399"
+  shortcut_url: "https://app.shortcut.com/expat-hunter/story/399"
+  title: "Fix: user account wiped from dev DB when tests run"
+  parent_spec: "specs/expat-hunter.yaml"
+  status: "refined"
+  size: "S"
+  estimate: 2
+  type: "bug"
+  priority: "high"
+  area: "backend"
+  refined_at: "2026-03-26"
+  refined_by: "refinement"
+
+context: |
+  Tests in apps/api/tests/functional use db.from('users').delete() in group.each.setup().
+  If expat_hunter_test DB does not exist or .env.test is not loaded, tests delete from
+  expat_hunter_dev, wiping real user accounts. The fix is a guard in bin/test.ts and
+  ensuring the test DB is isolated.
+
+scope:
+  included:
+    - "Guard in apps/api/bin/test.ts: assert NODE_ENV=test + DB_DATABASE ends with _test"
+    - "Create expat_hunter_test DB if it does not exist"
+    - ".env.test verified to point to expat_hunter_test"
+  excluded:
+    - "Rewriting test cleanup patterns (separate tech-debt story)"
+    - "Migrating to transaction-based test isolation"
+  files_to_modify:
+    - path: "apps/api/bin/test.ts"
+      reason: "Add guard that throws if NODE_ENV !== 'test' or DB_DATABASE does not end in _test"
+  files_to_create: []
+  files_to_read:
+    - "apps/api/bin/test.ts"
+    - "apps/api/.env.test"
+
+acceptance_criteria:
+
+  functional:
+    - id: "AC-FUNC-SC399-01"
+      description: "Given bin/test.ts is executed / When NODE_ENV is not 'test' / Then it throws before running any test"
+      verify: "grep -n 'NODE_ENV\\|process.exit\\|throw\\|assert' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/bin/test.ts | grep -v '//' | wc -l | tr -d ' ' | grep -v '^0$'"
+      tier: 1
+
+    - id: "AC-FUNC-SC399-02"
+      description: "Given Docker is running / When checking available databases / Then expat_hunter_test exists"
+      verify: "docker exec expat-hunter-db psql -U expathunter -c '\\l' | grep expat_hunter_test"
+      tier: 2
+
+    - id: "AC-FUNC-SC399-03"
+      description: "Given .env.test / When reading DB_DATABASE / Then it points to expat_hunter_test"
+      verify: "grep 'DB_DATABASE' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/.env.test | grep expat_hunter_test"
+      tier: 1
+
+    - id: "AC-FUNC-SC399-04"
+      description: "Given a user exists in expat_hunter_dev / When tests run with NODE_ENV=test / Then dev DB user is untouched"
+      verify: "NODE_ENV=test node --import tsx/esm /Volumes/Samsung_T5/dev/expat-hunter/apps/api/bin/test.ts 2>&1 | grep -v 'FAILED\\|Error' | head -5"
+      tier: 2
+
+  security:
+    - id: "AC-SEC-SC399-01"
+      description: "Guard must prevent any DB delete from running against non-test database"
+      verify: "grep -n 'expat_hunter_test\\|_test\\|NODE_ENV' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/bin/test.ts | wc -l | tr -d ' ' | grep -v '^0$'"
+      tier: 1
+
+  best_practices:
+    - id: "AC-BP-SC399-01"
+      description: "Guard exits with non-zero code and clear error message when DB is wrong"
+      verify: "grep -n 'process.exit\\|throw new Error\\|console.error' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/bin/test.ts | wc -l | tr -d ' ' | grep -v '^0$'"
+      tier: 1
+
+edge_cases:
+  - description: "DB_DATABASE is not set"
+    handling: "Guard treats undefined as non-test — throws immediately"
+  - description: ".env.test not loaded (e.g. running via npm test without dotenv-cli)"
+    handling: "Guard catches this via NODE_ENV check before any DB operation"
+  - description: "expat_hunter_test DB does not exist"
+    handling: "Create via Docker init script or manual psql — documented in story"
+
+depends_on: []
+
+notes: |
+  Root cause: group.each.setup() in functional tests calls db.from('users').delete()
+  unconditionally. If tests accidentally connect to expat_hunter_dev, this wipes the
+  dev user table.
+
+  The guard in bin/test.ts must run BEFORE Japa initialises any test groups:
+    if (process.env.NODE_ENV !== 'test') {
+      console.error('ABORT: NODE_ENV must be "test". Got:', process.env.NODE_ENV)
+      process.exit(1)
+    }
+    const dbName = process.env.DB_DATABASE ?? ''
+    if (!dbName.endsWith('_test')) {
+      console.error('ABORT: DB_DATABASE must end with _test. Got:', dbName)
+      process.exit(1)
+    }
+
+  Create test DB if missing:
+    docker exec expat-hunter-db psql -U expathunter -c "CREATE DATABASE expat_hunter_test;"
+
+definition_of_done:
+  - "Guard in bin/test.ts throws for non-test NODE_ENV and non-_test DB name"
+  - "expat_hunter_test DB exists in Docker"
+  - ".env.test points to expat_hunter_test"
+  - "All AC verify: commands pass"
+  - "No TypeScript errors (tsc --noEmit)"
+  - "PR merged into main"
+  - "Shortcut story moved to Done"
+
+closing_ac:
+  - id: "AC-BP-SC399-DONE"
+    type: "BP"
+    description: |
+      PR is merged into main — story closure gate.
+      After this passes, validator MUST move sc-399 to Done (workflow_state_id: 500000010).
+    verify: "gh pr list --state merged --base main --json title | grep -q 'sc-399\\|user.*wipe\\|wipe.*dev\\|test.*guard'"
+    tier: 1

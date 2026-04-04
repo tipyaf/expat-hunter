@@ -1,0 +1,193 @@
+# ============================================================================
+# ExpatHunter — Implementation Manifest
+# ============================================================================
+# Ordered build plan derived from architecture + feature dependencies.
+# Each phase builds on the previous. Features within a phase can be parallelized.
+# ============================================================================
+
+project:
+  name: "expat-hunter"
+  stack:
+    runtime: "node"
+    backend: "adonisjs@6"
+    frontend: "nextjs@15"
+    database: "postgresql@16"
+    cache: "redis@7"
+    orm: "lucid"
+    queue: "bullmq (via @adonisjs/queue)"
+    testing_backend: "japa"
+    testing_frontend: "vitest"
+    linting: "biome"
+    package_manager: "pnpm"
+    monorepo: "pnpm workspaces"
+
+# ============================================================================
+# BUILD ORDER
+# ============================================================================
+# Phase 0: Scaffold (project init, deps, structure, CI)
+# Phase 1: candidate-profile (foundation — all features depend on this)
+# Phase 2: contact-sourcing (depends on profile for targeting)
+# Phase 3: ai-relevance-analysis (depends on profile + contacts)
+#           pipeline-dashboard (depends on contacts, parallel with AI)
+# Phase 4: personalized-emailing (depends on AI analysis)
+# Phase 5: should-have features (signal-detection, multi-country)
+# ============================================================================
+
+build_phases:
+  - phase: 0
+    name: "Scaffold"
+    description: "Project initialization, dependencies, folder structure, dev tooling"
+    tasks:
+      - "Initialize pnpm monorepo with workspaces"
+      - "Set up AdonisJS 6 in apps/api"
+      - "Set up Next.js 15 in apps/frontend"
+      - "Create packages/shared with shared types"
+      - "Configure PostgreSQL + Redis (docker-compose)"
+      - "Configure Biome linting"
+      - "Set up Tailwind CSS with design tokens"
+      - "Create base layout (sidebar, auth pages)"
+      - "Set up i18n (next-intl frontend, @adonisjs/i18n backend)"
+      - "Configure auth (session-based, login/register/logout)"
+      - "Set up Japa test runner (backend) + Vitest (frontend)"
+    outputs:
+      - "Project compiles and starts (api + frontend)"
+      - "Login/register/logout functional"
+      - "Sidebar navigation renders"
+      - "i18n switching works (FR/EN)"
+
+  - phase: 1
+    name: "Candidate Profile"
+    feature_id: "candidate-profile"
+    depends_on: ["scaffold"]
+    tasks:
+      - "Create CandidateProfile model + migration"
+      - "Implement profile CRUD API (GET/PUT /api/profile)"
+      - "Implement CV upload endpoint (POST /api/profile/cv)"
+      - "Implement CV parsing service (pdf-parse + AI extraction)"
+      - "Build onboarding wizard (3 steps)"
+      - "Build profile editing page (/profil)"
+      - "Add onboarding redirect logic"
+    outputs:
+      - "User can complete onboarding wizard"
+      - "CV upload and AI parsing works"
+      - "Profile data persisted in database"
+
+  - phase: 2
+    name: "Contact Sourcing"
+    feature_id: "contact-sourcing"
+    depends_on: ["candidate-profile"]
+    tasks:
+      - "Create Company + Contact + SourcingRun models + migrations"
+      - "Implement base scraper abstract class"
+      - "Implement scraper registry (per country/source)"
+      - "Implement at least 1 scraper (Seek NZ as reference)"
+      - "Implement Apify fallback adapter"
+      - "Implement deduplication service"
+      - "Implement sourcing background job"
+      - "Build search page (/recherche) with launch form"
+      - "Build search progress modal (SSE or polling)"
+      - "Build contacts list page (/contacts)"
+      - "Implement anti-detection (user-agent rotation, delays, proxy)"
+    outputs:
+      - "User can launch a sourcing run"
+      - "Contacts are scraped and stored"
+      - "Deduplication removes duplicates"
+      - "Progress is visible in real-time"
+
+  - phase: 3
+    name: "AI Analysis + Pipeline"
+    feature_ids: ["ai-relevance-analysis", "pipeline-dashboard"]
+    depends_on: ["contact-sourcing"]
+    tasks:
+      # AI Analysis
+      - "Implement OpenRouter client service"
+      - "Implement relevance analyzer (profile vs contact scoring)"
+      - "Implement analysis background job"
+      - "Add score/reason/recommendation to contact model"
+      - "Build analysis results UI on contact cards"
+      # Pipeline
+      - "Implement pipeline API (contacts grouped by status)"
+      - "Implement status change API (PATCH)"
+      - "Build kanban board (/suivi) with 6 columns"
+      - "Implement drag-and-drop status changes"
+      - "Build pipeline filters and counters"
+      - "Build contact detail page (/contacts/:id)"
+    outputs:
+      - "Contacts receive AI relevance scores"
+      - "Kanban board shows contacts by status"
+      - "Drag-and-drop changes status"
+      - "Filters and counters work"
+
+  - phase: 4
+    name: "Personalized Emailing"
+    feature_id: "personalized-emailing"
+    depends_on: ["ai-relevance-analysis"]
+    tasks:
+      - "Create EmailMessage + FollowUpSequence models + migrations"
+      - "Implement email composer AI service"
+      - "Implement email generation API"
+      - "Implement Gmail OAuth2 integration"
+      - "Implement email sending service"
+      - "Implement follow-up scheduling job"
+      - "Build email management page (/emails)"
+      - "Build email preview/edit UI"
+      - "Build generation presets page (/parametres/presets)"
+      - "Build follow-up configuration (/parametres)"
+      - "Build email connection settings (/parametres/connexion-email)"
+      - "Implement cooldown tracking"
+    outputs:
+      - "AI generates personalized emails"
+      - "User can preview, edit, approve emails"
+      - "Emails sent via Gmail API"
+      - "Follow-up sequences execute automatically"
+
+  - phase: 5
+    name: "Should-Have Features"
+    feature_ids: ["signal-detection", "multi-country"]
+    depends_on: ["personalized-emailing"]
+    tasks:
+      # Signal Detection
+      - "Implement signal detection scrapers (job posts, team growth)"
+      - "Add signals to company/contact models"
+      - "Integrate signals into relevance scoring"
+      - "Display signals on contact/company cards"
+      # Multi-Country
+      - "Add country-specific scraper configurations"
+      - "Implement additional scrapers (AU, CA, UK minimum)"
+      - "Validate country selector with real data"
+    outputs:
+      - "Signals influence scoring and are visible"
+      - "At least 4 countries have working scrapers"
+
+# ============================================================================
+# SHARED MODELS (packages/shared)
+# ============================================================================
+shared_types:
+  - "ContactStatus (identified | analyzed | to_contact | contacted | replied | interview | offer | rejected)"
+  - "SourcingRunStatus (pending | scraping | enriching | analyzing | generating | completed | failed)"
+  - "EmailStatus (draft | approved | sent | opened | replied | bounced)"
+  - "EmailType (initial | follow_up_1 | follow_up_2 | follow_up_3)"
+  - "AiRecommendation (contact | skip | manual_review)"
+  - "PresetFramework (aida | pas | bab | direct)"
+  - "PresetLength (short | medium | long)"
+  - "UserRole (user | admin)"
+
+# ============================================================================
+# INFRASTRUCTURE
+# ============================================================================
+infrastructure:
+  development:
+    - "docker-compose: postgres + redis"
+    - "pnpm dev: starts api (port 3333) + frontend (port 3000)"
+  deployment:
+    target: "VPS Hostinger KVM2"
+    ci_cd: "GitHub Actions"
+    containers: "Docker (api + frontend + postgres + redis)"
+    reverse_proxy: "Caddy or Nginx"
+    ssl: "Let's Encrypt (via Caddy auto-TLS)"
+  budget:
+    hosting: "~10$/month (Hostinger KVM2)"
+    ai_api: "~10$/month (OpenRouter)"
+    apify: "~5$/month (fallback scraping)"
+    gmail_api: "free (under quota)"
+    total: "<30$/month"

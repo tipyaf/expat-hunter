@@ -1,0 +1,92 @@
+story:
+  id: "sc-336"
+  shortcut_url: "https://app.shortcut.com/expat-hunter/story/336"
+  title: "Centralize hardcoded test credentials (API + e2e)"
+  parent_spec: "specs/expat-hunter.yaml"
+  status: "refined"
+  size: "S"
+  estimate: 2
+  type: "chore"
+  refined_at: "2026-03-27"
+  refined_by: "refinement"
+
+user_story: >
+  As a developer, I want all test credentials (API functional tests + e2e fixtures)
+  to be read from environment variables rather than hardcoded in source files,
+  so that rotating credentials requires changing a single file instead of every test.
+
+scope:
+  already_done:
+    - "apps/api/tests/helpers/credentials.ts — helper exists, exports TEST_USER_EMAIL + TEST_USER_PASSWORD"
+    - "apps/api/.env.test — TEST_USER_EMAIL and TEST_USER_PASSWORD already defined"
+    - "apps/api/tests/functional/ — all functional tests already import from credentials.ts"
+  files_to_modify:
+    - path: "e2e/fixtures/seed.ts"
+      reason: "Replace hardcoded email + password with process.env reads (E2E_USER_EMAIL, E2E_USER_PASSWORD)"
+    - path: "apps/api/.env.test"
+      reason: "Add E2E_USER_EMAIL and E2E_USER_PASSWORD for completeness (shared .env.test loaded by e2e global-setup)"
+    - path: "apps/api/.env.example"
+      reason: "Document E2E_USER_EMAIL and E2E_USER_PASSWORD for new devs"
+  out_of_scope:
+    - "Unit tests that create temporary inline users (password123 there is fine — they are not the shared test account)"
+    - "The fallback value in credentials.ts (process.env.TEST_USER_PASSWORD ?? 'password123') — intentional CI fallback"
+
+acceptance_criteria:
+
+  security:
+    - id: "AC-SEC-SC336-01"
+      description: "e2e/fixtures/seed.ts reads email and password from process.env (not direct assignment)"
+      verify: "grep -n 'email: process.env.E2E_USER_EMAIL' /Volumes/Samsung_T5/dev/expat-hunter/e2e/fixtures/seed.ts && grep -n 'password: process.env.E2E_USER_PASSWORD' /Volumes/Samsung_T5/dev/expat-hunter/e2e/fixtures/seed.ts"
+      tier: 1
+
+    - id: "AC-SEC-SC336-02"
+      description: ".env.test defines E2E_USER_EMAIL and E2E_USER_PASSWORD"
+      verify: "grep -n 'E2E_USER_EMAIL' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/.env.test && grep -n 'E2E_USER_PASSWORD' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/.env.test"
+      tier: 1
+
+  functional:
+    - id: "AC-FUNC-SC336-01"
+      description: "seed.ts exports TEST_USER reading email from process.env.E2E_USER_EMAIL with fallback"
+      verify: "grep -n 'process.env.E2E_USER_EMAIL' /Volumes/Samsung_T5/dev/expat-hunter/e2e/fixtures/seed.ts"
+      tier: 1
+
+    - id: "AC-FUNC-SC336-02"
+      description: "seed.ts exports TEST_USER reading password from process.env.E2E_USER_PASSWORD with fallback"
+      verify: "grep -n 'process.env.E2E_USER_PASSWORD' /Volumes/Samsung_T5/dev/expat-hunter/e2e/fixtures/seed.ts"
+      tier: 1
+
+    - id: "AC-FUNC-SC336-03"
+      description: "API credentials helper still exports TEST_USER_EMAIL and TEST_USER_PASSWORD"
+      verify: "grep -n 'TEST_USER_EMAIL\\|TEST_USER_PASSWORD' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/tests/helpers/credentials.ts"
+      tier: 1
+
+  best_practices:
+    - id: "AC-BP-SC336-01"
+      description: "seed.ts syntax valid — Playwright can list e2e tests without compile errors"
+      verify: "cd /Volumes/Samsung_T5/dev/expat-hunter/e2e && node_modules/.bin/playwright test --list 2>&1 | grep -c 'error TS' | tr -d ' ' | grep '^0$'"
+      tier: 1
+
+    - id: "AC-BP-SC336-02"
+      description: "TypeScript: 0 errors in API"
+      verify: "cd /Volumes/Samsung_T5/dev/expat-hunter/apps/api && npx tsc --noEmit 2>&1 | wc -l | tr -d ' ' | grep '^0$'"
+      tier: 1
+
+edge_cases:
+  - description: "E2E_USER_PASSWORD not set in env (CI without .env.test)"
+    handling: "Fallback: process.env.E2E_USER_PASSWORD ?? 'E2eTestPassword123!' — e2e still runs"
+  - description: "E2E_USER_EMAIL not set in env"
+    handling: "Fallback: process.env.E2E_USER_EMAIL ?? 'e2e-test@expathunter.test'"
+
+depends_on: []
+
+notes: |
+  sc-461 (fix: e2e specs with hardcoded credentials fail) merged into this story.
+  Backend API side already complete. Only remaining work: externalize e2e/fixtures/seed.ts credentials.
+  Unit tests creating temporary inline users (password123) are intentionally excluded per original scope.
+
+definition_of_done:
+  - "AC-SEC-SC336-01: seed.ts has no hardcoded email or password"
+  - "AC-SEC-SC336-02: .env.test has E2E_USER_EMAIL + E2E_USER_PASSWORD"
+  - "AC-FUNC-SC336-01+02: seed.ts reads from process.env"
+  - "0 TS errors"
+  - "PR merged"

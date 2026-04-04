@@ -40,7 +40,7 @@ agents/              → Definitions of 9 agents (role, rules, output)
 prompts/phases/      → Detailed instructions per phase (0 → 6)
 specs/templates/     → YAML spec templates
 memory/              → Persistent memory per project
-_work/stacks/              → Tech stack definitions
+stacks/              → Tech stack definitions
 rules/               → This file + CLAUDE.md
 output/              → Generated projects
 examples/            → Spec examples
