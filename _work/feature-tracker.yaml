@@ -551,3 +551,14 @@ features:
     started_at: "2026-04-04"
     validated_at: "2026-04-04"
     notes: "~20 issues across 12 frontend files. PR #130."
+
+  - id: "sc-755"
+    name: "chore: single-command local dev startup (front + back + SonarQube)"
+    priority: "chore"
+    status: "validated"
+    cycles: 1
+    story_file: "_work/spec/sc-755.yaml"
+    depends_on: []
+    started_at: "2026-04-04"
+    validated_at: "2026-04-04"
+    notes: "Docker compose in .devtools/, scripts in root package.json, credentials from .env. 7/7 ACs pass. PR #135."
