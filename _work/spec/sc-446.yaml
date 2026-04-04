@@ -1,0 +1,95 @@
+id: "sc-446"
+name: "e2e: audit and complete frontend test coverage"
+type: "feature"
+priority: "high"
+area: "frontend"
+estimate: 5
+epic: "Engineering Excellence (#314)"
+shortcut_url: "https://app.shortcut.com/expat-hunter/story/446"
+
+context: |
+  The project has 10 Playwright e2e specs covering the main user flows. Several features shipped
+  recently (password toggle, contact detail panel, chat links, Google OAuth) have no e2e coverage.
+  The build checklist in CLAUDE.md also lacks an explicit e2e gate for frontend stories, allowing
+  agents to declare a story "done" without writing Playwright specs.
+  This story fixes both: updates the process (CLAUDE.md) and fills the missing coverage (5 new specs).
+  New requirement: e2e tests must be maintained on every change — broken specs block the merge.
+
+scope:
+  included:
+    - "Update CLAUDE.md: e2e tests explicit mandatory gate for frontend stories"
+    - "Update CLAUDE.md: broken e2e specs block PR merge — updating existing specs is mandatory on every frontend change"
+    - "login-flow.spec.ts: fill email+password → submit → redirect to /; wrong credentials → error shown"
+    - "contact-detail-panel.spec.ts: open panel from pipeline card, verify dialog, close via button and Escape"
+    - "password-toggle.spec.ts: show/hide toggle on /login, /register, /reset-password"
+    - "chat-links.spec.ts: open chat, internal link → Next.js navigation, external link → target=_blank"
+    - "oauth.spec.ts: Google button visible on /login and /register, click → redirect to /api/auth/google"
+  excluded:
+    - "LinkedIn OAuth (sc-434 not yet built)"
+    - "Full Google OAuth end-to-end flow (requires external provider mock)"
+    - "Backend API tests (covered by Japa)"
+    - "Mobile app"
+
+files_to_create:
+  - "e2e/tests/login-flow.spec.ts"
+  - "e2e/tests/contact-detail-panel.spec.ts"
+  - "e2e/tests/password-toggle.spec.ts"
+  - "e2e/tests/chat-links.spec.ts"
+  - "e2e/tests/oauth.spec.ts"
+
+files_to_modify:
+  - "CLAUDE.md"
+  - "specs/feature-tracker.yaml"
+
+acceptance_criteria:
+  - id: "AC-BP-E2E-01"
+    type: "BP"
+    description: "CLAUDE.md build checklist contains an explicit e2e gate for frontend stories"
+    verify: "grep -c 'e2e' CLAUDE.md | xargs -I{} test {} -ge 1 && echo OK"
+    tier: 1
+
+  - id: "AC-BP-E2E-02"
+    type: "BP"
+    description: "CLAUDE.md contains a rule that broken e2e specs block the merge and specs must be updated on every frontend change"
+    verify: "grep -q 'broken\\|block\\|merge' CLAUDE.md && echo OK"
+    tier: 1
+
+  - id: "AC-FUNC-E2E-03"
+    type: "FUNC"
+    description: "Given a valid user / When filling login form and submitting / Then redirected to dashboard. Given wrong credentials / Then error message shown."
+    verify: "pnpm --filter @expat-hunter/e2e test -- login-flow.spec.ts"
+    tier: 2
+
+  - id: "AC-FUNC-E2E-04"
+    type: "FUNC"
+    description: "Given a contact card on /suivi / When clicked / Then detail panel dialog opens with contact name. When Escape pressed or close button clicked / Then panel closes."
+    verify: "pnpm --filter @expat-hunter/e2e test -- contact-detail-panel.spec.ts"
+    tier: 2
+
+  - id: "AC-FUNC-E2E-05"
+    type: "FUNC"
+    description: "Given a password field on /login, /register, /reset-password / When toggle clicked / Then input type switches between password and text."
+    verify: "pnpm --filter @expat-hunter/e2e test -- password-toggle.spec.ts"
+    tier: 2
+
+  - id: "AC-FUNC-E2E-06"
+    type: "FUNC"
+    description: "Given the chat panel is open / When the assistant reply contains an internal link / Then it navigates in-app. When it contains an external link / Then it opens in a new tab with rel=noopener."
+    verify: "pnpm --filter @expat-hunter/e2e test -- chat-links.spec.ts"
+    tier: 2
+
+  - id: "AC-FUNC-E2E-07"
+    type: "FUNC"
+    description: "Given /login and /register pages / When loaded / Then Google OAuth button is visible. When clicked / Then browser navigates toward /api/auth/google."
+    verify: "pnpm --filter @expat-hunter/e2e test -- oauth.spec.ts"
+    tier: 2
+
+  - id: "AC-FUNC-E2E-08"
+    type: "FUNC"
+    description: "Full Playwright suite (all 15 specs) passes with 0 failures."
+    verify: "pnpm --filter @expat-hunter/e2e test"
+    tier: 2
+
+started_at: "2026-03-27"
+validated_at: ""
+cycles: 0

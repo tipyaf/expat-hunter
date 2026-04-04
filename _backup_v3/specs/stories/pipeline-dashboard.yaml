@@ -1,0 +1,92 @@
+id: "pipeline-dashboard"
+name: "feat: pipeline dashboard — kanban 6 columns, drag & drop, contact cards"
+type: "feature"
+status: "validated"
+shortcut_url: ""
+
+context: |
+  Retrospective story — the feature was fully implemented before the framework was set up.
+  PipelineService builds a 6-column kanban board (found → to_contact → contacted →
+  in_discussion → interview → done). Frontend /suivi page has drag & drop HTML5, ContactCard
+  with relevance badge, email status, visa sponsor badge, score breakdown. Status change via
+  PATCH /api/contacts/:id/status.
+
+scope:
+  - "apps/api/app/controllers/pipeline_controller.ts"
+  - "apps/api/app/services/pipeline_service.ts"
+  - "apps/api/start/routes.ts"
+  - "apps/frontend/src/app/suivi/page.tsx"
+  - "apps/frontend/src/hooks/use-pipeline.ts"
+
+acceptance_criteria:
+  - id: "AC-FUNC-PD-01"
+    type: "FUNC"
+    description: "GET /api/pipeline wired to PipelineController.index"
+    verify: "grep -c \"PipelineController, 'index'\" apps/api/start/routes.ts"
+    tier: 1
+
+  - id: "AC-FUNC-PD-02"
+    type: "FUNC"
+    description: "GET /api/pipeline/stats wired to PipelineController.stats"
+    verify: "grep -c \"PipelineController, 'stats'\" apps/api/start/routes.ts"
+    tier: 1
+
+  - id: "AC-FUNC-PD-03"
+    type: "FUNC"
+    description: "PATCH /api/contacts/:id/status wired to ContactsController.updateStatus"
+    verify: "grep -c \"ContactsController, 'updateStatus'\" apps/api/start/routes.ts"
+    tier: 1
+
+  - id: "AC-FUNC-PD-04"
+    type: "FUNC"
+    description: "PipelineService defines 6 columns (found, to_contact, contacted, in_discussion, interview, done)"
+    verify: "grep -c 'found\\|to_contact\\|contacted\\|in_discussion\\|interview\\|done' apps/api/app/services/pipeline_service.ts"
+    tier: 1
+
+  - id: "AC-FUNC-PD-05"
+    type: "FUNC"
+    description: "Frontend /suivi page exists and uses usePipeline hook"
+    verify: "test -f apps/frontend/src/app/suivi/page.tsx && grep -c 'usePipeline' apps/frontend/src/app/suivi/page.tsx"
+    tier: 1
+
+  - id: "AC-FUNC-PD-06"
+    type: "FUNC"
+    description: "ContactCard supports drag & drop (draggable attribute)"
+    verify: "grep -c 'draggable\\|onDragStart\\|onDrop' apps/frontend/src/app/suivi/page.tsx"
+    tier: 1
+
+  - id: "AC-FUNC-PD-07"
+    type: "FUNC"
+    description: "All pipeline unit and functional tests pass"
+    verify: "cd apps/api && ~/.nvm/versions/node/v22.22.1/bin/node --import tsx/esm bin/test.ts 2>&1 | grep -E 'Tests.*passed'"
+    tier: 2
+
+  - id: "AC-SEC-PD-01"
+    type: "SEC"
+    description: "All /api/pipeline routes are protected by auth middleware"
+    verify: "grep -A 6 'prefix.*api/pipeline' apps/api/start/routes.ts | grep -c 'middleware.auth'"
+    tier: 1
+
+  - id: "AC-SEC-PD-02"
+    type: "SEC"
+    description: "Board data scoped to auth.user.id in PipelineService"
+    verify: "grep -c 'userId\\|user_id' apps/api/app/services/pipeline_service.ts"
+    tier: 1
+
+  - id: "AC-BP-PD-01"
+    type: "BP"
+    description: "Business logic in PipelineService — controller only calls service"
+    verify: "grep -c 'new PipelineService\\|service\\.' apps/api/app/controllers/pipeline_controller.ts"
+    tier: 1
+
+  - id: "AC-BP-PD-02"
+    type: "BP"
+    description: "Frontend /suivi page uses i18n keys (useTranslations)"
+    verify: "grep -c 'useTranslations' apps/frontend/src/app/suivi/page.tsx"
+    tier: 1
+
+edge_cases:
+  - "Empty pipeline (0 contacts) → all columns render with count=0"
+  - "Contact dragged to same column → no status change, no error"
+  - "Status change fails (API error) → card stays in original column (optimistic rollback)"
+  - "Large number of contacts → columns scroll independently"

@@ -1,0 +1,822 @@
+# ============================================================================
+# ExpatHunter — Epic: Contact Sourcing Strategy
+# Spec: Stratégie de sourcing de contacts qualifiés
+# Auteur: Product Owner
+# Date: 2026-03-22
+# ============================================================================
+#
+# Problème à résoudre:
+#   Les contacts actuellement sourcés via Seek/Apify manquent d'emails directs
+#   et de noms réels. L'IA retourne trop souvent "skip" faute de données.
+#   Le funnel email — coeur de valeur d'ExpatHunter — est bloqué.
+#
+# Contrainte fondamentale:
+#   Ne pas être un simple wrapper de Hunter.io / Apollo.io.
+#   La valeur unique d'ExpatHunter = orchestration intelligente EXPAT-SPECIFIC
+#   combinant plusieurs sources + scoring contextualisé (visa, culture, marché).
+# ============================================================================
+
+project:
+  name: "expat-hunter-contact-sourcing-strategy"
+  description: |
+    Stratégie de sourcing de contacts pour ExpatHunter v2.
+    Définit les sources, la combinaison multi-sources, le scoring différenciant,
+    et les garde-fous légaux/éthiques pour produire des contacts actionnables
+    que Hunter.io et Apollo.io seuls ne peuvent pas fournir dans ce contexte.
+  parent_spec: "expat-hunter.yaml"
+  version: "1.0.0"
+
+# ============================================================================
+# ANALYSE STRATÉGIQUE — Contexte PO
+# ============================================================================
+
+strategic_context:
+
+  problem_statement: |
+    Sur 100 contacts scrapés via Seek aujourd'hui :
+    - ~60% ont un nom générique ("Hiring Manager", "HR Team")
+    - ~80% n'ont pas d'email direct
+    - ~70% reçoivent "skip" ou "manual_review" de l'IA
+    => Résultat: 0 email envoyé sans intervention manuelle lourde.
+
+  proposition_de_valeur_unique: |
+    ExpatHunter n'est PAS un outil de sales prospecting généraliste.
+    Il est l'UNIQUE outil qui :
+    1. Cible les managers opérationnels (pas les RH) qui ont le pouvoir de recruter
+    2. Comprend le contexte EXPAT : visa, adaptation culturelle, langue
+    3. Orchestre intelligemment plusieurs sources pour TRIANGULATION
+    4. Score les contacts selon la probabilité qu'ils sponsorisent un visa
+    5. Adapte le message à la culture locale du pays cible
+    Hunter/Apollo ne font rien de tout cela — ils sont des bases de données,
+    pas des coaches d'expatriation.
+
+  what_hunter_apollo_cannot_do:
+    - "Identifier les entreprises qui ont DÉJÀ sponsorisé des visas (sources gouvernementales)"
+    - "Scorer un contact selon sa probabilité de sponsoriser un visa pour un profil donné"
+    - "Adapter le scoring à la culture de recrutement locale (ex: NZ vs Germany vs Japan)"
+    - "Croiser les offres Seek/LinkedIn avec les profils LinkedIn pour identifier LE bon décideur"
+    - "Accéder aux annuaires sectoriels locaux (NZ Tech Alliance, Berlin Startup Registry...)"
+    - "Détecter les signaux expat-friendly (postes publiés en anglais dans pays non-anglophone)"
+    - "Trouver des contacts via les communautés expats (groupes LinkedIn, associations)"
+
+# ============================================================================
+# SOURCES DE CONTACTS — Taxonomie
+# ============================================================================
+
+contact_sources:
+
+  tier_1_high_value:
+    description: "Sources qui donnent des contacts NOMMÉS avec email ou LinkedIn direct"
+    sources:
+      - id: "job-board-applicant-page"
+        name: "Pages de candidature des job boards"
+        description: |
+          Les offres d'emploi publiées sur Seek/Indeed/LinkedIn contiennent souvent
+          dans la page ou dans le PDF de l'offre : le nom du hiring manager,
+          un email de contact direct, ou un lien LinkedIn du poster.
+          C'est la source la plus riche et la plus légale — l'entreprise a publié
+          l'info publiquement pour être contactée.
+        availability: "global"
+        data_quality: "high"
+        legal_risk: "low"
+        implementation: "scraping de l'offre complète + extraction NLP"
+        differentiator: true
+
+      - id: "company-website-team-page"
+        name: "Pages 'Our Team' et 'About Us' des sites entreprises"
+        description: |
+          La majorité des PME/startups publient leur équipe sur leur site.
+          C'est une source DIRECTE de noms + rôles + parfois emails.
+          Seek/LinkedIn donnent le nom de l'entreprise — on peut crawler
+          automatiquement son site pour trouver l'équipe technique.
+        availability: "global"
+        data_quality: "high"
+        legal_risk: "low"
+        implementation: "scraping web ciblé sur le domaine de l'entreprise"
+        differentiator: true
+
+      - id: "hunter-io-api"
+        name: "Hunter.io API"
+        description: |
+          Enrichissement d'email à partir du domaine de l'entreprise et du nom.
+          Utilisé en ENRICHISSEMENT, jamais comme source primaire.
+          Quota : à utiliser sur les contacts déjà identifiés par nom.
+        availability: "global"
+        data_quality: "medium-high"
+        legal_risk: "low"
+        implementation: "API REST — enrichissement post-identification"
+        differentiator: false
+        notes: "Wrapper seul = 0 valeur. Combiné à notre identification = fort."
+
+      - id: "apollo-io-api"
+        name: "Apollo.io API"
+        description: |
+          Base de données B2B : trouver des contacts par rôle + entreprise.
+          Utilisé en ENRICHISSEMENT ou FALLBACK quand notre scraping ne trouve pas.
+          Quota à gérer. Ne pas utiliser pour le découverte initiale d'entreprises.
+        availability: "global"
+        data_quality: "medium-high"
+        legal_risk: "low"
+        implementation: "API REST — enrichissement et fallback"
+        differentiator: false
+
+  tier_2_medium_value:
+    description: "Sources secondaires qui permettent la triangulation et l'enrichissement"
+    sources:
+      - id: "linkedin-public-profiles"
+        name: "Profils LinkedIn publics"
+        description: |
+          Via Google Search (site:linkedin.com/in "Engineering Manager" "Auckland"),
+          on peut trouver les profils sans scraper LinkedIn directement.
+          Contourne les CGU de LinkedIn tout en accédant aux données publiques
+          indexées par Google.
+        availability: "global"
+        data_quality: "medium"
+        legal_risk: "medium"
+        implementation: "Google Search API ou Apify Google scraper"
+        differentiator: true
+        legal_note: |
+          Données publiques indexées par Google. Le scraping DIRECT de LinkedIn
+          viole ses CGU et expose au ban + risque légal (cf. hiQ vs LinkedIn).
+          Passer par Google Search comme proxy est plus safe.
+
+      - id: "github-profiles"
+        name: "GitHub — Engineering Managers et CTOs"
+        description: |
+          Les développeurs seniors et Engineering Managers ont souvent un profil
+          GitHub public avec leur nom réel, leur entreprise et parfois leur email.
+          Source unique que Hunter/Apollo n'utilisent PAS.
+          Particulièrement puissant pour les secteurs tech.
+        availability: "global"
+        data_quality: "medium-high"
+        legal_risk: "low"
+        implementation: "GitHub API (gratuite, 5000 req/h)"
+        differentiator: true
+
+      - id: "visa-sponsor-registries"
+        name: "Registres gouvernementaux de sponsors de visa"
+        description: |
+          NZ: Immigration NZ publie la liste des employeurs accrédités (Accredited
+          Employer Work Visa). UK: Home Office publie la liste des sponsors de visa.
+          AU: DAMA et liste des sponsors 482.
+          SOURCE UNIQUE et DIFFÉRENCIANTE : Hunter/Apollo ne font pas ce croisement.
+          Un contact dans une entreprise déjà accréditée = probabilité de sponsoring
+          beaucoup plus élevée.
+        availability: "NZ, AU, UK, DE"
+        data_quality: "high"
+        legal_risk: "none"
+        implementation: "Scraping de pages gouvernementales publiques"
+        differentiator: true
+
+      - id: "sectoral-directories"
+        name: "Annuaires sectoriels locaux"
+        description: |
+          NZ: NZTech, BuildNZ (built.com.au), SilverStripe directory
+          AU: StartupAUS, AusTech
+          UK: TechNation, Silicon Roundabout directory
+          DE: Berlin Startup Map, Munich Startup
+          Ces annuaires donnent des entreprises avec leurs contacts directs,
+          souvent sans protection anti-scraping.
+        availability: "par pays"
+        data_quality: "medium-high"
+        legal_risk: "low"
+        implementation: "Scrapers dédiés par annuaire (pluggable strategy pattern)"
+        differentiator: true
+
+      - id: "expat-communities"
+        name: "Communautés et groupes expats"
+        description: |
+          Groupes LinkedIn "French professionals in Auckland", "Germans in Sydney",
+          forums Expat.com, InterNations.
+          USAGE: trouver des contacts expats déjà en poste qui peuvent recommander
+          des entreprises ou servir d'introduction. Réseau chaud vs réseau froid.
+        availability: "global"
+        data_quality: "low-medium"
+        legal_risk: "medium"
+        implementation: "Manual enrichment UI + future scraping"
+        differentiator: true
+
+  tier_3_signals:
+    description: "Sources de signaux pour prioriser les entreprises actives en recrutement"
+    sources:
+      - id: "job-posting-signals"
+        name: "Signaux d'offres actives"
+        description: |
+          Une entreprise qui publie 3 offres techniques en ce moment recrute.
+          Croiser le volume d'offres par entreprise pour scorer sa 'hiring intensity'.
+        availability: "global"
+        data_quality: "high"
+        legal_risk: "none"
+        implementation: "Agrégation depuis les scrapers existants"
+        differentiator: false
+
+      - id: "funding-news"
+        name: "Levées de fonds et annonces de croissance"
+        description: |
+          Crunchbase, TechCrunch, PitchBook (public feeds), Tracxn.
+          Une startup qui vient de lever = recrutement imminent.
+        availability: "global"
+        data_quality: "high"
+        legal_risk: "none"
+        implementation: "Apify news scraper + Crunchbase free API"
+        differentiator: false
+
+      - id: "linkedin-company-growth"
+        name: "Croissance de l'équipe LinkedIn (via Google)"
+        description: |
+          Chercher via Google les nouvelles recrues d'une entreprise sur LinkedIn
+          (site:linkedin.com/in "just joined [Company]"). Proxy légal pour détecter
+          la croissance sans scraper LinkedIn directement.
+        availability: "global"
+        data_quality: "medium"
+        legal_risk: "low"
+        implementation: "Google Search API"
+        differentiator: true
+
+# ============================================================================
+# STRATÉGIE DE COMBINAISON MULTI-SOURCES
+# ============================================================================
+
+combination_strategy:
+  description: |
+    La valeur d'ExpatHunter vient de l'ORCHESTRATION intelligente.
+    Un contact triangulé sur 3 sources vaut 10x un contact d'une seule source.
+
+  pipeline:
+    step_1_discover:
+      name: "Découverte d'entreprises"
+      description: "Identifier les entreprises qui ont le profil recherché"
+      sources_used:
+        - "job-board-applicant-page"
+        - "sectoral-directories"
+        - "visa-sponsor-registries"
+      output: "liste d'entreprises avec domaine web"
+
+    step_2_enrich_company:
+      name: "Enrichissement entreprise"
+      description: "Pour chaque entreprise, crawler son site pour trouver l'équipe"
+      sources_used:
+        - "company-website-team-page"
+        - "funding-news"
+      output: "entreprise enrichie avec signaux de recrutement"
+
+    step_3_identify_contacts:
+      name: "Identification des contacts"
+      description: "Trouver les managers opérationnels (pas les RH)"
+      sources_used:
+        - "job-board-applicant-page"
+        - "company-website-team-page"
+        - "linkedin-public-profiles"
+        - "github-profiles"
+      output: "contacts nommés avec rôle confirmé"
+
+    step_4_enrich_email:
+      name: "Enrichissement email"
+      description: "Trouver l'email du contact identifié"
+      sources_used:
+        - "hunter-io-api"
+        - "apollo-io-api"
+      fallback: "construire l'email probable (prénom.nom@domaine.com) + vérification MX"
+      output: "contact avec email ou email probable"
+
+    step_5_score:
+      name: "Scoring expat-contextualisé"
+      description: "Scorer chaque contact avec le contexte expat spécifique"
+      factors:
+        - "Pertinence du rôle vs profil candidat (IA)"
+        - "Entreprise accréditée sponsor visa (registre gov)"
+        - "Hiring intensity (nombre d'offres actives)"
+        - "Signaux culturels expat-friendly (offres en anglais dans pays non-EN)"
+        - "Levée de fonds récente (< 6 mois)"
+        - "Croissance de l'équipe détectée"
+      output: "contact avec score 0-100 + breakdown des facteurs"
+
+  deduplication:
+    strategy: "fingerprint sur (normalized_name + company_domain)"
+    merge_policy: "garder la source avec la meilleure data_quality"
+    cross_source: true
+
+# ============================================================================
+# USER STORIES PRIORITISÉES
+# ============================================================================
+
+features:
+
+  # === MUST-HAVE ===
+
+  - name: "job-offer-deep-scraping"
+    title: "Scraping profond des offres d'emploi"
+    user_story: |
+      En tant que candidat expat,
+      je veux qu'ExpatHunter extraie le nom et l'email du hiring manager
+      directement depuis les pages d'offres d'emploi,
+      afin de contacter directement la bonne personne sans passer par les RH.
+    priority: "must-have"
+    complexity: "M"
+    acceptance_criteria:
+      - "Lors du scraping d'une offre Seek/Indeed/LinkedIn, le système extrait : nom du contact si présent, email si présent, rôle du contact"
+      - "L'extraction utilise NLP/regex pour détecter les patterns (ex: 'Contact John Smith at john@company.com')"
+      - "Si aucun contact trouvé dans l'offre, le système note l'entreprise pour l'étape company-website-scraping"
+      - "Le champ source_detail du contact tracé l'URL de l'offre d'origine"
+      - "Test: sur 20 offres Seek contenant un contact explicite, 15+ sont extraits correctement"
+    api_endpoints:
+      - method: "POST"
+        path: "/api/sourcing/run"
+        description: "Paramètre deep_scraping: true active l'extraction NLP des contacts dans les offres"
+    ui_components:
+      - name: "ContactSourceBadge"
+        description: "Badge indiquant la source du contact (ex: 'Extrait de l'offre', 'Site entreprise', 'Hunter.io')"
+    data_model_changes:
+      - entity: "Contact"
+        add_fields:
+          - name: "source_detail"
+            type: "string"
+            description: "URL ou contexte précis de découverte"
+          - name: "source_confidence"
+            type: "number"
+            description: "Confiance dans la source (0-1)"
+          - name: "email_verified"
+            type: "boolean"
+            description: "Email vérifié par MX check ou Hunter"
+
+  - name: "company-website-team-scraper"
+    title: "Scraper des pages 'Our Team' des sites entreprises"
+    user_story: |
+      En tant que candidat expat,
+      je veux qu'ExpatHunter trouve automatiquement les managers techniques
+      sur le site web de chaque entreprise identifiée,
+      afin d'obtenir des contacts réels avec nom, rôle et email direct.
+    priority: "must-have"
+    complexity: "M"
+    acceptance_criteria:
+      - "Pour chaque entreprise avec un domaine web, le système tente de scraper /team, /about, /about-us, /company, /people"
+      - "L'IA extrait les blocs (nom, rôle, photo, email, LinkedIn) de la page"
+      - "Seuls les rôles opérationnels sont retenus (Engineering Manager, CTO, Head of..., VP..., Tech Lead, Product Manager)"
+      - "Les rôles RH purs sont filtrés (HR Manager, Recruiter, Talent Acquisition)"
+      - "Le scraper gère les sites SPA (JavaScript rendu) via Playwright"
+      - "Test: sur 10 sites d'entreprises tech avec page 'Our Team', 7+ retournent au moins 1 contact valide"
+    api_endpoints:
+      - method: "POST"
+        path: "/api/sourcing/enrich-company/{id}"
+        description: "Déclenche le scraping du site de l'entreprise pour trouver l'équipe"
+    ui_components:
+      - name: "CompanyTeamPreview"
+        description: "Aperçu des contacts trouvés sur le site de l'entreprise avec indicateur de source"
+
+  - name: "email-enrichment-pipeline"
+    title: "Pipeline d'enrichissement email multi-sources"
+    user_story: |
+      En tant que candidat expat,
+      je veux qu'ExpatHunter trouve ou infère l'email direct de chaque contact identifié
+      en combinant Hunter.io, Apollo.io et l'inférence de pattern email,
+      afin d'avoir un email actionnable pour chaque contact pertinent.
+    priority: "must-have"
+    complexity: "S"
+    acceptance_criteria:
+      - "Pour un contact avec nom + domaine entreprise : Hunter.io est interrogé en premier"
+      - "Si Hunter échoue, Apollo.io est interrogé en fallback"
+      - "Si Apollo échoue, le système génère les emails probables : prenom.nom@domain, pnom@domain, p.nom@domain"
+      - "Les emails générés sont vérifiés via MX check (le domaine accepte les emails)"
+      - "Le champ email_status indique : verified | probable | unknown"
+      - "Les quotas Hunter/Apollo sont trackés et affichés dans les settings"
+      - "Test: sur 20 contacts avec nom + domaine connu, 12+ obtiennent un email verified ou probable"
+    api_endpoints:
+      - method: "POST"
+        path: "/api/contacts/{id}/enrich-email"
+        description: "Lance l'enrichissement email pour un contact spécifique"
+      - method: "POST"
+        path: "/api/contacts/enrich-email-batch"
+        description: "Enrichissement email en batch pour tous les contacts sans email"
+      - method: "GET"
+        path: "/api/settings/enrichment-quotas"
+        description: "Quotas Hunter.io et Apollo.io restants"
+    ui_components:
+      - name: "EmailStatusBadge"
+        description: "Badge verified/probable/unknown sur chaque contact"
+      - name: "EnrichmentQuotaWidget"
+        description: "Widget affichant les quotas Hunter/Apollo restants dans les settings"
+    data_model_changes:
+      - entity: "Contact"
+        add_fields:
+          - name: "email_status"
+            type: "enum"
+            values: ["verified", "probable", "unknown", "bounced"]
+          - name: "email_alternatives"
+            type: "string[]"
+            description: "Emails alternatifs générés (non vérifiés)"
+          - name: "enrichment_source"
+            type: "string"
+            description: "hunter | apollo | inferred | job_page | team_page"
+
+  - name: "visa-sponsor-filter"
+    title: "Filtre et score entreprises accréditées visa"
+    user_story: |
+      En tant que candidat expat qui a besoin d'un visa de travail,
+      je veux savoir si une entreprise a déjà sponsorisé des visas
+      afin de prioriser mes efforts vers les entreprises qui peuvent réellement m'embaucher.
+    priority: "must-have"
+    complexity: "M"
+    acceptance_criteria:
+      - "Le système charge et indexe la liste des employeurs accrédités NZ (Immigration NZ, mise à jour mensuelle)"
+      - "Le système charge la liste des sponsors UK (Home Office Tier 2 register)"
+      - "Le système charge la liste des sponsors AU (DAMA + 482)"
+      - "Chaque entreprise est croisée avec ces listes à la normalisation du nom (fuzzy matching)"
+      - "Le champ visa_sponsor_status est mis à jour : accredited | not_found | unknown"
+      - "Le score de pertinence IA intègre +20 points si accredited"
+      - "L'UI affiche un badge 'Sponsor visa' visible sur la fiche entreprise et dans le kanban"
+      - "L'utilisateur peut filtrer les contacts/entreprises sur ce critère"
+    api_endpoints:
+      - method: "POST"
+        path: "/api/admin/refresh-visa-registries"
+        description: "Rafraîchit les listes de sponsors visa depuis les sources gouvernementales"
+      - method: "GET"
+        path: "/api/companies/{id}/visa-status"
+        description: "Statut visa sponsor pour une entreprise"
+    ui_components:
+      - name: "VisaSponsorBadge"
+        description: "Badge 'Sponsor visa accrédité' sur les fiches entreprises et les cartes kanban"
+      - name: "VisaSponsorFilter"
+        description: "Filtre 'Sponsor visa uniquement' dans le pipeline"
+    data_model_changes:
+      - entity: "Company"
+        add_fields:
+          - name: "visa_sponsor_status"
+            type: "enum"
+            values: ["accredited", "not_found", "unknown"]
+          - name: "visa_sponsor_countries"
+            type: "string[]"
+            description: "Pays pour lesquels l'accréditation est confirmée"
+          - name: "visa_registry_checked_at"
+            type: "date"
+
+  - name: "expat-contextual-scoring"
+    title: "Scoring contextualisé expat (différenciateur majeur)"
+    user_story: |
+      En tant que candidat expat,
+      je veux qu'ExpatHunter score chaque contact selon des critères spécifiques
+      à l'expatriation (visa, culture, marché local),
+      afin de ne contacter que les entreprises où j'ai une vraie chance d'être embauché.
+    priority: "must-have"
+    complexity: "L"
+    acceptance_criteria:
+      - "Le score total 0-100 est la somme de sous-scores pondérés (voir breakdown)"
+      - "Sous-score Visa (0-25): +25 si sponsor accrédité, +10 si a des expats dans l'équipe, 0 si inconnue"
+      - "Sous-score Pertinence rôle (0-30): IA compare le rôle du contact au profil candidat"
+      - "Sous-score Hiring intensity (0-20): basé sur le nombre d'offres actives de l'entreprise"
+      - "Sous-score Expat-friendly (0-15): offres en anglais dans pays non-EN, présence d'expats dans l'équipe LinkedIn"
+      - "Sous-score Momentum (0-10): levée de fonds < 6 mois, ouverture d'un nouveau bureau"
+      - "L'UI affiche le breakdown du score (pas juste le total)"
+      - "L'utilisateur peut configurer les pondérations dans ses settings"
+      - "Test: le score d'un Engineering Manager dans une entreprise sponsor NZ avec 5 offres actives > 70"
+    api_endpoints:
+      - method: "POST"
+        path: "/api/analysis/run"
+        description: "Paramètre scoring_version: 'expat_v2' pour utiliser le nouveau scoring"
+      - method: "GET"
+        path: "/api/contacts/{id}/score-breakdown"
+        description: "Détail du score par sous-critère"
+      - method: "PUT"
+        path: "/api/settings/scoring-weights"
+        description: "Configurer les pondérations de score"
+    ui_components:
+      - name: "ScoreBreakdown"
+        description: "Composant radar ou barre empilée affichant les sous-scores (Visa, Rôle, Hiring, Expat-friendly, Momentum)"
+      - name: "ScoringWeightsSettings"
+        description: "Interface de configuration des pondérations dans les settings"
+    data_model_changes:
+      - entity: "Contact"
+        add_fields:
+          - name: "score_breakdown"
+            type: "json"
+            description: "{ visa: 20, role: 25, hiring: 15, expat_friendly: 10, momentum: 5 }"
+          - name: "score_version"
+            type: "string"
+            description: "Version du modèle de scoring utilisé (ex: expat_v2)"
+
+  # === SHOULD-HAVE ===
+
+  - name: "github-tech-contact-sourcing"
+    title: "Sourcing de contacts tech via GitHub"
+    user_story: |
+      En tant que candidat expat dans le secteur tech,
+      je veux qu'ExpatHunter trouve les Engineering Managers et CTOs
+      via leurs profils GitHub publics,
+      afin d'obtenir des contacts réels avec email souvent public.
+    priority: "should-have"
+    complexity: "M"
+    acceptance_criteria:
+      - "Pour les entreprises identifiées, le système recherche leur organisation GitHub (github.com/[company])"
+      - "Pour chaque organisation, les membres publics sont listés via l'API GitHub"
+      - "Les profils des membres sont filtrés par rôle (bio contenant Manager, Lead, CTO, VP)"
+      - "L'email public GitHub est extrait si disponible"
+      - "Les quotas GitHub API (5000 req/h) sont respectés"
+      - "Le connecteur GitHub suit le strategy pattern existant"
+    api_endpoints:
+      - method: "POST"
+        path: "/api/sourcing/run"
+        description: "Paramètre sources inclut 'github' pour activer ce connecteur"
+    data_model_changes:
+      - entity: "Contact"
+        add_fields:
+          - name: "github_url"
+            type: "string"
+            required: false
+
+  - name: "sectoral-directory-connectors"
+    title: "Connecteurs annuaires sectoriels locaux"
+    user_story: |
+      En tant que candidat expat ciblant un pays spécifique,
+      je veux qu'ExpatHunter scrape les annuaires sectoriels locaux
+      (NZTech, TechNation UK, Berlin Startup Map...),
+      afin de trouver des entreprises et contacts qui ne sont PAS sur Seek/LinkedIn.
+    priority: "should-have"
+    complexity: "L"
+    acceptance_criteria:
+      - "Chaque annuaire est un connecteur indépendant suivant le strategy pattern existant"
+      - "MVP: NZTech (NZ), TechNation (UK), StartupAUS (AU)"
+      - "Chaque connecteur extrait : nom entreprise, site web, secteur, taille, contacts si disponibles"
+      - "Les entreprises trouvées entrent dans le pipeline standard (enrichissement, contacts, score)"
+      - "Un connecteur peut être activé/désactivé par pays dans les settings de sourcing"
+    api_endpoints:
+      - method: "GET"
+        path: "/api/sourcing/available-sources"
+        description: "Liste toutes les sources disponibles par pays avec statut actif/inactif"
+    ui_components:
+      - name: "SourcingSourcesConfig"
+        description: "Interface pour activer/désactiver les sources par pays dans les settings"
+
+  - name: "expat-friendly-signals"
+    title: "Détection de signaux expat-friendly"
+    user_story: |
+      En tant que candidat expat,
+      je veux qu'ExpatHunter détecte automatiquement les entreprises ouvertes
+      à l'international (offres en anglais, équipe internationale, remote-friendly),
+      afin de concentrer mes efforts sur les employeurs qui m'accepteront vraiment.
+    priority: "should-have"
+    complexity: "M"
+    acceptance_criteria:
+      - "Signal 1: L'offre est rédigée en anglais dans un pays dont l'anglais n'est pas la langue officielle (ex: Allemagne, France, Pays-Bas)"
+      - "Signal 2: La page équipe contient des noms clairement non-natifs (heuristique NLP)"
+      - "Signal 3: La description d'entreprise mentionne 'international', 'global', 'multicultural', 'remote'"
+      - "Signal 4: L'offre mentionne explicitement 'visa sponsorship available'"
+      - "Chaque signal détecté incrémente le sous-score expat_friendly"
+      - "Les signaux sont affichés sur la fiche entreprise"
+    ui_components:
+      - name: "ExpatSignalsList"
+        description: "Liste des signaux expat-friendly détectés sur une fiche entreprise"
+
+  # === NICE-TO-HAVE ===
+
+  - name: "linkedin-via-google-search"
+    title: "Profils LinkedIn via Google Search (proxy légal)"
+    user_story: |
+      En tant que candidat expat,
+      je veux qu'ExpatHunter trouve des profils LinkedIn de managers
+      sans scraper LinkedIn directement,
+      afin d'enrichir les contacts sans risque de ban.
+    priority: "nice-to-have"
+    complexity: "M"
+    acceptance_criteria:
+      - "Le système formule des requêtes Google ciblées: site:linkedin.com/in '[rôle]' '[entreprise]' '[ville]'"
+      - "Les résultats Google sont parsés pour extraire nom, titre, URL LinkedIn"
+      - "L'URL LinkedIn est stockée sur le contact (pas de scraping du profil)"
+      - "Le rate limiting Google Search est respecté (1 req/2s, max 100/jour)"
+      - "L'utilisateur est informé que c'est une donnée non vérifiée"
+    legal_note: |
+      Utiliser l'API Google Custom Search (payante mais légale) plutôt que
+      scraper google.com directement. Budget estimé: 5 USD/mois.
+
+  - name: "expat-community-referrals"
+    title: "Contacts via communautés expats"
+    user_story: |
+      En tant que candidat expat,
+      je veux pouvoir importer des contacts recommandés par ma communauté expat
+      (collègues déjà en poste, groupes LinkedIn, associations),
+      afin de bénéficier du réseau chaud pour des introductions.
+    priority: "nice-to-have"
+    complexity: "S"
+    acceptance_criteria:
+      - "L'utilisateur peut ajouter manuellement un contact avec sa source (ex: 'recommandé par Jean, CTO chez X')"
+      - "Les contacts manuels entrent dans le même pipeline (enrichissement, scoring, email)"
+      - "Le contact manuel a un badge 'Réseau' distinctif"
+      - "Ces contacts ont une priorité de scoring plus élevée par défaut (+10 points bonus réseau chaud)"
+
+# ============================================================================
+# GARDE-FOUS LÉGAUX ET ÉTHIQUES
+# ============================================================================
+
+legal_and_ethical:
+
+  gdpr_compliance:
+    applicable_to: "utilisateurs basés en Europe (candidats ou entreprises cibles UE)"
+    rules:
+      - "Seules les données publiques sont scrapées (pages publiques, registres gouvernementaux)"
+      - "Les emails sont utilisés pour une seule prise de contact non sollicitée (cold outreach légitime)"
+      - "Chaque email envoyé inclut une option de désinscription claire"
+      - "Les données sont supprimées si le contact répond négativement ou demande à être retiré"
+      - "La base légale est l'intérêt légitime (recherche d'emploi, données professionnelles publiques)"
+    implementation:
+      - "Champ 'unsubscribe_requested' sur Contact"
+      - "Suppression automatique des données si unsubscribe = true après 30 jours"
+      - "Log d'audit des emails envoyés"
+
+  linkedin_cgu:
+    risk: "medium"
+    rules:
+      - "INTERDIT: scraper les profils LinkedIn directement"
+      - "AUTORISÉ: utiliser Google Search pour trouver des URLs LinkedIn publiques"
+      - "AUTORISÉ: afficher des liens LinkedIn sans scraper le contenu"
+      - "AUTORISÉ: utiliser l'API LinkedIn officielle (mais limitée et payante)"
+    decision: "Google Search proxy pour les URLs, pas de scraping de contenu LinkedIn"
+
+  job_boards_cgu:
+    seek:
+      risk: "medium"
+      approach: "Respecter robots.txt, délais 3-10s, user-agent légitime"
+      fallback: "Apify actor officiel websift/seek-job-scraper si scraping maison bloqué"
+    indeed:
+      risk: "medium"
+      approach: "Apify actor dédié Indeed (peu de scraping maison car protections fortes)"
+    linkedin_jobs:
+      risk: "high"
+      approach: "Utiliser Apify actor officiel LinkedIn Jobs uniquement"
+
+  email_sending:
+    rules:
+      - "Maximum 50 emails/jour pour éviter le spam score"
+      - "Délais entre envois (min 5 min entre 2 emails)"
+      - "SPF/DKIM/DMARC configurés sur le domaine d'envoi"
+      - "Unsubscribe link dans chaque email"
+      - "Ne pas envoyer si email_status = 'bounced'"
+      - "Cooldown de 6 mois minimum entre 2 contacts vers la même personne"
+
+  data_retention:
+    rules:
+      - "Données de sourcing gardées 12 mois"
+      - "Emails envoyés gardés 24 mois (obligation légale)"
+      - "Purge automatique configurable par l'utilisateur"
+
+# ============================================================================
+# MODÈLE DE DONNÉES — DELTA vs spec principale
+# ============================================================================
+
+data_model_delta:
+  description: "Champs à ajouter aux entités existantes de expat-hunter.yaml"
+
+  contact_additions:
+    - name: "source_detail"
+      type: "string"
+      description: "URL ou contexte précis de découverte (URL offre, URL page team...)"
+    - name: "source_confidence"
+      type: "number"
+      description: "0-1. 1 = email trouvé sur la page, 0.5 = inféré, 0.2 = Apollo"
+    - name: "email_status"
+      type: "enum"
+      values: ["verified", "probable", "unknown", "bounced", "unsubscribed"]
+    - name: "email_alternatives"
+      type: "string[]"
+      description: "Emails alternatifs générés (non vérifiés)"
+    - name: "enrichment_source"
+      type: "enum"
+      values: ["job_page", "team_page", "hunter", "apollo", "inferred", "github", "manual"]
+    - name: "score_breakdown"
+      type: "json"
+      description: "{ visa: number, role: number, hiring: number, expat_friendly: number, momentum: number }"
+    - name: "score_version"
+      type: "string"
+    - name: "github_url"
+      type: "string"
+      required: false
+    - name: "unsubscribe_requested"
+      type: "boolean"
+      default: false
+
+  company_additions:
+    - name: "visa_sponsor_status"
+      type: "enum"
+      values: ["accredited", "not_found", "unknown"]
+    - name: "visa_sponsor_countries"
+      type: "string[]"
+    - name: "visa_registry_checked_at"
+      type: "date"
+    - name: "expat_friendly_signals"
+      type: "json"
+      description: "{ english_job_posts: bool, international_team: bool, remote_friendly: bool, visa_mentioned: bool }"
+    - name: "hiring_intensity"
+      type: "number"
+      description: "Nombre d'offres actives détectées"
+    - name: "last_funding_date"
+      type: "date"
+      required: false
+
+  new_entity_VisaRegistry:
+    name: "VisaRegistry"
+    description: "Cache des listes d'employeurs accrédités par pays"
+    fields:
+      - name: "id"
+        type: "string"
+      - name: "country"
+        type: "string"
+        description: "NZ, AU, UK, DE..."
+      - name: "employer_name"
+        type: "string"
+      - name: "employer_name_normalized"
+        type: "string"
+        description: "Nom normalisé pour fuzzy matching"
+      - name: "accreditation_type"
+        type: "string"
+        description: "Type de visa concerné (ex: AEWV pour NZ)"
+      - name: "source_url"
+        type: "string"
+      - name: "fetched_at"
+        type: "date"
+
+  new_entity_EnrichmentLog:
+    name: "EnrichmentLog"
+    description: "Trace des appels d'enrichissement pour gérer les quotas"
+    fields:
+      - name: "id"
+        type: "string"
+      - name: "contact_id"
+        type: "string"
+      - name: "provider"
+        type: "enum"
+        values: ["hunter", "apollo", "github", "team_page", "inferred"]
+      - name: "result"
+        type: "enum"
+        values: ["found", "not_found", "error", "quota_exceeded"]
+      - name: "called_at"
+        type: "date"
+
+# ============================================================================
+# CONTRAINTES TECHNIQUES ADDITIONNELLES
+# ============================================================================
+
+additional_constraints:
+  quotas:
+    hunter_io:
+      plan: "starter (250 req/mois)"
+      strategy: "utiliser uniquement pour les contacts avec nom + domaine confirmés"
+      fallback: "Apollo puis inférence"
+    apollo_io:
+      plan: "free tier (50 req/mois)"
+      strategy: "fallback Hunter uniquement, pour les contacts haute priorité (score > 60)"
+    github_api:
+      limit: "5000 req/h (non authentifié: 60 req/h)"
+      strategy: "utiliser le token GitHub de l'utilisateur"
+    google_search_api:
+      plan: "100 req/jour gratuit (Custom Search API)"
+      strategy: "réserver aux contacts score > 70 sans email"
+
+  performance:
+    enrichment_batch: "traiter max 50 contacts à la fois pour ne pas saturer les quotas"
+    visa_registry_cache: "TTL 30 jours (les listes gouvernementales changent rarement)"
+    company_website_scraping: "timeout 10s par site, retry 1 fois, skip si SPA complexe"
+
+  scraping_ethics:
+    robots_txt: "respecter sauf si le site est un annuaire public (registres gouvernementaux)"
+    rate_limiting: "3-8 secondes entre requêtes sur le même domaine"
+    user_agent: "rotation de user-agents légitimes (Chrome, Firefox récents)"
+
+# ============================================================================
+# HORS SCOPE — EXPLICITEMENT EXCLU
+# ============================================================================
+
+out_of_scope:
+  - item: "Scraping direct de profils LinkedIn"
+    reason: "Violation des CGU LinkedIn, risque légal et ban"
+    alternative: "URLs via Google Search, API officielle si budget"
+  - item: "Achat de bases de données email (data brokers)"
+    reason: "Non conforme RGPD, qualité douteuse, pas différenciant"
+    alternative: "Enrichissement par Hunter/Apollo sur contacts identifiés"
+  - item: "Envoi massif non personnalisé (blast)"
+    reason: "Contre la proposition de valeur, mauvais taux de réponse, risque spam"
+    alternative: "Emails 100% personnalisés par l'IA, max 50/jour"
+  - item: "Scraping de bases salariales (Glassdoor, PayScale)"
+    reason: "Hors scope MVP, données peu fiables, CGU restrictives"
+  - item: "Intégration d'un CRM externe (Salesforce, HubSpot)"
+    reason: "Hors scope, le pipeline interne suffit au MVP"
+  - item: "API publique pour tiers"
+    reason: "Hors scope MVP, complexité infra non justifiée"
+
+# ============================================================================
+# RÉSUMÉ — PROPOSITION DE VALEUR DIFFÉRENCIANTE
+# ============================================================================
+
+summary:
+  tagline: "Pas un wrapper. Un orchestrateur expat-intelligent."
+  key_differentiators:
+    1: "Croisement avec les registres gouvernementaux de sponsors visa — unique sur le marché"
+    2: "Pipeline de triangulation 4 sources (offre → site → Hunter → GitHub) vs 1 source chez les concurrents"
+    3: "Score expat-contextualisé (visa + culture + marché local) vs score générique B2B"
+    4: "Ciblage des managers opérationnels (pas les RH) identifiés par crawl du site entreprise"
+    5: "Détection des signaux expat-friendly (langue des offres, équipe internationale)"
+  hunter_apollo_comparison:
+    hunter_apollo_does: "Trouver un email à partir d'un nom + domaine"
+    expathunter_does: |
+      1. Identifier QUI contacter (le bon manager, pas les RH)
+      2. Valider SI l'entreprise peut te recruter (visa, culture)
+      3. Trouver l'email (Hunter/Apollo en sous-traitance)
+      4. Rédiger un email adapté à TON profil expat ET à LEUR culture
+      5. Gérer les relances intelligentes
+    conclusion: "Hunter/Apollo sont des briques dans notre pipeline, pas des concurrents"

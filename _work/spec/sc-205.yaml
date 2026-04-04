@@ -1,0 +1,200 @@
+story:
+  id: "sc-205"
+  shortcut_url: "https://app.shortcut.com/ya-bes-team/story/205"
+  title: "Smart visa cache — store expiryDateOfAccreditation and re-scrape only when expired"
+  type: "chore"
+  priority: "should-have"
+  status: "refined"
+  size: "S"
+
+  # ─── Context ────────────────────────────────────────────────────────────────
+
+  context: |
+    sc-30 implemented Playwright-based NZ visa scraping. The NZ immigration API returns
+    `expiryDateOfAccreditation` for each accredited employer.
+    Currently this date is used only to reject expired results, but is NOT stored anywhere.
+    The CacheService uses a flat 30-day TTL regardless of actual expiry.
+
+    Problem: if an accreditation expires in 3 months, we re-scrape unnecessarily at day 31.
+    If it expires in 2 years, we re-scrape 8 times needlessly.
+
+  solution: |
+    Option A — Dynamic TTL:
+    - `parseNzApiResponse()` returns `expiresAt` in `VisaCheckResult`
+    - `checkNZ()` computes TTL = max(1, days until expiresAt), fallback 30 days
+    - `CacheService.getOrFetch()` receives this dynamic TTL
+    - `Company.visaSponsorExpiresAt` stores the expiry date for UI/reporting
+    - `SourcingService` stores `visaSponsorExpiresAt` from `visaCheck.expiresAt`
+
+    Result: cache expires exactly when accreditation does — zero unnecessary scrapes.
+
+  # ─── Scope ──────────────────────────────────────────────────────────────────
+
+  files:
+    modify:
+      - path: "apps/api/app/services/visa_sponsor_registry.ts"
+        changes:
+          - "Add `expiresAt?: string` to VisaCheckResult interface"
+          - "Return `expiresAt` from parseNzApiResponse() in accredited result"
+          - "Compute dynamic TTL in checkNZ(): Math.max(1, Math.ceil(days until expiresAt)), fallback 30"
+          - "Pass dynamic TTL to cacheService.getOrFetch()"
+      - path: "apps/api/app/models/company.ts"
+        changes:
+          - "Add @column.dateTime() visaSponsorExpiresAt: DateTime | null"
+      - path: "apps/api/database/schema.ts"
+        changes:
+          - "Add visaSponsorExpiresAt to CompanySchema.$columns and declare field"
+      - path: "apps/api/app/services/sourcing_service.ts"
+        changes:
+          - "Store company.visaSponsorExpiresAt = DateTime.fromISO(visaCheck.expiresAt) after visa check"
+          - "Handle null/invalid expiresAt gracefully (→ null)"
+      - path: "apps/api/tests/unit/services/visa_sponsor_registry_nz.spec.ts"
+        changes:
+          - "Add test: accredited result includes expiresAt matching input expiryDateOfAccreditation"
+          - "Add test: dynamic TTL passed to getOrFetch when expiresAt is future date"
+      - path: "apps/api/tests/unit/services/sourcing_service.spec.ts"
+        changes:
+          - "Add test: visaSponsorExpiresAt stored on company after visa check returns expiresAt"
+          - "Add test: visaSponsorExpiresAt is null when visaCheck.expiresAt is absent"
+    create:
+      - path: "apps/api/database/migrations/29_add_visa_sponsor_expires_at_to_companies.ts"
+        description: "ALTER TABLE companies ADD COLUMN visa_sponsor_expires_at TIMESTAMP NULL"
+
+  out_of_scope:
+    - "UI display of visaSponsorExpiresAt"
+    - "Re-check logic changes in SourcingService (dynamic TTL handles this at cache level)"
+    - "Other countries (US, UK) — only NZ has expiresAt for now"
+
+  # ─── Acceptance Criteria ───────────────────────────────────────────────────
+
+  acceptance_criteria:
+
+    - id: "AC-FUNC-VISACACHE-01"
+      type: "FUNC"
+      description: |
+        Given parseNzApiResponse processes an accredited employer with a future expiryDateOfAccreditation
+        When the result is returned
+        Then result.expiresAt equals the ISO string from the API
+      verify: "grep -n 'expiresAt' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/app/services/visa_sponsor_registry.ts | grep -v '//' | grep -c 'expiresAt' | grep -vE '^0$'"
+      tier: 1
+
+    - id: "AC-FUNC-VISACACHE-02"
+      type: "FUNC"
+      description: |
+        Given parseNzApiResponse returns an accredited result with expiresAt = '2027-01-01'
+        When checkNZ computes the TTL
+        Then TTL = ceil((2027-01-01 - today) / 86400000) days, minimum 1
+      verify: "grep -A5 'getOrFetch' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/app/services/visa_sponsor_registry.ts | grep -E 'ttl|TTL|Math\\.ceil|Math\\.max|daysUntil'"
+      tier: 1
+
+    - id: "AC-FUNC-VISACACHE-03"
+      type: "FUNC"
+      description: |
+        Given no expiresAt in the result (not_found, unknown, or accredited with no expiry)
+        When checkNZ computes the TTL
+        Then TTL falls back to 30 days
+      verify: "grep -c 'NZ_CACHE_TTL_DAYS\\|30' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/app/services/visa_sponsor_registry.ts | grep -vE '^0$'"
+      tier: 1
+
+    - id: "AC-FUNC-VISACACHE-04"
+      type: "FUNC"
+      description: |
+        Given Company model
+        When visaSponsorExpiresAt column is declared
+        Then it is a nullable DateTime column
+      verify: "grep 'visaSponsorExpiresAt' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/app/models/company.ts"
+      tier: 1
+
+    - id: "AC-FUNC-VISACACHE-05"
+      type: "FUNC"
+      description: |
+        Given migration 29 exists
+        When it runs
+        Then it adds visa_sponsor_expires_at to companies table
+      verify: "grep -r 'visa_sponsor_expires_at' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/database/migrations/"
+      tier: 1
+
+    - id: "AC-FUNC-VISACACHE-06"
+      type: "FUNC"
+      description: |
+        Given persistContacts runs a visa check that returns expiresAt
+        When the company is saved
+        Then company.visaSponsorExpiresAt is set to DateTime.fromISO(visaCheck.expiresAt)
+      verify: "grep 'visaSponsorExpiresAt' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/app/services/sourcing_service.ts"
+      tier: 1
+
+    - id: "AC-FUNC-VISACACHE-07"
+      type: "FUNC"
+      description: |
+        Given visa check returns no expiresAt (unknown/not_found)
+        When the company is saved
+        Then company.visaSponsorExpiresAt is null (no crash)
+      verify: "grep -A3 'visaSponsorExpiresAt' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/app/services/sourcing_service.ts | grep -E 'null|undefined|\\?\\.')"
+      tier: 1
+
+    - id: "AC-FUNC-VISACACHE-08"
+      type: "FUNC"
+      description: |
+        Given visa_sponsor_registry_nz.spec.ts unit tests
+        When run with node v22
+        Then all tests pass including new expiresAt and dynamic TTL tests
+      verify: "cd /Volumes/Samsung_T5/dev/expat-hunter/apps/api && node ace test --files 'tests/unit/services/visa_sponsor_registry_nz.spec.ts' 2>&1 | tail -5"
+      tier: 2
+
+    - id: "AC-FUNC-VISACACHE-09"
+      type: "FUNC"
+      description: |
+        Given sourcing_service.spec.ts unit tests
+        When run with node v22
+        Then all tests pass including new visaSponsorExpiresAt storage tests
+      verify: "cd /Volumes/Samsung_T5/dev/expat-hunter/apps/api && node ace test --files 'tests/unit/services/sourcing_service.spec.ts' 2>&1 | tail -5"
+      tier: 2
+
+    - id: "AC-SEC-VISACACHE-01"
+      type: "SEC"
+      description: |
+        expiresAt is an internal field — it must NOT appear in public contact/company API responses
+      verify: "grep -r 'expiresAt' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/app/controllers/ | wc -l | tr -d ' ' | grep '^0$'"
+      tier: 1
+
+    - id: "AC-BP-VISACACHE-01"
+      type: "BP"
+      description: |
+        TTL computation must be a named constant/variable, not a magic number
+        The fallback 30 days must use a named constant (e.g. NZ_CACHE_TTL_DAYS)
+      verify: "grep 'NZ_CACHE_TTL_DAYS\\|CACHE_TTL\\|DEFAULT_TTL' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/app/services/visa_sponsor_registry.ts"
+      tier: 1
+
+    - id: "AC-BP-VISACACHE-02"
+      type: "BP"
+      description: |
+        Invalid expiresAt date (unparseable ISO string) must be handled gracefully — no crash
+      verify: "grep -A5 'fromISO\\|expiresAt' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/app/services/visa_sponsor_registry.ts | grep -E 'isValid|catch|\\?\\?|try'"
+      tier: 1
+
+  # ─── Edge Cases ────────────────────────────────────────────────────────────
+
+  edge_cases:
+    - "expiresAt absent (API returned empty string) → TTL = 30 days, visaSponsorExpiresAt = null"
+    - "expiresAt is in the past (already expired when parsed) → TTL = 1 day (min), result is not_found (handled by existing logic)"
+    - "expiresAt is invalid ISO string → DateTime.fromISO returns invalid DateTime → treat as null"
+    - "expiresAt very far in future (> 10 years) → TTL capped or uncapped (no business rule, leave as-is)"
+
+  # ─── Definition of Done ───────────────────────────────────────────────────
+
+  definition_of_done:
+    - "All 11 ACs pass (verify: commands return expected output)"
+    - "All unit tests pass (including new ones)"
+    - "Migration runs cleanly: node ace migration:run --dry-run shows migration 29"
+    - "No TypeScript errors: node ace build --no-copy"
+    - "PR merged into develop"
+    - "Shortcut sc-205 moved to Done"
+
+  closing_ac:
+    - id: "AC-BP-VISACACHE-DONE"
+      type: "BP"
+      description: |
+        PR for sc-205 is merged into develop.
+        After this passes, validator MUST call stories-update sc-205 → state 500000010 (Done).
+      verify: "gh pr list --state merged --base develop --json title,headRefName | grep -q 'sc-205'"
+      tier: 1

@@ -1,0 +1,106 @@
+story:
+  id: "sc-216"
+  shortcut_url: "https://app.shortcut.com/expat-hunter/story/216"
+  title: "Close scraper session after search"
+  parent_spec: "specs/expat-hunter.yaml"
+  status: "refined"
+  size: "XS"
+  estimate: 1
+  type: "bug"
+  refined_at: "2026-03-26"
+  refined_by: "refinement"
+
+user_story: >
+  As the system, I want every Playwright session opened during a visa check
+  to be closed when the check completes (success or error), so that the external
+  Playwright server does not accumulate abandoned browser sessions.
+
+scope:
+  files_to_create: []
+  files_to_modify:
+    - path: "apps/api/app/services/playwright_client.ts"
+      reason: "Add close(sessionId) method that calls POST /execute with tool: close_session"
+    - path: "apps/api/app/services/visa_sponsor_registry.ts"
+      reason: "Wrap scrapeNzPage() session usage in try/finally — always call close(sessionId)"
+    - path: "apps/api/tests/unit/services/visa_sponsor_registry_nz.spec.ts"
+      reason: "Add test: close() is called even when an error occurs mid-scrape"
+  files_to_read:
+    - "apps/api/app/services/playwright_client.ts"
+    - "apps/api/app/services/visa_sponsor_registry.ts"
+
+acceptance_criteria:
+
+  functional:
+    - id: "AC-FUNC-SC216-01"
+      description: "Given PlaywrightClient is imported / When close(sessionId) is called / Then it sends POST /execute with tool='close_session' and the sessionId"
+      verify: "grep -n 'close_session' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/app/services/playwright_client.ts"
+      tier: 1
+
+    - id: "AC-FUNC-SC216-02"
+      description: "Given scrapeNzPage() runs / When it completes (success or error) / Then close(sessionId) is called inside a finally block"
+      verify: "grep -n 'finally' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/app/services/visa_sponsor_registry.ts"
+      tier: 1
+
+    - id: "AC-FUNC-SC216-03"
+      description: "Given navigate() succeeds but a subsequent call throws / When scrapeNzPage() is called / Then the test spy confirms close() was still called"
+      verify: "~/.nvm/versions/node/v22.22.1/bin/node $(which node) -e \"process.chdir('/Volumes/Samsung_T5/dev/expat-hunter/apps/api'); require('child_process').execSync('~/.nvm/versions/node/v22.22.1/bin/node ./node_modules/.bin/japa --files tests/unit/services/visa_sponsor_registry_nz.spec.ts', {stdio: 'inherit'})\""
+      tier: 2
+
+  security:
+    - id: "AC-SEC-SC216-01"
+      description: "close() errors are swallowed silently — the method must catch its own errors and not re-throw, so sessionId never leaks in thrown error messages"
+      verify: "grep -A5 'async close' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/app/services/playwright_client.ts | grep -E 'catch|try'"
+      tier: 1
+
+  best_practices:
+    - id: "AC-BP-SC216-01"
+      description: "close() delegates to the existing private execute() method — no duplicated fetch logic"
+      verify: "grep -A3 'async close' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/app/services/playwright_client.ts | grep 'this.execute'"
+      tier: 1
+
+    - id: "AC-BP-SC216-02"
+      description: "TypeScript: 0 errors after changes"
+      verify: "cd /Volumes/Samsung_T5/dev/expat-hunter/apps/api && npx tsc --noEmit 2>&1 | wc -l | tr -d ' ' | grep '^0$'"
+      tier: 1
+
+edge_cases:
+  - description: "navigate() fails — sessionId is undefined or empty"
+    handling: "Guard in finally: only call close(sessionId) if sessionId is truthy"
+  - description: "close() itself throws"
+    handling: "close() must catch its own errors internally — never re-throw, never mask the original error"
+  - description: "Playwright server unreachable"
+    handling: "close() catches silently — the original scraping result (success or error) is preserved"
+
+depends_on: []
+
+notes: |
+  The Playwright session lifecycle:
+  - Open: playwrightClient.navigate(url) → returns { sessionId }
+  - Use: waitForSelector, fill, click, getNetworkRequests — all use sessionId
+  - Close: NEW playwrightClient.close(sessionId) → POST /execute { tool: "close_session", arguments: { sessionId } }
+
+  The try/finally pattern in scrapeNzPage():
+    let sessionId: string | undefined
+    try {
+      const result = await this.playwrightClient.navigate(NZ_PAGE_URL)
+      sessionId = result.sessionId
+      // ... rest of the scrape
+    } finally {
+      if (sessionId) await this.playwrightClient.close(sessionId)
+    }
+
+definition_of_done:
+  - "All AC verify: commands pass"
+  - "No TypeScript errors (tsc --noEmit)"
+  - "All unit tests pass (visa_sponsor_registry_nz.spec.ts)"
+  - "PR merged into main"
+  - "Shortcut story moved to Done"
+
+closing_ac:
+  - id: "AC-BP-SC216-DONE"
+    type: "BP"
+    description: |
+      PR is merged into main — story closure gate.
+      After this passes, validator MUST move sc-216 to Done (workflow_state_id: 500000010).
+    verify: "gh pr list --state merged --base main --json title | grep -q 'sc-216\\|close.*session\\|session.*close'"
+    tier: 1

@@ -1,0 +1,586 @@
+# ============================================================================
+# ExpatHunter — SaaS d'aide à la recherche d'emploi à l'étranger
+# ============================================================================
+
+project:
+  name: "expat-hunter"
+  description: "SaaS qui automatise la prospection du marché caché de l'emploi pour les expatriés. L'IA identifie les responsables d'équipes, évalue la pertinence par rapport au profil candidat, rédige des mails personnalisés et gère les relances."
+  type: "fullstack"
+  language: "typescript"  # Fullstack TypeScript
+  version: "0.1.0"
+
+# --- STACK TECHNIQUE ---
+stack:
+  runtime: "node"
+  framework: "adonisjs"  # Batteries-included: auth, mail, queue, i18n, validation intégrés
+  frontend_framework: "nextjs"  # Next.js (React)
+  database: "postgres"
+  orm: "lucid"  # ORM natif AdonisJS (ActiveRecord, migrations, seeds)
+  auth: "adonisjs-auth"  # Intégré AdonisJS (session, token, social)
+  i18n: true  # Anglais + Français au MVP, langue navigateur par défaut, extensible
+  i18n_languages: ["en", "fr"]
+  i18n_provider: "adonisjs-i18n"  # Intégré AdonisJS
+  styling: "tailwindcss"
+  testing: "japa"  # Framework de test natif AdonisJS + Vitest pour le frontend
+  linting: "biome"
+  package_manager: "pnpm"
+  background_jobs: "adonisjs-queue"  # Intégré AdonisJS (basé sur BullMQ)
+  mail: "adonisjs-mail"  # Intégré AdonisJS (SMTP, SES, Mailgun)
+  validation: "vinejs"  # Intégré AdonisJS (très performant)
+  project_management: "shortcut"  # Shortcut.com via MCP pour la gestion des tickets
+  stack_note: |
+    ADR-001 : TypeScript fullstack choisi car :
+    - Un seul runtime (Node.js) sur VPS budget 30$/mois
+    - Playwright natif en JS pour le scraping
+    - Libs LLM matures (OpenAI SDK, Vercel AI SDK)
+    - Moins de RAM que Python + Celery
+    - Stack de confort de l'utilisateur (tiebreaker)
+    ADR-002 : AdonisJS choisi car :
+    - Batteries-included : auth, mail, queue, i18n, validation intégrés nativement
+    - 0 briques externes à câbler vs ~5 pour NestJS, ~7 pour Hono
+    - Structure MVC imposée = code organisé à grande échelle
+    - Lucid ORM natif cohérent avec l'écosystème
+    - Productivité MVP maximale : on code la logique métier, pas la plomberie
+
+# --- ARCHITECTURE ---
+architecture:
+  pattern: "layered"
+  monorepo: true
+  monorepo_tool: "none"  # Simple dossiers backend/ et frontend/
+  directory_structure: |
+    expat-hunter/
+    ├── apps/
+    │   ├── api/                    # Backend AdonisJS
+    │   │   ├── app/
+    │   │   │   ├── controllers/        # HTTP controllers
+    │   │   │   ├── models/             # Lucid models
+    │   │   │   ├── services/           # Business logic
+    │   │   │   ├── validators/         # VineJS validators
+    │   │   │   ├── mailers/            # Email classes
+    │   │   │   ├── jobs/               # Queue jobs
+    │   │   │   ├── scrapers/           # Scraping engines (pluggable)
+    │   │   │   ├── ai/                 # AI services (analysis, email gen)
+    │   │   │   └── middleware/         # Auth, rate limit, etc.
+    │   │   ├── config/                 # AdonisJS config files
+    │   │   ├── database/
+    │   │   │   ├── migrations/         # Lucid migrations
+    │   │   │   └── seeders/            # DB seeders
+    │   │   ├── start/
+    │   │   │   ├── routes.ts           # Route definitions
+    │   │   │   └── kernel.ts           # Middleware registration
+    │   │   ├── resources/
+    │   │   │   └── lang/               # i18n translations (backend)
+    │   │   └── package.json
+    │   └── web/                    # Frontend Next.js
+    │       ├── src/
+    │       │   ├── app/                # Next.js App Router
+    │       │   ├── components/         # UI components
+    │       │   ├── hooks/              # Custom hooks
+    │       │   ├── lib/                # API client, utils
+    │       │   └── i18n/               # Translations (frontend)
+    │       └── package.json
+    ├── packages/
+    │   └── shared/                 # Shared types, constants
+    │       ├── src/
+    │       └── package.json
+    ├── docker-compose.yml
+    ├── pnpm-workspace.yaml
+    └── package.json
+
+# --- FONCTIONNALITÉS ---
+features:
+  # === MUST-HAVE (MVP) ===
+
+  - name: "candidate-profile"
+    description: "L'utilisateur configure son profil candidat : CV, compétences, expérience, pays cible, secteur, type de poste recherché, préférences. Ce profil sert de référence pour l'IA."
+    priority: "must-have"
+    acceptance_criteria:
+      - "L'utilisateur peut créer et modifier son profil"
+      - "Le profil inclut : CV (texte ou upload), compétences, expérience, pays cible, secteur, type de poste"
+      - "Le profil est utilisé par l'IA pour scorer les contacts"
+      - "Le profil est persisté en base de données"
+    api_endpoints:
+      - method: "GET"
+        path: "/api/profile"
+        description: "Récupérer le profil candidat"
+      - method: "PUT"
+        path: "/api/profile"
+        description: "Créer ou mettre à jour le profil"
+      - method: "POST"
+        path: "/api/profile/cv"
+        description: "Upload de CV (PDF/texte)"
+    ui_components:
+      - name: "ProfileForm"
+        description: "Formulaire de profil candidat avec sections (info perso, compétences, préférences)"
+      - name: "CVUploader"
+        description: "Zone d'upload de CV avec parsing automatique"
+
+  - name: "contact-sourcing"
+    description: "Scraper des entreprises et leurs responsables d'équipes opérationnelles (pas RH) depuis plusieurs sources. Le système identifie les personnes qui ont le pouvoir de recruter avant que le poste soit publié. Scraping maison Python avec anti-détection, Apify en fallback. Architecture de connecteurs pluggable par source et par pays."
+    priority: "must-have"
+    acceptance_criteria:
+      - "Le système scrape des sources configurables par pays (ex NZ : Seek, Matchstiq, Zeil, built.com ; global : LinkedIn)"
+      - "Le scraping est non détectable (user-agent rotation, delays aléatoires, proxy support)"
+      - "Le scraping gère les protections anti-bot (captchas, rate limiting)"
+      - "Les résultats sont dédupliqués (même personne sur plusieurs sources)"
+      - "Chaque contact a : nom, rôle, entreprise, email (si trouvé), profil LinkedIn"
+      - "L'architecture de connecteurs permet d'ajouter de nouvelles sources facilement"
+      - "Les contacts sont des responsables d'équipes opérationnelles, pas des RH"
+      - "Apify est utilisé en fallback si le scraping maison échoue"
+    api_endpoints:
+      - method: "POST"
+        path: "/api/sourcing/run"
+        description: "Lancer une campagne de sourcing (pays, secteur, critères)"
+      - method: "GET"
+        path: "/api/sourcing/status"
+        description: "Statut du scraping en cours"
+      - method: "GET"
+        path: "/api/contacts"
+        description: "Liste des contacts trouvés (filtrable, paginée)"
+      - method: "GET"
+        path: "/api/contacts/{id}"
+        description: "Détail d'un contact"
+    ui_components:
+      - name: "SourcingLauncher"
+        description: "Interface pour configurer et lancer un sourcing (pays, secteur, sources)"
+      - name: "SourcingProgress"
+        description: "Barre de progression du scraping en cours"
+      - name: "ContactList"
+        description: "Liste des contacts trouvés avec filtres et tri"
+      - name: "ContactCard"
+        description: "Carte de détail d'un contact"
+
+  - name: "ai-relevance-analysis"
+    description: "L'IA analyse chaque contact/entreprise par rapport au profil candidat. Elle attribue un score de pertinence, explique pourquoi le contact est pertinent ou non, et recommande de le contacter ou non. Elle comprend le profil du contact et s'adapte."
+    priority: "must-have"
+    acceptance_criteria:
+      - "Chaque contact reçoit un score de pertinence (0-100)"
+      - "L'IA fournit une explication textuelle de son analyse"
+      - "L'IA recommande : contacter / ne pas contacter / à vérifier manuellement"
+      - "L'analyse prend en compte le profil candidat ET le profil du contact/entreprise"
+      - "L'utilisateur peut override la recommandation de l'IA"
+      - "L'IA utilise OpenRouter (modèles interchangeables)"
+    api_endpoints:
+      - method: "POST"
+        path: "/api/analysis/run"
+        description: "Lancer l'analyse IA sur les contacts non analysés"
+      - method: "GET"
+        path: "/api/contacts/{id}/analysis"
+        description: "Résultat d'analyse pour un contact"
+      - method: "PUT"
+        path: "/api/contacts/{id}/analysis/override"
+        description: "Override manuel de la recommandation IA"
+    ui_components:
+      - name: "AnalysisResult"
+        description: "Affichage du score, explication et recommandation pour un contact"
+      - name: "AnalysisBatchProgress"
+        description: "Progression de l'analyse batch en cours"
+
+  - name: "personalized-emailing"
+    description: "L'IA rédige un email personnalisé pour chaque contact pertinent, adapté au profil du contact ET au profil du candidat. Envoi via Gmail (extensible Outlook). Séquences de relances automatiques si pas de réponse."
+    priority: "must-have"
+    acceptance_criteria:
+      - "L'IA génère un email unique pour chaque contact (pas de template fixe)"
+      - "L'email est adapté au profil du contact (son rôle, son entreprise, son secteur)"
+      - "L'email est adapté au profil du candidat (compétences, expérience)"
+      - "L'utilisateur peut preview et modifier l'email avant envoi"
+      - "Envoi via Gmail API"
+      - "Séquence de relance configurable (ex: J+3, J+7, J+14)"
+      - "Les relances sont adaptées (pas le même message)"
+      - "Tracking : email envoyé, ouvert (si possible), répondu"
+    api_endpoints:
+      - method: "POST"
+        path: "/api/emails/generate"
+        description: "Générer un email pour un contact"
+      - method: "PUT"
+        path: "/api/emails/{id}"
+        description: "Modifier un email avant envoi"
+      - method: "POST"
+        path: "/api/emails/{id}/send"
+        description: "Envoyer un email"
+      - method: "POST"
+        path: "/api/emails/send-batch"
+        description: "Envoyer tous les emails approuvés"
+      - method: "GET"
+        path: "/api/emails"
+        description: "Liste des emails (envoyés, en attente, brouillons)"
+    ui_components:
+      - name: "EmailPreview"
+        description: "Preview d'un email généré avec possibilité d'éditer"
+      - name: "EmailQueue"
+        description: "File d'attente des emails à envoyer"
+      - name: "FollowUpConfig"
+        description: "Configuration des séquences de relance"
+
+  - name: "pipeline-dashboard"
+    description: "Dashboard visuel de suivi des contacts dans le pipeline de prospection. Vue kanban ou liste avec statuts."
+    priority: "must-have"
+    acceptance_criteria:
+      - "Vue pipeline avec colonnes : Identifié → Analysé → À contacter → Contacté → Répondu → Entretien → Offre → Rejeté"
+      - "Drag & drop pour changer le statut manuellement"
+      - "Filtres par score, statut, entreprise, source"
+      - "Compteurs par colonne"
+      - "Vue liste alternative"
+    api_endpoints:
+      - method: "GET"
+        path: "/api/pipeline"
+        description: "Données du pipeline (contacts groupés par statut)"
+      - method: "PATCH"
+        path: "/api/contacts/{id}/status"
+        description: "Changer le statut d'un contact"
+    ui_components:
+      - name: "PipelineBoard"
+        description: "Vue kanban du pipeline avec drag & drop"
+      - name: "PipelineList"
+        description: "Vue liste alternative du pipeline"
+      - name: "PipelineFilters"
+        description: "Barre de filtres et compteurs"
+
+  # === SHOULD-HAVE ===
+
+  - name: "signal-detection"
+    description: "Détecter les signaux indiquant qu'une entreprise recrute activement : posts LinkedIn, offres publiées sur Seek, croissance de l'équipe, levées de fonds."
+    priority: "should-have"
+    acceptance_criteria:
+      - "Le système détecte les offres d'emploi publiées par l'entreprise"
+      - "Le système détecte la croissance de l'équipe (nouveaux profils LinkedIn)"
+      - "Les signaux sont affichés sur la fiche entreprise/contact"
+      - "Les signaux influencent le score de pertinence"
+
+  - name: "multi-country"
+    description: "Support de plusieurs pays avec des connecteurs de sources de données spécifiques par pays."
+    priority: "should-have"
+    acceptance_criteria:
+      - "L'architecture permet d'ajouter un pays avec ses sources spécifiques"
+      - "Le profil candidat peut cibler plusieurs pays"
+      - "Les résultats sont filtrables par pays"
+
+  # === NICE-TO-HAVE ===
+
+  - name: "linkedin-messaging"
+    description: "Envoi de messages LinkedIn automatiques. ATTENTION: nécessite une étude préalable par un agent spécialisé pour évaluer la faisabilité technique safe (risque de ban) et l'efficacité comparée au mail."
+    priority: "nice-to-have"
+    acceptance_criteria:
+      - "Étude préalable : mail vs LinkedIn (taux de réponse, risques)"
+      - "Si go : envoi sécurisé avec limites strictes (5-10/jour, délais aléatoires)"
+      - "Si no-go : feature abandonnée, focus mail"
+
+  - name: "multi-users"
+    description: "Support multi-utilisateurs avec inscription, auth, et potentiellement billing."
+    priority: "nice-to-have"
+
+  - name: "expat-assistance"
+    description: "Aide à l'expatriation : informations visas, législation du travail par pays, aide au logement, préparation au départ."
+    priority: "nice-to-have"
+
+  - name: "interview-prep"
+    description: "Préparation aux entretiens d'embauche : simulation d'entretiens dans la langue du pays cible, questions adaptées au poste visé et aux pratiques du marché local (culture d'entretien, attentes, formats). L'IA joue le rôle de l'intervieweur."
+    priority: "nice-to-have"
+    acceptance_criteria:
+      - "L'IA génère des questions d'entretien adaptées au poste, au secteur et au pays"
+      - "Les questions sont dans la langue du pays cible"
+      - "L'IA prend en compte les spécificités culturelles du marché du pays cible (ex: culture fit, style d'entretien local)"
+      - "Mode simulation : l'IA joue l'intervieweur, le candidat répond, l'IA donne un feedback"
+      - "Conseils adaptés au marché local (choses à dire/ne pas dire, format attendu)"
+
+  - name: "mobile-app"
+    description: "Application mobile (React Native) pour suivre le pipeline et recevoir des notifications."
+    priority: "nice-to-have"
+
+  - name: "analytics"
+    description: "Tableau de bord analytique : taux de réponse, meilleurs canaux, optimisation des messages."
+    priority: "nice-to-have"
+
+# --- MODÈLE DE DONNÉES ---
+data_model:
+  entities:
+    - name: "User"
+      fields:
+        - name: "id"
+          type: "string"
+          required: true
+          unique: true
+          description: "UUID"
+        - name: "email"
+          type: "string"
+          required: true
+          unique: true
+        - name: "name"
+          type: "string"
+          required: true
+        - name: "created_at"
+          type: "date"
+          required: true
+      relations:
+        - type: "one-to-one"
+          target: "CandidateProfile"
+          field: "profile"
+
+    - name: "CandidateProfile"
+      fields:
+        - name: "id"
+          type: "string"
+          required: true
+          unique: true
+        - name: "cv_text"
+          type: "string"
+          required: false
+          description: "CV en texte brut (extrait du PDF ou saisi)"
+        - name: "cv_file_path"
+          type: "string"
+          required: false
+          description: "Chemin vers le fichier CV uploadé"
+        - name: "skills"
+          type: "string[]"
+          required: true
+          description: "Liste des compétences"
+        - name: "experience_years"
+          type: "number"
+          required: true
+        - name: "target_countries"
+          type: "string[]"
+          required: true
+          description: "Pays ciblés (ex: ['NZ', 'AU'])"
+        - name: "target_sectors"
+          type: "string[]"
+          required: true
+          description: "Secteurs ciblés"
+        - name: "target_roles"
+          type: "string[]"
+          required: true
+          description: "Types de postes recherchés"
+        - name: "preferences"
+          type: "json"
+          required: false
+          description: "Préférences libres (taille entreprise, remote, salaire...)"
+      relations:
+        - type: "many-to-one"
+          target: "User"
+          field: "user_id"
+
+    - name: "Company"
+      fields:
+        - name: "id"
+          type: "string"
+          required: true
+          unique: true
+        - name: "name"
+          type: "string"
+          required: true
+        - name: "website"
+          type: "string"
+          required: false
+        - name: "sector"
+          type: "string"
+          required: false
+        - name: "size"
+          type: "string"
+          required: false
+          description: "Taille estimée (startup, SME, enterprise)"
+        - name: "location"
+          type: "string"
+          required: false
+        - name: "country"
+          type: "string"
+          required: true
+        - name: "linkedin_url"
+          type: "string"
+          required: false
+        - name: "signals"
+          type: "json"
+          required: false
+          description: "Signaux détectés (offres, croissance, etc.)"
+        - name: "source"
+          type: "string"
+          required: true
+          description: "Source de découverte (seek, linkedin, built.com...)"
+      relations:
+        - type: "one-to-many"
+          target: "Contact"
+          field: "contacts"
+
+    - name: "Contact"
+      fields:
+        - name: "id"
+          type: "string"
+          required: true
+          unique: true
+        - name: "name"
+          type: "string"
+          required: true
+        - name: "role"
+          type: "string"
+          required: true
+          description: "Rôle dans l'entreprise (Engineering Manager, CTO...)"
+        - name: "email"
+          type: "string"
+          required: false
+        - name: "linkedin_url"
+          type: "string"
+          required: false
+        - name: "source"
+          type: "string"
+          required: true
+        - name: "status"
+          type: "string"
+          required: true
+          description: "identified | analyzed | to_contact | contacted | replied | interview | offer | rejected"
+        - name: "relevance_score"
+          type: "number"
+          required: false
+          description: "Score IA 0-100"
+        - name: "relevance_reason"
+          type: "string"
+          required: false
+          description: "Explication IA de la pertinence"
+        - name: "ai_recommendation"
+          type: "string"
+          required: false
+          description: "contact | skip | manual_review"
+        - name: "user_override"
+          type: "boolean"
+          required: false
+          description: "L'utilisateur a override la reco IA"
+        - name: "created_at"
+          type: "date"
+          required: true
+      relations:
+        - type: "many-to-one"
+          target: "Company"
+          field: "company_id"
+        - type: "one-to-many"
+          target: "Email"
+          field: "emails"
+
+    - name: "Email"
+      fields:
+        - name: "id"
+          type: "string"
+          required: true
+          unique: true
+        - name: "subject"
+          type: "string"
+          required: true
+        - name: "body"
+          type: "string"
+          required: true
+        - name: "type"
+          type: "string"
+          required: true
+          description: "initial | follow_up_1 | follow_up_2 | follow_up_3"
+        - name: "status"
+          type: "string"
+          required: true
+          description: "draft | approved | sent | opened | replied | bounced"
+        - name: "sent_at"
+          type: "date"
+          required: false
+        - name: "scheduled_at"
+          type: "date"
+          required: false
+          description: "Date de relance prévue"
+        - name: "opened_at"
+          type: "date"
+          required: false
+        - name: "replied_at"
+          type: "date"
+          required: false
+      relations:
+        - type: "many-to-one"
+          target: "Contact"
+          field: "contact_id"
+
+    - name: "SourcingRun"
+      fields:
+        - name: "id"
+          type: "string"
+          required: true
+          unique: true
+        - name: "status"
+          type: "string"
+          required: true
+          description: "pending | running | completed | failed"
+        - name: "country"
+          type: "string"
+          required: true
+        - name: "sector"
+          type: "string"
+          required: false
+        - name: "sources"
+          type: "string[]"
+          required: true
+          description: "Sources utilisées pour ce run"
+        - name: "contacts_found"
+          type: "number"
+          required: false
+        - name: "started_at"
+          type: "date"
+          required: false
+        - name: "completed_at"
+          type: "date"
+          required: false
+        - name: "errors"
+          type: "json"
+          required: false
+
+# --- CONTRAINTES ---
+constraints:
+  performance:
+    - "API response < 500ms (hors scraping et IA)"
+    - "Le scraping tourne en background (async)"
+    - "L'analyse IA tourne en background (async)"
+  security:
+    - "Mots de passe hashés bcrypt"
+    - "JWT pour l'auth API"
+    - "Credentials email chiffrés en base"
+    - "Pas de secrets dans le code"
+    - "Rate limiting sur l'API"
+  scraping:
+    - "User-agent rotation"
+    - "Délais aléatoires entre requêtes (2-10s)"
+    - "Support de proxies"
+    - "Gestion des captchas (retry + fallback Apify)"
+    - "Respect des robots.txt quand applicable"
+  ai:
+    - "OpenRouter comme provider principal (modèles interchangeables)"
+    - "Ollama en fallback futur (quand VPS suffisant)"
+    - "Budget IA maîtrisé (batch processing, cache des résultats)"
+  deployment:
+    target: "vps"  # VPS Hostinger KVM2 existant
+    ci_cd: "github-actions"
+
+# --- CONVENTIONS ---
+conventions:
+  naming:
+    files: "kebab-case"  # TypeScript/Next.js convention
+    functions: "camelCase"
+    components: "PascalCase"
+    variables: "camelCase"
+    types: "PascalCase"
+  git:
+    branch_strategy: "github-flow"
+    commit_format: "conventional-commits"
+  code_style: "biome"
+
+# --- PHASES DE VALIDATION ---
+validation:
+  after_plan: true
+  after_scaffold: true
+  after_implement: true
+  after_test: true
+  after_review: true
+
+# --- CONTEXTE ---
+context:
+  inspiration: "Lemlist, Apollo.io (mais orienté job search, pas sales)"
+  existing_code: ""
+  documentation: ""
+  notes: |
+    - L'outil cible le marché CACHÉ de l'emploi (postes non publiés)
+    - On contacte les responsables d'équipes opérationnelles, PAS les RH
+    - L'IA doit comprendre à qui elle parle ET qui est le candidat
+    - Simplicité extrême pour l'utilisateur malgré la complexité technique
+    - MVP mono-user, architecturé pour multi-user
+    - Budget 30$/mois max (hosting + APIs)
+    - LinkedIn messaging : nécessite étude préalable risque/bénéfice
+    - Vision long terme : plateforme complète d'aide à l'expatriation

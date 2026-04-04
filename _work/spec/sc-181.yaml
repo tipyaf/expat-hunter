@@ -1,0 +1,58 @@
+id: "sc-181"
+name: "fix: forgot-password and reset-password inaccessible to unauthenticated users"
+type: "bug"
+status: "testing"
+shortcut_url: "https://app.shortcut.com/expat-hunter/story/181"
+
+scope:
+  - "apps/frontend/src/contexts/auth-context.tsx"
+  - "apps/frontend/src/contexts/__tests__/auth-guard.test.tsx"
+  - "apps/frontend/vitest.config.ts"
+  - "apps/frontend/src/test/setup.ts"
+  - "apps/frontend/package.json"
+  - "e2e/tests/auth-public-routes.spec.ts"
+
+context: |
+  publicPaths in auth-context.tsx only contained ['/login', '/register'].
+  The auth guard redirected unauthenticated users away from /forgot-password
+  and /reset-password, making "Mot de passe oublié ?" non-functional.
+
+fix: |
+  Added '/forgot-password' and '/reset-password' to publicPaths array.
+
+acceptance_criteria:
+  - id: "AC-FUNC-SC181-01"
+    type: "FUNC"
+    description: "publicPaths must include /forgot-password and /reset-password"
+    verify: "grep -n 'forgot-password.*reset-password\\|reset-password.*forgot-password' apps/frontend/src/contexts/auth-context.tsx"
+    tier: 1
+
+  - id: "AC-FUNC-SC181-02"
+    type: "FUNC"
+    description: "publicPaths must contain exactly 4 entries: /login /register /forgot-password /reset-password"
+    verify: "grep 'publicPaths' apps/frontend/src/contexts/auth-context.tsx | grep -c '/forgot-password'"
+    tier: 1
+
+  - id: "AC-FUNC-SC181-03"
+    type: "FUNC"
+    description: "Unit tests pass — 6 tests covering all publicPaths scenarios"
+    verify: "pnpm --filter @expat-hunter/frontend test"
+    tier: 2
+
+  - id: "AC-FUNC-SC181-04"
+    type: "FUNC"
+    description: "E2E: unauthenticated user visits /forgot-password — stays on /forgot-password, not redirected to /login"
+    verify: "pnpm --filter @expat-hunter/e2e test -- --grep 'unauthenticated.*forgot-password' 2>&1 || npx playwright test e2e/tests/auth-public-routes.spec.ts --grep 'forgot-password' --project=chromium"
+    tier: 2
+
+  - id: "AC-FUNC-SC181-05"
+    type: "FUNC"
+    description: "E2E: unauthenticated user visits /reset-password — stays on /reset-password, not redirected to /login"
+    verify: "pnpm --filter @expat-hunter/e2e test -- --grep 'unauthenticated.*reset-password' 2>&1 || npx playwright test e2e/tests/auth-public-routes.spec.ts --grep 'reset-password' --project=chromium"
+    tier: 2
+
+  - id: "AC-SEC-SC181-01"
+    type: "SEC"
+    description: "Protected routes still require authentication — no accidental public exposure"
+    verify: "grep -n 'publicPaths' apps/frontend/src/contexts/auth-context.tsx"
+    tier: 1

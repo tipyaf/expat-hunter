@@ -50,7 +50,7 @@ When a user describes a project idea or asks to build something:
 ### Existing project (memory file exists)
 1. Read `memory/expat-hunter.md` to restore context
 2. Read `memory/LESSONS.md` for known pitfalls
-3. Read `_work/feature-tracker.yaml` to know feature states
+3. Read `specs/feature-tracker.yaml` to know feature states
 4. **Check Shortcut** — query pending/in-progress stories before deciding what to do next (MANDATORY)
 5. Summarize the project state to the user: what's done, what's next, which features are pending/refined/validated
 6. Resume where it left off — use the appropriate skill
@@ -67,7 +67,7 @@ PHASE 0 — CONCEPTION (/spec) — Human validation at each step
   0.3 Design (UX/UI)  → specs/expat-hunter-ux.md
   0.5 Ordering        → features ordered in arch doc
   1.0 Architecture    → specs/expat-hunter-architecture.md
-  → Initialize        → _work/feature-tracker.yaml
+  → Initialize        → specs/feature-tracker.yaml
 
 ═══════════════════════════════════════════════════════════
 PHASE 1 — SCAFFOLD (/build first run) — Auto
@@ -77,8 +77,8 @@ PHASE 1 — SCAFFOLD (/build first run) — Auto
 ═══════════════════════════════════════════════════════════
 PHASE 2 — CONSTRUCTION (per feature loop)
 ═══════════════════════════════════════════════════════════
-  State tracked in: _work/feature-tracker.yaml
-  Build contract in: _work/spec/[feature-id].yaml
+  State tracked in: specs/feature-tracker.yaml
+  Build contract in: specs/stories/[feature-id].yaml
 
   For each feature [pending → refined → building → testing → validated]:
 
@@ -119,7 +119,7 @@ PHASE 5 — RELEASE — ✅ Human
 | 0.5: Ordering | /spec | PO+Arch | Human | Features ordered in arch doc |
 | 1: Plan | /spec | Architect | Human | `specs/expat-hunter-architecture.md` |
 | 2: Scaffold | /build | Developer | Auto | Project compiles/starts |
-| 2.5: Refine | /refine | Refinement | Human | `_work/spec/[feature].yaml` |
+| 2.5: Refine | /refine | Refinement | Human | `specs/stories/[feature].yaml` |
 | 3: Implement | /build | Developer | Auto | Code + tests written |
 | 3.5: Validate | /validate | Validator | Auto | ALL `verify:` commands PASS |
 | 4: Review | /review | Reviewer+Security+Tester | Auto | Quality + security PASS |
@@ -143,8 +143,8 @@ Before executing a skill, verify its prerequisites exist **on the filesystem**:
 | Skill | Prerequisites (files must exist) | If missing |
 |-------|----------------------------------|------------|
 | `/spec` | None — starting point | — |
-| `/refine` | `specs/expat-hunter.yaml` + `specs/expat-hunter-architecture.md` + `_work/feature-tracker.yaml` | → "Let's define the project first" → `/spec` |
-| `/build` | `_work/spec/[feature-id].yaml` + feature status=`refined` in tracker | → "This story needs refinement" → `/refine` |
+| `/refine` | `specs/expat-hunter.yaml` + `specs/expat-hunter-architecture.md` + `specs/feature-tracker.yaml` | → "Let's define the project first" → `/spec` |
+| `/build` | `specs/stories/[feature-id].yaml` + feature status=`refined` in tracker | → "This story needs refinement" → `/refine` |
 | `/validate` | Feature status=`building` or `testing` in tracker | → "Nothing to validate yet" → `/build` |
 | `/review` | ALL features status=`validated` in tracker | → "Some features still need validation" → list them |
 
@@ -165,14 +165,14 @@ Before executing a skill, verify its prerequisites exist **on the filesystem**:
 (copy ACs exactly from the story file YAML — check off as you go)
 
 ## References
-- Story file: _work/spec/[id].yaml
+- Story file: specs/stories/[id].yaml
 - Epic: [Shortcut link]
 ```
 
 ### Build checklist — add to EVERY story before starting dev
 These 14 tasks MUST be present and checked off via `stories-update-task` as each step completes:
 1. `[ ]` Refinement validated by user
-2. `[ ]` Story file YAML written (_work/spec/)
+2. `[ ]` Story file YAML written (specs/stories/)
 3. `[ ]` Code implemented (scope respected)
 4. `[ ]` Unit tests written and passing
 5. `[ ]` Functional / e2e tests written and passing (web projects: see e2e rules below — skip if not web)
@@ -283,7 +283,7 @@ acceptance_criteria:
 - Never mix changes from different stories/features on the same branch
 
 ## Strict rules
-1. **Always read memory** at session start — `memory/expat-hunter.md` + `memory/LESSONS.md` + `_work/feature-tracker.yaml`
+1. **Always read memory** at session start — `memory/expat-hunter.md` + `memory/LESSONS.md` + `specs/feature-tracker.yaml`
 2. **Always update memory** after each phase
 3. **Always update feature-tracker.yaml** after each feature state change
 4. **Always follow phase order** — no shortcuts (skills enforce this via filesystem checks)
@@ -312,9 +312,9 @@ acceptance_criteria:
 - **Framework agents**: `framework/agents/*.md` (core) + `framework/agents/*.ref.md` (templates)
 - **Phase prompts**: `framework/prompts/phases/`
 - **Spec templates**: `framework/specs/templates/`
-- **Feature tracker**: `_work/feature-tracker.yaml`
-- **Story files**: `_work/spec/[feature-id].yaml`
-- **Stack profiles**: `_work/stacks/`
+- **Feature tracker**: `specs/feature-tracker.yaml`
+- **Story files**: `specs/stories/[feature-id].yaml`
+- **Stack profiles**: `stacks/`
 - **Memory**: `memory/expat-hunter.md`
 - **Lessons**: `memory/LESSONS.md`
 - **Constitution**: `specs/constitution.md`

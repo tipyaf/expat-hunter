@@ -1,0 +1,67 @@
+id: "sc-185"
+name: "feat: reset-password full flow + fix success message styling"
+type: "feature"
+status: "testing"
+shortcut_url: "https://app.shortcut.com/expat-hunter/story/185"
+
+scope:
+  - "apps/frontend/src/app/forgot-password/page.tsx"
+  - "apps/frontend/src/app/reset-password/page.tsx"
+  - "e2e/tests/reset-password-flow.spec.ts"
+  - "e2e/package.json"
+  - "specs/stories/sc-185.yaml"
+
+context: |
+  Backend is fully implemented (PasswordResetService, email template, routes).
+  Two issues:
+  1. Success messages use hardcoded Tailwind colors (bg-green-50, text-green-800)
+     instead of design system CSS variables — violates LESSONS.md.
+  2. No e2e test covers the full reset password flow end-to-end.
+
+fix: |
+  - Replace hardcoded green Tailwind classes with CSS variable equivalents
+    (bg-[var(--color-success)]/10 border-[var(--color-success)]/30 text-[var(--color-success)])
+  - Add full e2e flow: forgot-password form → DB token → reset → login
+
+acceptance_criteria:
+  - id: "AC-FUNC-SC185-01"
+    type: "FUNC"
+    description: "No hardcoded green- Tailwind classes in forgot-password or reset-password pages"
+    verify: "grep -rn 'bg-green-\\|text-green-\\|border-green-' apps/frontend/src/app/forgot-password/page.tsx apps/frontend/src/app/reset-password/page.tsx && echo FAIL || echo PASS"
+    tier: 1
+
+  - id: "AC-FUNC-SC185-02"
+    type: "FUNC"
+    description: "Success messages use --color-success CSS variable"
+    verify: "grep -c 'color-success' apps/frontend/src/app/forgot-password/page.tsx"
+    tier: 1
+
+  - id: "AC-FUNC-SC185-03"
+    type: "FUNC"
+    description: "Success messages use --color-success CSS variable on reset-password page"
+    verify: "grep -c 'color-success' apps/frontend/src/app/reset-password/page.tsx"
+    tier: 1
+
+  - id: "AC-FUNC-SC185-04"
+    type: "FUNC"
+    description: "E2E: full flow — forgot-password → token → reset → login with new password"
+    verify: "cd e2e && npx playwright test tests/reset-password-flow.spec.ts --project=chromium 2>&1"
+    tier: 2
+
+  - id: "AC-FUNC-SC185-05"
+    type: "FUNC"
+    description: "E2E: invalid token shows error message"
+    verify: "cd e2e && npx playwright test tests/reset-password-flow.spec.ts --grep 'invalid token' --project=chromium 2>&1"
+    tier: 2
+
+  - id: "AC-FUNC-SC185-06"
+    type: "FUNC"
+    description: "E2E: missing token shows invalid link message"
+    verify: "cd e2e && npx playwright test tests/reset-password-flow.spec.ts --grep 'without token' --project=chromium 2>&1"
+    tier: 2
+
+  - id: "AC-SEC-SC185-01"
+    type: "SEC"
+    description: "No hardcoded Tailwind color classes in modified files"
+    verify: "grep -n 'text-blue-\\|text-red-\\|text-green-\\|bg-green-\\|bg-blue-\\|bg-red-' apps/frontend/src/app/forgot-password/page.tsx apps/frontend/src/app/reset-password/page.tsx && echo FAIL || echo PASS"
+    tier: 1

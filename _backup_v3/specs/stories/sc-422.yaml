@@ -1,0 +1,181 @@
+story:
+  id: "sc-422"
+  shortcut_url: "https://app.shortcut.com/expat-hunter/story/422"
+  title: "Sign in with Google (OAuth)"
+  parent_spec: "specs/expat-hunter.yaml"
+  status: "refined"
+  size: "M"
+  estimate: 3
+  type: "feature"
+  refined_at: "2026-03-26"
+  refined_by: "refinement"
+
+user_story: >
+  As a user, I want to sign in or register with my Google account so that
+  I can access ExpatHunter without creating a password.
+
+scope:
+  files_to_create:
+    - "apps/api/config/ally.ts"
+    - "apps/api/database/migrations/XX_add_google_id_to_users.ts"
+    - "apps/frontend/src/components/ui/social-auth-button.tsx"
+    - "apps/frontend/src/app/auth/callback/page.tsx"
+  files_to_modify:
+    - "apps/api/package.json"
+    - "apps/api/adonisrc.ts"
+    - "apps/api/start/env.ts"
+    - "apps/api/app/models/user.ts"
+    - "apps/api/app/controllers/auth_controller.ts"
+    - "apps/api/start/routes.ts"
+    - "apps/frontend/src/contexts/auth-context.tsx"
+    - "apps/frontend/src/app/login/page.tsx"
+    - "apps/frontend/src/app/register/page.tsx"
+    - "apps/frontend/src/i18n/en.json"
+    - "apps/frontend/src/i18n/fr.json"
+  files_to_read:
+    - "apps/api/app/models/user.ts"
+    - "apps/api/app/controllers/auth_controller.ts"
+    - "apps/api/start/routes.ts"
+    - "apps/api/start/env.ts"
+    - "apps/api/adonisrc.ts"
+    - "apps/frontend/src/contexts/auth-context.tsx"
+    - "apps/frontend/src/app/login/page.tsx"
+    - "apps/frontend/src/app/register/page.tsx"
+    - "apps/frontend/src/i18n/en.json"
+    - "apps/frontend/src/i18n/fr.json"
+    - "stacks/typescript.md"
+    - "stacks/typescript-adonisjs.md"
+    - "stacks/typescript-nextjs.md"
+
+excluded:
+  - LinkedIn OAuth (sc-434)
+  - Outlook / Meta / other providers
+  - Forced email verification for OAuth accounts (email already verified by Google)
+  - Any changes to existing email/password flow
+
+oauth_flow: >
+  1. User clicks "Continue with Google" on login or register page
+  2. Frontend navigates to GET /api/auth/google
+  3. AdonisJS Ally redirects to Google OAuth consent screen
+  4. Google redirects to GET /api/auth/google/callback
+  5. Ally verifies state (CSRF) and retrieves Google profile (email, name, googleId)
+  6. API finds user by googleId OR email:
+     - Found by googleId → log in directly
+     - Found by email → link googleId to existing account, log in
+     - Not found → create new user (password=null, emailVerifiedAt=now)
+  7. Generate access token
+  8. Redirect to FRONTEND_URL/auth/callback?token=<token>
+  9. Frontend /auth/callback reads ?token, stores via loginWithToken(), redirects to /
+
+notes:
+  - "@adonisjs/ally handles CSRF state automatically — do NOT use .stateless()"
+  - "User.password becomes nullable for OAuth-only accounts"
+  - "Google profile email is already verified — set emailVerifiedAt = DateTime.now()"
+  - "Use Google's official button branding: white background, Google SVG icon"
+  - "FRONTEND_URL must be added to env.ts (used for redirect after callback)"
+
+acceptance_criteria:
+  - id: "AC-FUNC-SC422-01"
+    type: "FUNC"
+    description: "Given ally is installed / When checking package.json / Then @adonisjs/ally is present"
+    verify: "grep -c '@adonisjs/ally' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/package.json"
+    expected: "1"
+    tier: 1
+
+  - id: "AC-FUNC-SC422-02"
+    type: "FUNC"
+    description: "Given ally is configured / When checking config / Then config/ally.ts exists with google driver"
+    verify: "test -f /Volumes/Samsung_T5/dev/expat-hunter/apps/api/config/ally.ts && echo ok"
+    expected: "ok"
+    tier: 1
+
+  - id: "AC-FUNC-SC422-03"
+    type: "FUNC"
+    description: "Given env vars are declared / When checking env.ts / Then GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are present"
+    verify: "grep -c 'GOOGLE_CLIENT_ID\\|GOOGLE_CLIENT_SECRET' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/start/env.ts"
+    expected: "2"
+    tier: 1
+
+  - id: "AC-FUNC-SC422-04"
+    type: "FUNC"
+    description: "Given googleId is added to User / When checking model / Then googleId column is declared"
+    verify: "grep -c 'googleId' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/app/models/user.ts"
+    expected: "1"
+    tier: 1
+
+  - id: "AC-FUNC-SC422-05"
+    type: "FUNC"
+    description: "Given migration exists / When listing migrations / Then google_id migration file is present"
+    verify: "ls /Volumes/Samsung_T5/dev/expat-hunter/apps/api/database/migrations/ | grep google_id"
+    expected: "match"
+    tier: 1
+
+  - id: "AC-FUNC-SC422-06"
+    type: "FUNC"
+    description: "Given OAuth methods exist / When checking controller / Then googleRedirect and googleCallback are present"
+    verify: "grep -c 'googleCallback\\|googleRedirect' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/app/controllers/auth_controller.ts"
+    expected: "2"
+    tier: 1
+
+  - id: "AC-FUNC-SC422-07"
+    type: "FUNC"
+    description: "Given routes are registered / When checking routes.ts / Then 2 Google routes exist"
+    verify: "grep -c 'google' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/start/routes.ts"
+    expected: "2"
+    tier: 1
+
+  - id: "AC-FUNC-SC422-08"
+    type: "FUNC"
+    description: "Given SocialAuthButton exists / When checking component / Then file is present"
+    verify: "test -f /Volumes/Samsung_T5/dev/expat-hunter/apps/frontend/src/components/ui/social-auth-button.tsx && echo ok"
+    expected: "ok"
+    tier: 1
+
+  - id: "AC-FUNC-SC422-09"
+    type: "FUNC"
+    description: "Given auth callback page exists / When checking / Then /auth/callback/page.tsx is present"
+    verify: "test -f /Volumes/Samsung_T5/dev/expat-hunter/apps/frontend/src/app/auth/callback/page.tsx && echo ok"
+    expected: "ok"
+    tier: 1
+
+  - id: "AC-FUNC-SC422-10"
+    type: "FUNC"
+    description: "Given login page has Google button / When checking / Then SocialAuthButton is used"
+    verify: "grep -c 'SocialAuthButton\\|continueWithGoogle' /Volumes/Samsung_T5/dev/expat-hunter/apps/frontend/src/app/login/page.tsx"
+    expected: "1"
+    tier: 1
+
+  - id: "AC-FUNC-SC422-11"
+    type: "FUNC"
+    description: "Given register page has Google button / When checking / Then SocialAuthButton is used"
+    verify: "grep -c 'SocialAuthButton\\|continueWithGoogle' /Volumes/Samsung_T5/dev/expat-hunter/apps/frontend/src/app/register/page.tsx"
+    expected: "1"
+    tier: 1
+
+  - id: "AC-SEC-SC422-01"
+    type: "SEC"
+    description: "Given CSRF protection is active / When checking controller / Then .stateless() is NOT called (state param required)"
+    verify: "grep -c 'stateless()' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/app/controllers/auth_controller.ts"
+    expected: "0"
+    tier: 1
+
+  - id: "AC-SEC-SC422-02"
+    type: "SEC"
+    description: "Given OAuth errors are handled / When checking callback / Then hasError check is present"
+    verify: "grep -c 'hasError\\|hasCode' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/app/controllers/auth_controller.ts"
+    expected: ">=1"
+    tier: 1
+
+  - id: "AC-BP-SC422-01"
+    type: "BP"
+    description: "Given TypeScript is strict / When compiling API / Then 0 errors"
+    verify: "cd /Volumes/Samsung_T5/dev/expat-hunter && pnpm --filter api exec tsc --noEmit 2>&1 | wc -l | tr -d ' ' | grep '^0$'"
+    expected: "0"
+    tier: 1
+
+  - id: "AC-BP-SC422-02"
+    type: "BP"
+    description: "Given TypeScript is strict / When compiling frontend / Then 0 errors"
+    verify: "cd /Volumes/Samsung_T5/dev/expat-hunter && pnpm --filter frontend exec tsc --noEmit 2>&1 | wc -l | tr -d ' ' | grep '^0$'"
+    expected: "0"
+    tier: 1

@@ -1,0 +1,146 @@
+# =============================================================================
+# STORY FILE — sc-549-1: Unified email edit modal with AI assistance
+# =============================================================================
+# This is the BUILD CONTRACT. The developer implements exactly this.
+# The validator checks exactly this. Nothing more, nothing less.
+# =============================================================================
+
+story:
+  id: "sc-549-1"
+  name: "Unified email edit modal with AI assistance"
+  parent: "sc-549"
+  type: "feature"
+  priority: "high"
+  estimate: 3  # M — standard feature
+  created_at: "2026-03-28"
+
+  user_story: >
+    As a user on the emails page,
+    I want to open an edit modal for a draft email with the ability to edit manually
+    OR ask AI to improve/regenerate the email,
+    so that I no longer have two separate actions (edit/regenerate) and can guide AI
+    with my own instructions.
+
+  context: >
+    The emails page currently has two separate actions for drafts: "Edit" (inline textarea)
+    and "Regenerate" (full AI rewrite with no user guidance). This is confusing because
+    regenerating IS editing. The user wants a single unified modal that combines:
+    manual editing, AI improvement with custom instructions, and full regeneration.
+
+scope:
+  included:
+    - "New EmailEditModal component (modal with subject/body textareas + AI assistance)"
+    - "Backend: regenerate endpoint accepts optional 'instructions' field"
+    - "EmailComposer.compose() accepts 'instructions' option injected into the prompt"
+    - "buildEmailPrompt() injects user instructions when provided"
+    - "Frontend hook: regenerate() accepts optional instructions param"
+    - "Remove inline edit (editingId/editSubject/editBody state) from emails page"
+    - "i18n keys for modal in en.json and fr.json"
+  excluded:
+    - "Email templates system (sc-549-2)"
+    - "Generation presets / tone / style (sc-549-3)"
+    - "Initial email generation flow changes"
+    - "Thread/reply generation changes"
+
+files:
+  to_create:
+    - path: "apps/frontend/src/components/emails/email-edit-modal.tsx"
+      description: "Modal component: subject/body editable fields, instructions textarea, Improve with AI button, Regenerate button, Save button"
+  to_modify:
+    - path: "apps/frontend/src/app/emails/page.tsx"
+      description: "Remove inline edit state (editingId, editSubject, editBody, startEditing). Replace Edit button with modal open trigger. Remove inline textarea block."
+    - path: "apps/frontend/src/hooks/use-emails.ts"
+      description: "regenerate() accepts optional { instructions?: string } parameter, passes to API"
+    - path: "apps/api/app/controllers/emails_controller.ts"
+      description: "regenerate() reads optional 'instructions' from request body, passes to service"
+    - path: "apps/api/app/services/email_generation_service.ts"
+      description: "regenerate() accepts optional instructions param, passes to composer"
+    - path: "apps/api/app/ai/email_composer.ts"
+      description: "compose() accepts optional instructions in options, passes to buildEmailPrompt"
+    - path: "apps/api/app/ai/prompts/email_prompt.ts"
+      description: "buildEmailPrompt() accepts instructions option, injects into user prompt when present"
+    - path: "apps/frontend/src/i18n/en.json"
+      description: "Add keys: emails.editEmail, emails.improveWithAi, emails.regenerateCompletely, emails.instructionsPlaceholder, emails.improving, emails.regenerating"
+    - path: "apps/frontend/src/i18n/fr.json"
+      description: "Add same keys in French"
+  to_read:
+    - path: "apps/api/app/ai/openrouter_client.ts"
+      description: "Understand chat() interface"
+
+dependencies:
+  - "OpenRouter API configured (OPENROUTER_API_KEY env var)"
+
+acceptance_criteria:
+  - id: "AC-FUNC-549-01"
+    type: "FUNC"
+    description: "Given a draft email / When I click 'Edit' / Then a modal opens with subject + body editable fields pre-filled"
+    verify: "grep -r 'EmailEditModal' apps/frontend/src/ --include='*.tsx' | grep -q 'open\\|isOpen\\|show'"
+    tier: 1
+
+  - id: "AC-FUNC-549-02"
+    type: "FUNC"
+    description: "Given the edit modal is open / When I modify subject/body and click 'Save' / Then PUT /api/emails/:id is called and the email is updated"
+    verify: "grep -r 'updateEmail' apps/frontend/src/components/emails/email-edit-modal.tsx | grep -q 'subject\\|body'"
+    tier: 1
+
+  - id: "AC-FUNC-549-03"
+    type: "FUNC"
+    description: "Given the edit modal is open / When I type instructions and click 'Improve with AI' / Then POST /api/emails/:id/regenerate is called with { instructions } and the modal fields update with the AI response"
+    verify: "grep -r 'instructions' apps/api/app/controllers/emails_controller.ts | grep -q 'regenerate\\|request'"
+    tier: 1
+
+  - id: "AC-FUNC-549-04"
+    type: "FUNC"
+    description: "Given the edit modal / When I click 'Regenerate' with no instructions / Then the email is fully regenerated as before (backward compatible)"
+    verify: "grep -r 'instructions' apps/api/app/services/email_generation_service.ts | grep -q 'optional\\|?\\|undefined'"
+    tier: 1
+
+  - id: "AC-FUNC-549-05"
+    type: "FUNC"
+    description: "Given instructions are provided to the regenerate endpoint / Then they are injected into the AI prompt as additional user instructions"
+    verify: "grep -r 'instructions' apps/api/app/ai/prompts/email_prompt.ts | grep -q 'instructions'"
+    tier: 1
+
+  - id: "AC-FUNC-549-06"
+    type: "FUNC"
+    description: "The old inline edit (textarea in email list) is removed — only the modal remains for editing"
+    verify: "! grep -q 'editingId' apps/frontend/src/app/emails/page.tsx"
+    tier: 1
+
+  - id: "AC-SEC-549-01"
+    type: "SEC"
+    description: "Instructions field is validated server-side: trimmed and truncated to max length, no raw injection into prompt without sanitization"
+    verify: "grep -r 'MAX_INSTRUCTIONS_LENGTH\\|INSTRUCTIONS_MAX_LENGTH' apps/api/app/ --include='*.ts' | grep -q '.'"
+    tier: 1
+
+  - id: "AC-BP-549-01"
+    type: "BP"
+    description: "i18n keys exist for modal UI elements in both en.json and fr.json"
+    verify: "grep -q 'improveWithAi' apps/frontend/src/i18n/en.json && grep -q 'improveWithAi' apps/frontend/src/i18n/fr.json"
+    tier: 1
+
+  - id: "AC-BP-549-02"
+    type: "BP"
+    description: "No magic strings — instruction length limit extracted as named constant"
+    verify: "grep -rn 'MAX_INSTRUCTIONS' apps/api/app/ --include='*.ts' | grep -q 'const\\|export'"
+    tier: 1
+
+  - id: "AC-BP-549-03"
+    type: "BP"
+    description: "TypeScript: 0 errors in frontend"
+    verify: "cd apps/frontend && pnpm tsc --noEmit 2>&1 | grep -c 'error TS' | grep -q '^0$'"
+    tier: 1
+
+edge_cases:
+  - "Empty instructions → treated as full regenerate (no instructions injected)"
+  - "Very long instructions → truncated to MAX_INSTRUCTIONS_LENGTH (500 chars) server-side"
+  - "OpenRouter unavailable → error displayed in modal, email fields not modified"
+  - "Non-draft email → API returns 400 (existing behavior preserved)"
+  - "Modal open while another action in progress → buttons disabled during loading"
+  - "User closes modal without saving → no API call, no changes"
+
+technical_notes:
+  - "The modal manages its own local state for subject/body (copied from email on open, updated on AI response)"
+  - "Improve with AI = regenerate with instructions (same endpoint, different prompt)"
+  - "Regenerate = regenerate without instructions (existing behavior)"
+  - "The instructions are appended to the user prompt section, NOT the system prompt"
