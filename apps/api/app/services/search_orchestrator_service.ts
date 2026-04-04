@@ -56,9 +56,9 @@ interface SearchResult {
 }
 
 export default class SearchOrchestratorService {
-  private sourcingService: SourcingService
-  private analysisService: AnalysisService
-  private emailGenerationService: EmailGenerationService
+  private readonly sourcingService: SourcingService
+  private readonly analysisService: AnalysisService
+  private readonly emailGenerationService: EmailGenerationService
 
   constructor(
     sourcingService?: SourcingService,

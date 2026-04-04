@@ -2,7 +2,7 @@ import type { HttpContext } from '@adonisjs/core/http'
 import MarketSnapshotService from '#services/market_snapshot_service'
 
 export default class MarketController {
-  private marketService = new MarketSnapshotService()
+  private readonly marketService = new MarketSnapshotService()
 
   /**
    * GET /api/market/snapshot?country=X&sector=Y — Get market snapshot.
