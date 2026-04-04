@@ -269,7 +269,6 @@ export default class SearchOrchestratorService {
       if (!company?.domain || seenCompanyIds.has(company.id)) continue
       seenCompanyIds.add(company.id)
 
-      // Skip job boards and recruitment agencies
       if (JOB_BOARD_DOMAINS.has(company.domain)) {
         logger.info('Skipping job board domain: %s', company.domain)
         continue
@@ -282,35 +281,15 @@ export default class SearchOrchestratorService {
           const name = raw.fullName.toLowerCase().trim()
           if (!name || name === 'hiring manager' || name === 'contact' || name === 'unknown') continue
           if (!raw.email) continue
+          if (!includeHr && raw.role && this.isHrRole(raw.role)) continue
 
-          // Filter out HR/recruiter roles unless includeHr is true
-          if (!includeHr && raw.role) {
-            const roleLower = raw.role.toLowerCase()
-            const hrKeywords = ['recruiter', 'recruitment', 'talent acquisition', 'human resources', 'hr manager', 'hr director', 'people operations', 'hiring manager']
-            if (hrKeywords.some((kw) => roleLower.includes(kw))) continue
-          }
-
-          // Skip if email already exists for this user
           const existing = await Contact.query()
             .where('userId', userId)
             .where('email', raw.email)
             .first()
           if (existing) continue
 
-          await Contact.create({
-            userId,
-            companyId: company.id,
-            sourcingRunId,
-            fullName: raw.fullName,
-            role: raw.role ?? 'Unknown',
-            email: raw.email,
-            source: raw.source,
-            sourceDetail: raw.sourceDetail ?? null,
-            emailSource: 'hunter',
-            emailConfidence: raw.emailConfidence ?? 90,
-            emailStatus: 'probable',
-            status: 'identified',
-          })
+          await this.createHunterContact(userId, company.id, sourcingRunId, raw)
           added++
         }
       } catch (error) {
@@ -319,6 +298,34 @@ export default class SearchOrchestratorService {
     }
 
     return added
+  }
+
+  private isHrRole(role: string): boolean {
+    const roleLower = role.toLowerCase()
+    const hrKeywords = ['recruiter', 'recruitment', 'talent acquisition', 'human resources', 'hr manager', 'hr director', 'people operations', 'hiring manager']
+    return hrKeywords.some((kw) => roleLower.includes(kw))
+  }
+
+  private async createHunterContact(
+    userId: string,
+    companyId: string,
+    sourcingRunId: string,
+    raw: { fullName: string; role?: string; email: string; source: string; sourceDetail?: string; emailConfidence?: number }
+  ): Promise<void> {
+    await Contact.create({
+      userId,
+      companyId,
+      sourcingRunId,
+      fullName: raw.fullName,
+      role: raw.role ?? 'Unknown',
+      email: raw.email,
+      source: raw.source,
+      sourceDetail: raw.sourceDetail ?? null,
+      emailSource: 'hunter',
+      emailConfidence: raw.emailConfidence ?? 90,
+      emailStatus: 'probable',
+      status: 'identified',
+    })
   }
 
   /**
