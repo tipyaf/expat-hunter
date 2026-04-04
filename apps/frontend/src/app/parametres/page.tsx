@@ -187,7 +187,7 @@ export default function SettingsPage() {
 
               <div className="space-y-3">
                 {followUps.map((item, index) => (
-                  <div key={index} className="flex items-center gap-3 rounded-lg border border-[var(--color-border)] px-4 py-3">
+                  <div key={`${item.delay}-${item.unit}-${index}`} className="flex items-center gap-3 rounded-lg border border-[var(--color-border)] px-4 py-3">
                     <span className="text-sm font-medium text-[var(--color-text-main)] w-24 shrink-0">
                       {t('followUp', { n: index + 1 })}
                     </span>

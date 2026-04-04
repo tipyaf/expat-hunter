@@ -82,13 +82,15 @@ export function usePipeline() {
       const contact = prev.flatMap((c) => c.contacts).find((c) => c.id === contactId)
       if (!contact) return prev
 
+      const updated = { ...contact, status: newStatus }
       return prev.map((col) => {
         const without = col.contacts.filter((c) => c.id !== contactId)
-        if (col.statuses.includes(newStatus)) {
-          const updated = { ...contact, status: newStatus }
-          return { ...col, contacts: [...without, updated], count: without.length + 1 }
+        const shouldAdd = col.statuses.includes(newStatus)
+        return {
+          ...col,
+          contacts: shouldAdd ? [...without, updated] : without,
+          count: shouldAdd ? without.length + 1 : without.length,
         }
-        return { ...col, contacts: without, count: without.length }
       })
     })
   }, [token])
