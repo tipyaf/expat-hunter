@@ -135,9 +135,10 @@ export function ChatPanel({
   }
 
   return (
-    <dialog
-      open
-      className="fixed bottom-0 right-0 z-50 flex h-[600px] w-[380px] max-h-[90vh] flex-col rounded-tl-2xl rounded-bl-none shadow-2xl border border-[var(--color-border)] bg-[var(--color-bg-light)] p-0 m-0"
+    <div
+      role="dialog"
+      aria-modal="true"
+      className="fixed bottom-0 right-0 z-50 flex h-[600px] w-[380px] max-h-[90vh] flex-col rounded-tl-2xl rounded-bl-none shadow-2xl border border-[var(--color-border)] bg-[var(--color-bg-light)]"
       aria-label={t('title')}
     >
       {/* Header */}
@@ -317,6 +318,6 @@ export function ChatPanel({
         </div>
         )}
       </div>
-    </dialog>
+    </div>
   )
 }

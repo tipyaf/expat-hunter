@@ -286,9 +286,10 @@ export function SearchProgressModal({
   const isInProgress = !isTerminal
 
   return (
-    <dialog
-      open
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm border-none p-0 m-0 max-w-none max-h-none w-full h-full"
+    <div
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm"
       aria-labelledby="search-modal-title"
     >
       <div className="relative w-full max-w-md mx-4 sm:mx-0 mb-4 sm:mb-0 rounded-2xl bg-[var(--color-surface-light)] p-6 sm:p-8 shadow-2xl">
@@ -410,6 +411,6 @@ export function SearchProgressModal({
           </div>
         )}
       </div>
-    </dialog>
+    </div>
   )
 }
