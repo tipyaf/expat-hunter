@@ -568,28 +568,10 @@ export default class VisaSponsorRegistryService {
           }>
 
           for (const result of results) {
-            const employerName =
-              result.field_schema.raw.find((f) => f.APIColumn === 'employerName')?.Value ?? ''
-            const tradingName =
-              result.field_schema.raw.find((f) => f.APIColumn === 'tradingName')?.Value ?? ''
-            const expiryDate =
-              result.field_schema.raw.find((f) => f.APIColumn === 'expiryDateOfAccreditation')
-                ?.Value ?? ''
-            const nzbn =
-              result.field_schema.raw.find((f) => f.APIColumn === 'nzbn')?.Value ?? ''
-
-            if (!employerName || seenNames.has(employerName.toUpperCase())) continue
-            seenNames.add(employerName.toUpperCase())
-
-            allRecords.push({
-              companyName: employerName,
-              companyNameNormalized: this.normalizeCompanyName(employerName),
-              country: 'NZ',
-              visaType: 'AEWV',
-              expiresAt: expiryDate || undefined,
-              rawData: { tradingName, nzbn, expiryDate },
-              sourceUrl,
-            })
+            const record = this.parseNzApiResult(result, sourceUrl)
+            if (!record || seenNames.has(record.companyName.toUpperCase())) continue
+            seenNames.add(record.companyName.toUpperCase())
+            allRecords.push(record)
           }
 
           totalPages = json.totalPages
@@ -608,6 +590,32 @@ export default class VisaSponsorRegistryService {
     }
 
     return allRecords
+  }
+
+  private parseNzApiResult(
+    result: { field_schema: { raw: Array<{ APIColumn: string; Value: string }> }; title: { raw: string } },
+    sourceUrl: string
+  ): VisaSponsorRecord | null {
+    const employerName =
+      result.field_schema.raw.find((f) => f.APIColumn === 'employerName')?.Value ?? ''
+    if (!employerName) return null
+
+    const tradingName =
+      result.field_schema.raw.find((f) => f.APIColumn === 'tradingName')?.Value ?? ''
+    const expiryDate =
+      result.field_schema.raw.find((f) => f.APIColumn === 'expiryDateOfAccreditation')?.Value ?? ''
+    const nzbn =
+      result.field_schema.raw.find((f) => f.APIColumn === 'nzbn')?.Value ?? ''
+
+    return {
+      companyName: employerName,
+      companyNameNormalized: this.normalizeCompanyName(employerName),
+      country: 'NZ',
+      visaType: 'AEWV',
+      expiresAt: expiryDate || undefined,
+      rawData: { tradingName, nzbn, expiryDate },
+      sourceUrl,
+    }
   }
 
   /**
@@ -657,31 +665,10 @@ export default class VisaSponsorRegistryService {
    * extract strings that look like employer names from the shared strings table.
    */
   private parseUsLcaExcel(buffer: Buffer, sourceUrl: string): VisaSponsorRecord[] {
-    // XLSX files are ZIP archives. The shared strings are in xl/sharedStrings.xml.
-    // For a production-grade solution, we'd use a library like 'xlsx' or 'exceljs'.
-    // Here we do a best-effort extraction from the raw buffer.
-
     const text = buffer.toString('utf8', 0, Math.min(buffer.length, 50_000_000))
 
-    // Look for employer names in the binary/XML content
-    // DOL LCA files have EMPLOYER_NAME column with company names
-    // We extract unique certified employer names
-    const employerNames = new Set<string>()
+    const allStrings = this.extractXmlStrings(text)
 
-    // Pattern: look for strings between XML tags that look like company names
-    // In XLSX shared strings: <t>EMPLOYER NAME</t>
-    const tagPattern = /<t[^>]*>([^<]+)<\/t>/g
-    let tagMatch: RegExpExecArray | null
-
-    // Track if we've seen "Certified" near an employer name
-    const allStrings: string[] = []
-    while ((tagMatch = tagPattern.exec(text)) !== null) {
-      allStrings.push(tagMatch[1])
-    }
-
-    // The shared strings table lists all unique strings used in the spreadsheet.
-    // Employer names are typically in ALL CAPS or Title Case, longer than 3 chars,
-    // and not column headers or status values.
     const skipValues = new Set([
       'Certified',
       'Certified - Withdrawn',
@@ -696,15 +683,9 @@ export default class VisaSponsorRegistryService {
       'VISA_CLASS',
     ])
 
+    const employerNames = new Set<string>()
     for (const str of allStrings) {
-      if (str.length < 3 || str.length > 200) continue
-      if (skipValues.has(str)) continue
-      // Skip numeric strings, dates, URLs
-      if (/^\d+$/.test(str)) continue
-      if (/^\d{4}-\d{2}-\d{2}/.test(str)) continue
-      if (str.startsWith('http')) continue
-      // Employer names are typically all uppercase in DOL data
-      if (str === str.toUpperCase() && /[A-Z]{3,}/.test(str) && str.includes(' ')) {
+      if (this.isValidEmployerName(str, skipValues)) {
         employerNames.add(str)
       }
     }
@@ -723,6 +704,25 @@ export default class VisaSponsorRegistryService {
     }
 
     return records
+  }
+
+  private extractXmlStrings(text: string): string[] {
+    const tagPattern = /<t[^>]*>([^<]+)<\/t>/g
+    const strings: string[] = []
+    let tagMatch: RegExpExecArray | null
+    while ((tagMatch = tagPattern.exec(text)) !== null) {
+      strings.push(tagMatch[1])
+    }
+    return strings
+  }
+
+  private isValidEmployerName(str: string, skipValues: Set<string>): boolean {
+    if (str.length < 3 || str.length > 200) return false
+    if (skipValues.has(str)) return false
+    if (/^\d+$/.test(str)) return false
+    if (/^\d{4}-\d{2}-\d{2}/.test(str)) return false
+    if (str.startsWith('http')) return false
+    return str === str.toUpperCase() && /[A-Z]{3,}/.test(str) && str.includes(' ')
   }
 
   private async fetchUkRegistry(): Promise<VisaSponsorRecord[]> {

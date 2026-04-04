@@ -52,96 +52,93 @@ export default class OnboardingController {
     const rawBody = request.body() as { step?: unknown; data?: unknown }
     const step = rawBody.step
 
-    if (step === 1) {
-      const payload = await request.validateUsing(step1Schema)
-
-      // Update user fullName if provided
-      if (payload.data.fullName) {
-        user.fullName = payload.data.fullName
-        await user.save()
-      }
-
-      // Update profile with step 1 data
-      const updateData: Record<string, unknown> = {}
-      if (payload.data.targetCountries !== undefined) {
-        updateData.targetCountries = payload.data.targetCountries
-      }
-      if (payload.data.targetSectors !== undefined) {
-        updateData.targetSectors = payload.data.targetSectors
-      }
-      if (payload.data.targetRoles !== undefined) {
-        updateData.targetRoles = payload.data.targetRoles
-      }
-
-      const profile = await this.profileService.updateProfile(user, updateData)
-
-      return response.ok({
-        step: 1,
-        completed: false,
-        profile: this.serializeProfile(profile),
-      })
-    }
-
-    if (step === 2) {
-      await request.validateUsing(step2Schema)
-
-      // Step 2 = CV upload (handled by /api/profile/cv), just validate CV exists
-      const profile = await this.profileService.getOrCreateProfile(user)
-      const hasCv = Boolean(profile.cvText)
-
-      return response.ok({
-        step: 2,
-        completed: false,
-        hasCv,
-        profile: this.serializeProfile(profile),
-      })
-    }
-
-    if (step === 3) {
-      const payload = await request.validateUsing(step3Schema)
-
-      const updateData: Record<string, unknown> = {}
-      if (payload.data.experienceYears !== undefined) {
-        updateData.experienceYears = payload.data.experienceYears
-      }
-      if (payload.data.skills !== undefined) {
-        updateData.skills = payload.data.skills
-      }
-      if (payload.data.preferences !== undefined) {
-        updateData.preferences = payload.data.preferences as Record<string, unknown>
-      }
-
-      let profile = await this.profileService.updateProfile(user, updateData)
-
-      // Mark onboarding as completed
-      profile.onboardingCompleted = true
-      await profile.save()
-
-      // Create follow-up sequence if needed (reuse existing logic)
-      try {
-        const { default: FollowUpSequence } = await import('#models/follow_up_sequence')
-        const existingSequence = await FollowUpSequence.findBy('userId', user.id)
-        if (!existingSequence) {
-          await FollowUpSequence.create({
-            userId: user.id,
-            delayDays1: 3,
-            delayDays2: 7,
-            delayDays3: 14,
-          })
-        }
-      } catch {
-        // Non-critical
-      }
-
-      return response.ok({
-        step: 3,
-        completed: true,
-        profile: this.serializeProfile(profile),
-      })
-    }
+    if (step === 1) return this.handleStep1(user, request, response)
+    if (step === 2) return this.handleStep2(user, response)
+    if (step === 3) return this.handleStep3(user, request, response)
 
     return response.badRequest({
       error: { code: 'INVALID_STEP', message: 'step must be 1, 2, or 3' },
+    })
+  }
+
+  private async handleStep1(user: any, request: any, response: any) {
+    const payload = await request.validateUsing(step1Schema)
+
+    if (payload.data.fullName) {
+      user.fullName = payload.data.fullName
+      await user.save()
+    }
+
+    const updateData: Record<string, unknown> = {}
+    if (payload.data.targetCountries !== undefined) {
+      updateData.targetCountries = payload.data.targetCountries
+    }
+    if (payload.data.targetSectors !== undefined) {
+      updateData.targetSectors = payload.data.targetSectors
+    }
+    if (payload.data.targetRoles !== undefined) {
+      updateData.targetRoles = payload.data.targetRoles
+    }
+
+    const profile = await this.profileService.updateProfile(user, updateData)
+
+    return response.ok({
+      step: 1,
+      completed: false,
+      profile: this.serializeProfile(profile),
+    })
+  }
+
+  private async handleStep2(user: any, response: any) {
+    const profile = await this.profileService.getOrCreateProfile(user)
+    const hasCv = Boolean(profile.cvText)
+
+    return response.ok({
+      step: 2,
+      completed: false,
+      hasCv,
+      profile: this.serializeProfile(profile),
+    })
+  }
+
+  private async handleStep3(user: any, request: any, response: any) {
+    const payload = await request.validateUsing(step3Schema)
+
+    const updateData: Record<string, unknown> = {}
+    if (payload.data.experienceYears !== undefined) {
+      updateData.experienceYears = payload.data.experienceYears
+    }
+    if (payload.data.skills !== undefined) {
+      updateData.skills = payload.data.skills
+    }
+    if (payload.data.preferences !== undefined) {
+      updateData.preferences = payload.data.preferences as Record<string, unknown>
+    }
+
+    let profile = await this.profileService.updateProfile(user, updateData)
+
+    profile.onboardingCompleted = true
+    await profile.save()
+
+    try {
+      const { default: FollowUpSequence } = await import('#models/follow_up_sequence')
+      const existingSequence = await FollowUpSequence.findBy('userId', user.id)
+      if (!existingSequence) {
+        await FollowUpSequence.create({
+          userId: user.id,
+          delayDays1: 3,
+          delayDays2: 7,
+          delayDays3: 14,
+        })
+      }
+    } catch {
+      // Non-critical
+    }
+
+    return response.ok({
+      step: 3,
+      completed: true,
+      profile: this.serializeProfile(profile),
     })
   }
 
