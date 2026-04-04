@@ -46,8 +46,8 @@ const ABOUT_PARSE_PROMPT = `Analyze this company "About" page content and extrac
 Return ONLY valid JSON with keys: culture, techStack, expatFriendlySignals, aboutSummary. No markdown.`
 
 export default class ContextEnrichmentService {
-  private cache = new CacheService()
-  private hunterApiKey = env.get('HUNTER_API_KEY')
+  private readonly cache = new CacheService()
+  private readonly hunterApiKey = env.get('HUNTER_API_KEY')
 
   /**
    * Enrich a company with contextual data from multiple sources.

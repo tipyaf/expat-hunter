@@ -40,8 +40,8 @@ const refineSchema = vine.compile(
 )
 
 export default class OnboardingController {
-  private profileService = new ProfileService()
-  private chatService = new ChatAssistantService()
+  private readonly profileService = new ProfileService()
+  private readonly chatService = new ChatAssistantService()
 
   /**
    * POST /api/onboarding
