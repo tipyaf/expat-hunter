@@ -516,3 +516,38 @@ features:
     started_at: ""
     validated_at: ""
     notes: "Wire EmailEditModal + template selector into contact detail panel. Edit drafts + generate emails from contacts page. Shortcut sc-554."
+
+  # === SONARQUBE REFACTORING ===
+
+  - id: "sc-752"
+    name: "refacto: add readonly to never-reassigned class members (SonarQube S2933)"
+    priority: "chore"
+    status: "validated"
+    cycles: 1
+    story_file: "_work/spec/sc-752.yaml"
+    depends_on: []
+    started_at: "2026-04-04"
+    validated_at: "2026-04-04"
+    notes: "15 members across 10 backend files. PR #128."
+
+  - id: "sc-753"
+    name: "refacto: reduce cognitive complexity in 6 files (SonarQube S3776)"
+    priority: "chore"
+    status: "validated"
+    cycles: 1
+    story_file: "_work/spec/sc-753.yaml"
+    depends_on: []
+    started_at: "2026-04-04"
+    validated_at: "2026-04-04"
+    notes: "7 CRITICAL issues across 6 files. Extract helpers. PR #129."
+
+  - id: "sc-754"
+    name: "refacto: fix frontend code smells — ternaries, accessibility, hooks (SonarQube)"
+    priority: "chore"
+    status: "validated"
+    cycles: 1
+    story_file: "_work/spec/sc-754.yaml"
+    depends_on: []
+    started_at: "2026-04-04"
+    validated_at: "2026-04-04"
+    notes: "~20 issues across 12 frontend files. PR #130."
