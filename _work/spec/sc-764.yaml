@@ -1,0 +1,132 @@
+# =============================================================================
+# Story: sc-764 — Add readonly to never-reassigned class members (SonarQube S2933)
+# =============================================================================
+# Build contract — developer implements exactly this, validator checks exactly this.
+# =============================================================================
+
+story:
+  id: "sc-764"
+  name: "refacto: add readonly to never-reassigned class members (SonarQube S2933)"
+  type: "chore"
+  size: "S"
+  estimate: 2
+  priority: "medium"
+  parent_feature: null
+  depends_on: []
+  adr_required: false
+
+user_story: |
+  As a developer,
+  I want class members that are never reassigned to be marked `readonly`,
+  so the compiler prevents accidental mutations and the code expresses intent clearly.
+
+scope:
+  files_to_modify:
+    - path: "apps/api/app/ai/openrouter_client.ts"
+      description: "Add readonly to apiKey, defaultModel, defaultTemperature, defaultMaxTokens, baseUrl"
+    - path: "apps/api/app/services/sourcing_orchestrator.ts"
+      description: "Add readonly to sourcingService, hunterScraper, emailEnricher, contextService, emailVerifier, scoringService, titleService"
+    - path: "apps/api/app/services/visa_sponsor_registry.ts"
+      description: "Add readonly to cacheService, playwrightClient, nzWaitAfterClickMs"
+    - path: "apps/api/app/controllers/sourcing_controller.ts"
+      description: "Add readonly to sourcingService, orchestrator, usageService"
+    - path: "apps/api/app/services/email_sending_service.ts"
+      description: "Add readonly to movementService, oauthTokenService"
+    - path: "apps/api/app/services/sector_title_service.ts"
+      description: "Add readonly to systemPrompt, llmProvider, staticProvider"
+    - path: "apps/api/app/controllers/thread_controller.ts"
+      description: "Add readonly to imapSyncService, replyGenerationService"
+    - path: "apps/api/app/scrapers/hunter_company_search_scraper.ts"
+      description: "Add readonly to apiKey, cache"
+    - path: "apps/api/app/scrapers/google_linkedin_proxy_scraper.ts"
+      description: "Add readonly to apiKey, searchEngineId"
+    - path: "apps/api/app/scrapers/seek_scraper.ts"
+      description: "Add readonly to seekCountry, apiToken"
+    - path: "apps/api/app/controllers/profile_controller.ts"
+      description: "Add readonly to profileService, cvExtractor"
+    - path: "apps/api/app/controllers/blocked_entities_controller.ts"
+      description: "Add readonly to movementService"
+    - path: "apps/api/app/services/pipeline_service.ts"
+      description: "Add readonly to movementService"
+    - path: "apps/api/app/services/imap_sync_service.ts"
+      description: "Add readonly to movementService"
+    - path: "apps/api/app/services/sourcing_service.ts"
+      description: "Add readonly to cacheService"
+    - path: "apps/api/app/services/chat_assistant_service.ts"
+      description: "Add readonly to cacheService"
+    - path: "apps/api/app/services/sector_registry.ts"
+      description: "Add readonly to configs"
+    - path: "apps/api/app/controllers/search_controller.ts"
+      description: "Add readonly to searchService"
+    - path: "apps/api/app/controllers/dashboard_controller.ts"
+      description: "Add readonly to service"
+    - path: "apps/api/app/services/ai_settings_service.ts"
+      description: "Add readonly to cache"
+    - path: "apps/api/app/ai/email_composer.ts"
+      description: "Add readonly to client"
+    - path: "apps/api/app/ai/relevance_analyzer.ts"
+      description: "Add readonly to client"
+    - path: "apps/api/app/ai/cv_extractor.ts"
+      description: "Add readonly to client"
+    - path: "apps/api/app/services/analysis_service.ts"
+      description: "Add readonly to analyzer"
+    - path: "apps/api/app/scrapers/apify_fallback.ts"
+      description: "Add readonly to apiToken"
+    - path: "apps/api/app/scrapers/scraper_registry.ts"
+      description: "Add readonly to scrapers"
+    - path: "apps/api/app/services/expat_scoring_service.ts"
+      description: "Add readonly to visaRegistry"
+  files_to_read: []
+  files_to_create: []
+
+acceptance_criteria:
+  - id: "AC-FUNC-764-01"
+    type: "FUNC"
+    description: "Given all 23 files / When checked / Then no SonarQube S2933 violations remain"
+    verify: "curl -s 'http://localhost:9000/api/issues/search?projectKeys=expathunter&rules=typescript:S2933&statuses=OPEN&ps=1' -H \"Authorization: Bearer $(grep '^SONAR_TOKEN=' .env | cut -d= -f2)\" | grep -o '\"total\":[0-9]*' | grep -q '\"total\":0' && echo PASS"
+    tier: 2
+
+  - id: "AC-FUNC-764-02"
+    type: "FUNC"
+    description: "Given the codebase / When tsc --noEmit runs / Then 0 TypeScript errors"
+    verify: "cd apps/api && PATH='/opt/homebrew/bin:$PATH' npx tsc --noEmit 2>&1 | grep -c 'error TS' | xargs test 0 -eq && echo PASS"
+    tier: 2
+
+  - id: "AC-FUNC-764-03"
+    type: "FUNC"
+    description: "Given the codebase / When unit tests run / Then all pass"
+    verify: "cd apps/api && PATH='/opt/homebrew/bin:$PATH' pnpm test 2>&1 | tail -5"
+    tier: 2
+
+  - id: "AC-FUNC-764-04"
+    type: "FUNC"
+    description: "Given the API / When started / Then it boots without errors"
+    verify: "cd apps/api && PATH='/opt/homebrew/bin:$PATH' timeout 15 node ace serve 2>&1 | grep -q 'started' && echo PASS"
+    tier: 2
+
+  - id: "AC-FUNC-764-05"
+    type: "FUNC"
+    description: "Given e2e tests / When run / Then no regression introduced"
+    verify: "PATH='/opt/homebrew/bin:$PATH' pnpm test:e2e 2>&1 | tail -5"
+    tier: 2
+
+  - id: "AC-SEC-764-01"
+    type: "SEC"
+    description: "Given all modified files / When checked / Then no any type introduced"
+    verify: "git diff origin/main --unified=0 -- 'apps/api/**/*.ts' | grep '^+' | grep -v '^+++' | grep -c ': any' | xargs test 0 -eq && echo PASS"
+    tier: 1
+
+  - id: "AC-BP-764-01"
+    type: "BP"
+    description: "Given all modified files / When checked / Then only readonly keyword was added — no logic changes"
+    verify: "git diff origin/main -- 'apps/api/**/*.ts' | grep '^+' | grep -v '^+++' | grep -v 'readonly' | grep -v '^+$' | wc -l | xargs test 0 -eq && echo PASS"
+    tier: 1
+
+edge_cases:
+  - "AdonisJS @inject() decorated members — readonly is compatible with DI injection"
+  - "Members set in constructor only — safe to mark readonly"
+  - "Members set via = something in declaration — safe to mark readonly"
+
+test_intentions: []
+
+components: {}

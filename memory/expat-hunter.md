@@ -5,9 +5,9 @@
 ## Metadata
 - **Project**: expat-hunter
 - **Started**: 2026-03-17
-- **Current phase**: Phase 2 — Construction (features pending refinement)
-- **Last updated**: 2026-03-26
-- **Framework version**: 2.1.0
+- **Current phase**: Phase 2 — Construction (SonarQube refactoring sprint)
+- **Last updated**: 2026-04-05
+- **Framework version**: 4.0.11
 - **GitHub repo**: https://github.com/tipyaf/expat-hunter (public)
 - **Branches**: main (protected, default), develop (protected, dev base), feature/* → PR to develop
 
@@ -99,9 +99,22 @@
 - **Note**: AdonisJS v7 (not v6 as originally planned)
 
 ### Phase 2 — Construction
-- **Status**: 🔄 In progress — Sprint 1 active (sc-216, sc-79, sc-80, sc-81)
+- **Status**: 🔄 In progress — SonarQube refactoring sprint
 - **Features**: 6 must-have validated, 2 should-have pending, 6 nice-to-have pending
-- **Next**: Pick a story from Sprint 1 backlog
+- **Current sprint**: SonarQube code quality refactoring (145 issues found)
+  - sc-755 ✅ validated — single-command local dev startup (PR #135 merged)
+  - sc-764 🔄 refined — add readonly to class members (51 issues, 27 files) → next: `/build`
+  - sc-763 pending — reduce cognitive complexity (16 CRITICAL, 5 pts)
+  - sc-765 pending — extract nested ternaries (~15 issues, 2 pts)
+  - sc-766 pending — fix accessibility HTML native (5 issues, 1 pt)
+  - sc-767 pending — remove useless assignments + misc fixes (3 pts)
+- **Infra done this session**:
+  - Framework updated to v4.0.11 (PR #134)
+  - .mcp.json fixed (npx path + PATH env for Shortcut MCP)
+  - .devtools/docker-compose.yml for SonarQube (credentials from .env)
+  - sonar-project.properties fixed (targeted sources, tests included)
+  - .env.example cleaned (no secrets, security warning added)
+  - README.md updated (description, commands, structure)
 
 ### Phase 3 — Review
 - **Status**: ✅ Done (all must-have features validated 2026-03-25)
