@@ -8,7 +8,7 @@ export interface ImapSyncResult {
 }
 
 export default class ImapSyncService {
-  private movementService = new ContactMovementService()
+  private readonly movementService = new ContactMovementService()
 
   /**
    * Sync IMAP replies for a user.

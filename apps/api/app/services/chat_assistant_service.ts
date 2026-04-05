@@ -162,7 +162,7 @@ function detectActions(
 }
 
 export default class ChatAssistantService {
-  private cacheService = new CacheService()
+  private readonly cacheService = new CacheService()
 
   getHistory(sessionId: string): ChatMessage[] {
     return sessions.get(sessionId) ?? []

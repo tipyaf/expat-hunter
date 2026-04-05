@@ -12,7 +12,7 @@ import {
 } from './prompts/cv_extraction_prompt.js'
 
 export default class CvExtractor {
-  private client: OpenRouterClient
+  private readonly client: OpenRouterClient
 
   constructor(client?: OpenRouterClient) {
     this.client = client ?? new OpenRouterClient()

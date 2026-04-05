@@ -66,10 +66,10 @@ const US_DOL_LCA_URL =
   'https://www.dol.gov/sites/dolgov/files/ETA/oflc/pdfs/LCA_Disclosure_Data_FY2025_Q4.xlsx'
 
 export default class VisaSponsorRegistryService {
-  private cacheService = new CacheService()
-  private playwrightClient = new PlaywrightClient()
+  private readonly cacheService = new CacheService()
+  private readonly playwrightClient = new PlaywrightClient()
   /** Delay after clicking the search button, in ms. Override in tests to speed them up. */
-  private nzWaitAfterClickMs = NZ_WAIT_AFTER_CLICK_MS
+  private readonly nzWaitAfterClickMs = NZ_WAIT_AFTER_CLICK_MS
 
   /**
    * Check if a company is an accredited visa sponsor for a given country.

@@ -47,8 +47,8 @@ const CONTACT_NLP_PATTERNS = [
 export class SeekScraper extends BaseScraper {
   readonly name = 'seek'
   readonly country: string
-  private seekCountry: string
-  private apiToken: string
+  private readonly seekCountry: string
+  private readonly apiToken: string
 
   private static readonly ACTOR_ID = 'websift~seek-job-scraper'
 

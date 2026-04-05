@@ -26,11 +26,11 @@ interface OpenRouterResponse {
 }
 
 export default class OpenRouterClient {
-  private apiKey: string
-  private defaultModel: string
-  private defaultTemperature: number
-  private defaultMaxTokens: number
-  private baseUrl = 'https://openrouter.ai/api/v1/chat/completions'
+  private readonly apiKey: string
+  private readonly defaultModel: string
+  private readonly defaultTemperature: number
+  private readonly defaultMaxTokens: number
+  private readonly baseUrl = 'https://openrouter.ai/api/v1/chat/completions'
 
   constructor(config?: { model?: string; temperature?: number; maxTokens?: number }) {
     this.apiKey = env.get('OPENROUTER_API_KEY', '')

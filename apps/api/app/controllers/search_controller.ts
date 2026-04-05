@@ -6,7 +6,7 @@ import logger from '@adonisjs/core/services/logger'
 import '../scrapers/register.js'
 
 export default class SearchController {
-  private searchService = new SearchOrchestratorService()
+  private readonly searchService = new SearchOrchestratorService()
 
   /**
    * POST /api/recherche — Launch the full automated search flow.
