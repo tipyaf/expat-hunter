@@ -18,7 +18,7 @@ interface AnalysisRunResult {
 }
 
 export default class AnalysisService {
-  private analyzer: RelevanceAnalyzer
+  private readonly analyzer: RelevanceAnalyzer
 
   constructor(analyzer?: RelevanceAnalyzer) {
     this.analyzer = analyzer ?? new RelevanceAnalyzer()

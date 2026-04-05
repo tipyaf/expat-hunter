@@ -14,7 +14,7 @@ import VisaSponsorRegistryService from './visa_sponsor_registry.js'
 import { DateTime } from 'luxon'
 
 export default class SourcingService {
-  private cacheService = new CacheService()
+  private readonly cacheService = new CacheService()
   /**
    * Launch a sourcing run: execute scrapers, persist results, update run status.
    */

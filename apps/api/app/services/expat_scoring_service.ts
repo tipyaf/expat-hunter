@@ -23,7 +23,7 @@ export interface ExpatScoreResult extends ConfidenceResult {
 }
 
 export default class ExpatScoringService {
-  private visaRegistry = new VisaSponsorRegistryService()
+  private readonly visaRegistry = new VisaSponsorRegistryService()
 
   async calculate(contact: Contact, company?: Company | null): Promise<ExpatScoreResult> {
     const comp = company ?? (contact.$preloaded?.company as Company | undefined) ?? null

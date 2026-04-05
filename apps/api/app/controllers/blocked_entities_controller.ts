@@ -12,7 +12,7 @@ const blockValidator = vine.compile(
 )
 
 export default class BlockedEntitiesController {
-  private movementService = new ContactMovementService()
+  private readonly movementService = new ContactMovementService()
 
   async index({ auth, response }: HttpContext) {
     const user = auth.getUserOrFail()

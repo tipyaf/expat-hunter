@@ -45,7 +45,7 @@ const PIPELINE_COLUMNS = [
 ] as const
 
 export default class PipelineService {
-  private movementService = new ContactMovementService()
+  private readonly movementService = new ContactMovementService()
 
   async getBoard(userId: string): Promise<PipelineColumn[]> {
     const { contactIds: blockedContactIds, companyIds: blockedCompanyIds } =

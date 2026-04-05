@@ -552,6 +552,17 @@ features:
     validated_at: "2026-04-04"
     notes: "~20 issues across 12 frontend files. PR #130."
 
+  - id: "sc-764"
+    name: "refacto: add readonly to never-reassigned class members (SonarQube S2933)"
+    priority: "chore"
+    status: "validated"
+    cycles: 1
+    story_file: "_work/spec/sc-764.yaml"
+    depends_on: []
+    started_at: "2026-04-05"
+    validated_at: "2026-04-05"
+    notes: "49 members across 27 backend files. All ACs pass: 0 new TS errors, 0 test regressions, no any introduced, only readonly changes."
+
   - id: "sc-755"
     name: "chore: single-command local dev startup (front + back + SonarQube)"
     priority: "chore"

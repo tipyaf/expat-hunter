@@ -12,8 +12,8 @@ const generateReplyValidator = vine.compile(
 )
 
 export default class ThreadController {
-  private imapSyncService = new ImapSyncService()
-  private replyGenerationService = new ReplyGenerationService()
+  private readonly imapSyncService = new ImapSyncService()
+  private readonly replyGenerationService = new ReplyGenerationService()
 
   /**
    * GET /api/contacts/:id/thread

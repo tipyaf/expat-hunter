@@ -28,8 +28,8 @@ const GOOGLE_API_BASE = 'https://www.googleapis.com/customsearch/v1'
 export class GoogleLinkedInProxyScraper extends BaseScraper {
   readonly name = 'google_linkedin_proxy'
   readonly country = '*'
-  private apiKey = env.get('GOOGLE_SEARCH_API_KEY', '')
-  private searchEngineId = env.get('GOOGLE_SEARCH_ENGINE_ID', '')
+  private readonly apiKey = env.get('GOOGLE_SEARCH_API_KEY', '')
+  private readonly searchEngineId = env.get('GOOGLE_SEARCH_ENGINE_ID', '')
 
   async scrape(params: ScrapeParams): Promise<RawContact[]> {
     if (!this.apiKey || !this.searchEngineId) return []

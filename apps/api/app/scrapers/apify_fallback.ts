@@ -23,7 +23,7 @@ interface GoogleSearchResult {
 export class ApifyFallback extends BaseScraper {
   readonly name = 'apify'
   readonly country = '*'
-  private apiToken: string
+  private readonly apiToken: string
 
   private static readonly ACTOR_ID = 'apify~google-search-scraper'
 

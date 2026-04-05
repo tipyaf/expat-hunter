@@ -41,13 +41,13 @@ interface PhaseResult {
 const ACTIVE_RUNS = new Set<string>()
 
 export default class SourcingOrchestrator {
-  private sourcingService = new SourcingService()
-  private hunterScraper = new HunterCompanySearchScraper()
-  private emailEnricher = new EmailEnricher()
-  private contextService = new ContextEnrichmentService()
-  private emailVerifier = new EmailVerifier()
-  private scoringService = new ExpatScoringService()
-  private titleService = new SectorTitleService()
+  private readonly sourcingService = new SourcingService()
+  private readonly hunterScraper = new HunterCompanySearchScraper()
+  private readonly emailEnricher = new EmailEnricher()
+  private readonly contextService = new ContextEnrichmentService()
+  private readonly emailVerifier = new EmailVerifier()
+  private readonly scoringService = new ExpatScoringService()
+  private readonly titleService = new SectorTitleService()
 
   /**
    * Run the full 5-phase pipeline. Blocks concurrent runs for same userId.

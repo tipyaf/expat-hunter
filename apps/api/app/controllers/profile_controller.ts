@@ -9,9 +9,9 @@ import ProfileService from '#services/profile_service'
 import { updateProfileValidator } from '#validators/profile_validator'
 
 export default class ProfileController {
-  private profileService = new ProfileService()
+  private readonly profileService = new ProfileService()
   private cvParserService = new CvParserService()
-  private cvExtractor = new CvExtractor()
+  private readonly cvExtractor = new CvExtractor()
 
   async show({ auth, response }: HttpContext) {
     const user = auth.getUserOrFail()

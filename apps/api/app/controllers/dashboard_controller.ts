@@ -2,7 +2,7 @@ import type { HttpContext } from '@adonisjs/core/http'
 import DashboardService from '#services/dashboard_service'
 
 export default class DashboardController {
-  private service = new DashboardService()
+  private readonly service = new DashboardService()
 
   async actions({ auth, response }: HttpContext) {
     const user = auth.getUserOrFail()

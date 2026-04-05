@@ -162,7 +162,7 @@ const SECTOR_CONFIGS: SectorConfig[] = [
 ]
 
 export class SectorRegistry {
-  private configs: Map<string, SectorConfig> = new Map()
+  private readonly configs: Map<string, SectorConfig> = new Map()
 
   constructor() {
     for (const config of SECTOR_CONFIGS) {
