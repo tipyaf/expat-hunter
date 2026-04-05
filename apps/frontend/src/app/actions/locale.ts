@@ -6,7 +6,7 @@ import type { Locale } from '@/i18n/config'
 
 export async function setLocaleAction(locale: string) {
   if (!locales.includes(locale as Locale)) return
-  const cookieStore = await cookies()
+  const cookieStore = cookies()
   cookieStore.set('locale', locale, {
     path: '/',
     maxAge: 60 * 60 * 24 * 365, // 1 year

@@ -595,3 +595,25 @@ features:
     started_at: ""
     validated_at: ""
     notes: "22 issues across 15 files (8 backend + 7 frontend). Mechanical fix."
+
+  - id: "sc-766"
+    name: "refacto: fix accessibility issues — use native HTML elements (SonarQube S6848)"
+    priority: "chore"
+    status: "validated"
+    cycles: 0
+    story_file: ""
+    depends_on: []
+    started_at: "2026-04-05"
+    validated_at: "2026-04-05"
+    notes: "0 S6848 issues remaining — already fixed by sc-754. Closed without changes."
+
+  - id: "sc-767"
+    name: "refacto: fix misc code smells — readonly, ternaries, nesting, dead code (SonarQube)"
+    priority: "chore"
+    status: "refined"
+    cycles: 0
+    story_file: "_work/spec/sc-767.yaml"
+    depends_on: []
+    started_at: ""
+    validated_at: ""
+    notes: "32 issues across 5 rules (S2933, S3358, S2004, S4123, S1854). Focus on CRITICAL + MAJOR."

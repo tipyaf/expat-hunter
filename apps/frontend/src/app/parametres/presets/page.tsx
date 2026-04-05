@@ -24,6 +24,14 @@ const EMPTY_FORM = {
   isDefault: false,
 }
 
+function toggleTone(form: typeof EMPTY_FORM, tone: string): typeof EMPTY_FORM {
+  const tones = form.tone.includes(tone)
+    ? form.tone.filter((t) => t !== tone)
+    : [...form.tone, tone]
+  // Keep at least one tone selected
+  return { ...form, tone: tones.length > 0 ? tones : [tone] }
+}
+
 export default function PresetsPage() {
   const { user, isLoading: authLoading } = useAuth()
   const t = useTranslations('presets')
@@ -212,13 +220,7 @@ export default function PresetsPage() {
                         <button
                           key={tone}
                           type="button"
-                          onClick={() => setForm((f) => {
-                            const tones = f.tone.includes(tone)
-                              ? f.tone.filter((t) => t !== tone)
-                              : [...f.tone, tone]
-                            // Keep at least one tone selected
-                            return { ...f, tone: tones.length > 0 ? tones : [tone] }
-                          })}
+                          onClick={() => setForm((f) => toggleTone(f, tone))}
                           className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                             isSelected
                               ? 'bg-primary text-white'

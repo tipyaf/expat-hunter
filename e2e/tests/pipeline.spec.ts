@@ -80,7 +80,6 @@ test.describe('Pipeline page', () => {
 
     if (cardCount > 0) {
       const firstCard = cards.first()
-      const cardText = await firstCard.textContent()
 
       // Find the "À contacter" column drop zone
       const targetColumn = page.locator('text=À contacter').locator('..')

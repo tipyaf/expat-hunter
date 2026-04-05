@@ -116,7 +116,7 @@ function ReplyCard({ reply, onGenerateReply }: { reply: EmailReply; onGenerateRe
 
 export function ThreadView({ contactId }: ThreadViewProps) {
   const t = useTranslations('thread')
-  const { replies, emails, summary, isLoading, error, refresh, generateReply, syncReplies } = useThread(contactId)
+  const { replies, emails, summary, isLoading, error, generateReply, syncReplies } = useThread(contactId)
 
   const [isSyncing, setIsSyncing] = useState(false)
 

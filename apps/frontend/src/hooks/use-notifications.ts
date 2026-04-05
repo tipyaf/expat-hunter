@@ -12,6 +12,27 @@ export interface AppNotification {
   timestamp: number
 }
 
+function parseNotificationEvent(type: AppNotification['type'], e: MessageEvent): AppNotification {
+  let data: Record<string, unknown> = {}
+  let message = ''
+  try {
+    const parsed = JSON.parse(e.data as string) as { message?: string; type?: string; data?: Record<string, unknown> }
+    message = parsed.message ?? ''
+    data = parsed.data ?? {}
+  } catch {
+    message = e.data as string
+  }
+
+  return {
+    id: `${Date.now()}-${Math.random()}`,
+    type,
+    message,
+    data,
+    read: false,
+    timestamp: Date.now(),
+  }
+}
+
 export function useNotifications() {
   const { token } = useAuth()
   const [notifications, setNotifications] = useState<AppNotification[]>([])
@@ -32,25 +53,7 @@ export function useNotifications() {
     eventSourceRef.current = es
 
     const handleEvent = (type: AppNotification['type']) => (e: MessageEvent) => {
-      let data: Record<string, unknown> = {}
-      let message = ''
-      try {
-        const parsed = JSON.parse(e.data as string) as { message?: string; type?: string; data?: Record<string, unknown> }
-        message = parsed.message ?? ''
-        data = parsed.data ?? {}
-      } catch {
-        message = e.data as string
-      }
-
-      const notification: AppNotification = {
-        id: `${Date.now()}-${Math.random()}`,
-        type,
-        message,
-        data,
-        read: false,
-        timestamp: Date.now(),
-      }
-
+      const notification = parseNotificationEvent(type, e)
       setNotifications((prev) => [notification, ...prev].slice(0, 50))
     }
 

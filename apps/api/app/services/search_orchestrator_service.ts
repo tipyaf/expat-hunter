@@ -98,9 +98,8 @@ export default class SearchOrchestratorService {
   }
 
   private async runPipeline(searchRun: SearchRun, userId: string, params: SearchParams): Promise<SearchResult> {
-    // Check user plan for contact limit and analysis gating
+    // Check user plan for analysis gating
     const user = await User.findOrFail(userId)
-    const contactLimit = user.isPremium ? undefined : FREE_QUOTAS.results
 
     try {
       searchRun.startedAt = DateTime.now()

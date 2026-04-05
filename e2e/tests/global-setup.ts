@@ -7,7 +7,7 @@ setup('authenticate and seed data', async ({ page }) => {
   expect(auth.token).toBeTruthy()
 
   // Step 2: Seed candidate profile via API
-  const profileRes = await fetch('http://localhost:3333/api/profile', {
+  await fetch('http://localhost:3333/api/profile', {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',

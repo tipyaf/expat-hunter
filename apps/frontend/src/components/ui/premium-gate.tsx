@@ -13,7 +13,7 @@ interface PremiumGateProps {
 }
 
 export function PremiumGate({ children, fallback }: PremiumGateProps) {
-  const { isPremium, isFree } = usePlan()
+  const { isPremium } = usePlan()
   const t = useTranslations('premium')
 
   if (isPremium) {

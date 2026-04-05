@@ -9,7 +9,6 @@ import { DateTime } from 'luxon'
 
 test.group('SearchOrchestratorService - SearchRun model', (group) => {
   let testUser: User
-  let testProfile: CandidateProfile
 
   group.setup(async () => {
     // Clean up
@@ -27,7 +26,7 @@ test.group('SearchOrchestratorService - SearchRun model', (group) => {
       isAdmin: false,
     })
 
-    testProfile = await CandidateProfile.create({
+    await CandidateProfile.create({
       userId: testUser.id,
       skills: ['typescript'],
       experienceYears: 5,

@@ -20,8 +20,6 @@ test.describe('Chat panel — open and close', () => {
   })
 
   test('floating chat button is visible on the dashboard', async ({ page }) => {
-    // The FloatingChatButton has aria-label from t('openChat')
-    const chatBtn = page.locator('button[aria-label]').filter({ has: page.locator('svg path[d*="M21 15"]') })
     // Fallback: find any fixed bottom-right button
     const fixedBtn = page.locator('button.fixed, button[class*="fixed"]')
     const count = await fixedBtn.count()
