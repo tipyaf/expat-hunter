@@ -128,3 +128,8 @@ Use `stories-update labels:[{name: "scope:building"}]` at each transition.
 **Problem**: Multiple stories validated while MISSING_MESSAGE errors, JavaScript stacktraces, or backend exceptions were visible in the console. These were dismissed as "pre-existing" or "not related" without being fixed or tracked.
 **Root cause**: Validator checked TypeScript compilation and screenshots but never inspected the browser console or server logs for runtime errors.
 **Rule**: Before ANY story can be marked validated: 1) Check browser console via preview_console_logs — zero errors allowed, 2) Check backend server logs — zero stacktraces or unhandled exceptions, 3) Warnings are noted but do not block. 4) Pre-existing errors MUST be fixed (<30 min) or tracked in a new Shortcut story. Console errors are a BLOCKING validation gate — a page with a console error is NOT validated, period.
+
+### [Shortcut] Always include the Shortcut story link when presenting refinement
+**Problem**: Refinement proposals presented without a link to the Shortcut ticket. User has to search for it manually.
+**Root cause**: Agent focuses on technical content and forgets the project management link.
+**Rule**: When presenting a refinement, ALWAYS include the Shortcut story URL (e.g., https://app.shortcut.com/expat-hunter/story/XXX) so the user can review the ticket directly.

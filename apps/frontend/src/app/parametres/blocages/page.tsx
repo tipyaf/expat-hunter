@@ -30,15 +30,20 @@ export default function BlockedPage() {
             <p className="text-sm text-[var(--color-text-muted)] mt-1">{t('subtitle')}</p>
           </div>
 
-          {isLoading ? (
-            <p className="text-sm text-[var(--color-text-muted)]">{tc('loading')}</p>
-          ) : blocked.length === 0 ? (
-            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-8 text-center">
-              <p className="text-[var(--color-text-muted)]">{t('empty')}</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {blocked.map((b) => (
+          {(() => {
+            if (isLoading) {
+              return <p className="text-sm text-[var(--color-text-muted)]">{tc('loading')}</p>
+            }
+            if (blocked.length === 0) {
+              return (
+                <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-8 text-center">
+                  <p className="text-[var(--color-text-muted)]">{t('empty')}</p>
+                </div>
+              )
+            }
+            return (
+              <div className="space-y-3">
+                {blocked.map((b) => (
                 <div
                   key={b.id}
                   className="flex items-center justify-between rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-4 shadow-sm"
@@ -76,7 +81,8 @@ export default function BlockedPage() {
                 </div>
               ))}
             </div>
-          )}
+          )
+          })()}
         </div>
       </main>
     </div>

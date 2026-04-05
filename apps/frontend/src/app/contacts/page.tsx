@@ -263,12 +263,9 @@ export default function ContactsPage() {
                             )}
                             {user?.isAdmin && <span>{t('source')}: {contact.source}</span>}
                             {contact.aiRecommendation && (() => {
-                              const recColor =
-                                contact.aiRecommendation === 'contact'
-                                  ? 'text-green-600'
-                                  : contact.aiRecommendation === 'skip'
-                                    ? 'text-red-500'
-                                    : 'text-yellow-600'
+                              let recColor = 'text-yellow-600'
+                              if (contact.aiRecommendation === 'contact') recColor = 'text-green-600'
+                              else if (contact.aiRecommendation === 'skip') recColor = 'text-red-500'
                               return (
                                 <span className={`font-medium ${recColor}`}>
                                   {t(`rec_${contact.aiRecommendation}`)}

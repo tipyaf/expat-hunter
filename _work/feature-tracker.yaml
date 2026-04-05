@@ -584,3 +584,14 @@ features:
     started_at: ""
     validated_at: ""
     notes: "15 functions across 12 files. CC range 16–83. Extract helpers, early returns, lookup tables."
+
+  - id: "sc-765"
+    name: "refacto: extract nested ternaries into named variables (SonarQube S3358)"
+    priority: "chore"
+    status: "refined"
+    cycles: 0
+    story_file: "_work/spec/sc-765.yaml"
+    depends_on: []
+    started_at: ""
+    validated_at: ""
+    notes: "22 issues across 15 files (8 backend + 7 frontend). Mechanical fix."

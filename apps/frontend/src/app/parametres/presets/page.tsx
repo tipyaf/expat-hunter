@@ -269,19 +269,24 @@ export default function PresetsPage() {
           )}
 
           {/* Presets list */}
-          {isLoading ? (
-            <p className="text-sm text-[var(--color-text-muted)]">{tc('loading')}</p>
-          ) : presets.length === 0 && !showForm ? (
-            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-8 text-center">
-              <p className="text-[var(--color-text-muted)]">{t('empty')}</p>
-              <Button className="mt-4" onClick={openCreate}>
-                <Plus className="w-4 h-4 mr-1" />
-                {t('createFirst')}
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {presets.map((preset) => (
+          {(() => {
+            if (isLoading) {
+              return <p className="text-sm text-[var(--color-text-muted)]">{tc('loading')}</p>
+            }
+            if (presets.length === 0 && !showForm) {
+              return (
+                <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-8 text-center">
+                  <p className="text-[var(--color-text-muted)]">{t('empty')}</p>
+                  <Button className="mt-4" onClick={openCreate}>
+                    <Plus className="w-4 h-4 mr-1" />
+                    {t('createFirst')}
+                  </Button>
+                </div>
+              )
+            }
+            return (
+              <div className="space-y-3">
+                {presets.map((preset) => (
                 <div key={preset.id} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-4 shadow-sm">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
@@ -338,7 +343,8 @@ export default function PresetsPage() {
                 </div>
               ))}
             </div>
-          )}
+          )
+          })()}
         </div>
       </main>
 

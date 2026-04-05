@@ -41,10 +41,9 @@ export function ScoreBreakdown({ breakdown, totalScore, className = '' }: ScoreB
   const maxTotal = dimensions.reduce((sum, d) => sum + breakdown[d].maxScore, 0)
   const pct = maxTotal > 0 ? Math.round((total / maxTotal) * 100) : 0
 
-  const scoreColor =
-    pct >= 70 ? 'text-green-600' :
-    pct >= 45 ? 'text-orange-600' :
-    'text-red-600'
+  let scoreColor = 'text-red-600'
+  if (pct >= 70) scoreColor = 'text-green-600'
+  else if (pct >= 45) scoreColor = 'text-orange-600'
 
   return (
     <div className={`w-full ${className}`}>

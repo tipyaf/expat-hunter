@@ -387,9 +387,10 @@ export default class SearchOrchestratorService {
     for (const contact of contactsWithEmail) {
       try {
         const result = await verifier.verify(contact.email!)
-        contact.emailStatus = result.status === 'verified' ? 'verified'
-          : result.status === 'invalid' ? 'bounced'
+        const verifiedStatus = result.status === 'verified'
+          ? 'verified'
           : 'probable'
+        contact.emailStatus = result.status === 'invalid' ? 'bounced' : verifiedStatus
         contact.emailConfidence = result.confidence
         contact.emailVerifiedAt = DateTime.now()
         contact.emailVerifyMethod = result.method
