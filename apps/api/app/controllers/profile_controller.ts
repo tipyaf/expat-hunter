@@ -4,6 +4,9 @@ import { join } from 'node:path'
 import type { HttpContext } from '@adonisjs/core/http'
 import app from '@adonisjs/core/services/app'
 import CvExtractor from '#ai/cv_extractor'
+import type { CvExtractionResult } from '#ai/prompts/cv_extraction_prompt'
+import type CandidateProfile from '#models/candidate_profile'
+import type User from '#models/user'
 import CvParserService from '#services/cv_parser_service'
 import ProfileService from '#services/profile_service'
 import { updateProfileValidator } from '#validators/profile_validator'
@@ -68,17 +71,10 @@ export default class ProfileController {
 
     const filePath = join(uploadsDir, fileName)
 
-    let cvText: string
-    try {
-      cvText = await this.cvParserService.extractText(filePath)
-    } catch (error) {
-      return response.unprocessableEntity({
-        error: {
-          code: 'CV_PARSE_ERROR',
-          message: error instanceof Error ? error.message : 'Impossible de lire le fichier CV',
-        },
-      })
-    }
+    const parseResult = await this.parseCvText(filePath, response)
+    if ('error' in parseResult) return parseResult.error
+
+    const cvText = parseResult.text
 
     // Save raw text first
     let profile = await this.profileService.updateProfile(user, {
@@ -87,41 +83,81 @@ export default class ProfileController {
     })
 
     // AI extraction (non-blocking: if it fails, we still have the raw text)
-    let aiExtraction = null
-    try {
-      aiExtraction = await this.cvExtractor.extract(cvText)
-      if (aiExtraction) {
-        const updateData: Record<string, unknown> = {}
-
-        // Only auto-fill skills if the user hasn't set them yet
-        if (profile.skills.length === 0 && aiExtraction.skills.length > 0) {
-          updateData.skills = aiExtraction.skills
-        }
-        if (profile.targetRoles.length === 0 && aiExtraction.suggestedRoles.length > 0) {
-          updateData.targetRoles = aiExtraction.suggestedRoles
-        }
-        if (profile.targetSectors.length === 0 && aiExtraction.suggestedSectors.length > 0) {
-          updateData.targetSectors = aiExtraction.suggestedSectors
-        }
-        if (profile.experienceYears === 0 && aiExtraction.experienceYears) {
-          updateData.experienceYears = aiExtraction.experienceYears
-        }
-
-        if (Object.keys(updateData).length > 0) {
-          profile = await this.profileService.updateProfile(user, updateData)
-        }
-      }
-    } catch {
-      // AI extraction failure is not critical — raw text is already saved
+    const aiExtraction = await this.extractAiData(cvText, profile, user)
+    if (aiExtraction) {
+      profile = aiExtraction.updatedProfile ?? profile
     }
 
     return response.ok({
       data: this.serializeProfile(profile, user.fullName),
-      aiExtraction,
-      message: aiExtraction
+      aiExtraction: aiExtraction?.data ?? null,
+      message: aiExtraction?.data
         ? 'CV uploaded, parsed and analyzed by AI'
         : 'CV uploaded and parsed successfully',
     })
+  }
+
+  private async parseCvText(
+    filePath: string,
+    response: HttpContext['response']
+  ): Promise<{ text: string } | { error: ReturnType<HttpContext['response']['unprocessableEntity']> }> {
+    try {
+      const text = await this.cvParserService.extractText(filePath)
+      return { text }
+    } catch (error) {
+      return {
+        error: response.unprocessableEntity({
+          error: {
+            code: 'CV_PARSE_ERROR',
+            message: error instanceof Error ? error.message : 'Impossible de lire le fichier CV',
+          },
+        }),
+      }
+    }
+  }
+
+  private async extractAiData(
+    cvText: string,
+    profile: CandidateProfile,
+    user: User
+  ): Promise<{ data: CvExtractionResult; updatedProfile?: CandidateProfile } | null> {
+    try {
+      const data = await this.cvExtractor.extract(cvText)
+      if (!data) return null
+
+      const updateData = this.buildAutoFillData(profile, data)
+      let updatedProfile: CandidateProfile | undefined
+      if (Object.keys(updateData).length > 0) {
+        updatedProfile = await this.profileService.updateProfile(user, updateData)
+      }
+
+      return { data, updatedProfile }
+    } catch {
+      // AI extraction failure is not critical — raw text is already saved
+      return null
+    }
+  }
+
+  private buildAutoFillData(
+    profile: CandidateProfile,
+    extraction: CvExtractionResult
+  ): Record<string, unknown> {
+    const updateData: Record<string, unknown> = {}
+
+    if (profile.skills.length === 0 && extraction.skills.length > 0) {
+      updateData.skills = extraction.skills
+    }
+    if (profile.targetRoles.length === 0 && extraction.suggestedRoles.length > 0) {
+      updateData.targetRoles = extraction.suggestedRoles
+    }
+    if (profile.targetSectors.length === 0 && extraction.suggestedSectors.length > 0) {
+      updateData.targetSectors = extraction.suggestedSectors
+    }
+    if (profile.experienceYears === 0 && extraction.experienceYears) {
+      updateData.experienceYears = extraction.experienceYears
+    }
+
+    return updateData
   }
 
   async completeOnboarding({ auth, response }: HttpContext) {

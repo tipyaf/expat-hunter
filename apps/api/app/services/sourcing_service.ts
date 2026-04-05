@@ -138,84 +138,18 @@ export default class SourcingService {
 
     for (const raw of rawContacts) {
       try {
-        // Find or create company
         const companyKey = `${raw.companyName}::${raw.companyCountry}`.toLowerCase()
-        const company = await Company.firstOrCreate(
-          { name: raw.companyName, country: raw.companyCountry },
-          {
-            name: raw.companyName,
-            country: raw.companyCountry,
-            website: raw.companyWebsite ?? null,
-            sector: raw.companySector ?? null,
-            city: raw.companyCity ?? null,
-            source: raw.source,
-          }
-        )
-
-        // Extract and store domain
-        if (!company.domain && raw.companyWebsite) {
-          company.domain = enricher.extractDomain(raw.companyWebsite)
-        }
-
-        // Check visa sponsor status if not already checked
-        if (!company.visaRegistryCheckedAt) {
-          const visaCheck = await visaRegistry
-            .checkCompany(raw.companyName, raw.companyCountry)
-            .catch(() => null)
-
-          if (visaCheck) {
-            company.visaSponsorStatus = visaCheck.status
-            company.visaSponsorCountries = visaCheck.countries.length > 0 ? visaCheck.countries : null
-            company.visaRegistryCheckedAt = DateTime.now()
-            const parsedExpiry = visaCheck.expiresAt ? DateTime.fromISO(visaCheck.expiresAt) : null
-            company.visaSponsorExpiresAt = parsedExpiry?.isValid ? parsedExpiry : null
-          }
-        }
-
-        if (company.$isDirty) await company.save()
+        const company = await this.createOrUpdateCompany(raw, enricher, visaRegistry)
 
         allCompanies.set(companyKey, company)
         if (raw.email) companiesWithEmail.add(companyKey)
 
-        // Cache company data
-        await this.cacheService.getOrFetch(raw.source, 'company', companyKey, async () => ({
-          id: company.id,
-          name: company.name,
-          country: company.country,
-          website: company.website,
-          sector: company.sector,
-          city: company.city,
-        }))
+        await this.cacheCompanyData(raw.source, companyKey, company)
 
-        // Dedup by linkedin or email
-        const existingQuery = Contact.query().where('userId', userId)
-        if (raw.linkedinUrl) {
-          const existing = await existingQuery.clone().where('linkedinUrl', raw.linkedinUrl).first()
-          if (existing) continue
-        }
-        if (raw.email) {
-          const existing = await existingQuery.clone().where('email', raw.email).first()
-          if (existing) continue
-        }
+        const isDuplicate = await this.isContactDuplicate(userId, raw)
+        if (isDuplicate) continue
 
-        // Create contact with new enrichment fields
-        await Contact.create({
-          userId,
-          companyId: company.id,
-          sourcingRunId: runId,
-          fullName: raw.fullName,
-          role: raw.role,
-          email: raw.email ?? null,
-          linkedinUrl: raw.linkedinUrl ?? null,
-          source: raw.source,
-          sourceDetail: raw.sourceDetail ?? null,
-          emailSource: raw.emailSource ?? null,
-          emailConfidence: raw.emailConfidence ?? null,
-          emailStatus: raw.email ? 'probable' : null,
-          githubUrl: raw.githubUrl ?? null,
-          status: 'identified',
-        })
-
+        await this.persistSingleContact(userId, runId, raw, company.id)
         count++
       } catch {
         // Skip contacts that fail (e.g., unique constraint violation)
@@ -229,6 +163,119 @@ export default class SourcingService {
       .filter((c) => !c.teamCrawledAt) // Skip already crawled
 
     return { count, companiesWithoutEmail }
+  }
+
+  /**
+   * Find or create a company, update domain and visa status if needed.
+   */
+  private async createOrUpdateCompany(
+    raw: RawContact,
+    enricher: CompanyEnricher,
+    visaRegistry: VisaSponsorRegistryService
+  ): Promise<Company> {
+    const company = await Company.firstOrCreate(
+      { name: raw.companyName, country: raw.companyCountry },
+      {
+        name: raw.companyName,
+        country: raw.companyCountry,
+        website: raw.companyWebsite ?? null,
+        sector: raw.companySector ?? null,
+        city: raw.companyCity ?? null,
+        source: raw.source,
+      }
+    )
+
+    if (!company.domain && raw.companyWebsite) {
+      company.domain = enricher.extractDomain(raw.companyWebsite)
+    }
+
+    await this.checkVisaStatus(company, raw, visaRegistry)
+
+    if (company.$isDirty) await company.save()
+    return company
+  }
+
+  /**
+   * Check visa sponsor status for a company if not already checked.
+   */
+  private async checkVisaStatus(
+    company: Company,
+    raw: RawContact,
+    visaRegistry: VisaSponsorRegistryService
+  ): Promise<void> {
+    if (company.visaRegistryCheckedAt) return
+
+    const visaCheck = await visaRegistry
+      .checkCompany(raw.companyName, raw.companyCountry)
+      .catch(() => null)
+
+    if (!visaCheck) return
+
+    company.visaSponsorStatus = visaCheck.status
+    company.visaSponsorCountries = visaCheck.countries.length > 0 ? visaCheck.countries : null
+    company.visaRegistryCheckedAt = DateTime.now()
+    const parsedExpiry = visaCheck.expiresAt ? DateTime.fromISO(visaCheck.expiresAt) : null
+    company.visaSponsorExpiresAt = parsedExpiry?.isValid ? parsedExpiry : null
+  }
+
+  /**
+   * Cache company data for deduplication across sources.
+   */
+  private async cacheCompanyData(source: string, companyKey: string, company: Company): Promise<void> {
+    await this.cacheService.getOrFetch(source, 'company', companyKey, async () => ({
+      id: company.id,
+      name: company.name,
+      country: company.country,
+      website: company.website,
+      sector: company.sector,
+      city: company.city,
+    }))
+  }
+
+  /**
+   * Check if a contact already exists by LinkedIn URL or email.
+   */
+  private async isContactDuplicate(userId: string, raw: RawContact): Promise<boolean> {
+    const existingQuery = Contact.query().where('userId', userId)
+
+    if (raw.linkedinUrl) {
+      const existing = await existingQuery.clone().where('linkedinUrl', raw.linkedinUrl).first()
+      if (existing) return true
+    }
+
+    if (raw.email) {
+      const existing = await existingQuery.clone().where('email', raw.email).first()
+      if (existing) return true
+    }
+
+    return false
+  }
+
+  /**
+   * Create a single contact record from raw scraped data.
+   */
+  private async persistSingleContact(
+    userId: string,
+    runId: string,
+    raw: RawContact,
+    companyId: string
+  ): Promise<void> {
+    await Contact.create({
+      userId,
+      companyId,
+      sourcingRunId: runId,
+      fullName: raw.fullName,
+      role: raw.role,
+      email: raw.email ?? null,
+      linkedinUrl: raw.linkedinUrl ?? null,
+      source: raw.source,
+      sourceDetail: raw.sourceDetail ?? null,
+      emailSource: raw.emailSource ?? null,
+      emailConfidence: raw.emailConfidence ?? null,
+      emailStatus: raw.email ? 'probable' : null,
+      githubUrl: raw.githubUrl ?? null,
+      status: 'identified',
+    })
   }
 
   /**

@@ -6,6 +6,7 @@
  * Progress: updates SearchRun status and percent at each step.
  */
 import Contact from '#models/contact'
+import Company from '#models/company'
 import CandidateProfile from '#models/candidate_profile'
 import User from '#models/user'
 import SearchRun from '#models/search_run'
@@ -19,6 +20,7 @@ import EmailEnricher from './email_enricher.js'
 import EmailVerifier from './email_verifier.js'
 import ExpatScoringService from './expat_scoring_service.js'
 import { HunterCompanySearchScraper } from '../scrapers/hunter_company_search_scraper.js'
+import type { RawContact } from '../scrapers/base_scraper.js'
 import { FREE_QUOTAS } from '@expat-hunter/shared'
 
 interface SearchParams {
@@ -255,7 +257,6 @@ export default class SearchOrchestratorService {
     const hunterScraper = new HunterCompanySearchScraper()
     let added = 0
 
-    // Get all companies from this run
     const companies = await Contact.query()
       .where('sourcingRunId', sourcingRunId)
       .preload('company')
@@ -266,38 +267,77 @@ export default class SearchOrchestratorService {
 
     for (const contact of companies) {
       const company = contact.company
-      if (!company?.domain || seenCompanyIds.has(company.id)) continue
-      seenCompanyIds.add(company.id)
-
-      if (JOB_BOARD_DOMAINS.has(company.domain)) {
-        logger.info('Skipping job board domain: %s', company.domain)
-        continue
-      }
+      if (this.shouldSkipCompany(company, seenCompanyIds)) continue
+      seenCompanyIds.add(company!.id)
 
       try {
-        const hunterContacts = await hunterScraper.searchDomain(company.domain, company.country)
-
-        for (const raw of hunterContacts) {
-          const name = raw.fullName.toLowerCase().trim()
-          if (!name || name === 'hiring manager' || name === 'contact' || name === 'unknown') continue
-          if (!raw.email) continue
-          if (!includeHr && raw.role && this.isHrRole(raw.role)) continue
-
-          const existing = await Contact.query()
-            .where('userId', userId)
-            .where('email', raw.email)
-            .first()
-          if (existing) continue
-
-          await this.createHunterContact(userId, company.id, sourcingRunId, raw)
-          added++
-        }
+        const hunterContacts = await hunterScraper.searchDomain(company!.domain!, company!.country)
+        added += await this.processHunterContacts(hunterContacts, userId, company!.id, sourcingRunId, includeHr)
       } catch (error) {
-        logger.warn('Hunter search failed for %s: %s', company.domain, error instanceof Error ? error.message : 'Unknown')
+        logger.warn('Hunter search failed for %s: %s', company!.domain, error instanceof Error ? error.message : 'Unknown')
       }
     }
 
     return added
+  }
+
+  /**
+   * Check if a company should be skipped for Hunter search.
+   */
+  private shouldSkipCompany(
+    company: Company | undefined | null,
+    seenCompanyIds: Set<string>
+  ): boolean {
+    if (!company?.domain || seenCompanyIds.has(company.id)) return true
+
+    if (JOB_BOARD_DOMAINS.has(company.domain)) {
+      logger.info('Skipping job board domain: %s', company.domain)
+      return true
+    }
+
+    return false
+  }
+
+  /**
+   * Process a batch of Hunter contacts for a single company, creating non-duplicate contacts.
+   */
+  private async processHunterContacts(
+    hunterContacts: RawContact[],
+    userId: string,
+    companyId: string,
+    sourcingRunId: string,
+    includeHr: boolean
+  ): Promise<number> {
+    let added = 0
+
+    for (const raw of hunterContacts) {
+      if (this.shouldSkipHunterContact(raw, includeHr)) continue
+
+      const existing = await Contact.query()
+        .where('userId', userId)
+        .where('email', raw.email!)
+        .first()
+      if (existing) continue
+
+      await this.createHunterContact(userId, companyId, sourcingRunId, raw)
+      added++
+    }
+
+    return added
+  }
+
+  /**
+   * Check if a Hunter contact should be skipped based on name/email/role filters.
+   */
+  private shouldSkipHunterContact(
+    raw: RawContact,
+    includeHr: boolean
+  ): boolean {
+    const name = raw.fullName.toLowerCase().trim()
+    if (!name || name === 'hiring manager' || name === 'contact' || name === 'unknown') return true
+    if (!raw.email) return true
+    if (!includeHr && raw.role && this.isHrRole(raw.role)) return true
+    return false
   }
 
   private isHrRole(role: string): boolean {
@@ -310,7 +350,7 @@ export default class SearchOrchestratorService {
     userId: string,
     companyId: string,
     sourcingRunId: string,
-    raw: { fullName: string; role?: string; email: string; source: string; sourceDetail?: string; emailConfidence?: number }
+    raw: RawContact
   ): Promise<void> {
     await Contact.create({
       userId,
@@ -318,7 +358,7 @@ export default class SearchOrchestratorService {
       sourcingRunId,
       fullName: raw.fullName,
       role: raw.role ?? 'Unknown',
-      email: raw.email,
+      email: raw.email!,
       source: raw.source,
       sourceDetail: raw.sourceDetail ?? null,
       emailSource: 'hunter',

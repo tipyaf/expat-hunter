@@ -21,93 +21,91 @@ export default class ConfidenceScoreService {
     let total = 0
     let maxPossible = 0
 
-    // Email verified (30 points)
-    maxPossible += 30
-    if (contact.email) {
-      factors.push({ label: 'Email disponible', impact: 'positive', weight: 30 })
-      total += 30
-    } else {
-      factors.push({ label: 'Pas d\'email', impact: 'negative', weight: 30 })
-    }
+    const scorers = [
+      this.scoreEmail(contact),
+      this.scoreRole(contact),
+      this.scoreLinkedIn(contact),
+      this.scoreAiAnalysis(contact),
+      this.scoreCompanyData(contact, company),
+    ]
 
-    // Role/title present (15 points)
-    maxPossible += 15
-    if (contact.role && contact.role.length > 3) {
-      factors.push({ label: 'Poste identifié', impact: 'positive', weight: 15 })
-      total += 15
-    } else {
-      factors.push({ label: 'Poste non identifié', impact: 'negative', weight: 15 })
-    }
-
-    // LinkedIn URL (10 points)
-    maxPossible += 10
-    if (contact.linkedinUrl) {
-      factors.push({ label: 'Profil LinkedIn', impact: 'positive', weight: 10 })
-      total += 10
-    } else {
-      factors.push({ label: 'Pas de profil LinkedIn', impact: 'neutral', weight: 10 })
-    }
-
-    // AI analysis done (15 points)
-    maxPossible += 15
-    if (contact.relevanceScore !== null) {
-      factors.push({ label: 'Analyse IA effectuée', impact: 'positive', weight: 15 })
-      total += 15
-      // Bonus for high relevance (5 extra)
-      if (contact.relevanceLabel === 'very_relevant') {
-        factors.push({ label: 'Très pertinent (IA)', impact: 'positive', weight: 5 })
-        total += 5
-        maxPossible += 5
-      }
-    } else {
-      factors.push({ label: 'Pas encore analysé', impact: 'neutral', weight: 15 })
-    }
-
-    // Company data quality (30 points total)
-    const comp = company ?? (contact.$preloaded?.company as Company | undefined)
-    if (comp) {
-      // Company website (10 points)
-      maxPossible += 10
-      if (comp.website) {
-        factors.push({ label: 'Site web entreprise', impact: 'positive', weight: 10 })
-        total += 10
-      }
-
-      // Company sector (5 points)
-      maxPossible += 5
-      if (comp.sector) {
-        factors.push({ label: 'Secteur identifié', impact: 'positive', weight: 5 })
-        total += 5
-      }
-
-      // Company size (5 points)
-      maxPossible += 5
-      if (comp.size) {
-        factors.push({ label: 'Taille entreprise connue', impact: 'positive', weight: 5 })
-        total += 5
-      }
-
-      // Company city (5 points)
-      maxPossible += 5
-      if (comp.city) {
-        factors.push({ label: 'Ville identifiée', impact: 'positive', weight: 5 })
-        total += 5
-      }
-
-      // Company signals (5 points)
-      maxPossible += 5
-      if (comp.signals && Object.keys(comp.signals).length > 0) {
-        factors.push({ label: 'Signaux entreprise détectés', impact: 'positive', weight: 5 })
-        total += 5
-      }
-    } else {
-      maxPossible += 30
-      factors.push({ label: 'Données entreprise manquantes', impact: 'negative', weight: 30 })
+    for (const result of scorers) {
+      total += result.total
+      maxPossible += result.maxPossible
+      factors.push(...result.factors)
     }
 
     const score = maxPossible > 0 ? Math.round((total / maxPossible) * 100) : 0
 
     return { score, factors }
+  }
+
+  private scoreEmail(contact: Contact): { total: number; maxPossible: number; factors: ConfidenceFactor[] } {
+    if (contact.email) {
+      return { total: 30, maxPossible: 30, factors: [{ label: 'Email disponible', impact: 'positive', weight: 30 }] }
+    }
+    return { total: 0, maxPossible: 30, factors: [{ label: 'Pas d\'email', impact: 'negative', weight: 30 }] }
+  }
+
+  private scoreRole(contact: Contact): { total: number; maxPossible: number; factors: ConfidenceFactor[] } {
+    if (contact.role && contact.role.length > 3) {
+      return { total: 15, maxPossible: 15, factors: [{ label: 'Poste identifié', impact: 'positive', weight: 15 }] }
+    }
+    return { total: 0, maxPossible: 15, factors: [{ label: 'Poste non identifié', impact: 'negative', weight: 15 }] }
+  }
+
+  private scoreLinkedIn(contact: Contact): { total: number; maxPossible: number; factors: ConfidenceFactor[] } {
+    if (contact.linkedinUrl) {
+      return { total: 10, maxPossible: 10, factors: [{ label: 'Profil LinkedIn', impact: 'positive', weight: 10 }] }
+    }
+    return { total: 0, maxPossible: 10, factors: [{ label: 'Pas de profil LinkedIn', impact: 'neutral', weight: 10 }] }
+  }
+
+  private scoreAiAnalysis(contact: Contact): { total: number; maxPossible: number; factors: ConfidenceFactor[] } {
+    if (contact.relevanceScore === null) {
+      return { total: 0, maxPossible: 15, factors: [{ label: 'Pas encore analysé', impact: 'neutral', weight: 15 }] }
+    }
+
+    const factors: ConfidenceFactor[] = [{ label: 'Analyse IA effectuée', impact: 'positive', weight: 15 }]
+    let total = 15
+    let maxPossible = 15
+
+    if (contact.relevanceLabel === 'very_relevant') {
+      factors.push({ label: 'Très pertinent (IA)', impact: 'positive', weight: 5 })
+      total += 5
+      maxPossible += 5
+    }
+
+    return { total, maxPossible, factors }
+  }
+
+  private scoreCompanyData(contact: Contact, company?: Company | null): { total: number; maxPossible: number; factors: ConfidenceFactor[] } {
+    const comp = company ?? (contact.$preloaded?.company as Company | undefined)
+    if (!comp) {
+      return { total: 0, maxPossible: 30, factors: [{ label: 'Données entreprise manquantes', impact: 'negative', weight: 30 }] }
+    }
+
+    const factors: ConfidenceFactor[] = []
+    let total = 0
+    let maxPossible = 0
+
+    const checks: Array<{ condition: boolean; label: string; weight: number }> = [
+      { condition: !!comp.website, label: 'Site web entreprise', weight: 10 },
+      { condition: !!comp.sector, label: 'Secteur identifié', weight: 5 },
+      { condition: !!comp.size, label: 'Taille entreprise connue', weight: 5 },
+      { condition: !!comp.city, label: 'Ville identifiée', weight: 5 },
+      { condition: !!(comp.signals && Object.keys(comp.signals).length > 0), label: 'Signaux entreprise détectés', weight: 5 },
+    ]
+
+    for (const check of checks) {
+      maxPossible += check.weight
+      if (check.condition) {
+        factors.push({ label: check.label, impact: 'positive', weight: check.weight })
+        total += check.weight
+      }
+    }
+
+    return { total, maxPossible, factors }
   }
 
   /**

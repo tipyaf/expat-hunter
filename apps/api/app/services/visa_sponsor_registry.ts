@@ -516,70 +516,12 @@ export default class VisaSponsorRegistryService {
   private async fetchNzRegistry(): Promise<VisaSponsorRecord[]> {
     const allRecords: VisaSponsorRecord[] = []
     const sourceUrl = SOURCE_URLS.NZ
-
-    // The API requires at least 3 chars. Use common prefixes to scrape broadly.
-    // Single-letter queries don't work, but 'a', 'b', etc. with 3+ chars won't cover all.
-    // Strategy: iterate through alphabet trigrams to get broad coverage.
     const prefixes = 'abcdefghijklmnopqrstuvwxyz'.split('')
     const seenNames = new Set<string>()
 
     for (const prefix of prefixes) {
       try {
-        // Query with single letter + padding — the API accepts 1-char queries when
-        // submitted via the form, but may require 3. Try single letter first.
-        let page = 1
-        let totalPages = 1
-
-        while (page <= totalPages) {
-          const formData = new FormData()
-          formData.append('query', prefix)
-          formData.append('collection', '2')
-          formData.append('page', String(page))
-
-          const res = await fetch('https://www.immigration.govt.nz/list-api/getAPIResults/', {
-            method: 'POST',
-            body: formData,
-            headers: {
-              Accept: 'application/json, text/plain, */*',
-              Origin: 'https://www.immigration.govt.nz',
-              Referer: sourceUrl,
-            },
-            signal: AbortSignal.timeout(20_000),
-          })
-
-          // NZ API returns 400 for "No Results" — treat as end of results for this prefix
-          if (res.status === 400) break
-          if (!res.ok) break
-
-          const json = (await res.json()) as {
-            results: string
-            current: number
-            totalPages: number
-            totalResults: number
-          }
-
-          if (!json.results || json.totalResults === 0) break
-
-          const results = JSON.parse(json.results) as Array<{
-            field_schema: {
-              raw: Array<{ APIColumn: string; Value: string }>
-            }
-            title: { raw: string }
-          }>
-
-          for (const result of results) {
-            const record = this.parseNzApiResult(result, sourceUrl)
-            if (!record || seenNames.has(record.companyName.toUpperCase())) continue
-            seenNames.add(record.companyName.toUpperCase())
-            allRecords.push(record)
-          }
-
-          totalPages = json.totalPages
-          page++
-
-          // Rate limiting: small delay between pages
-          await new Promise((resolve) => setTimeout(resolve, 200))
-        }
+        await this.fetchNzPrefixPages(prefix, sourceUrl, seenNames, allRecords)
       } catch {
         // Continue with next prefix if one fails
         continue
@@ -590,6 +532,79 @@ export default class VisaSponsorRegistryService {
     }
 
     return allRecords
+  }
+
+  private async fetchNzPrefixPages(
+    prefix: string,
+    sourceUrl: string,
+    seenNames: Set<string>,
+    allRecords: VisaSponsorRecord[]
+  ): Promise<void> {
+    let page = 1
+    let totalPages = 1
+
+    while (page <= totalPages) {
+      const pageResult = await this.fetchNzPage(prefix, page, sourceUrl)
+      if (!pageResult) break
+
+      for (const result of pageResult.results) {
+        const record = this.parseNzApiResult(result, sourceUrl)
+        if (!record || seenNames.has(record.companyName.toUpperCase())) continue
+        seenNames.add(record.companyName.toUpperCase())
+        allRecords.push(record)
+      }
+
+      totalPages = pageResult.totalPages
+      page++
+
+      // Rate limiting: small delay between pages
+      await new Promise((resolve) => setTimeout(resolve, 200))
+    }
+  }
+
+  private async fetchNzPage(
+    prefix: string,
+    page: number,
+    sourceUrl: string
+  ): Promise<{
+    results: Array<{ field_schema: { raw: Array<{ APIColumn: string; Value: string }> }; title: { raw: string } }>
+    totalPages: number
+  } | null> {
+    const formData = new FormData()
+    formData.append('query', prefix)
+    formData.append('collection', '2')
+    formData.append('page', String(page))
+
+    const res = await fetch('https://www.immigration.govt.nz/list-api/getAPIResults/', {
+      method: 'POST',
+      body: formData,
+      headers: {
+        Accept: 'application/json, text/plain, */*',
+        Origin: 'https://www.immigration.govt.nz',
+        Referer: sourceUrl,
+      },
+      signal: AbortSignal.timeout(20_000),
+    })
+
+    // NZ API returns 400 for "No Results" — treat as end of results for this prefix
+    if (res.status === 400) return null
+    if (!res.ok) return null
+
+    const json = (await res.json()) as {
+      results: string
+      current: number
+      totalPages: number
+      totalResults: number
+    }
+
+    if (!json.results || json.totalResults === 0) return null
+
+    const results = JSON.parse(json.results) as Array<{
+      field_schema: { raw: Array<{ APIColumn: string; Value: string }> }
+      title: { raw: string }
+    }>
+
+    return { results, totalPages: json.totalPages }
   }
 
   private parseNzApiResult(
