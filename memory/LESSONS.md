@@ -134,6 +134,11 @@ Use `stories-update labels:[{name: "scope:building"}]` at each transition.
 **Root cause**: Agent focuses on technical content and forgets the project management link.
 **Rule**: When presenting a refinement, ALWAYS include the Shortcut story URL (e.g., https://app.shortcut.com/expat-hunter/story/XXX) so the user can review the ticket directly.
 
+### [Git] Always commit memory and tracker files before finishing a story
+**Problem**: memory/expat-hunter.md and _work/spec/*.yaml left uncommitted multiple times. User had to catch it manually.
+**Root cause**: Agent updates memory/tracker files but forgets to stage and commit them with the rest of the changes.
+**Rule**: Before declaring a story done or pushing a PR, ALWAYS run `git status` and verify that ALL modified files are committed — especially: 1) `memory/expat-hunter.md`, 2) `_work/feature-tracker.yaml`, 3) `_work/spec/*.yaml` story files. These are project artifacts, not throwaway notes. If they are modified, they MUST be in the commit.
+
 ### [Shortcut] Story description must use real newlines, not literal \n
 **Problem**: Shortcut story descriptions rendered as a single block of text with no formatting. ACs, scope, and context were unreadable.
 **Root cause**: Agent passed the description string with `\n` escape sequences instead of real newlines. The Shortcut API renders them literally.
