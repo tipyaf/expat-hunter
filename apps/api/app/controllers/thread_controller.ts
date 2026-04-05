@@ -74,7 +74,7 @@ export default class ThreadController {
    * Stub: marks as sent in email_messages.
    */
   async reply({ auth, params, request, response }: HttpContext) {
-    const user = auth.getUserOrFail()
+    auth.getUserOrFail()
     const contactId = params.id as string
     const { subject, body } = request.only(['subject', 'body']) as {
       subject: string

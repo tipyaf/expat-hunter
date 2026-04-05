@@ -133,3 +133,8 @@ Use `stories-update labels:[{name: "scope:building"}]` at each transition.
 **Problem**: Refinement proposals presented without a link to the Shortcut ticket. User has to search for it manually.
 **Root cause**: Agent focuses on technical content and forgets the project management link.
 **Rule**: When presenting a refinement, ALWAYS include the Shortcut story URL (e.g., https://app.shortcut.com/expat-hunter/story/XXX) so the user can review the ticket directly.
+
+### [Shortcut] Story description must use real newlines, not literal \n
+**Problem**: Shortcut story descriptions rendered as a single block of text with no formatting. ACs, scope, and context were unreadable.
+**Root cause**: Agent passed the description string with `\n` escape sequences instead of real newlines. The Shortcut API renders them literally.
+**Rule**: ALWAYS use real multi-line strings when calling `stories-update` or `stories-create` for the description field. Never use `\n` in description strings — use actual line breaks.

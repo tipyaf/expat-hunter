@@ -1,0 +1,87 @@
+# =============================================================================
+# Story: sc-767 — Fix misc code smells (SonarQube)
+# =============================================================================
+# Build contract — developer implements exactly this, validator checks exactly this.
+# =============================================================================
+
+story:
+  id: "sc-767"
+  name: "refacto: fix misc code smells — readonly, ternaries, nesting, dead code (SonarQube)"
+  type: "chore"
+  size: "M"
+  estimate: 3
+  priority: "medium"
+  parent_feature: null
+  depends_on: []
+  adr_required: false
+
+user_story: |
+  As a developer,
+  I want remaining CRITICAL and MAJOR SonarQube code smells fixed,
+  so the codebase quality improves and the most impactful violations are resolved.
+
+scope:
+  rules_targeted:
+    - rule: "S2933"
+      severity: "MAJOR"
+      count: 12
+      fix: "Add readonly to never-reassigned class members"
+    - rule: "S3358"
+      severity: "MAJOR"
+      count: 8
+      fix: "Extract remaining nested ternaries into named variables"
+    - rule: "S2004"
+      severity: "CRITICAL"
+      count: 3
+      fix: "Flatten nested functions beyond 4 levels in frontend hooks/pages"
+    - rule: "S4123"
+      severity: "CRITICAL"
+      count: 2
+      fix: "Remove useless await of non-Promise values"
+    - rule: "S1854"
+      severity: "MAJOR"
+      count: 7
+      fix: "Remove dead/useless variable assignments"
+  files_to_modify: []  # Dynamic — determined by SonarQube issue locations
+  files_to_read: []
+  files_to_create: []
+
+acceptance_criteria:
+  - id: "AC-FUNC-767-01"
+    type: "FUNC"
+    description: "Given the codebase / When SonarQube re-scanned / Then 0 CRITICAL issues remain"
+    verify: "curl -s 'http://localhost:9000/api/issues/search?projectKeys=expathunter&statuses=OPEN&severities=CRITICAL,BLOCKER&ps=1' -H \"Authorization: Bearer $(grep '^SONAR_TOKEN=' .env | cut -d= -f2)\" | grep -o '\"total\":[0-9]*'"
+    tier: 2
+
+  - id: "AC-FUNC-767-02"
+    type: "FUNC"
+    description: "Given the targeted rules / When SonarQube re-scanned / Then S2933+S3358+S1854 MAJOR count is 0"
+    verify: "curl -s 'http://localhost:9000/api/issues/search?projectKeys=expathunter&statuses=OPEN&rules=typescript:S2933,typescript:S3358,typescript:S1854&ps=1' -H \"Authorization: Bearer $(grep '^SONAR_TOKEN=' .env | cut -d= -f2)\" | grep -o '\"total\":[0-9]*'"
+    tier: 2
+
+  - id: "AC-FUNC-767-03"
+    type: "FUNC"
+    description: "Given the codebase / When tsc --noEmit runs / Then 0 new TypeScript errors introduced"
+    verify: "cd apps/api && PATH='/opt/homebrew/bin:$PATH' npx tsc --noEmit 2>&1 | grep -c 'error TS' | xargs test 24 -ge && echo PASS"
+    tier: 2
+
+  - id: "AC-FUNC-767-04"
+    type: "FUNC"
+    description: "Given the codebase / When unit tests run / Then all pass (no regressions)"
+    verify: "cd apps/api && PATH='/opt/homebrew/bin:$PATH' pnpm test 2>&1 | tail -5"
+    tier: 2
+
+  - id: "AC-SEC-767-01"
+    type: "SEC"
+    description: "Given all modified files / When checked / Then no any type introduced"
+    verify: "git diff origin/main --unified=0 -- 'apps/api/**/*.ts' 'apps/frontend/**/*.tsx' 'apps/frontend/**/*.ts' | grep '^+' | grep -v '^+++' | grep -c ': any' | xargs test 0 -eq && echo PASS"
+    tier: 1
+
+edge_cases:
+  - "S3776 CRITICAL issues will still show until SonarQube re-scans after sc-763 merge"
+  - "S2004 in React hooks — preserve hook call rules when flattening"
+  - "S4123 in Next.js i18n — verify the function is truly not async before removing await"
+
+test_intentions: []
+
+components: {}
