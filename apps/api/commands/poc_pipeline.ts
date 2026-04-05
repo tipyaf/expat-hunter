@@ -338,167 +338,186 @@ function roleScore(position: string): number {
   return score
 }
 
-// ─── Main ────────────────────────────────────────────────────────────────────
+// ─── Pipeline Step Helpers ───────────────────────────────────────────────────
 
-async function run() {
-  console.log('=== POC Pipeline — 10 NZ Companies ===')
-  console.log(`Hunter API: ${HUNTER_API_KEY ? '✅ configured' : '❌ missing'}`)
-  console.log(`Apollo API: ${APOLLO_API_KEY ? '✅ configured' : '❌ missing'}`)
-  console.log('')
-
-  const results: CompanyResult[] = []
-
-  for (const company of NZ_COMPANIES) {
-    console.log(`--- ${company.name} (${company.domain}, ${company.city}) ---`)
-    const start = Date.now()
-    const errors: string[] = []
-
-    // ─── Step 1: Visa Check ───
-    let visaStatus = 'unknown'
-    let visaConfidence = 0
-    let visaMatchedName: string | undefined
-    let visaCorrect = false
-
-    try {
-      const visa = await checkVisaNZ(company.name)
-      visaStatus = visa.status
-      visaConfidence = visa.confidence
-      visaMatchedName = visa.matchedName
-      visaCorrect = visaStatus === company.expectedVisa || company.expectedVisa === 'unknown'
+function runVisaCheck(
+  companyName: string,
+  expectedVisa: string,
+  errors: string[]
+): Promise<{ status: string; confidence: number; matchedName?: string; correct: boolean }> {
+  return checkVisaNZ(companyName)
+    .then((visa) => {
+      const correct = visa.status === expectedVisa || expectedVisa === 'unknown'
       console.log(
-        `  Visa: ${visaStatus} (${(visaConfidence * 100).toFixed(0)}%` +
-          `${visaMatchedName ? `, "${visaMatchedName}"` : ''}) ` +
-          `${visaCorrect ? '✅' : '❌ expected ' + company.expectedVisa}`
+        `  Visa: ${visa.status} (${(visa.confidence * 100).toFixed(0)}%` +
+          `${visa.matchedName ? `, "${visa.matchedName}"` : ''}) ` +
+          `${correct ? '✅' : '❌ expected ' + expectedVisa}`
       )
-    } catch (err) {
+      return { status: visa.status, confidence: visa.confidence, matchedName: visa.matchedName, correct }
+    })
+    .catch((err) => {
       const msg = err instanceof Error ? err.message : String(err)
       errors.push(`Visa: ${msg}`)
       console.log(`  Visa: ERROR — ${msg}`)
-    }
-
-    // ─── Step 2: Hunter Domain Search ───
-    let hunterContacts: HunterContact[] = []
-    try {
-      hunterContacts = await hunterDomainSearch(company.domain)
-      console.log(`  Hunter: ${hunterContacts.length} contacts`)
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err)
-      errors.push(`Hunter: ${msg}`)
-      console.log(`  Hunter: ERROR — ${msg}`)
-    }
-
-    // ─── Step 3: Apollo Org Search ───
-    let apolloContacts: Array<{ name: string; title: string; email: string | null }> = []
-    try {
-      apolloContacts = await apolloOrgSearch(company.domain)
-      console.log(`  Apollo: ${apolloContacts.length} contacts`)
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err)
-      errors.push(`Apollo: ${msg}`)
-      console.log(`  Apollo: ERROR — ${msg}`)
-    }
-
-    // ─── Step 4: Merge & Deduplicate ───
-    const allContacts: ContactFound[] = []
-    const seenNames = new Set<string>()
-
-    // Hunter contacts (already have emails)
-    for (const c of hunterContacts) {
-      const name = `${c.firstName} ${c.lastName}`.trim()
-      if (!name || seenNames.has(name.toLowerCase())) continue
-      seenNames.add(name.toLowerCase())
-      allContacts.push({
-        name,
-        role: c.position || 'Unknown',
-        email: c.email ?? null,
-        emailSource: c.email ? 'hunter' : 'none',
-        emailConfidence: c.email ? (c.confidence ?? 90) : 0,
-        emailStatus: c.email ? 'verified' : 'unknown',
-      })
-    }
-
-    // Apollo contacts (may have emails)
-    for (const c of apolloContacts) {
-      if (!c.name || seenNames.has(c.name.toLowerCase())) continue
-      seenNames.add(c.name.toLowerCase())
-      allContacts.push({
-        name: c.name,
-        role: c.title || 'Unknown',
-        email: c.email,
-        emailSource: c.email ? 'apollo' : 'none',
-        emailConfidence: c.email ? 80 : 0,
-        emailStatus: c.email ? 'probable' : 'unknown',
-      })
-    }
-
-    // Sort by role relevance
-    allContacts.sort((a, b) => roleScore(b.role) - roleScore(a.role))
-
-    // ─── Step 5: Pattern inference for contacts without email ───
-    const mxValid = await verifyMx(company.domain)
-    const top5 = allContacts.slice(0, 5)
-
-    for (const contact of top5) {
-      if (contact.email) continue
-      if (!mxValid) continue
-
-      const parts = contact.name.split(/\s+/)
-      if (parts.length < 2) continue
-
-      const patterns = inferEmailPatterns(parts[0], parts.slice(1).join(' '), company.domain)
-      if (patterns.length > 0) {
-        contact.email = patterns[0]
-        contact.emailSource = 'inferred'
-        contact.emailConfidence = 40
-        contact.emailStatus = 'probable'
-      }
-    }
-
-    // Print top 5
-    for (const c of top5) {
-      const emailStr = c.email
-        ? `${c.email} (${c.emailSource}, ${c.emailConfidence}%)`
-        : 'NO EMAIL'
-      console.log(`  → ${c.name} — ${c.role} — ${emailStr}`)
-    }
-
-    const contactsWithEmail = top5.filter((c) => c.email).length
-    const contactsWithVerifiedEmail = top5.filter(
-      (c) => c.email && (c.emailStatus === 'verified' || c.emailConfidence >= 80)
-    ).length
-
-    const durationMs = Date.now() - start
-    console.log(`  ⏱ ${(durationMs / 1000).toFixed(1)}s | ${errors.length} errors`)
-    console.log('')
-
-    results.push({
-      company: company.name,
-      domain: company.domain,
-      city: company.city,
-      visaStatus,
-      visaConfidence,
-      visaMatchedName,
-      visaExpected: company.expectedVisa,
-      visaCorrect,
-      hunterContactsFound: hunterContacts.length,
-      apolloContactsFound: apolloContacts.length,
-      contacts: top5,
-      contactsWithEmail,
-      contactsWithVerifiedEmail,
-      durationMs,
-      errors,
+      return { status: 'unknown', confidence: 0, matchedName: undefined, correct: expectedVisa === 'unknown' }
     })
+}
 
-    // Rate limiting
-    await new Promise((r) => setTimeout(r, 1500))
+async function runHunterSearch(domain: string, errors: string[]): Promise<HunterContact[]> {
+  try {
+    const contacts = await hunterDomainSearch(domain)
+    console.log(`  Hunter: ${contacts.length} contacts`)
+    return contacts
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    errors.push(`Hunter: ${msg}`)
+    console.log(`  Hunter: ERROR — ${msg}`)
+    return []
   }
+}
 
-  // ─── Summary ───────────────────────────────────────────────────────────────
-  console.log('══════════════════════════════════════════════════════════════')
-  console.log('                   POC RESULTS SUMMARY')
-  console.log('══════════════════════════════════════════════════════════════')
+async function runApolloSearch(
+  domain: string,
+  errors: string[]
+): Promise<Array<{ name: string; title: string; email: string | null }>> {
+  try {
+    const contacts = await apolloOrgSearch(domain)
+    console.log(`  Apollo: ${contacts.length} contacts`)
+    return contacts
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    errors.push(`Apollo: ${msg}`)
+    console.log(`  Apollo: ERROR — ${msg}`)
+    return []
+  }
+}
+
+function mergeHunterContacts(
+  hunterContacts: HunterContact[],
+  seenNames: Set<string>
+): ContactFound[] {
+  const merged: ContactFound[] = []
+  for (const c of hunterContacts) {
+    const name = `${c.firstName} ${c.lastName}`.trim()
+    if (!name || seenNames.has(name.toLowerCase())) continue
+    seenNames.add(name.toLowerCase())
+    merged.push({
+      name,
+      role: c.position || 'Unknown',
+      email: c.email ?? null,
+      emailSource: c.email ? 'hunter' : 'none',
+      emailConfidence: c.email ? (c.confidence ?? 90) : 0,
+      emailStatus: c.email ? 'verified' : 'unknown',
+    })
+  }
+  return merged
+}
+
+function mergeApolloContacts(
+  apolloContacts: Array<{ name: string; title: string; email: string | null }>,
+  seenNames: Set<string>
+): ContactFound[] {
+  const merged: ContactFound[] = []
+  for (const c of apolloContacts) {
+    if (!c.name || seenNames.has(c.name.toLowerCase())) continue
+    seenNames.add(c.name.toLowerCase())
+    merged.push({
+      name: c.name,
+      role: c.title || 'Unknown',
+      email: c.email,
+      emailSource: c.email ? 'apollo' : 'none',
+      emailConfidence: c.email ? 80 : 0,
+      emailStatus: c.email ? 'probable' : 'unknown',
+    })
+  }
+  return merged
+}
+
+function inferEmailsForContacts(contacts: ContactFound[], domain: string, mxValid: boolean): void {
+  for (const contact of contacts) {
+    if (contact.email) continue
+    if (!mxValid) continue
+
+    const parts = contact.name.split(/\s+/)
+    if (parts.length < 2) continue
+
+    const patterns = inferEmailPatterns(parts[0], parts.slice(1).join(' '), domain)
+    if (patterns.length > 0) {
+      contact.email = patterns[0]
+      contact.emailSource = 'inferred'
+      contact.emailConfidence = 40
+      contact.emailStatus = 'probable'
+    }
+  }
+}
+
+function logTopContacts(contacts: ContactFound[]): void {
+  for (const c of contacts) {
+    const emailStr = c.email
+      ? `${c.email} (${c.emailSource}, ${c.emailConfidence}%)`
+      : 'NO EMAIL'
+    console.log(`  → ${c.name} — ${c.role} — ${emailStr}`)
+  }
+}
+
+async function processSingleCompany(company: CompanyTest): Promise<CompanyResult> {
+  console.log(`--- ${company.name} (${company.domain}, ${company.city}) ---`)
+  const start = Date.now()
+  const errors: string[] = []
+
+  // Step 1: Visa Check
+  const visa = await runVisaCheck(company.name, company.expectedVisa, errors)
+
+  // Step 2: Hunter Domain Search
+  const hunterContacts = await runHunterSearch(company.domain, errors)
+
+  // Step 3: Apollo Org Search
+  const apolloContacts = await runApolloSearch(company.domain, errors)
+
+  // Step 4: Merge & Deduplicate
+  const seenNames = new Set<string>()
+  const allContacts: ContactFound[] = [
+    ...mergeHunterContacts(hunterContacts, seenNames),
+    ...mergeApolloContacts(apolloContacts, seenNames),
+  ]
+  allContacts.sort((a, b) => roleScore(b.role) - roleScore(a.role))
+
+  // Step 5: Pattern inference for contacts without email
+  const mxValid = await verifyMx(company.domain)
+  const top5 = allContacts.slice(0, 5)
+  inferEmailsForContacts(top5, company.domain, mxValid)
+
+  logTopContacts(top5)
+
+  const contactsWithEmail = top5.filter((c) => c.email).length
+  const contactsWithVerifiedEmail = top5.filter(
+    (c) => c.email && (c.emailStatus === 'verified' || c.emailConfidence >= 80)
+  ).length
+
+  const durationMs = Date.now() - start
+  console.log(`  ⏱ ${(durationMs / 1000).toFixed(1)}s | ${errors.length} errors`)
   console.log('')
 
+  return {
+    company: company.name,
+    domain: company.domain,
+    city: company.city,
+    visaStatus: visa.status,
+    visaConfidence: visa.confidence,
+    visaMatchedName: visa.matchedName,
+    visaExpected: company.expectedVisa,
+    visaCorrect: visa.correct,
+    hunterContactsFound: hunterContacts.length,
+    apolloContactsFound: apolloContacts.length,
+    contacts: top5,
+    contactsWithEmail,
+    contactsWithVerifiedEmail,
+    durationMs,
+    errors,
+  }
+}
+
+function printResultsTable(results: CompanyResult[]): void {
   console.log(
     'Company'.padEnd(16) +
       'Visa'.padEnd(18) +
@@ -523,7 +542,9 @@ async function run() {
     )
   }
   console.log('─'.repeat(75))
+}
 
+function printMetrics(results: CompanyResult[]): void {
   const total = results.length
   const visaResolved = results.filter((r) => r.visaStatus !== 'unknown').length
   const visaCorrect = results.filter((r) => r.visaCorrect).length
@@ -548,11 +569,11 @@ async function run() {
   console.log(`  Total time:           ${(totalTime / 1000).toFixed(1)}s`)
   console.log(`  Errors:               ${totalErrors}`)
   console.log(`  Cost:                 ~$0 (free tiers)`)
-  console.log('')
 
   const visaPct = (visaResolved / total) * 100
   const emailPct = totalTested > 0 ? (totalWithEmail / totalTested) * 100 : 0
 
+  console.log('')
   console.log('GO/NO-GO:')
   console.log(`  Visa ≥80%:   ${visaPct >= 80 ? '✅ PASS' : '❌ FAIL'} (${visaPct.toFixed(0)}%)`)
   console.log(`  Email ≥70%:  ${emailPct >= 70 ? '✅ PASS' : '❌ FAIL'} (${emailPct.toFixed(0)}%)`)
@@ -567,6 +588,34 @@ async function run() {
       }
     }
   }
+}
+
+// ─── Main ────────────────────────────────────────────────────────────────────
+
+async function run() {
+  console.log('=== POC Pipeline — 10 NZ Companies ===')
+  console.log(`Hunter API: ${HUNTER_API_KEY ? '✅ configured' : '❌ missing'}`)
+  console.log(`Apollo API: ${APOLLO_API_KEY ? '✅ configured' : '❌ missing'}`)
+  console.log('')
+
+  const results: CompanyResult[] = []
+
+  for (const company of NZ_COMPANIES) {
+    const result = await processSingleCompany(company)
+    results.push(result)
+
+    // Rate limiting
+    await new Promise((r) => setTimeout(r, 1500))
+  }
+
+  // ─── Summary ───────────────────────────────────────────────────────────────
+  console.log('══════════════════════════════════════════════════════════════')
+  console.log('                   POC RESULTS SUMMARY')
+  console.log('══════════════════════════════════════════════════════════════')
+  console.log('')
+
+  printResultsTable(results)
+  printMetrics(results)
 }
 
 function pct(a: number, b: number): string {

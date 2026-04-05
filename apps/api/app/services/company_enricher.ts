@@ -86,25 +86,35 @@ export default class CompanyEnricher {
       return { companyId: company.id, teamMembers: [], crawledUrls: [], errors: ['No domain'] }
     }
 
-    // Update domain on company if missing
     if (!company.domain) {
       company.domain = domain
     }
 
     const baseUrl = `https://${domain}`
-    const crawledUrls: string[] = []
-    const errors: string[] = []
-    const allMembers: TeamMember[] = []
 
-    // Check robots.txt first
     const robotsAllowed = await this.checkRobots(baseUrl)
     if (!robotsAllowed) {
-      errors.push('Crawl disallowed by robots.txt')
-      return { companyId: company.id, teamMembers: [], crawledUrls, errors }
+      return { companyId: company.id, teamMembers: [], crawledUrls: [], errors: ['Crawl disallowed by robots.txt'] }
     }
 
-    // Try each path, stop after finding 2 pages with members
+    const { allMembers, crawledUrls } = await this.crawlTeamPages(baseUrl)
+    const uniqueMembers = this.deduplicateMembers(allMembers)
+    await this.persistTeamMembers(uniqueMembers, userId, company.id, sourcingRunId)
+
+    company.teamCrawledAt = DateTime.now()
+    await company.save()
+
+    return { companyId: company.id, teamMembers: uniqueMembers, crawledUrls, errors: [] }
+  }
+
+  /**
+   * Crawl team pages on the company website, stopping after 2 successful pages or 5 total attempts.
+   */
+  private async crawlTeamPages(baseUrl: string): Promise<{ allMembers: TeamMember[]; crawledUrls: string[] }> {
+    const crawledUrls: string[] = []
+    const allMembers: TeamMember[] = []
     let successfulPages = 0
+
     for (const path of TEAM_PATHS) {
       if (successfulPages >= 2) break
       if (crawledUrls.length >= 5) break
@@ -124,20 +134,33 @@ export default class CompanyEnricher {
       }
     }
 
-    // Deduplicate by name
+    return { allMembers, crawledUrls }
+  }
+
+  /**
+   * Deduplicate team members by name.
+   */
+  private deduplicateMembers(members: TeamMember[]): TeamMember[] {
     const seen = new Set<string>()
-    const uniqueMembers = allMembers.filter((m) => {
+    return members.filter((m) => {
       const key = m.fullName.toLowerCase()
       if (seen.has(key)) return false
       seen.add(key)
       return true
     })
+  }
 
-    // Persist as contacts
-    let persisted = 0
-    for (const member of uniqueMembers) {
+  /**
+   * Persist team members as contacts, skipping duplicates by email.
+   */
+  private async persistTeamMembers(
+    members: TeamMember[],
+    userId: string,
+    companyId: string,
+    sourcingRunId: string | null
+  ): Promise<void> {
+    for (const member of members) {
       try {
-        // Skip if already exists
         if (member.email) {
           const existing = await Contact.query()
             .where('userId', userId)
@@ -148,7 +171,7 @@ export default class CompanyEnricher {
 
         await Contact.create({
           userId,
-          companyId: company.id,
+          companyId,
           sourcingRunId,
           fullName: member.fullName,
           role: member.role,
@@ -160,17 +183,10 @@ export default class CompanyEnricher {
           source: 'company_team',
           status: 'identified',
         })
-        persisted++
       } catch {
         // Skip duplicates
       }
     }
-
-    // Update company crawl timestamp
-    company.teamCrawledAt = DateTime.now()
-    await company.save()
-
-    return { companyId: company.id, teamMembers: uniqueMembers, crawledUrls, errors }
   }
 
   private async crawlPage(url: string): Promise<TeamMember[]> {
@@ -191,17 +207,30 @@ export default class CompanyEnricher {
 
   private extractTeamMembers(html: string, pageUrl: string): TeamMember[] {
     const root = parse(html)
-    const members: TeamMember[] = []
 
-    // Extract emails visible in the page (bonus — not for team page extraction itself)
     const pageText = root.text
     const emailsInPage = pageText.match(EMAIL_REGEX) ?? []
     const professionalEmails = emailsInPage.filter(
       (e) => !e.match(/^(info|contact|hello|hi|support|noreply|no-reply|admin|careers|jobs|hr)@/i)
     )
 
-    // Look for structured person cards: elements with both name-like text and role-like text
-    // Common patterns: .team-member, .person, .staff, article with h3+p, etc.
+    const members = this.extractMembersFromCards(root, pageUrl, professionalEmails)
+
+    if (members.length === 0) {
+      return this.extractMembersFromHeadings(root, pageUrl).slice(0, 20)
+    }
+
+    return members.slice(0, 20)
+  }
+
+  /**
+   * Extract team members from structured card elements (e.g. .team-member, .person).
+   */
+  private extractMembersFromCards(
+    root: ReturnType<typeof parse>,
+    pageUrl: string,
+    professionalEmails: string[]
+  ): TeamMember[] {
     const cardSelectors = [
       '.team-member',
       '.person',
@@ -217,35 +246,43 @@ export default class CompanyEnricher {
     for (const selector of cardSelectors) {
       try {
         const cards = root.querySelectorAll(selector)
+        const members: TeamMember[] = []
         for (const card of cards) {
           const member = this.parseCard(card.text, pageUrl, professionalEmails)
           if (member) members.push(member)
         }
+        if (members.length > 0) return members
       } catch {
         // Ignore selector errors
       }
-
-      if (members.length > 0) break
     }
 
-    // Fallback: scan headings followed by role-like text
-    if (members.length === 0) {
-      const headings = root.querySelectorAll('h2, h3, h4')
-      for (const heading of headings) {
-        const name = heading.text.trim()
-        if (!this.looksLikeName(name)) continue
+    return []
+  }
 
-        const next = heading.nextElementSibling
-        const role = next?.text?.trim() ?? ''
-        if (!role || role.length > 80) continue
+  /**
+   * Fallback extraction: scan headings followed by role-like text.
+   */
+  private extractMembersFromHeadings(
+    root: ReturnType<typeof parse>,
+    pageUrl: string
+  ): TeamMember[] {
+    const members: TeamMember[] = []
+    const headings = root.querySelectorAll('h2, h3, h4')
 
-        if (!this.isOperationalRole(role)) continue
+    for (const heading of headings) {
+      const name = heading.text.trim()
+      if (!this.looksLikeName(name)) continue
 
-        members.push({ fullName: name, role, pageUrl })
-      }
+      const next = heading.nextElementSibling
+      const role = next?.text?.trim() ?? ''
+      if (!role || role.length > 80) continue
+      if (!this.isOperationalRole(role)) continue
+
+      members.push({ fullName: name, role, pageUrl })
     }
 
-    return members.slice(0, 20) // Cap per page
+    return members
   }
 
   private parseCard(

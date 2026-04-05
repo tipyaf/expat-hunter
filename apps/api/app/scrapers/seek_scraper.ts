@@ -76,132 +76,112 @@ export class SeekScraper extends BaseScraper {
   }
 
   async scrape(params: ScrapeParams): Promise<RawContact[]> {
-    if (!this.isConfigured) {
-      return []
-    }
+    if (!this.isConfigured) return []
 
-    let keywords = params.keywords?.join(' ') ?? params.sector ?? 'technology'
-    // Append city to search term if provided (Seek filters by location in search)
-    if (params.city) keywords = `${keywords} ${params.city}`
-    const maxResults = Math.min(params.maxResults ?? 20, 50) // Cap to control costs
+    const keywords = this.buildKeywords(params)
+    const maxResults = Math.min(params.maxResults ?? 20, 50)
 
     try {
-      // Start the actor run synchronously (waits for completion)
-      const response = await fetch(
-        `https://api.apify.com/v2/acts/${SeekScraper.ACTOR_ID}/run-sync-get-dataset-items?token=${this.apiToken}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            searchTerm: keywords,
-            country: this.seekCountry,
-            maxResults,
-          }),
-        }
-      )
+      const items = await this.callApifyActor(keywords, maxResults)
+      if (!items || items.length === 0) return []
 
-      if (!response.ok) {
-        throw new Error(`Apify Seek actor returned ${response.status}`)
-      }
-
-      const items = (await response.json()) as SeekApifyResult[]
-
-      if (!Array.isArray(items) || items.length === 0) {
-        return []
-      }
-
-      // Extract unique companies from job listings
-      const companyMap = new Map<string, { job: SeekApifyResult; emails: string[] }>()
-
-      for (const item of items) {
-        const companyName =
-          item.companyProfile?.name ??
-          item.advertiser?.name ??
-          null
-
-        if (!companyName) continue
-
-        const key = companyName.toLowerCase()
-        if (!companyMap.has(key)) {
-          companyMap.set(key, {
-            job: item,
-            emails: item.emails ?? [],
-          })
-        } else {
-          // Merge emails from duplicate company listings
-          const existing = companyMap.get(key)!
-          if (item.emails) {
-            existing.emails.push(...item.emails)
-          }
-        }
-      }
-
-      // Convert to RawContacts
-      const contacts: RawContact[] = []
-
-      for (const [, { job, emails }] of companyMap) {
-        const companyName = job.companyProfile?.name ?? job.advertiser?.name ?? 'Unknown'
-        const uniqueEmails = [...new Set(emails)]
-        const website = this.cleanValue(job.companyProfile?.website)
-        const sector = this.cleanValue(job.companyProfile?.industry)
-        const city = job.joblocationInfo?.location ?? job.joblocationInfo?.suburb ?? undefined
-
-        // Try NLP extraction from job description
-        const nlpContact = this.extractContactFromDescription(job.description ?? '')
-
-        if (nlpContact) {
-          contacts.push({
-            fullName: nlpContact.name,
-            role: job.title,
-            email: nlpContact.email,
-            emailSource: 'scraped',
-            emailConfidence: 95,
-            companyName,
-            companyWebsite: website,
-            companySector: sector,
-            companyCity: city,
-            companyCountry: params.country,
-            source: 'seek',
-            sourceDetail: job.jobLink,
-          })
-        } else if (uniqueEmails.length > 0) {
-          for (const email of uniqueEmails) {
-            contacts.push({
-              fullName: 'Hiring Manager',
-              role: job.title,
-              email,
-              emailSource: 'scraped',
-              emailConfidence: 70,
-              companyName,
-              companyWebsite: website,
-              companySector: sector,
-              companyCity: city,
-              companyCountry: params.country,
-              source: 'seek',
-              sourceDetail: job.jobLink,
-            })
-          }
-        } else {
-          // No email — create company placeholder for CompanyEnricher to enrich later
-          contacts.push({
-            fullName: 'Hiring Manager',
-            role: job.title,
-            companyName,
-            companyWebsite: website,
-            companySector: sector,
-            companyCity: city,
-            companyCountry: params.country,
-            source: 'seek',
-            sourceDetail: job.jobLink,
-          })
-        }
-      }
+      const companyMap = this.buildCompanyMap(items)
+      const contacts = this.convertToRawContacts(companyMap, params.country)
 
       return this.deduplicateContacts(contacts)
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error'
       throw new Error(`SeekScraper (${this.country}): ${message}`)
     }
+  }
+
+  /** Build search keywords from params, appending city if provided. */
+  private buildKeywords(params: ScrapeParams): string {
+    let keywords = params.keywords?.join(' ') ?? params.sector ?? 'technology'
+    if (params.city) keywords = `${keywords} ${params.city}`
+    return keywords
+  }
+
+  /** Call the Apify Seek actor and return parsed results. */
+  private async callApifyActor(keywords: string, maxResults: number): Promise<SeekApifyResult[]> {
+    const response = await fetch(
+      `https://api.apify.com/v2/acts/${SeekScraper.ACTOR_ID}/run-sync-get-dataset-items?token=${this.apiToken}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          searchTerm: keywords,
+          country: this.seekCountry,
+          maxResults,
+        }),
+      }
+    )
+
+    if (!response.ok) {
+      throw new Error(`Apify Seek actor returned ${response.status}`)
+    }
+
+    const items = (await response.json()) as SeekApifyResult[]
+    return Array.isArray(items) ? items : []
+  }
+
+  /** Deduplicate job listings by company name, merging emails. */
+  private buildCompanyMap(items: SeekApifyResult[]): Map<string, { job: SeekApifyResult; emails: string[] }> {
+    const companyMap = new Map<string, { job: SeekApifyResult; emails: string[] }>()
+
+    for (const item of items) {
+      const companyName = item.companyProfile?.name ?? item.advertiser?.name ?? null
+      if (!companyName) continue
+
+      const key = companyName.toLowerCase()
+      if (!companyMap.has(key)) {
+        companyMap.set(key, { job: item, emails: item.emails ?? [] })
+      } else {
+        const existing = companyMap.get(key)!
+        if (item.emails) existing.emails.push(...item.emails)
+      }
+    }
+
+    return companyMap
+  }
+
+  /** Convert deduplicated company map to RawContact array. */
+  private convertToRawContacts(
+    companyMap: Map<string, { job: SeekApifyResult; emails: string[] }>,
+    country: string
+  ): RawContact[] {
+    const contacts: RawContact[] = []
+
+    for (const [, { job, emails }] of companyMap) {
+      const companyName = job.companyProfile?.name ?? job.advertiser?.name ?? 'Unknown'
+      const uniqueEmails = [...new Set(emails)]
+      const website = this.cleanValue(job.companyProfile?.website)
+      const sector = this.cleanValue(job.companyProfile?.industry)
+      const city = job.joblocationInfo?.location ?? job.joblocationInfo?.suburb ?? undefined
+      const nlpContact = this.extractContactFromDescription(job.description ?? '')
+
+      const base = {
+        companyName,
+        companyWebsite: website,
+        companySector: sector,
+        companyCity: city,
+        companyCountry: country,
+        source: 'seek' as const,
+        sourceDetail: job.jobLink,
+      }
+
+      if (nlpContact) {
+        contacts.push({ ...base, fullName: nlpContact.name, role: job.title, email: nlpContact.email, emailSource: 'scraped', emailConfidence: 95 })
+      } else if (uniqueEmails.length > 0) {
+        for (const email of uniqueEmails) {
+          contacts.push({ ...base, fullName: 'Hiring Manager', role: job.title, email, emailSource: 'scraped', emailConfidence: 70 })
+        }
+      } else {
+        contacts.push({ ...base, fullName: 'Hiring Manager', role: job.title })
+      }
+    }
+
+    return contacts
   }
 
   /** Extract named contact + email from job description text using NLP patterns */

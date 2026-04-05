@@ -573,3 +573,14 @@ features:
     started_at: "2026-04-04"
     validated_at: "2026-04-04"
     notes: "Docker compose in .devtools/, scripts in root package.json, credentials from .env. 7/7 ACs pass. PR #135."
+
+  - id: "sc-763"
+    name: "refacto: reduce cognitive complexity in critical functions (SonarQube S3776)"
+    priority: "chore"
+    status: "refined"
+    cycles: 0
+    story_file: "_work/spec/sc-763.yaml"
+    depends_on: []
+    started_at: ""
+    validated_at: ""
+    notes: "15 functions across 12 files. CC range 16–83. Extract helpers, early returns, lookup tables."

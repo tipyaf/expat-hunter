@@ -11,7 +11,7 @@
  * No concurrent runs for the same userId.
  */
 import Company from '#models/company'
-import Contact from '#models/contact'
+import Contact, { type RelevanceLabel, type AiRecommendation, type EmailSource } from '#models/contact'
 import SourcingRun from '#models/sourcing_run'
 import ContextEnrichmentService from '#services/context_enrichment_service'
 import EmailEnricher from '#services/email_enricher'
@@ -159,15 +159,11 @@ export default class SourcingOrchestrator {
       if (!company.domain) continue
 
       try {
-        // Get named contacts from Hunter
         const hunterContacts = await this.hunterScraper.searchDomain(company.domain, country)
 
         for (const raw of hunterContacts) {
-          // Skip generic names
-          const name = raw.fullName.toLowerCase().trim()
-          if (!name || name === 'hiring manager' || name === 'contact' || name === 'unknown') continue
+          if (!this.isValidHunterContact(raw)) continue
 
-          // Skip if already exists (by email)
           if (raw.email) {
             const existing = await Contact.query()
               .where('userId', userId)
@@ -176,20 +172,7 @@ export default class SourcingOrchestrator {
             if (existing) continue
           }
 
-          await Contact.create({
-            userId,
-            companyId: company.id,
-            sourcingRunId: runId,
-            fullName: raw.fullName,
-            role: raw.role ?? 'Unknown',
-            email: raw.email ?? null,
-            source: raw.source,
-            sourceDetail: raw.sourceDetail ?? null,
-            emailSource: raw.emailSource ?? null,
-            emailConfidence: raw.emailConfidence ?? null,
-            emailStatus: raw.email ? 'probable' : null,
-            status: 'identified',
-          })
+          await this.createHunterContact(raw, userId, company.id, runId)
           added++
         }
       } catch {
@@ -198,6 +181,34 @@ export default class SourcingOrchestrator {
     }
 
     return added
+  }
+
+  private isValidHunterContact(raw: { fullName: string }): boolean {
+    const name = raw.fullName.toLowerCase().trim()
+    const genericNames = ['', 'hiring manager', 'contact', 'unknown']
+    return !genericNames.includes(name)
+  }
+
+  private async createHunterContact(
+    raw: { fullName: string; role?: string; email?: string; source: string; sourceDetail?: string; emailSource?: EmailSource; emailConfidence?: number },
+    userId: string,
+    companyId: string,
+    runId: string
+  ): Promise<void> {
+    await Contact.create({
+      userId,
+      companyId,
+      sourcingRunId: runId,
+      fullName: raw.fullName,
+      role: raw.role ?? 'Unknown',
+      email: raw.email ?? null,
+      source: raw.source,
+      sourceDetail: raw.sourceDetail ?? null,
+      emailSource: raw.emailSource ?? null,
+      emailConfidence: raw.emailConfidence ?? null,
+      emailStatus: raw.email ? 'probable' : null,
+      status: 'identified',
+    })
   }
 
   private async enrichCompanies(companies: Company[]): Promise<number> {
@@ -282,16 +293,8 @@ export default class SourcingOrchestrator {
         contact.relevanceScore = result.score
         contact.scoreBreakdown = result.breakdown as unknown as Record<string, unknown>
         contact.scoreVersion = result.version
-
-        // Set label based on score
-        contact.relevanceLabel = result.score >= 70 ? 'very_relevant'
-          : result.score >= 50 ? 'relevant'
-          : result.score >= 30 ? 'to_review'
-          : 'not_relevant'
-
-        contact.aiRecommendation = result.score >= 50 ? 'contact'
-          : result.score >= 30 ? 'manual_review'
-          : 'skip'
+        contact.relevanceLabel = this.getRelevanceLabel(result.score)
+        contact.aiRecommendation = this.getAiRecommendation(result.score)
 
         await contact.save()
         scored++
@@ -301,6 +304,19 @@ export default class SourcingOrchestrator {
     }
 
     return scored
+  }
+
+  private getRelevanceLabel(score: number): RelevanceLabel {
+    if (score >= 70) return 'very_relevant'
+    if (score >= 50) return 'relevant'
+    if (score >= 30) return 'to_review'
+    return 'not_relevant'
+  }
+
+  private getAiRecommendation(score: number): AiRecommendation {
+    if (score >= 50) return 'contact'
+    if (score >= 30) return 'manual_review'
+    return 'skip'
   }
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
