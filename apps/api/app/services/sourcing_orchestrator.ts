@@ -267,9 +267,10 @@ export default class SourcingOrchestrator {
 
       try {
         const result = await this.emailVerifier.verify(contact.email)
-        contact.emailStatus = result.status === 'verified' ? 'verified'
-          : result.status === 'invalid' ? 'bounced'
+        const emailStatus = result.status === 'verified'
+          ? 'verified'
           : 'probable'
+        contact.emailStatus = result.status === 'invalid' ? 'bounced' : emailStatus
         contact.emailConfidence = result.confidence
         contact.emailVerifiedAt = DateTime.now()
         contact.emailVerifyMethod = result.method

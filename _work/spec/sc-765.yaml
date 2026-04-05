@@ -1,0 +1,98 @@
+# =============================================================================
+# Story: sc-765 — Extract nested ternaries into named variables (SonarQube S3358)
+# =============================================================================
+# Build contract — developer implements exactly this, validator checks exactly this.
+# =============================================================================
+
+story:
+  id: "sc-765"
+  name: "refacto: extract nested ternaries into named variables (SonarQube S3358)"
+  type: "chore"
+  size: "S"
+  estimate: 2
+  priority: "medium"
+  parent_feature: null
+  depends_on: []
+  adr_required: false
+
+user_story: |
+  As a developer,
+  I want nested ternary operations replaced with named variables or if/else blocks,
+  so the code is readable and SonarQube S3358 violations are resolved.
+
+scope:
+  files_to_modify:
+    - path: "apps/api/app/ai/prompts/email_prompt.ts"
+      description: "Extract nested ternaries at line 137 (x2)"
+    - path: "apps/api/app/services/search_orchestrator_service.ts"
+      description: "Extract nested ternary at line 351"
+    - path: "apps/api/app/services/sourcing_orchestrator.ts"
+      description: "Extract nested ternaries at lines 260, 288, 289, 293"
+    - path: "apps/api/app/services/context_enrichment_service.ts"
+      description: "Extract nested ternary at line 89"
+    - path: "apps/api/commands/poc_pipeline.ts"
+      description: "Extract nested ternary at line 104"
+    - path: "apps/api/app/services/reply_generation_service.ts"
+      description: "Extract nested ternary at line 26"
+    - path: "apps/api/app/services/visa_sponsor_registry.ts"
+      description: "Extract nested ternary at line 848"
+    - path: "apps/api/app/services/expat_scoring_service.ts"
+      description: "Extract nested ternaries at lines 43, 119"
+    - path: "apps/frontend/src/app/parametres/presets/page.tsx"
+      description: "Extract nested ternary at line 274"
+    - path: "apps/frontend/src/app/parametres/templates/page.tsx"
+      description: "Extract nested ternary at line 176"
+    - path: "apps/frontend/src/components/ui/country-select.tsx"
+      description: "Extract nested ternary at line 164"
+    - path: "apps/frontend/src/app/parametres/blocages/page.tsx"
+      description: "Extract nested ternary at line 35"
+    - path: "apps/frontend/src/components/ui/progress-bar-multi-step.tsx"
+      description: "Extract nested ternaries at lines 78, 117"
+    - path: "apps/frontend/src/components/ui/score-breakdown.tsx"
+      description: "Extract nested ternary at line 46"
+    - path: "apps/frontend/src/app/page.tsx"
+      description: "Extract nested ternary at line 81"
+    - path: "apps/frontend/src/app/contacts/page.tsx"
+      description: "Extract nested ternary at line 269"
+  files_to_read: []
+  files_to_create: []
+
+acceptance_criteria:
+  - id: "AC-FUNC-765-01"
+    type: "FUNC"
+    description: "Given all 15 files / When SonarQube re-scanned / Then 0 S3358 violations remain"
+    verify: "curl -s 'http://localhost:9000/api/issues/search?projectKeys=expathunter&rules=typescript:S3358&statuses=OPEN&ps=1' -H \"Authorization: Bearer $(grep '^SONAR_TOKEN=' .env | cut -d= -f2)\" | grep -o '\"total\":[0-9]*' | grep -q '\"total\":0' && echo PASS"
+    tier: 2
+
+  - id: "AC-FUNC-765-02"
+    type: "FUNC"
+    description: "Given the codebase / When tsc --noEmit runs / Then 0 new TypeScript errors introduced"
+    verify: "cd apps/api && PATH='/opt/homebrew/bin:$PATH' npx tsc --noEmit 2>&1 | grep -c 'error TS' | xargs test 24 -ge && echo PASS"
+    tier: 2
+
+  - id: "AC-FUNC-765-03"
+    type: "FUNC"
+    description: "Given the codebase / When unit tests run / Then all pass (no regressions)"
+    verify: "cd apps/api && PATH='/opt/homebrew/bin:$PATH' pnpm test 2>&1 | tail -5"
+    tier: 2
+
+  - id: "AC-SEC-765-01"
+    type: "SEC"
+    description: "Given all modified files / When checked / Then no any type introduced"
+    verify: "git diff origin/main --unified=0 -- 'apps/api/**/*.ts' 'apps/frontend/**/*.tsx' | grep '^+' | grep -v '^+++' | grep -c ': any' | xargs test 0 -eq && echo PASS"
+    tier: 1
+
+  - id: "AC-BP-765-01"
+    type: "BP"
+    description: "Given all modified files / When checked / Then only ternary extraction — no logic changes"
+    verify: "git diff origin/main -- 'apps/api/**/*.ts' 'apps/frontend/**/*.tsx' | grep '^+' | grep -v '^+++' | grep -v '^+$' | grep -v 'const ' | grep -v 'let ' | grep -v '//' | grep -vc '?' | xargs test 5 -ge && echo PASS"
+    tier: 1
+
+edge_cases:
+  - "Some ternaries may already be fixed by sc-763 (cognitive complexity refactoring)"
+  - "JSX conditional rendering ({condition ? <A/> : <B/>}) is fine — only nested ternaries flagged"
+  - "Frontend ternaries in JSX may need intermediate const before the return"
+
+test_intentions: []
+
+components: {}

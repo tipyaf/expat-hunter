@@ -38,9 +38,18 @@ export default class ExpatScoringService {
     const total = visa.score + role.score + hiring.score + expatFriendly.score + momentum.score
 
     // Backwards-compatible factors for frontend (maps sub-scores to flat factors)
+    let roleImpact: ConfidenceFactor['impact']
+    if (role.score > 15) {
+      roleImpact = 'positive'
+    } else if (role.score > 5) {
+      roleImpact = 'neutral'
+    } else {
+      roleImpact = 'negative'
+    }
+
     const factors: ConfidenceFactor[] = [
       { label: visa.explanation, impact: visa.score > 0 ? 'positive' : 'negative', weight: visa.score },
-      { label: role.explanation, impact: role.score > 15 ? 'positive' : role.score > 5 ? 'neutral' : 'negative', weight: role.score },
+      { label: role.explanation, impact: roleImpact, weight: role.score },
       { label: hiring.explanation, impact: hiring.score > 10 ? 'positive' : 'neutral', weight: hiring.score },
       { label: expatFriendly.explanation, impact: expatFriendly.score > 7 ? 'positive' : 'neutral', weight: expatFriendly.score },
       { label: momentum.explanation, impact: momentum.score > 5 ? 'positive' : 'neutral', weight: momentum.score },
@@ -114,11 +123,14 @@ export default class ExpatScoringService {
     // Use existing AI relevance score if available
     if (contact.relevanceScore !== null) {
       const normalized = Math.round((contact.relevanceScore / 100) * 30)
-      const label = contact.relevanceLabel === 'very_relevant'
-        ? 'Très pertinent selon l\'IA'
-        : contact.relevanceLabel === 'relevant'
-          ? 'Pertinent selon l\'IA'
-          : 'Pertinence limitée selon l\'IA'
+      let label: string
+      if (contact.relevanceLabel === 'very_relevant') {
+        label = 'Très pertinent selon l\'IA'
+      } else if (contact.relevanceLabel === 'relevant') {
+        label = 'Pertinent selon l\'IA'
+      } else {
+        label = 'Pertinence limitée selon l\'IA'
+      }
       return { score: normalized, maxScore: 30, explanation: `${label} — ${contact.role}` }
     }
 

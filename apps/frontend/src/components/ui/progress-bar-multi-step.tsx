@@ -65,6 +65,18 @@ function stepIcon(status: 'completed' | 'active' | 'pending' | 'failed', index: 
   return String(index + 1)
 }
 
+function getProgressBarColor(status: string): string {
+  if (status === 'failed') return 'bg-red-500'
+  if (status === 'completed') return 'bg-green-500'
+  return 'bg-blue-500'
+}
+
+function getStatusText(status: string, progressPercent: number, searchComplete: string, searchFailed: string): string {
+  if (status === 'completed') return searchComplete
+  if (status === 'failed') return searchFailed
+  return `${progressPercent}%`
+}
+
 export function ProgressBarMultiStep({ steps, currentStep, progressPercent, status }: ProgressBarMultiStepProps) {
   const t = useTranslations('search')
   const currentStepIndex = steps.findIndex((s) => s.key === currentStep)
@@ -74,9 +86,7 @@ export function ProgressBarMultiStep({ steps, currentStep, progressPercent, stat
       {/* Progress bar */}
       <div className="w-full h-2 bg-[var(--color-border)] rounded-full mb-4 overflow-hidden">
         <div
-          className={`h-full rounded-full transition-all duration-500 ease-out ${
-            status === 'failed' ? 'bg-red-500' : status === 'completed' ? 'bg-green-500' : 'bg-blue-500'
-          }`}
+          className={`h-full rounded-full transition-all duration-500 ease-out ${getProgressBarColor(status)}`}
           style={{ width: `${progressPercent}%` }}
         />
       </div>
@@ -112,11 +122,7 @@ export function ProgressBarMultiStep({ steps, currentStep, progressPercent, stat
 
       {/* Percentage */}
       <p className="text-center text-sm text-[var(--color-text-muted)] mt-3">
-        {status === 'completed'
-          ? t('searchComplete')
-          : status === 'failed'
-            ? t('searchFailed')
-            : `${progressPercent}%`}
+        {getStatusText(status, progressPercent, t('searchComplete'), t('searchFailed'))}
       </p>
     </div>
   )

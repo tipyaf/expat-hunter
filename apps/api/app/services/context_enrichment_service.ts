@@ -85,8 +85,14 @@ export default class ContextEnrichmentService {
     // Determine data quality
     const fieldCount = [culture, techStack.length > 0, aboutSummary, expatFriendlySignals.length > 0]
       .filter(Boolean).length
-    const dataQuality: CompanyContextData['dataQuality'] =
-      fieldCount >= 3 ? 'high' : fieldCount >= 1 ? 'medium' : 'low'
+    let dataQuality: CompanyContextData['dataQuality']
+    if (fieldCount >= 3) {
+      dataQuality = 'high'
+    } else if (fieldCount >= 1) {
+      dataQuality = 'medium'
+    } else {
+      dataQuality = 'low'
+    }
 
     return {
       culture,

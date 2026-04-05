@@ -161,7 +161,11 @@ export function CountrySelect({ value, onChange, label }: CountrySelectProps) {
             setIsOpen(true)
           }}
           onFocus={() => setIsOpen(true)}
-          placeholder={value.length === 0 ? (locale === 'fr' ? 'Sélectionner des pays...' : 'Select countries...') : ''}
+          placeholder={(() => {
+            if (value.length > 0) return ''
+            if (locale === 'fr') return 'Sélectionner des pays...'
+            return 'Select countries...'
+          })()}
           className="flex-1 min-w-[120px] bg-transparent text-sm outline-none"
         />
       </div>

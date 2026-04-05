@@ -72,22 +72,29 @@ export default function DashboardPage() {
             <h2 className="text-lg font-semibold mb-4">
               {t('pendingActions', { count: actions.length })}
             </h2>
-            {dashLoading ? (
-              <div className="space-y-3">
-                {[1, 2].map((i) => (
-                  <div key={i} className="h-16 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] animate-pulse" />
-                ))}
-              </div>
-            ) : actions.length === 0 ? (
-              <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-6 text-center">
-                <p className="text-[var(--color-text-muted)]">{t('noActions')}</p>
-                <Link href="/recherche" className="text-primary text-sm font-medium hover:underline mt-2 inline-block">
-                  {t('startSourcing')}
-                </Link>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {actions.map((action) => (
+            {(() => {
+              if (dashLoading) {
+                return (
+                  <div className="space-y-3">
+                    {[1, 2].map((i) => (
+                      <div key={i} className="h-16 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] animate-pulse" />
+                    ))}
+                  </div>
+                )
+              }
+              if (actions.length === 0) {
+                return (
+                  <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-6 text-center">
+                    <p className="text-[var(--color-text-muted)]">{t('noActions')}</p>
+                    <Link href="/recherche" className="text-primary text-sm font-medium hover:underline mt-2 inline-block">
+                      {t('startSourcing')}
+                    </Link>
+                  </div>
+                )
+              }
+              return (
+                <div className="space-y-3">
+                  {actions.map((action) => (
                   <Link
                     key={action.type}
                     href={action.href}
@@ -105,7 +112,8 @@ export default function DashboardPage() {
                   </Link>
                 ))}
               </div>
-            )}
+            )
+            })()}
           </div>
 
           {/* Statistiques rapides */}
