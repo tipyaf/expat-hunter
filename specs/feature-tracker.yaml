@@ -652,14 +652,14 @@ features:
   - id: "job-search-config"
     name: "Job Search Configuration"
     priority: "must-have"
-    status: "building"
+    status: "validated"
     cycles: 1
     story_file: "specs/stories/job-search-config.yaml"
     depends_on: ["candidate-profile"]
     refined_at: "2026-04-07"
     started_at: "2026-04-07"
-    validated_at: ""
-    notes: "CRUD + quota enforcement + /recherche-offres page. Shortcut sc-810, Epic 809 (E10). L (5 pts). 17 ACs."
+    validated_at: "2026-04-08"
+    notes: "CRUD + quota enforcement + /recherche-offres page. Shortcut sc-810, Epic 809 (E10). L (5 pts). 17 ACs. All 11 gates pass. 26 unit + 12 e2e tests. PR #144."
 
   - id: "job-scraping-pipeline"
     name: "Job Scraping Pipeline"
