@@ -103,11 +103,12 @@
 - **Features**: 6 must-have validated, 2 should-have pending, 6 nice-to-have pending
 - **Current sprint**: SonarQube code quality refactoring (145 issues found)
   - sc-755 ✅ validated — single-command local dev startup (PR #135 merged)
-  - sc-764 🔄 refined — add readonly to class members (51 issues, 27 files) → next: `/build`
-  - sc-763 pending — reduce cognitive complexity (16 CRITICAL, 5 pts)
-  - sc-765 pending — extract nested ternaries (~15 issues, 2 pts)
-  - sc-766 pending — fix accessibility HTML native (5 issues, 1 pt)
-  - sc-767 pending — remove useless assignments + misc fixes (3 pts)
+  - sc-764 ✅ validated — add readonly to class members (PR #136 merged)
+  - sc-763 ✅ validated — reduce cognitive complexity (PR #137 merged)
+  - sc-765 ✅ validated — extract nested ternaries (PR #138 merged)
+  - sc-766 ✅ validated/closed — accessibility issues already fixed (0 remaining)
+  - sc-767 ✅ validated — fix misc code smells (PR #139 merged)
+  - sc-808 ✅ validated — persistent Docker volumes for PostgreSQL + Redis (PR #140)
 - **Infra done this session**:
   - Framework updated to v4.0.11 (PR #134)
   - .mcp.json fixed (npx path + PATH env for Shortcut MCP)

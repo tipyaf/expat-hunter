@@ -617,3 +617,14 @@ features:
     started_at: ""
     validated_at: ""
     notes: "32 issues across 5 rules (S2933, S3358, S2004, S4123, S1854). Focus on CRITICAL + MAJOR."
+
+  - id: "sc-808"
+    name: "chore: add persistent Docker volume for local PostgreSQL + Redis"
+    priority: "chore"
+    status: "validated"
+    cycles: 0
+    story_file: "_work/spec/sc-808.yaml"
+    depends_on: []
+    started_at: "2026-04-05"
+    validated_at: "2026-04-05"
+    notes: "Add app-db + redis to docker-compose with named volumes. pnpm db:up/db:down scripts."
