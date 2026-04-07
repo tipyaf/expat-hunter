@@ -81,7 +81,7 @@ export function ActiveSearchCard({ search, onEdit, onDelete, onRun, isRunning }:
             type="button"
             onClick={onRun}
             disabled={isRunning}
-            data-testid="job-search-run-btn"
+            data-testid="job-search-run-now-button"
             className="flex items-center gap-2 rounded-[var(--radius-md)] bg-primary px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-primary/90 disabled:opacity-50"
           >
             <Play className="h-4 w-4" aria-hidden="true" />

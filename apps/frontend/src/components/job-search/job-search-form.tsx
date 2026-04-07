@@ -116,7 +116,7 @@ export function JobSearchForm({ initialData, onSubmit, onCancel, isSubmitting }:
   return (
     <form
       onSubmit={(e) => void handleSubmit(e)}
-      data-testid="job-search-form"
+      data-testid="job-search-config-form"
       className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-6 shadow-sm space-y-5"
     >
       <h2 className="text-lg font-semibold text-[var(--color-text-main)]">
@@ -141,7 +141,7 @@ export function JobSearchForm({ initialData, onSubmit, onCancel, isSubmitting }:
       </div>
 
       {/* Countries */}
-      <div data-testid="job-search-countries-input">
+      <div data-testid="job-search-countries-select">
         <CountrySelect
           label={t('countriesLabel')}
           value={countries}
@@ -166,6 +166,7 @@ export function JobSearchForm({ initialData, onSubmit, onCancel, isSubmitting }:
           {SUPPORTED_PLATFORMS.map((platform) => (
             <label
               key={platform}
+              data-testid={`job-search-platforms-${platform}`}
               className="flex items-center gap-2 cursor-pointer"
             >
               <input
@@ -187,6 +188,7 @@ export function JobSearchForm({ initialData, onSubmit, onCancel, isSubmitting }:
           {SENIORITY_VALUES.map((level) => (
             <label
               key={level}
+              data-testid={`job-search-seniority-${level}`}
               className="flex items-center gap-2 cursor-pointer"
             >
               <input
@@ -263,7 +265,7 @@ export function JobSearchForm({ initialData, onSubmit, onCancel, isSubmitting }:
       </div>
 
       {/* Frequency */}
-      <div data-testid="job-search-frequency-input">
+      <div data-testid="job-search-frequency-select">
         <label htmlFor="frequency" className="block text-sm font-medium mb-1">
           {t('frequencyLabel')}
         </label>
@@ -298,7 +300,7 @@ export function JobSearchForm({ initialData, onSubmit, onCancel, isSubmitting }:
         <button
           type="submit"
           disabled={isSubmitting}
-          data-testid="job-search-submit-btn"
+          data-testid="job-search-save-button"
           className="rounded-[var(--radius-md)] bg-primary px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary/90 disabled:opacity-50"
         >
           {isSubmitting ? t('saving') : (initialData ? t('update') : t('create'))}
