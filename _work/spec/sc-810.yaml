@@ -1,0 +1,35 @@
+# Spec overlay — sc-810 (job-search-config)
+# Changes implied by this story
+
+new_table: job_searches
+new_endpoints:
+  - POST /api/job-searches
+  - GET /api/job-searches
+  - PUT /api/job-searches/:id
+  - DELETE /api/job-searches/:id
+  - POST /api/job-searches/:id/run
+
+new_constants:
+  - FREE_MAX_SEARCHES: 1
+  - PREMIUM_MAX_SEARCHES: 3
+  - SENIORITY_VALUES: ["junior", "intermediate", "senior", "lead", "indifferent"]
+  - SUPPORTED_PLATFORMS: ["seek", "linkedin", "builtin", "zeil"]
+  - MAX_ROLES_PER_SEARCH: 10
+  - MAX_ROLE_LENGTH: 100
+
+new_shared_types:
+  - JobSearch
+  - CreateJobSearchPayload
+  - UpdateJobSearchPayload
+  - JobSearchSeniority
+  - JobSearchPlatform
+
+new_pages:
+  - /recherche-offres
+
+new_components:
+  - JobSearchForm (smart)
+  - ActiveSearchCard (dumb)
+
+i18n_namespaces:
+  - jobSearch

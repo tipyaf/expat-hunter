@@ -31,3 +31,23 @@ export {
 } from './constants/countries'
 export type { PlaceholderContactName } from './constants/contacts'
 export { PLACEHOLDER_CONTACT_NAMES } from './constants/contacts'
+
+// Job search
+export type {
+  JobSearch,
+  JobSearchSeniority,
+  JobSearchPlatform,
+  JobSearchFrequency,
+  JobSearchContractType,
+  CreateJobSearchPayload,
+  UpdateJobSearchPayload,
+} from './types/job-search'
+export {
+  SENIORITY_VALUES,
+  SUPPORTED_PLATFORMS,
+  FREQUENCY_VALUES,
+  MAX_ROLES_PER_SEARCH,
+  MAX_ROLE_LENGTH,
+  FREE_MAX_SEARCHES,
+  PREMIUM_MAX_SEARCHES,
+} from './constants/job-search'
