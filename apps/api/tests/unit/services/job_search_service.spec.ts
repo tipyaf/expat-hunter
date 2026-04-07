@@ -1,5 +1,5 @@
 import { test } from '@japa/runner'
-import { PLAN_FREE, PLAN_PREMIUM, FREE_MAX_SEARCHES, PREMIUM_MAX_SEARCHES } from '@expat-hunter/shared'
+import { PLAN_FREE, PLAN_PREMIUM } from '@expat-hunter/shared'
 import JobSearchService from '#services/job_search_service'
 import JobSearch from '#models/job_search'
 import User from '#models/user'
@@ -13,30 +13,24 @@ test.group('JobSearchService', (group) => {
 
   group.setup(async () => {
     // Create test users
-    let userA = await User.findBy('email', TEST_EMAIL_A)
-    if (!userA) {
-      userA = await User.create({
-        email: TEST_EMAIL_A,
-        password: 'password123',
-        fullName: 'Job Search Test A',
-        locale: 'en',
-        plan: 'free',
-        isAdmin: false,
-      })
-    }
+    const userA = (await User.findBy('email', TEST_EMAIL_A)) ?? (await User.create({
+      email: TEST_EMAIL_A,
+      password: 'password123',
+      fullName: 'Job Search Test A',
+      locale: 'en',
+      plan: 'free',
+      isAdmin: false,
+    }))
     userAId = userA.id
 
-    let userB = await User.findBy('email', TEST_EMAIL_B)
-    if (!userB) {
-      userB = await User.create({
-        email: TEST_EMAIL_B,
-        password: 'password123',
-        fullName: 'Job Search Test B',
-        locale: 'en',
-        plan: 'free',
-        isAdmin: false,
-      })
-    }
+    const userB = (await User.findBy('email', TEST_EMAIL_B)) ?? (await User.create({
+      email: TEST_EMAIL_B,
+      password: 'password123',
+      fullName: 'Job Search Test B',
+      locale: 'en',
+      plan: 'free',
+      isAdmin: false,
+    }))
     userBId = userB.id
 
     // Clean existing searches

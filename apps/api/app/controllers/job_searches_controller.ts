@@ -3,7 +3,7 @@ import JobSearchService from '#services/job_search_service'
 import { createJobSearchValidator, updateJobSearchValidator } from '#validators/job_search_validator'
 
 export default class JobSearchesController {
-  private service = new JobSearchService()
+  private readonly service = new JobSearchService()
 
   /**
    * GET /api/job-searches — List user's job search configurations.

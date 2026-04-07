@@ -153,3 +153,8 @@ Use `stories-update labels:[{name: "scope:building"}]` at each transition.
 **Problem**: Shortcut story descriptions rendered as a single block of text with no formatting. ACs, scope, and context were unreadable.
 **Root cause**: Agent passed the description string with `\n` escape sequences instead of real newlines. The Shortcut API renders them literally.
 **Rule**: ALWAYS use real multi-line strings when calling `stories-update` or `stories-create` for the description field. Never use `\n` in description strings — use actual line breaks.
+
+### [Quality] ALWAYS run SonarQube before commit/PR — it's configured in .devtools
+**Problem**: sc-810 — PR created and merged without running SonarQube. 17 issues (4 Major) found only after the user asked. Required a follow-up fix PR.
+**Root cause**: Agent skipped Gate 3 (Code Quality) tool check. SonarQube is configured in `.devtools/docker-compose.yml` and `.env` but the agent used "reviewer fallback" instead of the actual tool.
+**Rule**: This project has SonarQube configured. ALWAYS run it via `docker run sonarsource/sonar-scanner-cli` (not local Java) BEFORE creating a commit. The command: `source .env && docker run --rm --network host -e SONAR_HOST_URL -e SONAR_TOKEN -v $(pwd):/usr/src sonarsource/sonar-scanner-cli -Dsonar.projectKey=$SONAR_PROJECT_KEY -Dsonar.sources=. -Dsonar.inclusions="<changed-files>" -Dsonar.exclusions="node_modules/**,dist/**" -Dsonar.projectBaseDir=/usr/src`. Fix all Major issues before committing. Minor issues should be fixed too when feasible.

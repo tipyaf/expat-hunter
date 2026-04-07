@@ -6,7 +6,7 @@ import type { JobSearchSeniority, JobSearchPlatform, JobSearchFrequency, JobSear
 import User from './user.js'
 
 export default class JobSearch extends BaseModel {
-  static table = 'job_searches'
+  static readonly table = 'job_searches'
 
   @column({ isPrimary: true })
   declare id: string

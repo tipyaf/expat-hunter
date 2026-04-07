@@ -43,11 +43,12 @@ interface JobSearchFormProps {
   isSubmitting?: boolean
 }
 
-const PREMIUM_FREQUENCIES: JobSearchFrequency[] = ['daily', 'biweekly']
+const PREMIUM_FREQUENCIES = new Set<JobSearchFrequency>(['daily', 'biweekly'])
 
-export function JobSearchForm({ initialData, onSubmit, onCancel, isSubmitting }: JobSearchFormProps) {
+export function JobSearchForm({ initialData, onSubmit, onCancel, isSubmitting }: Readonly<JobSearchFormProps>) {
   const t = useTranslations('jobSearch')
   const { isFree } = usePlan()
+  const submitLabel = initialData ? t('update') : t('create')
 
   const [roles, setRoles] = useState<string[]>(initialData?.roles ?? [])
   const [countries, setCountries] = useState<string[]>(initialData?.countries ?? [])
@@ -280,14 +281,14 @@ export function JobSearchForm({ initialData, onSubmit, onCancel, isSubmitting }:
               <option
                 key={freq}
                 value={freq}
-                disabled={isFree && PREMIUM_FREQUENCIES.includes(freq)}
+                disabled={isFree && PREMIUM_FREQUENCIES.has(freq)}
               >
                 {t(`frequency_${freq}`)}
-                {isFree && PREMIUM_FREQUENCIES.includes(freq) ? ` (${t('premiumOnly')})` : ''}
+                {isFree && PREMIUM_FREQUENCIES.has(freq) ? ` (${t('premiumOnly')})` : ''}
               </option>
             ))}
           </select>
-          {isFree && PREMIUM_FREQUENCIES.includes(frequency) && (
+          {isFree && PREMIUM_FREQUENCIES.has(frequency) && (
             <div className="absolute right-10 top-1/2 -translate-y-1/2">
               <PremiumBadge size="sm" />
             </div>
@@ -303,7 +304,7 @@ export function JobSearchForm({ initialData, onSubmit, onCancel, isSubmitting }:
           data-testid="job-search-save-button"
           className="rounded-[var(--radius-md)] bg-primary px-5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary/90 disabled:opacity-50"
         >
-          {isSubmitting ? t('saving') : (initialData ? t('update') : t('create'))}
+          {isSubmitting ? t('saving') : submitLabel}
         </button>
         {onCancel && (
           <button
