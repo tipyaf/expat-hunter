@@ -35,8 +35,8 @@
 | analytics | nice-to-have | pending | — | 0 |
 | contact-detail-panel | must-have | ✅ validated | specs/stories/contact-detail-panel.yaml | 1 |
 
-| job-search-config | must-have | pending | — | 0 |
-| job-scraping-pipeline | must-have | pending | — | 0 |
+| job-search-config | must-have | ✅ validated | specs/stories/job-search-config.yaml | 1 |
+| job-scraping-pipeline | must-have | 🔄 refining | — | 0 |
 | job-ai-evaluation | must-have | pending | — | 0 |
 | job-company-enrichment | must-have | pending | — | 0 |
 | job-offers-page | must-have | pending | — | 0 |
@@ -47,7 +47,7 @@
 | job-custom-platforms | should-have | pending | — | 0 |
 | job-notifications | nice-to-have | pending | — | 0 |
 
-**Summary**: 25 features total — 6 validated (original MVP), 8 new must-have (job offers pipeline), 11 pending. /spec complete for job offers pipeline — all phases done (0.1 Scoping → 0.2 Clarify → 0.3 UX → 0.5 Ordering → 1.0 Architecture). Feature tracker updated. Next: `/refine` for E10 (job-search-config).
+**Summary**: 25 features total — 7 validated (original MVP + job-search-config), 7 new must-have remaining (job offers pipeline), 11 pending. /spec complete for job offers pipeline. Next: finish `/refine job-scraping-pipeline` (3 decisions pending), then `/build`.
 
 ## Architecture Decisions
 
@@ -115,23 +115,21 @@
 - **Note**: AdonisJS v7 (not v6 as originally planned)
 
 ### Phase 2 — Construction
-- **Status**: 🔄 In progress — SonarQube refactoring sprint
-- **Features**: 6 must-have validated, 2 should-have pending, 6 nice-to-have pending
-- **Current sprint**: SonarQube code quality refactoring (145 issues found)
-  - sc-755 ✅ validated — single-command local dev startup (PR #135 merged)
-  - sc-764 ✅ validated — add readonly to class members (PR #136 merged)
-  - sc-763 ✅ validated — reduce cognitive complexity (PR #137 merged)
-  - sc-765 ✅ validated — extract nested ternaries (PR #138 merged)
-  - sc-766 ✅ validated/closed — accessibility issues already fixed (0 remaining)
-  - sc-767 ✅ validated — fix misc code smells (PR #139 merged)
-  - sc-808 ✅ validated — persistent Docker volumes for PostgreSQL + Redis (PR #140)
-- **Infra done this session**:
-  - Framework updated to v4.0.11 (PR #134)
-  - .mcp.json fixed (npx path + PATH env for Shortcut MCP)
-  - .devtools/docker-compose.yml for SonarQube (credentials from .env)
-  - sonar-project.properties fixed (targeted sources, tests included)
-  - .env.example cleaned (no secrets, security warning added)
-  - README.md updated (description, commands, structure)
+- **Status**: 🔄 In progress — Job Offers pipeline (E10)
+- **Features**: 7 must-have validated (+job-search-config), 2 should-have pending, 6 nice-to-have pending
+- **Current**: Refining job-scraping-pipeline (next in E10 after job-search-config)
+- **Last completed**: sc-810 (job-search-config) — PR #144 + PR #145 (SonarQube fixes) merged
+- **Previous sprint**: SonarQube refactoring (sc-755 to sc-808, all validated)
+- **Refinement in progress — job-scraping-pipeline**:
+  - Split proposed: 2 stories (XL → 2×L)
+  - Story 1: Data model + 4 scrapers (Seek/BuiltIn/Zeil/LinkedIn)
+  - Story 2: Orchestration + dedup + API + quotas
+  - 3 decisions pending user validation:
+    1. BullMQ → reporter à E14 (job-recurring-search), garder sync+polling
+    2. Seek scraper → réutiliser pattern Apify existant (pas Playwright)
+    3. Dédup IA → v1 rules-only ou inclure IA dès maintenant?
+  - Wireframe gate: SKIP (backend-only, pas d'UI)
+  - Codebase findings: BaseScraper exists (returns RawContact[]), need new BaseJobOfferScraper (returns RawJobOffer[]), ScraperRegistry pattern reusable, Apify already integrated, last migration=34, BullMQ NOT installed
 
 ### Phase 3 — Review
 - **Status**: ✅ Done (all must-have features validated 2026-03-25)

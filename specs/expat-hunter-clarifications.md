@@ -97,3 +97,57 @@ Data is cached for 7 days per country/sector combination.
 4. Partial extractions are shown as editable suggestions (user can correct)
 
 The raw CV text is always stored regardless of extraction success.
+
+---
+
+# Job Offers Pipeline — Clarifications (Phase 2)
+
+## CL-013: Scraping Strategy per Platform
+
+**Question**: Which scraping approach is used per platform?
+**Resolution**:
+- **Seek, BuiltIn, Zeil**: In-house Playwright scraper first, Apify fallback after 3 consecutive failures or captcha detection (2 retries)
+- **LinkedIn**: Apify-only — never in-house scraping (high anti-bot risk, account ban risk)
+- Apify usage is logged and tracked per user for cost control
+
+## CL-014: CV Adaptation Approach
+
+**Question**: How are CVs adapted to each job offer?
+**Resolution**: Hybrid approach offering two methods:
+1. **Google Docs API (recommended)** — Copy user's CV template in Google Drive, extract text, AI generates max 7 targeted replacements, apply via `replaceAll` API, export as PDF. Best results: native document handling, no run-splitting issues.
+2. **Local DOCX processing (alternative)** — For users without Google account. Upload DOCX, process with jszip + xml-parser + run-merging logic, apply AI replacements, export PDF via LibreOffice headless.
+
+The UI clearly indicates that Google Docs gives better results. Both methods:
+- Use max 7 AI-targeted replacements (preserving original CV structure)
+- Support user instructions before and after generation
+- Allow manual text editing before final export
+- Output PDF format
+
+## CL-015: Application Email Content
+
+**Question**: What content goes in the application email body?
+**Resolution**: AI generates a short professional email (3-4 lines) that accompanies the CV and cover letter as attachments. The email:
+- Is editable by the user before sending
+- Adapts tone to the target country (formal for Japan, casual for NZ/Australia)
+- References the specific role and company
+- Does not repeat cover letter content
+
+## CL-016: Expired Offers Behavior
+
+**Question**: What happens when an offer expires or is no longer found?
+**Resolution**: Silent auto-expiration:
+- Offers past their `closing_date` automatically move to `expired` status
+- Offers not found during the next scraping run also move to `expired`
+- Expired offers remain visible in the "Archived" tab for historical reference
+- Users can manually reactivate an expired offer if it's still valid
+- No notification is sent for expiration (reduces noise)
+
+## CL-017: CV/Cover Letter Generation Language
+
+**Question**: In which language are the CV and cover letter generated?
+**Resolution**: Language is deduced from the target country of the offer, but modifiable by the user before generation:
+- NZ/Australia/UK/US → English (default)
+- France → French (default)
+- Japan → English (standard for expats, default)
+- User can override via a language selector before triggering generation
+- The same language setting applies to both CV adaptation and cover letter

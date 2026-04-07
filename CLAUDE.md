@@ -1,7 +1,7 @@
 # CLAUDE.md — Rules for Claude Code
 
 ## Context
-This project uses the **ai-spec-driven-generator** framework v4.1.0 (in `framework/`).
+This project uses the **ai-spec-driven-generator** framework v4.1.1 (in `framework/`).
 You must follow a structured, phase-based process with human validation, persistent memory, and machine-verifiable acceptance criteria.
 
 ## Fundamental Principles

@@ -196,6 +196,9 @@ importers:
 
   e2e:
     devDependencies:
+      '@axe-core/playwright':
+        specifier: ^4.11.1
+        version: 4.11.1(playwright-core@1.58.2)
       '@playwright/test':
         specifier: ^1.49.0
         version: 1.58.2
@@ -589,6 +592,11 @@ packages:
   '@ast-grep/napi@0.42.0':
     resolution: {integrity: sha512-f3DAjeC657EqbWN2In+girgbpvnKMV77bONyhuezXK4XQtvbGCB55u3CnNvQv6EP0caIBTtDHqO5CVyO6qY4LQ==}
     engines: {node: '>= 10'}
+
+  '@axe-core/playwright@4.11.1':
+    resolution: {integrity: sha512-mKEfoUIB1MkVTht0BGZFXtSAEKXMJoDkyV5YZ9jbBmZCcWDz71tegNsdTkIN8zc/yMi5Gm2kx7Z5YQ9PfWNAWw==}
+    peerDependencies:
+      playwright-core: '>= 1.0.0'
 
   '@babel/code-frame@7.29.0':
     resolution: {integrity: sha512-9NhCeYjq9+3uxgdtp20LSiJXJvN0FeCtNGpJxuMFZ1Kv3cWUNb6DOhJwUvcVCzKGR66cw4njwM6hrJLqgOwbcw==}
@@ -1714,6 +1722,10 @@ packages:
     hasBin: true
     peerDependencies:
       postcss: ^8.1.0
+
+  axe-core@4.11.2:
+    resolution: {integrity: sha512-byD6KPdvo72y/wj2T/4zGEvvlis+PsZsn/yPS3pEO+sFpcrqRpX/TJCxvVaEsNeMrfQbCr7w163YqoD9IYwHXw==}
+    engines: {node: '>=4'}
 
   bail@2.0.2:
     resolution: {integrity: sha512-0xO6mYd7JB2YesxDKplafRpsiOzPt9V02ddPCLbY1xYGPOX24NTyN50qnUxgCPcSoYMhKpAuBTjQoRZCAkUDRw==}
@@ -4127,6 +4139,11 @@ snapshots:
       '@ast-grep/napi-win32-ia32-msvc': 0.42.0
       '@ast-grep/napi-win32-x64-msvc': 0.42.0
 
+  '@axe-core/playwright@4.11.1(playwright-core@1.58.2)':
+    dependencies:
+      axe-core: 4.11.2
+      playwright-core: 1.58.2
+
   '@babel/code-frame@7.29.0':
     dependencies:
       '@babel/helper-validator-identifier': 7.28.5
@@ -5063,6 +5080,8 @@ snapshots:
       picocolors: 1.1.1
       postcss: 8.5.8
       postcss-value-parser: 4.2.0
+
+  axe-core@4.11.2: {}
 
   bail@2.0.2: {}
 
