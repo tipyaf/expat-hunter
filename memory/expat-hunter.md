@@ -6,8 +6,8 @@
 - **Project**: expat-hunter
 - **Started**: 2026-03-17
 - **Current phase**: Phase 2 — Construction (features pending refinement)
-- **Last updated**: 2026-03-26
-- **Framework version**: 2.1.0
+- **Last updated**: 2026-04-07
+- **Framework version**: 4.1.0
 - **GitHub repo**: https://github.com/tipyaf/expat-hunter (public)
 - **Branches**: main (protected, default), develop (protected, dev base), feature/* → PR to develop
 

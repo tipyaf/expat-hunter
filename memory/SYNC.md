@@ -21,3 +21,10 @@ cd ..
 git add framework
 git commit -m "chore: update framework submodule to vX.Y.Z"
 ```
+
+## v4.1.0 Migration (2026-04-07)
+- Build pipeline: 7 gates → 11 gates
+- Refine: wireframe gate + WCAG validation + PM integration
+- Commit: atomic after ALL gates pass + auto PR/MR
+- New script: check_story_commits.py
+- New rules: agent-conduct Rules 11-17

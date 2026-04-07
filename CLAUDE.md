@@ -1,7 +1,7 @@
 # CLAUDE.md — Rules for Claude Code
 
 ## Context
-This project uses the **ai-spec-driven-generator** framework v3.0.10 (in `framework/`).
+This project uses the **ai-spec-driven-generator** framework v4.1.0 (in `framework/`).
 You must follow a structured, phase-based process with human validation, persistent memory, and machine-verifiable acceptance criteria.
 
 ## Fundamental Principles
@@ -25,6 +25,11 @@ Use skills to dispatch to the right agent(s). Each skill loads ONLY the agents i
 | `/build` | Implement a refined story | developer, validator |
 | `/validate` | Verify implementation against story file | validator |
 | `/review` | Review all validated features before PR | reviewer, security, tester |
+| `/scan` | Scan local changes only (staged + unstaged vs integration branch) | (inline) |
+| `/scan-full` | Full codebase SonarQube analysis with hotspots and trends | (inline) |
+| `/sonar` | SonarQube scan of local changes | (inline) |
+| `/ux` | Design UI before building frontend stories | ux-ui |
+| `/migrate` | Migrate project to latest framework version | (inline) |
 
 **Default workflow**: `/spec` → `/refine` (per feature) → `/build` (per feature) → `/validate` (per feature) → `/review` (all features)
 
@@ -35,6 +40,15 @@ When you need an agent, read ONLY its core file:
 - `framework/agents/[name].ref.md` — templates and examples (read only when you need a specific template)
 
 **NEVER read all agent files at once.** Load the minimum needed for the current task.
+
+### Model dispatch rule (mandatory)
+
+When dispatching an agent, read the `model:` field from its YAML frontmatter and **pass it as the `model` parameter** when using the Agent tool to spawn the subagent. This ensures each agent runs on the appropriate model tier (Opus for reasoning-heavy tasks, Sonnet for systematic tasks).
+
+- If the agent frontmatter says `model: opus` → spawn with `model: "opus"`
+- If the agent frontmatter says `model: sonnet` → spawn with `model: "sonnet"`
+- If no `model:` field → use the current session model (no override)
+- Projects MAY override agent models in their project `CLAUDE.md` under `§Agent Model Overrides`
 
 ## On session start
 
@@ -82,16 +96,22 @@ PHASE 2 — CONSTRUCTION (per feature loop)
 
   For each feature [pending → refined → building → testing → validated]:
 
-  /refine  → Refinement  → ✅ Human   → story file written
-  /build   → Developer   → 🤖 Auto    → code + tests
-  /validate → Validator   → 🤖 Auto    → verify: commands executed
-    Gate 1: Security (OWASP + stack forbidden patterns)
-    Gate 2: Tests (TU + e2e)
-    Gate 3: UI (WCAG + wireframe conformity)
-    Gate 4: AC Validation (every verify: command)
-    Gate 5: Review (code quality + scope check)
-  → PASS: status → validated
-  → FAIL: cycles++ → fix → re-validate (max 3, then escalate)
+  /refine  → Refinement  → ✅ Human   → story file written + wireframes (UI)
+  /build   → RED (test-engineer) → GREEN (developer) → 🤖 Auto
+  /validate → Validator   → 🤖 Auto    → 11 quality gates
+    Gate  1: Security (OWASP + stack forbidden patterns + AC-SEC-*)
+    Gate  2: Unit Tests (execute TU from stack profile)
+    Gate  3: Code Quality (tool if configured, reviewer fallback — NEVER skipped)
+    Gate  4: E2E Code from wireframes (UI only — uses data-testid)
+    Gate  5: WCAG + Wireframe conformity (UI only)
+    Gate  6: E2E Execution (UI only)
+    Gate  7: E2E vs Wireframes validation (UI only)
+    Gate  8: AC Validation (every verify: command)
+    Gate  9: Story Review (story-reviewer verifies every AC — mandatory)
+    Gate 10: Code Review (SOLID/KISS + scope + 0 console errors)
+    Gate 11: Final Compilation (re-compile to confirm fixes)
+  → ALL GATES PASS: atomic commit + PR/MR → status → validated
+  → ANY FAIL: cycles++ → fix → re-validate (max 3, then escalate)
 
 ═══════════════════════════════════════════════════════════
 PHASE 3 — REVIEW (/review) — Auto
@@ -120,8 +140,9 @@ PHASE 5 — RELEASE — ✅ Human
 | 1: Plan | /spec | Architect | Human | `specs/expat-hunter-architecture.md` |
 | 2: Scaffold | /build | Developer | Auto | Project compiles/starts |
 | 2.5: Refine | /refine | Refinement | Human | `specs/stories/[feature].yaml` |
-| 3: Implement | /build | Developer | Auto | Code + tests written |
-| 3.5: Validate | /validate | Validator | Auto | ALL `verify:` commands PASS |
+| 3: RED | /build | Test Engineer | Auto | Failing tests written + reviewed |
+| 3.1: GREEN | /build | Developer | Auto | Production code makes tests pass + compilation |
+| 3.5: Validate | /validate | Validator | Auto | ALL 11 quality gates PASS |
 | 4: Review | /review | Reviewer+Security+Tester | Auto | Quality + security PASS |
 | 5: Deploy | — | DevOps | Human | Infrastructure decision |
 | 6: Release | — | — | Human | Go/no-go decision |
@@ -382,6 +403,8 @@ Before creating any PR, verify:
 | Reviewer | Audit quality, flag issues | Modify files directly |
 | Security | Audit security, flag vulns | Modify files directly |
 | DevOps | Configure CI/CD, deployment | Modify feature code |
+| Test Engineer | TDD RED phase: write failing tests from spec | Write production code, modify existing tests in GREEN phase |
+| Story Reviewer | Verify ACs against committed code, post PASS/FAIL | Modify files, execute tests |
 
 ## File locations
 - **Framework agents**: `framework/agents/*.md` (core) + `framework/agents/*.ref.md` (templates)
@@ -396,4 +419,6 @@ Before creating any PR, verify:
 - **Memory**: `memory/expat-hunter.md`
 - **Lessons**: `memory/LESSONS.md`
 - **Constitution**: `specs/constitution.md`
+- **UX wireframes**: `_work/ux/wireframes/`
+- **Build files**: `_work/build/[feature-id].yaml`
 - **Application code**: `apps/` and `packages/`
