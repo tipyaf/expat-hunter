@@ -6,6 +6,7 @@
  * Progress: updates SearchRun status and percent at each step.
  */
 import Contact from '#models/contact'
+import Company from '#models/company'
 import CandidateProfile from '#models/candidate_profile'
 import User from '#models/user'
 import SearchRun from '#models/search_run'
@@ -36,11 +37,11 @@ interface SearchResult {
 }
 
 export default class SearchOrchestratorService {
-  private sourcingService: SourcingService
-  private analysisService: AnalysisService
-  private emailGenerationService: EmailGenerationService
-  private hunterContactService: HunterContactService
-  private emailEnrichmentOrchestrator: EmailEnrichmentOrchestrator
+  private readonly sourcingService: SourcingService
+  private readonly analysisService: AnalysisService
+  private readonly emailGenerationService: EmailGenerationService
+  private readonly hunterContactService: HunterContactService
+  private readonly emailEnrichmentOrchestrator: EmailEnrichmentOrchestrator
 
   constructor(
     sourcingService?: SourcingService,

@@ -55,11 +55,11 @@ const SOURCE_URLS: Record<string, string> = {
 const BATCH_SIZE = 500
 
 export default class VisaSponsorRegistryService {
-  private cacheService = new CacheService()
-  private playwrightClient = new PlaywrightClient()
-  private fuzzyMatcher = new FuzzyMatchService()
-  private nzService: VisaNzService
-  private usService: VisaUsService
+  private readonly cacheService = new CacheService()
+  private readonly playwrightClient = new PlaywrightClient()
+  private readonly fuzzyMatcher = new FuzzyMatchService()
+  private readonly nzService: VisaNzService
+  private readonly usService: VisaUsService
 
   constructor() {
     this.nzService = new VisaNzService(this.cacheService, this.playwrightClient, this.fuzzyMatcher)
@@ -205,6 +205,25 @@ export default class VisaSponsorRegistryService {
   }
 
   // ─── Private fetchers (UK/AU stay here — small, not worth their own file) ────
+
+  private extractXmlStrings(text: string): string[] {
+    const tagPattern = /<t[^>]*>([^<]+)<\/t>/g
+    const strings: string[] = []
+    let tagMatch: RegExpExecArray | null
+    while ((tagMatch = tagPattern.exec(text)) !== null) {
+      strings.push(tagMatch[1])
+    }
+    return strings
+  }
+
+  private isValidEmployerName(str: string, skipValues: Set<string>): boolean {
+    if (str.length < 3 || str.length > 200) return false
+    if (skipValues.has(str)) return false
+    if (/^\d+$/.test(str)) return false
+    if (/^\d{4}-\d{2}-\d{2}/.test(str)) return false
+    if (str.startsWith('http')) return false
+    return str === str.toUpperCase() && /[A-Z]{3,}/.test(str) && str.includes(' ')
+  }
 
   private async fetchUkRegistry(): Promise<VisaSponsorRecord[]> {
     const url =

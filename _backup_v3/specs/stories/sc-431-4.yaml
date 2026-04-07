@@ -1,0 +1,113 @@
+story:
+  id: "sc-431-4"
+  shortcut_url: ""
+  title: "Premium/Free: chat free mode (commercial tone + restrictions)"
+  parent_spec: "specs/expat-hunter.yaml"
+  parent_epic: "sc-431"
+  status: "refined"
+  size: "M"
+  estimate: 3
+  type: "feature"
+  refined_at: "2026-03-27"
+  refined_by: "refinement"
+
+user_story: >
+  As a free user, I can use the chat for app/support questions (up to 15 lifetime).
+  The AI has a subtle commercial tone encouraging me to upgrade. Questions about
+  job search or hidden market are premium-only. When I reach 15 questions the
+  chat is blocked with an upgrade prompt. As a premium user, no restrictions.
+
+scope:
+  files_to_create: []
+  files_to_modify:
+    - path: "apps/api/app/services/chat_assistant_service.ts"
+      reason: "Add free-mode system prompt with commercial tone, restrict topics for free users, check question quota"
+    - path: "apps/api/app/controllers/chat_controller.ts"
+      reason: "Check chat question quota before processing, increment counter, return remaining quota"
+    - path: "apps/frontend/src/components/chat/chat-input.tsx"
+      reason: "Show question counter (X/15 remaining), disable input at limit, show upgrade prompt"
+    - path: "apps/frontend/src/i18n/en.json"
+      reason: "Add chat quota/premium i18n keys"
+    - path: "apps/frontend/src/i18n/fr.json"
+      reason: "Add chat quota/premium i18n keys"
+  files_to_read:
+    - "apps/api/app/services/chat_assistant_service.ts"
+    - "apps/api/app/controllers/chat_controller.ts"
+    - "apps/frontend/src/components/chat/"
+
+acceptance_criteria:
+
+  functional:
+    - id: "AC-FUNC-SC431-4-01"
+      description: "Given a free user / When chat responds / Then system prompt includes subtle commercial tone encouraging upgrade"
+      verify: "grep -n 'premium\\|upgrade\\|commercial\\|free.*plan' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/app/services/chat_assistant_service.ts"
+      tier: 1
+
+    - id: "AC-FUNC-SC431-4-02"
+      description: "Given a free user asking about job search / When processed / Then returns a message saying this is premium-only"
+      verify: "grep -n 'PREMIUM_REQUIRED\\|premium.*only\\|réservé.*premium' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/app/services/chat_assistant_service.ts"
+      tier: 1
+
+    - id: "AC-FUNC-SC431-4-03"
+      description: "Given a free user with 15 questions used / When POST /api/chat / Then 403 QUOTA_EXCEEDED"
+      verify: "grep -n 'QUOTA_EXCEEDED\\|chatQuestions' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/app/controllers/chat_controller.ts"
+      tier: 1
+
+    - id: "AC-FUNC-SC431-4-04"
+      description: "Given the chat UI / When user is free / Then question counter shows 'X/15 questions remaining'"
+      verify: "grep -n 'remaining\\|quota\\|counter' /Volumes/Samsung_T5/dev/expat-hunter/apps/frontend/src/components/chat/chat-input.tsx"
+      tier: 1
+
+    - id: "AC-FUNC-SC431-4-05"
+      description: "Given a premium user / When using chat / Then no restrictions, no commercial tone, no counter"
+      verify: "grep -n 'isPremium\\|PLAN_PREMIUM' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/app/services/chat_assistant_service.ts"
+      tier: 1
+
+  security:
+    - id: "AC-SEC-SC431-4-01"
+      description: "Question counter is server-side (usage_counters table) — not client-side manipulable"
+      verify: "grep -n 'usageService\\|UsageService\\|usage_service' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/app/controllers/chat_controller.ts"
+      tier: 1
+
+    - id: "AC-SEC-SC431-4-02"
+      description: "Commercial tone is subtle and non-pushy — no aggressive sales language in system prompt"
+      verify: "grep -n 'subtil\\|subtle\\|discrète\\|naturally' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/app/services/chat_assistant_service.ts"
+      tier: 1
+
+  best_practices:
+    - id: "AC-BP-SC431-4-01"
+      description: "TypeScript: 0 errors API"
+      verify: "cd /Volumes/Samsung_T5/dev/expat-hunter/apps/api && npx tsc --noEmit 2>&1 | wc -l | tr -d ' ' | grep '^0$'"
+      tier: 1
+
+    - id: "AC-BP-SC431-4-02"
+      description: "i18n keys for chat quota messages exist in both en + fr"
+      verify: "grep -n 'chat.*quota\\|chat.*premium\\|chat.*limit' /Volumes/Samsung_T5/dev/expat-hunter/apps/frontend/src/i18n/en.json"
+      tier: 1
+
+edge_cases:
+  - description: "Free user asks a borderline question (could be support or job search)"
+    handling: "AI decides based on system prompt instructions — err on the side of answering if unclear"
+  - description: "Free user at 14/15 questions"
+    handling: "Show warning: 'Dernière question gratuite — passez à Premium pour continuer'"
+  - description: "Free user sends message after reaching limit"
+    handling: "Input disabled, overlay message with upgrade CTA — no API call made"
+
+depends_on: ["sc-431-1", "sc-431-2"]
+
+notes: |
+  ChatMode already exists (support/expert/mixed). Free users get support-only
+  with a modified system prompt. Expert mode is premium-only.
+  The commercial tone must be natural — not every response mentions premium.
+  System prompt should mention it occasionally, especially when the user hits
+  a restriction.
+
+definition_of_done:
+  - "Free-mode system prompt with commercial tone"
+  - "Topic restriction for free users"
+  - "Question quota enforced server-side"
+  - "Counter displayed in chat UI"
+  - "Premium users unrestricted"
+  - "i18n en + fr"
+  - "0 TS errors"
+  - "PR merged"

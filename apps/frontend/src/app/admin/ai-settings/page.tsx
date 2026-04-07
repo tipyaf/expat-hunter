@@ -211,15 +211,18 @@ export default function AiSettingsPage() {
                           </button>
                         </div>
                       </div>
-                    ) : setting ? (
-                      <div className="text-sm text-[var(--color-text-muted)] space-y-1">
-                        <p>{t('modelLabel')}: <span className="font-mono">{setting.model}</span></p>
-                        <p>{t('temperatureLabel')}: {setting.temperature} | {t('maxTokensLabel')}: {setting.maxTokens}</p>
-                        <p>{setting.isEnabled ? t('enabled') : t('disabled')}</p>
-                      </div>
-                    ) : (
-                      <p className="text-sm text-[var(--color-text-muted)]">{t('notConfigured')}</p>
-                    )}
+                    ) : (() => {
+                      const settingContent = setting ? (
+                        <div className="text-sm text-[var(--color-text-muted)] space-y-1">
+                          <p>{t('modelLabel')}: <span className="font-mono">{setting.model}</span></p>
+                          <p>{t('temperatureLabel')}: {setting.temperature} | {t('maxTokensLabel')}: {setting.maxTokens}</p>
+                          <p>{setting.isEnabled ? t('enabled') : t('disabled')}</p>
+                        </div>
+                      ) : (
+                        <p className="text-sm text-[var(--color-text-muted)]">{t('notConfigured')}</p>
+                      )
+                      return settingContent
+                    })()}
                   </div>
                 )
               })}

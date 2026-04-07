@@ -16,9 +16,9 @@ const chatMessageSchema = vine.compile(
 )
 
 export default class ChatController {
-  private chatService = new ChatAssistantService()
-  private profileService = new ProfileService()
-  private usageService = new UsageService()
+  private readonly chatService = new ChatAssistantService()
+  private readonly profileService = new ProfileService()
+  private readonly usageService = new UsageService()
 
   /**
    * POST /api/assistant/chat

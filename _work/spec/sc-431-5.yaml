@@ -1,0 +1,118 @@
+story:
+  id: "sc-431-5"
+  shortcut_url: ""
+  title: "Premium/Free: admin panel user management"
+  parent_spec: "specs/expat-hunter.yaml"
+  parent_epic: "sc-431"
+  status: "refined"
+  size: "M"
+  estimate: 3
+  type: "feature"
+  refined_at: "2026-03-27"
+  refined_by: "refinement"
+
+user_story: >
+  As an admin, I want to see all users with their name, email, plan status,
+  and registration date, and toggle any user between free and premium,
+  so that I can manage access manually until a payment system is integrated.
+
+scope:
+  files_to_create:
+    - path: "apps/api/app/controllers/admin_users_controller.ts"
+      reason: "AdminUsersController: index (list users with plan + filter), updatePlan (toggle premium/free)"
+    - path: "apps/api/tests/functional/admin/users.spec.ts"
+      reason: "Functional tests for admin user management endpoints"
+    - path: "apps/frontend/src/app/admin/users/page.tsx"
+      reason: "Admin users page — table with name, email, plan, date, toggle button"
+  files_to_modify:
+    - path: "apps/api/start/routes.ts"
+      reason: "Add GET /api/admin/users and PATCH /api/admin/users/:id/plan routes"
+    - path: "apps/frontend/src/i18n/en.json"
+      reason: "Add admin.users i18n keys"
+    - path: "apps/frontend/src/i18n/fr.json"
+      reason: "Add admin.users i18n keys"
+  files_to_read:
+    - "apps/api/app/controllers/contacts_controller.ts"
+    - "apps/api/start/routes.ts"
+    - "apps/api/app/middleware/admin_middleware.ts"
+    - "apps/frontend/src/app/admin/"
+
+acceptance_criteria:
+
+  functional:
+    - id: "AC-FUNC-SC431-5-01"
+      description: "Given GET /api/admin/users / When admin calls / Then returns list of users with id, fullName, email, plan, createdAt"
+      verify: "grep -n 'fullName\\|email\\|plan\\|createdAt' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/app/controllers/admin_users_controller.ts"
+      tier: 1
+
+    - id: "AC-FUNC-SC431-5-02"
+      description: "Given PATCH /api/admin/users/:id/plan / When admin toggles / Then user plan is updated immediately"
+      verify: "grep -n 'updatePlan\\|plan.*save\\|PATCH' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/app/controllers/admin_users_controller.ts"
+      tier: 1
+
+    - id: "AC-FUNC-SC431-5-03"
+      description: "Given admin users page / When loaded / Then shows table with name, email, plan, date and toggle button"
+      verify: "grep -n 'fullName\\|email\\|plan\\|toggle\\|Toggle' /Volumes/Samsung_T5/dev/expat-hunter/apps/frontend/src/app/admin/users/page.tsx | wc -l | xargs test 3 -le"
+      tier: 1
+
+    - id: "AC-FUNC-SC431-5-04"
+      description: "Given admin users page / When filter by plan / Then only matching users shown"
+      verify: "grep -n 'filter\\|Filter\\|plan.*filter' /Volumes/Samsung_T5/dev/expat-hunter/apps/frontend/src/app/admin/users/page.tsx"
+      tier: 1
+
+    - id: "AC-FUNC-SC431-5-05"
+      description: "Given routes.ts / When checked / Then admin user routes exist with admin middleware"
+      verify: "grep -n 'admin/users' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/start/routes.ts"
+      tier: 1
+
+  security:
+    - id: "AC-SEC-SC431-5-01"
+      description: "Admin user endpoints are protected by admin middleware — non-admins get 403"
+      verify: "grep -A5 'admin/users' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/start/routes.ts | grep -i 'admin'"
+      tier: 1
+
+    - id: "AC-SEC-SC431-5-02"
+      description: "PATCH plan endpoint validates plan value — only 'free' or 'premium' accepted"
+      verify: "grep -n 'free.*premium\\|PLAN_FREE\\|PLAN_PREMIUM\\|valid' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/app/controllers/admin_users_controller.ts"
+      tier: 1
+
+  best_practices:
+    - id: "AC-BP-SC431-5-01"
+      description: "TypeScript: 0 errors"
+      verify: "cd /Volumes/Samsung_T5/dev/expat-hunter/apps/api && npx tsc --noEmit 2>&1 | wc -l | tr -d ' ' | grep '^0$'"
+      tier: 1
+
+    - id: "AC-BP-SC431-5-02"
+      description: "Functional tests exist for admin user endpoints"
+      verify: "test -f /Volumes/Samsung_T5/dev/expat-hunter/apps/api/tests/functional/admin/users.spec.ts && echo 'EXISTS'"
+      tier: 1
+
+    - id: "AC-BP-SC431-5-03"
+      description: "i18n keys for admin users page in en + fr"
+      verify: "grep -n 'admin.*users\\|users.*admin' /Volumes/Samsung_T5/dev/expat-hunter/apps/frontend/src/i18n/en.json"
+      tier: 1
+
+edge_cases:
+  - description: "Admin tries to downgrade themselves"
+    handling: "Allow it — admin status is separate from plan status"
+  - description: "Only one admin exists and they toggle their own plan"
+    handling: "No restriction — isAdmin and plan are independent fields"
+  - description: "Large number of users (pagination)"
+    handling: "Use cursor-based pagination on the API, paginated table on frontend"
+
+depends_on: ["sc-431-1"]
+
+notes: |
+  Admin routes already exist in routes.ts (ai-settings, visa-registries, etc.).
+  Follow the same pattern: group under /api/admin/users, use middleware.admin().
+  AdminMiddleware already handles auth + isAdmin check.
+  The admin page pattern exists in apps/frontend/src/app/admin/ — follow it.
+
+definition_of_done:
+  - "API endpoints for list users + toggle plan"
+  - "Admin page with table + filter + toggle"
+  - "Protected by admin middleware"
+  - "Functional tests passing"
+  - "i18n en + fr"
+  - "0 TS errors"
+  - "PR merged"

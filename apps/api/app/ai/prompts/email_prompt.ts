@@ -82,33 +82,86 @@ function buildToneInstruction(preset?: PresetPromptOptions): string {
   return toneMap[preset.tone] ?? `Ton ${preset.tone}`
 }
 
-export function buildEmailPrompt(
-  contact: ContactForEmail,
-  candidate: CandidateForEmail,
-  options?: EmailPromptOptions
-): { system: string; user: string } {
-  const isFollowUp = options?.type && options.type !== 'initial'
-  const preset = options?.preset
+function buildSystemRules(
+  preset: PresetPromptOptions | undefined,
+  isFollowUp: boolean,
+  country: string
+): string {
   const lengthConstraint = LENGTH_CONSTRAINTS[preset?.length ?? 'medium'] ?? LENGTH_CONSTRAINTS.medium
   const toneInstruction = buildToneInstruction(preset)
   const frameworkInstruction = FRAMEWORK_INSTRUCTIONS[preset?.framework ?? 'direct'] ?? ''
   const emailLanguage = preset?.language === 'fr' ? 'FRANÇAIS' : 'ANGLAIS'
 
+  const rules = [
+    `- L'email doit être en ${emailLanguage} (communication professionnelle internationale)`,
+    `- ${lengthConstraint} pour le corps de l'email`,
+    `- ${toneInstruction}`,
+    '- Pas de formules génériques ("I hope this email finds you well", "Dear Sir/Madam")',
+    '- Mentionne le rôle du contact et son entreprise naturellement',
+    '- Mets en avant 2-3 compétences pertinentes du candidat par rapport au contexte',
+    '- Termine par une question ouverte ou une proposition concrète',
+    `- Le sujet doit être court et accrocheur (max 60 caractères)${getCulturalInstruction(country)}`,
+  ]
+
+  if (isFollowUp) {
+    rules.push("- C'est une RELANCE, sois plus bref et mentionne l'email précédent")
+  }
+  if (frameworkInstruction) {
+    rules.push(`- ${frameworkInstruction}`)
+  }
+  if (preset?.customInstructions) {
+    rules.push(`- Instructions supplémentaires : ${preset.customInstructions}`)
+  }
+
+  return rules.join('\n')
+}
+
+function buildUserClosingInstruction(isFollowUp: boolean, options?: EmailPromptOptions): string {
+  if (isFollowUp) {
+    return 'Rédige une relance courte et naturelle.'
+  }
+  if (options?.template) {
+    return 'Personnalise le template ci-dessus pour ce contact en adaptant le contenu à son profil et son entreprise.'
+  }
+  if (options?.instructions) {
+    return "Améliore l'email existant en suivant les instructions ci-dessus."
+  }
+  return 'Rédige un premier email de prise de contact.'
+}
+
+function buildUserContextSections(
+  isFollowUp: boolean,
+  options?: EmailPromptOptions
+): string {
+  const sections: string[] = []
+
+  if (isFollowUp && options?.previousEmail) {
+    sections.push(`\n## Email précédent\n${options.previousEmail}`)
+  }
+  if (options?.template) {
+    sections.push(`\n## Template à personnaliser\n**Sujet** : ${options.template.subjectPattern}\n**Corps** :\n${options.template.bodyPattern}`)
+  }
+  if (options?.instructions) {
+    sections.push(`\n## Instructions de l'utilisateur\n${options.instructions}`)
+  }
+
+  return sections.join('\n')
+}
+
+export function buildEmailPrompt(
+  contact: ContactForEmail,
+  candidate: CandidateForEmail,
+  options?: EmailPromptOptions
+): { system: string; user: string } {
+  const isFollowUp = options?.type !== undefined && options.type !== 'initial'
+  const preset = options?.preset
+  const systemRules = buildSystemRules(preset, isFollowUp, contact.companyCountry)
+
   return {
     system: `Tu es un expert en prospection d'emploi à l'international. Tu rédiges des emails courts, humains et personnalisés pour des candidats qui contactent directement des responsables d'équipes opérationnelles (PAS les RH).
 
 Règles strictes :
-- L'email doit être en ${emailLanguage} (communication professionnelle internationale)
-- ${lengthConstraint} pour le corps de l'email
-- ${toneInstruction}
-- Pas de formules génériques ("I hope this email finds you well", "Dear Sir/Madam")
-- Mentionne le rôle du contact et son entreprise naturellement
-- Mets en avant 2-3 compétences pertinentes du candidat par rapport au contexte
-- Termine par une question ouverte ou une proposition concrète
-- Le sujet doit être court et accrocheur (max 60 caractères)${getCulturalInstruction(contact.companyCountry)}
-${isFollowUp ? '- C\'est une RELANCE, sois plus bref et mentionne l\'email précédent' : ''}
-${frameworkInstruction ? `- ${frameworkInstruction}` : ''}
-${preset?.customInstructions ? `- Instructions supplémentaires : ${preset.customInstructions}` : ''}
+${systemRules}
 
 Réponds UNIQUEMENT avec un objet JSON valide :
 {
@@ -130,11 +183,9 @@ Réponds UNIQUEMENT avec un objet JSON valide :
 - **Expérience** : ${candidate.experienceYears} ans
 - **Rôles visés** : ${candidate.targetRoles.join(', ') || 'Non renseignés'}
 ${candidate.cvSummary ? `- **Résumé** : ${candidate.cvSummary}` : ''}
-${isFollowUp && options?.previousEmail ? `\n## Email précédent\n${options.previousEmail}` : ''}
-${options?.template ? `\n## Template à personnaliser\n**Sujet** : ${options.template.subjectPattern}\n**Corps** :\n${options.template.bodyPattern}` : ''}
-${options?.instructions ? `\n## Instructions de l'utilisateur\n${options.instructions}` : ''}
+${buildUserContextSections(isFollowUp, options)}
 
-${isFollowUp ? 'Rédige une relance courte et naturelle.' : options?.template ? 'Personnalise le template ci-dessus pour ce contact en adaptant le contenu à son profil et son entreprise.' : options?.instructions ? 'Améliore l\'email existant en suivant les instructions ci-dessus.' : 'Rédige un premier email de prise de contact.'}`,
+${buildUserClosingInstruction(isFollowUp, options)}`,
   }
 }
 

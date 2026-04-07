@@ -1,0 +1,138 @@
+story:
+  id: "sc-496"
+  title: "fix: filter out 'Hiring Manager' placeholder contacts from API responses"
+  parent_spec: "specs/expat-hunter.yaml"
+  status: "refined"
+  size: "S"
+  refined_at: "2026-03-28"
+  refined_by: "refinement"
+
+user_story: >
+  As a user viewing my contacts list or pipeline,
+  I want placeholder 'Hiring Manager' contacts to be hidden,
+  so that I only see real named contacts I can actually reach out to.
+
+scope:
+  files_to_create:
+    - path: "packages/shared/src/constants/contacts.ts"
+      reason: "Shared PLACEHOLDER_CONTACT_NAMES constant used by API filter and sourcing dedup"
+    - path: "apps/api/tests/functional/contacts/placeholder_filter.spec.ts"
+      reason: "Functional test verifying Hiring Manager contacts are excluded from API response"
+  files_to_modify:
+    - path: "packages/shared/src/index.ts"
+      reason: "Export the new contacts constants"
+    - path: "apps/api/app/controllers/contacts_controller.ts"
+      reason: "Add whereNotIn filter on full_name to exclude placeholder contacts from index query"
+    - path: "apps/api/app/services/sourcing_service.ts"
+      reason: "Replace local GENERIC_NAMES with shared PLACEHOLDER_CONTACT_NAMES constant"
+  files_to_read:
+    - path: "apps/api/app/services/search_orchestrator_service.ts"
+      reason: "Verify consistency with Hunter enrichment filtering"
+    - path: "apps/api/app/models/contact.ts"
+      reason: "Contact model structure reference"
+    - path: "apps/api/app/scrapers/seek_scraper.ts"
+      reason: "Understand how placeholders are created"
+
+acceptance_criteria:
+
+  functional:
+    - id: "AC-FUNC-SC496-01"
+      description: >
+        Given contacts in DB including some with fullName = "Hiring Manager",
+        When GET /api/contacts is called by an authenticated user,
+        Then no contact with fullName = "Hiring Manager" appears in the response.
+      verify: "curl -s http://localhost:3333/api/contacts -H 'Cookie: adonis-session=test' | grep -c '\"Hiring Manager\"' | grep -q '^0$' && echo PASS || echo FAIL"
+      tier: 2
+
+    - id: "AC-FUNC-SC496-02"
+      description: >
+        Given a "Hiring Manager" contact exists in DB,
+        When the filter is applied at the API level,
+        Then the contact is NOT deleted from the database — it remains for enrichment pipeline use.
+      verify: "grep -q 'whereNotIn\\|whereNot' apps/api/app/controllers/contacts_controller.ts && ! grep -q 'DELETE.*Hiring\\|destroy.*Hiring\\|delete.*hiring' apps/api/app/controllers/contacts_controller.ts && echo PASS || echo FAIL"
+      tier: 1
+
+    - id: "AC-FUNC-SC496-03"
+      description: >
+        Given the pipeline/suivi page fetches contacts,
+        When contacts are returned for pipeline display,
+        Then "Hiring Manager" contacts are also excluded from the pipeline view.
+      verify: "grep -rn 'PLACEHOLDER_CONTACT_NAMES\\|whereNotIn.*full_name' apps/api/app/controllers/contacts_controller.ts | grep -q 'whereNotIn\\|PLACEHOLDER' && echo PASS || echo FAIL"
+      tier: 1
+
+  security:
+    - id: "AC-SEC-SC496-01"
+      description: >
+        Given the filter query in contacts_controller.ts,
+        When reviewing the code,
+        Then only Lucid ORM methods are used — no raw SQL string interpolation.
+      verify: "! grep -n '\\.raw.*Hiring\\|\\.raw.*placeholder' apps/api/app/controllers/contacts_controller.ts && echo PASS || echo FAIL"
+      tier: 1
+
+  best_practices:
+    - id: "AC-BP-SC496-CONST"
+      description: >
+        Given the placeholder name list,
+        When reviewing the code,
+        Then PLACEHOLDER_CONTACT_NAMES is defined in @expat-hunter/shared (no magic strings in controller).
+      verify: "grep -q 'PLACEHOLDER_CONTACT_NAMES' packages/shared/src/constants/contacts.ts && grep -q 'Hiring Manager' packages/shared/src/constants/contacts.ts && echo PASS || echo FAIL"
+      tier: 1
+
+    - id: "AC-BP-SC496-TS"
+      description: >
+        Given the codebase after changes,
+        When running TypeScript compilation,
+        Then no new TypeScript errors are introduced.
+      verify: "cd apps/api && node ace build 2>&1 | tail -3"
+      tier: 1
+
+    - id: "AC-BP-SC496-TEST"
+      description: >
+        Given the new functional test for placeholder filtering,
+        When running the test suite,
+        Then the placeholder_filter test passes.
+      verify: "cd apps/api && node --loader ts-node/esm bin/test.ts --files tests/functional/contacts/placeholder_filter.spec.ts 2>&1 | tail -5"
+      tier: 2
+
+edge_cases:
+  - description: "Case-insensitive matching — 'hiring manager' vs 'Hiring Manager'"
+    handling: "PLACEHOLDER_CONTACT_NAMES includes normalized forms. Query uses case-insensitive comparison or includes all common variants."
+  - description: "Partial match — 'Hiring Manager Jr.' or 'Senior Hiring Manager'"
+    handling: "Exact match only. Do not filter contacts with similar but distinct names."
+  - description: "All contacts in a search run are placeholders"
+    handling: "API returns empty list — correct behavior, no named contacts found yet."
+  - description: "Existing 'Hiring Manager' contacts in production DB"
+    handling: "Not deleted — just hidden from API responses. Enrichment pipeline continues using them."
+
+depends_on: []
+
+notes: >
+  The SeekScraper creates 'Hiring Manager' placeholders when:
+  1. Named contact extraction fails from job description
+  2. Company has email but no named contact
+  3. No email at all (placeholder for Hunter enrichment)
+
+  The SearchOrchestratorService Phase 1b replaces these with Hunter-found named contacts,
+  but the placeholders remain in DB. This fix hides them from API responses only.
+
+  sourcing_service.ts already has a GENERIC_NAMES set (line 117) that includes "hiring manager".
+  This should be migrated to the shared package as PLACEHOLDER_CONTACT_NAMES for reuse.
+
+  The pipeline (suivi) page and contacts page both use the same /api/contacts endpoint,
+  so filtering there covers both views.
+
+definition_of_done:
+  - "All AC verify: commands pass"
+  - "No new TypeScript errors"
+  - "Functional test written and passing"
+  - "PR merged into develop"
+  - "Shortcut story sc-496 moved to Done"
+
+closing_ac:
+  - id: "AC-BP-SC496-DONE"
+    type: "BP"
+    description: |
+      PR for sc-496 is merged into develop — story closure gate.
+      After this passes, the validator MUST move sc-496 to Done (state 500000010).
+    verify: "gh pr list --state merged --base develop --json title | grep -q 'sc-496'"
+    tier: 1

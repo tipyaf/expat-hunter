@@ -1,0 +1,72 @@
+# =============================================================================
+# Story: sc-808 — Add persistent Docker volume for local PostgreSQL + Redis
+# =============================================================================
+# Build contract — developer implements exactly this, validator checks exactly this.
+# =============================================================================
+
+story:
+  id: "sc-808"
+  name: "chore: add persistent Docker volume for local PostgreSQL + Redis"
+  type: "chore"
+  size: "S"
+  estimate: 2
+  priority: "medium"
+  parent_feature: null
+  depends_on: []
+  adr_required: false
+
+user_story: |
+  As a developer,
+  I want PostgreSQL and Redis managed by docker-compose with persistent named volumes,
+  so my local dev data survives container restarts and I can start everything with one command.
+
+scope:
+  files_to_modify:
+    - path: ".devtools/docker-compose.yml"
+      description: "Add app-db (PostgreSQL 16) and redis (Redis 7) services with named volumes"
+    - path: "package.json"
+      description: "Add pnpm db:up and db:down scripts, update dev:all"
+    - path: ".env.example"
+      description: "Ensure DB_USER, DB_PASSWORD, DB_DATABASE, REDIS_PASSWORD vars are documented"
+  files_to_read: []
+  files_to_create: []
+
+acceptance_criteria:
+  - id: "AC-FUNC-808-01"
+    type: "FUNC"
+    description: "Given docker-compose / When pnpm db:up runs / Then PostgreSQL is accessible on 5432 and Redis on 6379"
+    verify: "cd /Volumes/Samsung_T5/dev/expat-hunter && pnpm db:up && sleep 5 && docker exec expat-db pg_isready -U ${DB_USER:-expathunter} && docker exec expat-redis redis-cli ping | grep -q PONG && echo PASS"
+    tier: 2
+
+  - id: "AC-FUNC-808-02"
+    type: "FUNC"
+    description: "Given running services / When docker compose down then up / Then PostgreSQL data is preserved"
+    verify: "cd /Volumes/Samsung_T5/dev/expat-hunter && docker compose -f .devtools/docker-compose.yml down && docker compose --env-file .env -f .devtools/docker-compose.yml up -d && sleep 5 && docker exec expat-db psql -U ${DB_USER:-expathunter} -d ${DB_DATABASE:-expat_hunter_dev} -c 'SELECT 1' && echo PASS"
+    tier: 2
+
+  - id: "AC-FUNC-808-03"
+    type: "FUNC"
+    description: "Given package.json / When checked / Then dev:all script starts all services + apps"
+    verify: "grep -q 'db:up\\|docker compose' /Volumes/Samsung_T5/dev/expat-hunter/package.json && grep -q 'dev:all' /Volumes/Samsung_T5/dev/expat-hunter/package.json && echo PASS"
+    tier: 1
+
+  - id: "AC-SEC-808-01"
+    type: "SEC"
+    description: "Given docker-compose.yml / When checked / Then no hardcoded passwords or API keys — all via ${VAR}"
+    verify: "! grep -E '(password|PASSWORD|api_key|API_KEY|secret|SECRET)\\s*[:=]\\s*[^${}\\s]' /Volumes/Samsung_T5/dev/expat-hunter/.devtools/docker-compose.yml && echo PASS"
+    tier: 1
+
+  - id: "AC-BP-808-01"
+    type: "BP"
+    description: "Given docker-compose.yml / When checked / Then named volumes are used (no bind mounts for data)"
+    verify: "grep -q 'expat_pgdata\\|pgdata' /Volumes/Samsung_T5/dev/expat-hunter/.devtools/docker-compose.yml && ! grep -q './data' /Volumes/Samsung_T5/dev/expat-hunter/.devtools/docker-compose.yml && echo PASS"
+    tier: 1
+
+edge_cases:
+  - "Port 5432 may already be in use by standalone docker container — document in README"
+  - "Existing volume expat-hunter_pgdata from previous docker run should be reusable"
+  - "Redis password may be empty for local dev — support optional REDIS_PASSWORD"
+
+test_intentions: []
+
+components: {}

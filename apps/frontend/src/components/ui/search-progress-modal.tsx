@@ -75,9 +75,9 @@ export function SearchProgressModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm"
-      aria-modal="true"
       role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm"
       aria-labelledby="search-modal-title"
     >
       <div className="relative w-full max-w-md mx-4 sm:mx-0 mb-4 sm:mb-0 rounded-2xl bg-[var(--color-surface-light)] p-6 sm:p-8 shadow-2xl">
@@ -99,11 +99,11 @@ export function SearchProgressModal({
             id="search-modal-title"
             className="text-xl font-bold text-[var(--color-text-main)] mt-3"
           >
-            {status === 'completed'
-              ? t('searchComplete')
-              : status === 'failed'
-                ? t('searchFailed')
-                : t('launching')}
+            {(() => {
+              if (status === 'completed') return t('searchComplete')
+              if (status === 'failed') return t('searchFailed')
+              return t('launching')
+            })()}
           </h2>
           <p className="text-sm text-[var(--color-text-muted)] mt-1">
             {country}{sector ? ` · ${sector}` : ''}

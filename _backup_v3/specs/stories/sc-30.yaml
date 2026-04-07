@@ -1,0 +1,131 @@
+story:
+  id: "sc-30"
+  name: "Fix visa check NZ — Playwright-based scraping via external server"
+  type: "bug"
+  size: "L"
+  priority: "should-have"
+  status: "refined"
+  created_at: "2026-03-25"
+
+  context: |
+    The current NZ visa check in visa_sponsor_registry.ts calls /list-api/getAPIResults/ directly.
+    This endpoint is NOT a public API — it requires browser session cookies set during page load.
+    Direct HTTP calls fail silently and always return not_found instead of unknown.
+
+    Proven approach (from n8n workflow 8sRbC6W5Z0sSHr62):
+    - Use external Playwright server (playwright.yannickbenchimol.cloud)
+    - Navigate to immigration.govt.nz page (sets session cookies)
+    - Fill #search-filter-input-keyword with company name
+    - Click the search button
+    - Intercept the /list-api/getAPIResults/ network response
+    - Parse JSON response (double-parsed: body is JSON, results field is also a JSON string)
+
+  scope:
+    modify:
+      - "apps/api/app/services/visa_sponsor_registry.ts"
+      - "apps/api/app/services/sourcing_service.ts"
+      - "apps/api/.env.example"
+    create:
+      - "apps/api/tests/unit/services/visa_sponsor_registry_nz.spec.ts"
+    read:
+      - "apps/api/app/models/company.ts"
+
+  implementation_notes: |
+    PLAYWRIGHT SERVER API (from n8n workflow):
+    - POST https://playwright.yannickbenchimol.cloud/execute
+    - Bearer auth via env PLAYWRIGHT_SERVER_TOKEN
+    - Tools:
+      1. navigate: { url, captureNetwork: true } → { sessionId }
+      2. wait_for_selector: { selector: "#search-filter-input-keyword", sessionId }
+      3. fill: { selector: "#search-filter-input-keyword", value: companyName, sessionId }
+      4. evaluate: { script: "document.querySelector('#search-filter-input-keyword').value", sessionId } → verify fill
+      5. click: { selector: "div.list-search__actions > button.btn.list-search__action.list-search__action--search", sessionId }
+      6. [wait 3s]
+      7. get_network_requests: { urlPattern: "**/list-api/getAPIResults/", sessionId }
+
+    RESPONSE PARSING (from n8n output node):
+    - body = requests[0].body (string) → JSON.parse(body)
+    - parsed.results is also a JSON string → JSON.parse(parsed.results)
+    - If statusCode=400 or results.length=0 → not_found
+    - Each result: result.field_schema.raw is Array<{APIColumn, Value}>
+    - Extract: employerName, tradingName, expiryDateOfAccreditation
+
+    STATUS MAPPING:
+    - Playwright error / timeout / sessionId missing → unknown
+    - results.length=0 or statusCode=400 → not_found
+    - Match found and not expired → accredited
+
+    SOURCING SERVICE FIX (line 191):
+    - Current: visaCheck.isAccredited ? 'accredited' : 'not_found'  ← BUG: drops unknown
+    - Fix: visaCheck.status  (use the explicit status field)
+
+    ENV VARS TO ADD:
+    - PLAYWRIGHT_SERVER_URL=https://playwright.yannickbenchimol.cloud
+    - PLAYWRIGHT_SERVER_TOKEN=<bearer_token>
+
+  acceptance_criteria:
+    - id: "AC-FUNC-SC30-01"
+      type: "FUNC"
+      description: "Given Playwright server reachable + company='Datacom' (known NZ accredited employer), When checkNZ('Datacom') is called, Then result.status='accredited' and result.confidence > 0.7"
+      verify: "curl -s -X POST http://localhost:3333/api/debug/visa-check -H 'Content-Type: application/json' -d '{\"company\":\"Datacom\",\"country\":\"NZ\"}' | grep -q '\"status\":\"accredited\"' && echo OK"
+      tier: 2
+
+    - id: "AC-FUNC-SC30-02"
+      type: "FUNC"
+      description: "Given company='FakeCompanyXYZ999' (unknown), When checkNZ is called, Then result.status='not_found'"
+      verify: "curl -s -X POST http://localhost:3333/api/debug/visa-check -H 'Content-Type: application/json' -d '{\"company\":\"FakeCompanyXYZ999\",\"country\":\"NZ\"}' | grep -q '\"status\":\"not_found\"' && echo OK"
+      tier: 2
+
+    - id: "AC-FUNC-SC30-03"
+      type: "FUNC"
+      description: "Given PLAYWRIGHT_SERVER_TOKEN is invalid/missing, When checkNZ is called, Then result.status='unknown' (never crashes, never returns not_found by default)"
+      verify: "grep -n 'unknown' apps/api/app/services/visa_sponsor_registry.ts | grep -E 'catch|error|timeout|status' | wc -l | awk '{if($1>0) print \"OK\"; else print \"FAIL\"}'"
+      tier: 1
+
+    - id: "AC-FUNC-SC30-04"
+      type: "FUNC"
+      description: "Given sourcing_service processes a company, When visa check returns status='unknown', Then company.visaSponsorStatus='unknown' (not 'not_found')"
+      verify: "grep -n 'visaSponsorStatus' apps/api/app/services/sourcing_service.ts | grep -v 'not_found' | grep -q 'status' && echo OK"
+      tier: 1
+
+    - id: "AC-SEC-SC30-01"
+      type: "SEC"
+      description: "PLAYWRIGHT_SERVER_TOKEN must not be hardcoded in source — must come from env"
+      verify: "grep -rn 'playwright.yannickbenchimol.cloud' apps/api/app/ | grep -v 'Env\\.get\\|process\\.env\\|env(' | wc -l | awk '{if($1==0) print \"OK\"; else print \"FAIL\"}'"
+      tier: 1
+
+    - id: "AC-SEC-SC30-02"
+      type: "SEC"
+      description: "Bearer token must not appear in logs or error messages"
+      verify: "grep -rn 'PLAYWRIGHT_SERVER_TOKEN\\|Bearer ' apps/api/app/ | grep -v 'Env\\.get\\|process\\.env\\|// ' | grep -v '\\.env\\.example' | wc -l | awk '{if($1==0) print \"OK\"; else print \"FAIL\"}'"
+      tier: 1
+
+    - id: "AC-BP-SC30-01"
+      type: "BP"
+      description: "PlaywrightClient must be a separate injectable class (not inline in visa_sponsor_registry.ts)"
+      verify: "test -f apps/api/app/services/playwright_client.ts && echo OK"
+      tier: 1
+
+    - id: "AC-BP-SC30-02"
+      type: "BP"
+      description: "All magic strings (selectors, URL patterns) extracted as named constants"
+      verify: "grep -n '#search-filter-input-keyword\\|list-api/getAPIResults\\|list-search__action--search' apps/api/app/services/visa_sponsor_registry.ts | grep -v 'const ' | wc -l | awk '{if($1==0) print \"OK\"; else print \"FAIL\"}'"
+      tier: 1
+
+  edge_cases:
+    - "Playwright server timeout (>15s) → status=unknown"
+    - "sessionId not returned by navigate → status=unknown"
+    - "requests[0] missing (page didn't trigger the API call) → status=unknown"
+    - "Company name with special chars (e.g. ampersand) → URL-encode before fill"
+    - "expiryDateOfAccreditation in past → not_found (already accredited but expired)"
+    - "Multiple results for same company → fuzzy match best score > 0.7"
+    - "PLAYWRIGHT_SERVER_URL not set → throw at startup (env validation)"
+
+  definition_of_done:
+    - "PlaywrightClient service created and tested"
+    - "checkNZ() uses Playwright flow (not direct HTTP)"
+    - "All 3 statuses (accredited/not_found/unknown) correctly propagated to Company model"
+    - "sourcing_service.ts bug fixed (line 191)"
+    - "PLAYWRIGHT_SERVER_URL + PLAYWRIGHT_SERVER_TOKEN added to .env.example"
+    - "Unit tests pass (mock PlaywrightClient)"
+    - "AC verify commands all pass"

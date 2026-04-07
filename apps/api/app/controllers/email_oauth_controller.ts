@@ -101,7 +101,7 @@ export default class EmailOAuthController {
       connection.isActive = true
       await connection.save()
     } else {
-      connection = await EmailConnection.create({
+      await EmailConnection.create({
         userId: user.id,
         connectionType: CONNECTION_TYPE.OAUTH,
         oauthProvider: OAUTH_PROVIDER.GOOGLE,

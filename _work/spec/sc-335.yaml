@@ -1,0 +1,136 @@
+story:
+  id: "sc-335"
+  shortcut_url: "https://app.shortcut.com/expat-hunter/story/335"
+  title: "Chat: render internal navigation links as clickable"
+  parent_spec: "specs/expat-hunter.yaml"
+  status: "refined"
+  size: "S"
+  estimate: 2
+  type: "feature"
+  refined_at: "2026-03-26"
+  refined_by: "refinement"
+
+user_story: >
+  As a user chatting with the AI assistant, I want navigation references
+  (e.g. "go to Recherche", "open Emails") to be clickable links so that
+  I can navigate directly to the mentioned page without leaving the chat
+  or hunting for the item in the sidebar.
+
+scope:
+  files_to_create:
+    - path: "apps/frontend/src/components/chat/chat-link-renderer.tsx"
+      reason: "Custom ReactMarkdown link component — uses Next.js Link for internal paths, plain <a> for external URLs"
+  files_to_modify:
+    - path: "apps/frontend/src/components/chat/chat-panel.tsx"
+      reason: "Pass components={{ a: ChatLinkRenderer }} to <ReactMarkdown> in the assistant message block"
+    - path: "apps/api/app/services/chat_assistant_service.ts"
+      reason: "Rewrite APP_FAQ answers to embed markdown links (e.g. [Recherche](/recherche)) instead of bold-only page names, so the AI returns navigable text"
+  files_to_read:
+    - "apps/frontend/src/components/chat/chat-panel.tsx"
+    - "apps/frontend/src/hooks/use-chat.ts"
+    - "apps/api/app/services/chat_assistant_service.ts"
+
+acceptance_criteria:
+
+  functional:
+    - id: "AC-FUNC-SC335-01"
+      description: "Given the assistant mentions a page / When the message contains a markdown link like [Recherche](/recherche) / Then a Next.js Link renders (data-testid or href present in DOM) — verified by grep on the renderer file"
+      verify: "grep -n 'Link' /Volumes/Samsung_T5/dev/expat-hunter/apps/frontend/src/components/chat/chat-link-renderer.tsx | grep -i 'next'"
+      tier: 1
+
+    - id: "AC-FUNC-SC335-02"
+      description: "Given an internal link (starts with /) / When rendered by ChatLinkRenderer / Then it uses Next.js <Link href=...> (client navigation, no full reload)"
+      verify: "grep -n \"href.startsWith('/') \\|\\| href.startsWith('/')\" /Volumes/Samsung_T5/dev/expat-hunter/apps/frontend/src/components/chat/chat-link-renderer.tsx || grep -n 'startsWith' /Volumes/Samsung_T5/dev/expat-hunter/apps/frontend/src/components/chat/chat-link-renderer.tsx"
+      tier: 1
+
+    - id: "AC-FUNC-SC335-03"
+      description: "Given an external link (http/https) / When rendered by ChatLinkRenderer / Then it uses a plain <a> with target=_blank and rel=noopener noreferrer"
+      verify: "grep -n 'noopener' /Volumes/Samsung_T5/dev/expat-hunter/apps/frontend/src/components/chat/chat-link-renderer.tsx"
+      tier: 1
+
+    - id: "AC-FUNC-SC335-04"
+      description: "Given ChatLinkRenderer is created / When chat-panel renders an assistant message / Then it passes components={{ a: ChatLinkRenderer }} to ReactMarkdown"
+      verify: "grep -n 'ChatLinkRenderer' /Volumes/Samsung_T5/dev/expat-hunter/apps/frontend/src/components/chat/chat-panel.tsx"
+      tier: 1
+
+    - id: "AC-FUNC-SC335-05"
+      description: "Given the FAQ answer for 'lancer une recherche' / When it is returned / Then it contains a markdown link to /recherche"
+      verify: "grep -n '/recherche' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/app/services/chat_assistant_service.ts"
+      tier: 1
+
+    - id: "AC-FUNC-SC335-06"
+      description: "Given the FAQ answers / When they reference app pages / Then at least 4 distinct internal routes are linked via markdown syntax in APP_FAQ"
+      verify: "grep -c '](/[a-z]' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/app/services/chat_assistant_service.ts | awk '{if($1>=4) print \"OK\"; else print \"FAIL: only \"$1\" links found\"}'"
+      tier: 1
+
+  security:
+    - id: "AC-SEC-SC335-01"
+      description: "External links opened in ChatLinkRenderer must have rel=noopener noreferrer to prevent tab-napping attacks"
+      verify: "grep -n 'noreferrer' /Volumes/Samsung_T5/dev/expat-hunter/apps/frontend/src/components/chat/chat-link-renderer.tsx"
+      tier: 1
+
+    - id: "AC-SEC-SC335-02"
+      description: "No javascript: or data: URIs must be accepted as href — the renderer must only allow http/https or paths starting with /"
+      verify: "grep -n 'javascript:\\|data:' /Volumes/Samsung_T5/dev/expat-hunter/apps/frontend/src/components/chat/chat-link-renderer.tsx | grep -v 'javascript:\\|data:.*block\\|sanitize\\|guard' || grep -n 'startsWith' /Volumes/Samsung_T5/dev/expat-hunter/apps/frontend/src/components/chat/chat-link-renderer.tsx | grep -q '/' && echo 'guard present'"
+      tier: 1
+
+  best_practices:
+    - id: "AC-BP-SC335-01"
+      description: "ChatLinkRenderer is a standalone component file (not inlined in chat-panel) — max 50 lines, single responsibility"
+      verify: "wc -l /Volumes/Samsung_T5/dev/expat-hunter/apps/frontend/src/components/chat/chat-link-renderer.tsx | awk '{if($1<=50) print \"OK: \"$1\" lines\"; else print \"FAIL: \"$1\" lines (max 50)\"}'"
+      tier: 1
+
+    - id: "AC-BP-SC335-02"
+      description: "TypeScript: 0 errors after changes"
+      verify: "cd /Volumes/Samsung_T5/dev/expat-hunter/apps/frontend && npx tsc --noEmit 2>&1 | wc -l | tr -d ' ' | grep '^0$'"
+      tier: 1
+
+edge_cases:
+  - description: "href is undefined or null (malformed markdown)"
+    handling: "ChatLinkRenderer renders children as plain text if href is falsy — never throw"
+  - description: "href is a relative path without leading slash (e.g. 'recherche')"
+    handling: "Treat as external (plain <a>) — only leading-slash paths are navigated with Next.js Link"
+  - description: "AI returns a link to an unknown internal path"
+    handling: "Next.js Link handles 404 natively — no special handling needed in the renderer"
+  - description: "javascript: URI injected via markdown"
+    handling: "Guard in renderer: only render Link/a if href starts with '/' or 'http' — otherwise render plain text"
+
+depends_on: []
+
+notes: |
+  Architecture summary:
+  - ReactMarkdown already renders assistant messages in chat-panel.tsx (line 216).
+  - It accepts a `components` prop to override how each HTML element is rendered.
+  - We create ChatLinkRenderer: if href starts with '/' → <Link href={href}> (Next.js client nav);
+    otherwise → <a href target=_blank rel=noopener noreferrer>.
+  - APP_FAQ answers in chat_assistant_service.ts are rewritten to use markdown links:
+    e.g. "Allez dans **[Recherche](/recherche)**" instead of "Allez dans **Recherche**".
+  - The system prompt for AI fallback already mentions page names; no change needed there
+    (the AI generates free text and may or may not include markdown links — acceptable).
+
+  App routes mapping:
+    Recherche     → /recherche
+    Emails        → /emails
+    Suivi/Kanban  → /suivi
+    Contacts      → /contacts
+    Dashboard     → /
+    Paramètres    → /parametres
+    Templates     → /parametres/templates
+    Presets       → /parametres/presets
+
+definition_of_done:
+  - "All AC verify: commands pass"
+  - "No TypeScript errors (tsc --noEmit) in apps/frontend"
+  - "Internal links in chat open via Next.js client navigation (no full page reload)"
+  - "External links open in new tab with noopener noreferrer"
+  - "PR merged into main"
+  - "Shortcut story moved to Done"
+
+closing_ac:
+  - id: "AC-BP-SC335-DONE"
+    type: "BP"
+    description: |
+      PR is merged into main — story closure gate.
+      After this passes, validator MUST move sc-335 to Done (workflow_state_id: 500000010).
+    verify: "gh pr list --state merged --base main --json title | grep -q 'sc-335\\|chat.*link\\|link.*chat\\|clickable'"
+    tier: 1

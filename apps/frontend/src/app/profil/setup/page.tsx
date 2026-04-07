@@ -3,12 +3,44 @@
 import { Button } from '@/components/ui/button'
 import { TagInput } from '@/components/ui/tag-input'
 import { useAuth } from '@/contexts/auth-context'
-import { type UpdateProfileData, useProfile } from '@/hooks/use-profile'
+import { type AiExtraction, type UpdateProfileData, useProfile } from '@/hooks/use-profile'
 import { useRouter } from 'next/navigation'
 import { type ChangeEvent, type FormEvent, useCallback, useState } from 'react'
 import { useTranslations } from 'next-intl'
 
 type WizardStep = 'info' | 'cv' | 'confirm'
+
+interface AiSuggestions {
+  skills?: string[]
+  targetRoles?: string[]
+  targetSectors?: string[]
+  experienceYears?: number
+}
+
+function computeAiSuggestions(
+  ai: AiExtraction,
+  currentSkillsLength: number,
+  currentRolesLength: number,
+  currentSectorsLength: number,
+  currentExperienceYears: number
+): AiSuggestions {
+  const suggestions: AiSuggestions = {}
+
+  if (currentSkillsLength === 0 && ai.skills.length > 0) {
+    suggestions.skills = ai.skills
+  }
+  if (currentRolesLength === 0 && ai.suggestedRoles.length > 0) {
+    suggestions.targetRoles = ai.suggestedRoles
+  }
+  if (currentSectorsLength === 0 && ai.suggestedSectors.length > 0) {
+    suggestions.targetSectors = ai.suggestedSectors
+  }
+  if (currentExperienceYears === 0 && ai.experienceYears) {
+    suggestions.experienceYears = ai.experienceYears
+  }
+
+  return suggestions
+}
 
 export default function ProfileSetupPage() {
   const { user, isLoading: authLoading } = useAuth()
@@ -94,20 +126,17 @@ export default function ProfileSetupPage() {
       try {
         const result = await uploadCv(file)
         if (result?.aiExtraction) {
-          const ai = result.aiExtraction
-          // Auto-fill empty fields with AI suggestions
-          if (skills.length === 0 && ai.skills.length > 0) {
-            setSkills(ai.skills)
-          }
-          if (targetRoles.length === 0 && ai.suggestedRoles.length > 0) {
-            setTargetRoles(ai.suggestedRoles)
-          }
-          if (targetSectors.length === 0 && ai.suggestedSectors.length > 0) {
-            setTargetSectors(ai.suggestedSectors)
-          }
-          if (experienceYears === 0 && ai.experienceYears) {
-            setExperienceYears(ai.experienceYears)
-          }
+          const suggestions = computeAiSuggestions(
+            result.aiExtraction,
+            skills.length,
+            targetRoles.length,
+            targetSectors.length,
+            experienceYears
+          )
+          if (suggestions.skills) setSkills(suggestions.skills)
+          if (suggestions.targetRoles) setTargetRoles(suggestions.targetRoles)
+          if (suggestions.targetSectors) setTargetSectors(suggestions.targetSectors)
+          if (suggestions.experienceYears) setExperienceYears(suggestions.experienceYears)
           setAiMessage(t('cvAiAnalyzed'))
         }
       } catch (err) {

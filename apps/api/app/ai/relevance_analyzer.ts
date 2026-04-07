@@ -14,7 +14,7 @@ import {
 } from '#ai/prompts/relevance_analysis_prompt'
 
 export class RelevanceAnalyzer {
-  private client: OpenRouterClient
+  private readonly client: OpenRouterClient
 
   constructor(client?: OpenRouterClient) {
     this.client = client ?? new OpenRouterClient()

@@ -99,9 +99,23 @@
 - **Note**: AdonisJS v7 (not v6 as originally planned)
 
 ### Phase 2 — Construction
-- **Status**: 🔄 In progress — Sprint 1 active (sc-216, sc-79, sc-80, sc-81)
+- **Status**: 🔄 In progress — SonarQube refactoring sprint
 - **Features**: 6 must-have validated, 2 should-have pending, 6 nice-to-have pending
-- **Next**: Pick a story from Sprint 1 backlog
+- **Current sprint**: SonarQube code quality refactoring (145 issues found)
+  - sc-755 ✅ validated — single-command local dev startup (PR #135 merged)
+  - sc-764 ✅ validated — add readonly to class members (PR #136 merged)
+  - sc-763 ✅ validated — reduce cognitive complexity (PR #137 merged)
+  - sc-765 ✅ validated — extract nested ternaries (PR #138 merged)
+  - sc-766 ✅ validated/closed — accessibility issues already fixed (0 remaining)
+  - sc-767 ✅ validated — fix misc code smells (PR #139 merged)
+  - sc-808 ✅ validated — persistent Docker volumes for PostgreSQL + Redis (PR #140)
+- **Infra done this session**:
+  - Framework updated to v4.0.11 (PR #134)
+  - .mcp.json fixed (npx path + PATH env for Shortcut MCP)
+  - .devtools/docker-compose.yml for SonarQube (credentials from .env)
+  - sonar-project.properties fixed (targeted sources, tests included)
+  - .env.example cleaned (no secrets, security warning added)
+  - README.md updated (description, commands, structure)
 
 ### Phase 3 — Review
 - **Status**: ✅ Done (all must-have features validated 2026-03-25)

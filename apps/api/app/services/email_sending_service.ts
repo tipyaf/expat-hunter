@@ -29,8 +29,8 @@ export interface BatchProgress {
 const batchProgressStore = new Map<string, BatchProgress>()
 
 export default class EmailSendingService {
-  private movementService = new ContactMovementService()
-  private oauthTokenService = new OAuthTokenService()
+  private readonly movementService = new ContactMovementService()
+  private readonly oauthTokenService = new OAuthTokenService()
 
   /**
    * Send all approved emails for a user in batch.

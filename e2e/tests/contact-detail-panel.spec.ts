@@ -45,8 +45,6 @@ test.describe('Contact detail panel', () => {
       return
     }
 
-    // Get the name from the card before clicking
-    const cardText = await cards.first().textContent()
     await cards.first().click()
 
     const dialog = page.locator('[role="dialog"][aria-modal="true"]')

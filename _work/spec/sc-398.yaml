@@ -1,0 +1,112 @@
+story:
+  id: "sc-398"
+  shortcut_url: "https://app.shortcut.com/expat-hunter/story/398"
+  title: "Fix: chat falls back to support mode when OpenRouter unavailable"
+  parent_spec: "specs/expat-hunter.yaml"
+  status: "refined"
+  size: "XS"
+  estimate: 1
+  type: "bug"
+  refined_at: "2026-03-26"
+  refined_by: "refinement"
+
+user_story: >
+  As a user chatting with the assistant, when OpenRouter is unavailable (missing/invalid API key),
+  I want to receive a relevant FAQ-based response instead of the same hardcoded error message
+  regardless of what I asked, so that the chat remains useful even when AI is not configured.
+
+context: |
+  getExpertResponse() returns a hardcoded error string when OpenRouterClient.forFeature('chat_assistant')
+  returns null (API key missing or invalid). Most user questions trigger 'expert' mode via keyword
+  matching (visa, salaire, carrière...). Result: every question gets the same error message regardless
+  of content.
+  Fix: fall back to getSupportResponse() when client is null, log a warning. Keep the error string
+  as a last resort only if the support fallback also fails.
+
+scope:
+  files_to_modify:
+    - path: "apps/api/app/services/chat_assistant_service.ts"
+      reason: "In getExpertResponse(): when client is null, call getSupportResponse() as fallback and log a warning"
+  files_to_create: []
+  files_to_read:
+    - "apps/api/app/services/chat_assistant_service.ts"
+
+  included:
+    - "In getExpertResponse(): when client is null, call getSupportResponse() as fallback"
+    - "Log a warning (logger.warn) when OpenRouter is unavailable"
+    - "Keep the error string as a last resort (if support fallback also fails)"
+  excluded:
+    - "Fixing the OPENROUTER_API_KEY configuration (infrastructure concern)"
+    - "Changing the expert keyword matching logic"
+    - "Adding new FAQ entries"
+
+acceptance_criteria:
+
+  functional:
+    - id: "AC-FUNC-SC398-01"
+      type: "FUNC"
+      description: "Given OpenRouter client is null / When getExpertResponse is called / Then it falls back to getSupportResponse"
+      verify: "grep -n 'getSupportResponse\\|fallback\\|support' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/app/services/chat_assistant_service.ts | grep -i 'expert\\|client\\|null\\|fallback' | wc -l | tr -d ' ' | grep -v '^0$'"
+      tier: 1
+
+    - id: "AC-FUNC-SC398-02"
+      type: "FUNC"
+      description: "Given OpenRouter unavailable / When user asks any question / Then response is not the hardcoded error string"
+      verify: "grep -c \"L'assistant IA expert n'est pas configuré\" /Volumes/Samsung_T5/dev/expat-hunter/apps/api/app/services/chat_assistant_service.ts | tr -d ' ' | grep -E '^[01]$'"
+      tier: 1
+
+  security:
+    - id: "AC-SEC-SC398-01"
+      type: "SEC"
+      description: "OPENROUTER_API_KEY must never be hardcoded in the service"
+      verify: "grep -rn 'sk-or-\\|OPENROUTER_API_KEY\\s*=' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/app/services/chat_assistant_service.ts | wc -l | tr -d ' ' | grep '^0$'"
+      tier: 1
+
+  best_practices:
+    - id: "AC-BP-SC398-01"
+      type: "BP"
+      description: "A warning is logged when OpenRouter client is null"
+      verify: "grep -n 'logger.warn\\|console.warn\\|Logger' /Volumes/Samsung_T5/dev/expat-hunter/apps/api/app/services/chat_assistant_service.ts | wc -l | tr -d ' ' | grep -v '^0$'"
+      tier: 1
+
+    - id: "AC-BP-SC398-02"
+      type: "BP"
+      description: "TypeScript: 0 errors after change"
+      verify: "cd /Volumes/Samsung_T5/dev/expat-hunter && npx tsc --noEmit -p apps/api/tsconfig.json 2>&1 | wc -l | tr -d ' ' | grep '^0$'"
+      tier: 1
+
+edge_cases:
+  - description: "getSupportResponse() returns an empty string or throws"
+    handling: "Catch the fallback error and return the original hardcoded error string as last resort"
+  - description: "Both OpenRouter and FAQ matching fail"
+    handling: "Return the hardcoded error string — degraded but stable behavior"
+
+depends_on: []
+
+notes: |
+  Root cause: lines ~239-241 in chat_assistant_service.ts return a hardcoded French error string
+  when client is null. Since keyword matching routes most questions to expert mode, users always
+  see the same error regardless of their question.
+
+  The fix pattern in getExpertResponse():
+    if (!client) {
+      logger.warn('OpenRouter unavailable for chat_assistant — falling back to support mode')
+      return this.getSupportResponse(message)
+    }
+
+  getSupportResponse() already exists and performs FAQ keyword matching — no new code needed.
+
+definition_of_done:
+  - "All AC verify: commands pass"
+  - "No TypeScript errors (tsc --noEmit)"
+  - "PR merged into main"
+  - "Shortcut story moved to Done"
+
+closing_ac:
+  - id: "AC-BP-SC398-DONE"
+    type: "BP"
+    description: |
+      PR is merged into main — story closure gate.
+      After this passes, validator MUST move sc-398 to Done (workflow_state_id: 500000010).
+    verify: "gh pr list --state merged --base main --json title | grep -q 'sc-398\\|chat.*fallback\\|fallback.*support\\|openrouter'"
+    tier: 1

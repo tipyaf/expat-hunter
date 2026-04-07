@@ -45,6 +45,22 @@ interface StatsResponse {
   data: Record<string, number>
 }
 
+function updateColumnsAfterMove(prev: PipelineColumn[], contactId: string, newStatus: string): PipelineColumn[] {
+  const contact = prev.flatMap((c) => c.contacts).find((c) => c.id === contactId)
+  if (!contact) return prev
+
+  const updated = { ...contact, status: newStatus }
+  return prev.map((col) => {
+    const without = col.contacts.filter((c) => c.id !== contactId)
+    const shouldAdd = col.statuses.includes(newStatus)
+    return {
+      ...col,
+      contacts: shouldAdd ? [...without, updated] : without,
+      count: shouldAdd ? without.length + 1 : without.length,
+    }
+  })
+}
+
 export function usePipeline() {
   const { token } = useAuth()
   const [columns, setColumns] = useState<PipelineColumn[]>([])
@@ -78,19 +94,7 @@ export function usePipeline() {
     if (!token) return
     await apiClient.patch(`/api/contacts/${contactId}/status`, { status: newStatus, trigger }, { token })
 
-    setColumns((prev) => {
-      const contact = prev.flatMap((c) => c.contacts).find((c) => c.id === contactId)
-      if (!contact) return prev
-
-      return prev.map((col) => {
-        const without = col.contacts.filter((c) => c.id !== contactId)
-        if (col.statuses.includes(newStatus)) {
-          const updated = { ...contact, status: newStatus }
-          return { ...col, contacts: [...without, updated], count: without.length + 1 }
-        }
-        return { ...col, contacts: without, count: without.length }
-      })
-    })
+    setColumns((prev) => updateColumnsAfterMove(prev, contactId, newStatus))
   }, [token])
 
   useEffect(() => {

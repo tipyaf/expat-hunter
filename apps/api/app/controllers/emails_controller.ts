@@ -8,7 +8,7 @@ const VALID_STATUSES = ['draft', 'approved', 'sent', 'opened', 'replied', 'bounc
 const MAX_INSTRUCTIONS_LENGTH = 500
 
 export default class EmailsController {
-  private usageService = new UsageService()
+  private readonly usageService = new UsageService()
   /**
    * GET /api/emails — List emails for current user (paginated).
    */

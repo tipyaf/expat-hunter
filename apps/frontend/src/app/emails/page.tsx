@@ -105,40 +105,38 @@ export default function EmailsPage() {
     clearSelection()
   }
 
+  const startProgressPolling = (batchId: string) => {
+    pollRef.current = setInterval(async () => {
+      const p = await getSendBatchProgress(batchId)
+      if (!p) return
+      setSendProgress({ batchId: p.batchId, status: p.status, total: p.total, sent: p.sent, failed: p.failed })
+      if (p.status !== 'completed' && p.status !== 'failed') return
+      clearInterval(pollRef.current!)
+      pollRef.current = null
+      setMessage({
+        text: t('sendComplete', { sent: p.sent, failed: p.failed }),
+        type: p.failed > 0 ? 'error' : 'success',
+      })
+      void refetch()
+    }, 1500)
+  }
+
   const handleSendConfirmed = async () => {
     setShowSendConfirm(false)
     setMessage(null)
     try {
       const emailIds = selected.size > 0 ? [...selected] : undefined
       const result = await sendBatch(emailIds)
-      const progress: SendProgress = {
+      setSendProgress({
         batchId: result.batchId,
         status: 'running',
         total: result.total,
         sent: 0,
         failed: 0,
-      }
-      setSendProgress(progress)
+      })
       clearSelection()
-
-      // Poll for progress
-      pollRef.current = setInterval(async () => {
-        const p = await getSendBatchProgress(result.batchId)
-        if (p) {
-          setSendProgress({ batchId: p.batchId, status: p.status, total: p.total, sent: p.sent, failed: p.failed })
-          if (p.status === 'completed' || p.status === 'failed') {
-            clearInterval(pollRef.current!)
-            pollRef.current = null
-            setMessage({
-              text: t('sendComplete', { sent: p.sent, failed: p.failed }),
-              type: p.failed > 0 ? 'error' : 'success',
-            })
-            void refetch()
-          }
-        }
-      }, 1500)
-    } catch (error) {
-      console.error('Failed to send email batch:', error)
+      startProgressPolling(result.batchId)
+    } catch {
       setMessage({ text: t('sendError'), type: 'error' })
     }
   }
@@ -252,7 +250,7 @@ export default function EmailsPage() {
                 {t('selectedCount', { count: selected.size })}
               </span>
               <div className="flex items-center gap-2">
-                {selected.size > 0 && emails.some((e) => selected.has(e.id) && e.status === 'draft') && (
+                {emails.some((e) => selected.has(e.id) && e.status === 'draft') && (
                   <button
                     type="button"
                     onClick={() => void handleApproveSelected()}

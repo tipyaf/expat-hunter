@@ -3,7 +3,7 @@ import MarketSnapshotService from '#services/market_snapshot_service'
 import { LOCALE_NAMES } from '../constants/locale.js'
 
 export default class MarketController {
-  private marketService = new MarketSnapshotService()
+  private readonly marketService = new MarketSnapshotService()
 
   /**
    * GET /api/market/snapshot?country=X&sector=Y&lang=Z — Get market snapshot.

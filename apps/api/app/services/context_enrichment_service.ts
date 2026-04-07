@@ -47,8 +47,8 @@ const ABOUT_PARSE_PROMPT = `Analyze this company "About" page content and extrac
 Return ONLY valid JSON with keys: culture, techStack, expatFriendlySignals, aboutSummary. No markdown.`
 
 export default class ContextEnrichmentService {
-  private cache = new CacheService()
-  private hunterApiKey = env.get('HUNTER_API_KEY')
+  private readonly cache = new CacheService()
+  private readonly hunterApiKey = env.get('HUNTER_API_KEY')
 
   /**
    * Enrich a company with contextual data from multiple sources.
@@ -86,8 +86,14 @@ export default class ContextEnrichmentService {
     // Determine data quality
     const fieldCount = [culture, techStack.length > 0, aboutSummary, expatFriendlySignals.length > 0]
       .filter(Boolean).length
-    const dataQuality: CompanyContextData['dataQuality'] =
-      fieldCount >= 3 ? 'high' : fieldCount >= 1 ? 'medium' : 'low'
+    let dataQuality: CompanyContextData['dataQuality']
+    if (fieldCount >= 3) {
+      dataQuality = 'high'
+    } else if (fieldCount >= 1) {
+      dataQuality = 'medium'
+    } else {
+      dataQuality = 'low'
+    }
 
     return {
       culture,

@@ -268,7 +268,7 @@ const DEFAULT_DATA: CountryEntry = {
 // ─── Service ─────────────────────────────────────────────────────────────────
 
 export default class MarketSnapshotService {
-  private cacheService: CacheService
+  private readonly cacheService: CacheService
 
   constructor(cacheService?: CacheService) {
     this.cacheService = cacheService ?? new CacheService()

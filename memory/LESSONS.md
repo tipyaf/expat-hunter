@@ -133,3 +133,18 @@ Use `stories-update labels:[{name: "scope:building"}]` at each transition.
 **Problem**: Multiple stories validated while MISSING_MESSAGE errors, JavaScript stacktraces, or backend exceptions were visible in the console. These were dismissed as "pre-existing" or "not related" without being fixed or tracked.
 **Root cause**: Validator checked TypeScript compilation and screenshots but never inspected the browser console or server logs for runtime errors.
 **Rule**: Before ANY story can be marked validated: 1) Check browser console via preview_console_logs — zero errors allowed, 2) Check backend server logs — zero stacktraces or unhandled exceptions, 3) Warnings are noted but do not block. 4) Pre-existing errors MUST be fixed (<30 min) or tracked in a new Shortcut story. Console errors are a BLOCKING validation gate — a page with a console error is NOT validated, period.
+
+### [Shortcut] Always include the Shortcut story link when presenting refinement
+**Problem**: Refinement proposals presented without a link to the Shortcut ticket. User has to search for it manually.
+**Root cause**: Agent focuses on technical content and forgets the project management link.
+**Rule**: When presenting a refinement, ALWAYS include the Shortcut story URL (e.g., https://app.shortcut.com/expat-hunter/story/XXX) so the user can review the ticket directly.
+
+### [Git] Always commit memory and tracker files before finishing a story
+**Problem**: memory/expat-hunter.md and _work/spec/*.yaml left uncommitted multiple times. User had to catch it manually.
+**Root cause**: Agent updates memory/tracker files but forgets to stage and commit them with the rest of the changes.
+**Rule**: Before declaring a story done or pushing a PR, ALWAYS run `git status` and verify that ALL modified files are committed — especially: 1) `memory/expat-hunter.md`, 2) `_work/feature-tracker.yaml`, 3) `_work/spec/*.yaml` story files. These are project artifacts, not throwaway notes. If they are modified, they MUST be in the commit.
+
+### [Shortcut] Story description must use real newlines, not literal \n
+**Problem**: Shortcut story descriptions rendered as a single block of text with no formatting. ACs, scope, and context were unreadable.
+**Root cause**: Agent passed the description string with `\n` escape sequences instead of real newlines. The Shortcut API renders them literally.
+**Rule**: ALWAYS use real multi-line strings when calling `stories-update` or `stories-create` for the description field. Never use `\n` in description strings — use actual line breaks.
