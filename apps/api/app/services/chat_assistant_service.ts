@@ -175,7 +175,7 @@ function detectActions(
 }
 
 export default class ChatAssistantService {
-  private cacheService = new CacheService()
+  private readonly cacheService = new CacheService()
 
   getHistory(sessionId: string): ChatMessage[] {
     return sessions.get(sessionId) ?? []
@@ -271,12 +271,34 @@ Main app features:
       }
     }
 
-    const lower = message.toLowerCase()
+    const contextData = await this.gatherContextData(context, message)
+    const profileContext = this.gatherProfileContext(userProfile, message)
 
-    // Gather context from cache
+    const systemPrompt = `Tu es un expert en immigration professionnelle et recrutement international, spécialisé dans les marchés anglophones (Nouvelle-Zélande, Australie, Canada, UK).
+Tu aides les utilisateurs d'ExpatHunter dans leur recherche d'emploi à l'international.
+Réponds en français de manière précise, avec des conseils concrets et actionnables.
+Page actuelle: ${context.page}${context.companyName ? `\nEntreprise: ${context.companyName}` : ''}${context.country ? `\nPays cible: ${context.country}` : ''}${contextData}${profileContext}`
+
+    try {
+      const messages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
+        { role: 'system', content: systemPrompt },
+        ...history.slice(-10).map((m) => ({
+          role: m.role as 'user' | 'assistant',
+          content: m.content,
+        })),
+        { role: 'user', content: message },
+      ]
+
+      return await client.chat({ messages, temperature: 0.7, maxTokens: 768 })
+    } catch {
+      return "Une erreur est survenue lors de la consultation de l'assistant expert. Veuillez réessayer."
+    }
+  }
+
+  private async gatherContextData(context: ChatContext, message: string): Promise<string> {
+    const lower = message.toLowerCase()
     let contextData = ''
 
-    // F14.5: Inject market snapshot data when country is available
     if (context.country) {
       try {
         const marketCache = await this.cacheService.get<Record<string, unknown>>(
@@ -307,7 +329,6 @@ Main app features:
       }
     }
 
-    // F14.6: Inject visa info when visa keywords detected
     if (VISA_KEYWORDS.some((kw) => lower.includes(kw)) && context.country) {
       const visaInfo = VISA_INFO[context.country]
       if (visaInfo) {
@@ -315,39 +336,31 @@ Main app features:
       }
     }
 
-    // F14.7: Inject user profile context when career/CV keywords detected
+    return contextData
+  }
+
+  private gatherProfileContext(
+    userProfile: { cvText?: string; skills?: string[]; experienceYears?: number } | undefined,
+    message: string
+  ): string {
+    const lower = message.toLowerCase()
     let profileContext = ''
-    if (userProfile && CAREER_KEYWORDS.some((kw) => lower.includes(kw))) {
-      if (userProfile.cvText) {
-        profileContext += `\nCandidate CV (excerpt): ${userProfile.cvText.slice(0, 800)}`
-      }
-      if (userProfile.skills && userProfile.skills.length > 0) {
-        profileContext += `\nSkills: ${userProfile.skills.join(', ')}`
-      }
-      if (userProfile.experienceYears !== undefined) {
-        profileContext += `\nYears of experience: ${userProfile.experienceYears}`
-      }
+
+    if (!userProfile || !CAREER_KEYWORDS.some((kw) => lower.includes(kw))) {
+      return profileContext
     }
 
-    const systemPrompt = `You are an expert in professional immigration and international recruitment, specialized in English-speaking markets (New Zealand, Australia, Canada, UK).
-You help ExpatHunter users in their international job search.
-Respond in ${languageName}. Be precise, concrete, and actionable.
-Current page: ${context.page}${context.companyName ? `\nCompany: ${context.companyName}` : ''}${context.country ? `\nTarget country: ${context.country}` : ''}${contextData}${profileContext}`
-
-    try {
-      const messages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
-        { role: 'system', content: systemPrompt },
-        ...history.slice(-10).map((m) => ({
-          role: m.role as 'user' | 'assistant',
-          content: m.content,
-        })),
-        { role: 'user', content: message },
-      ]
-
-      return await client.chat({ messages, temperature: AI_TEMPERATURE_CREATIVE, maxTokens: AI_MAX_TOKENS_LONG })
-    } catch {
-      return 'An error occurred while consulting the expert assistant. Please try again.'
+    if (userProfile.cvText) {
+      profileContext += `\nCV du candidat (extrait): ${userProfile.cvText.slice(0, 800)}`
     }
+    if (userProfile.skills && userProfile.skills.length > 0) {
+      profileContext += `\nCompétences: ${userProfile.skills.join(', ')}`
+    }
+    if (userProfile.experienceYears !== undefined) {
+      profileContext += `\nAnnées d'expérience: ${userProfile.experienceYears}`
+    }
+
+    return profileContext
   }
 
   async processMessage(

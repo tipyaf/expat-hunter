@@ -7,7 +7,7 @@
 import { BaseScraper } from './base_scraper.js'
 
 export class ScraperRegistry {
-  private scrapers: Map<string, BaseScraper[]> = new Map()
+  private readonly scrapers: Map<string, BaseScraper[]> = new Map()
 
   register(scraper: BaseScraper): void {
     const key = scraper.country

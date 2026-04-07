@@ -45,6 +45,7 @@ export default function PipelinePage() {
     reason: '',
   })
   const [blocking, setBlocking] = useState(false)
+  const { isFree } = usePlan()
 
   // Contextual tip for kanban
   const [tip, setTip] = useState<{ message: string; cta?: { label: string; href: string } } | null>(null)
@@ -117,8 +118,6 @@ export default function PipelinePage() {
       setBlocking(false)
     }
   }
-
-  const { isFree } = usePlan()
 
   const kanbanMockup = (
     <div className="flex-1 flex flex-col overflow-hidden">

@@ -68,7 +68,7 @@ async function resetUserPasswordToOriginal(): Promise<void> {
     })
     if (!loginRes.ok) return
 
-    const { token } = await loginRes.json()
+    await loginRes.json()
 
     // Update password back to original via profile or direct DB
     const db = new Client(DB_CONFIG)

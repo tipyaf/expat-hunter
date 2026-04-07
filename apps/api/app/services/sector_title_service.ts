@@ -67,7 +67,7 @@ function loadSystemPrompt(): string {
 
 export class OpenRouterTitleProvider implements TitleGenerationProvider {
   readonly providerName = 'llm:gpt-4o-mini'
-  private systemPrompt = loadSystemPrompt()
+  private readonly systemPrompt = loadSystemPrompt()
 
   async generateTitles(sector: string, country: string): Promise<SectorTitles> {
     const client = new OpenRouterClient({ model: 'openai/gpt-4o-mini', maxTokens: 1024 })
@@ -115,8 +115,8 @@ const CACHE_SOURCE = 'sector_titles'
 const CACHE_TTL_DAYS = 30
 
 export default class SectorTitleService {
-  private llmProvider: TitleGenerationProvider
-  private staticProvider: TitleGenerationProvider
+  private readonly llmProvider: TitleGenerationProvider
+  private readonly staticProvider: TitleGenerationProvider
 
   constructor(llmProvider?: TitleGenerationProvider) {
     this.staticProvider = new StaticTitleProvider()

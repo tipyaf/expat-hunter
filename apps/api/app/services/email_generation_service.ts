@@ -17,7 +17,7 @@ interface GenerationResult {
 }
 
 export default class EmailGenerationService {
-  private composer: EmailComposer
+  private readonly composer: EmailComposer
 
   constructor(composer?: EmailComposer) {
     this.composer = composer ?? new EmailComposer()

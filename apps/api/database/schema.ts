@@ -241,8 +241,10 @@ export class ContactSchema extends BaseModel {
 }
 
 export class EmailConnectionSchema extends BaseModel {
-  static $columns = ['createdAt', 'id', 'imapHost', 'imapPassword', 'imapPort', 'imapUser', 'isActive', 'lastSyncedAt', 'smtpHost', 'smtpPassword', 'smtpPort', 'smtpUser', 'updatedAt', 'userId'] as const
+  static $columns = ['connectionType', 'createdAt', 'id', 'imapHost', 'imapPassword', 'imapPort', 'imapUser', 'isActive', 'lastSyncedAt', 'oauthAccessToken', 'oauthEmail', 'oauthExpiresAt', 'oauthProvider', 'oauthRefreshToken', 'smtpHost', 'smtpPassword', 'smtpPort', 'smtpUser', 'updatedAt', 'userId'] as const
   $columns = EmailConnectionSchema.$columns
+  @column()
+  declare connectionType: string
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
   @column({ isPrimary: true })
@@ -259,6 +261,16 @@ export class EmailConnectionSchema extends BaseModel {
   declare isActive: boolean
   @column.dateTime()
   declare lastSyncedAt: DateTime | null
+  @column()
+  declare oauthAccessToken: string | null
+  @column()
+  declare oauthEmail: string | null
+  @column.dateTime()
+  declare oauthExpiresAt: DateTime | null
+  @column()
+  declare oauthProvider: string | null
+  @column()
+  declare oauthRefreshToken: string | null
   @column()
   declare smtpHost: string
   @column()

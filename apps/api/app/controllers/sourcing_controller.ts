@@ -6,9 +6,9 @@ import UsageService from '#services/usage_service'
 import '../scrapers/register.js'
 
 export default class SourcingController {
-  private sourcingService = new SourcingService()
-  private orchestrator = new SourcingOrchestrator()
-  private usageService = new UsageService()
+  private readonly sourcingService = new SourcingService()
+  private readonly orchestrator = new SourcingOrchestrator()
+  private readonly usageService = new UsageService()
 
   /**
    * POST /api/sourcing/run — Launch a new sourcing campaign (5-phase pipeline).

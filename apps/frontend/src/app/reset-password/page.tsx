@@ -17,7 +17,6 @@ function ResetPasswordForm() {
   const [error, setError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const t = useTranslations('auth')
-  const tc = useTranslations('common')
 
   if (!token) {
     return (

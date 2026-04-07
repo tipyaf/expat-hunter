@@ -268,11 +268,14 @@ export default function SearchPage() {
           <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface-light)] p-6 shadow-sm">
             <h2 className="text-lg font-semibold mb-4">{t('historyTitle')}</h2>
 
-            {isLoading ? (
-              <p className="text-sm text-[var(--color-text-muted)]">{tc('loading')}</p>
-            ) : runs.length === 0 ? (
-              <p className="text-sm text-[var(--color-text-muted)]">{t('noRuns')}</p>
-            ) : (
+            {(() => {
+              if (isLoading) {
+                return <p className="text-sm text-[var(--color-text-muted)]">{tc('loading')}</p>
+              }
+              if (runs.length === 0) {
+                return <p className="text-sm text-[var(--color-text-muted)]">{t('noRuns')}</p>
+              }
+              return (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
@@ -311,7 +314,8 @@ export default function SearchPage() {
                   </tbody>
                 </table>
               </div>
-            )}
+              )
+            })()}
           </div>
         </div>
       </main>

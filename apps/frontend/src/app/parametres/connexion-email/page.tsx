@@ -60,12 +60,9 @@ export default function EmailConnectionPage() {
       router.replace('/parametres/connexion-email')
     } else if (oauth === 'error') {
       oauthHandled.current = true
-      const errorKey =
-        reason === 'access_denied'
-          ? 'oauthErrorAccessDenied'
-          : reason === 'state_mismatch'
-            ? 'oauthErrorStateMismatch'
-            : 'oauthErrorGeneric'
+      let errorKey = 'oauthErrorGeneric'
+      if (reason === 'access_denied') errorKey = 'oauthErrorAccessDenied'
+      else if (reason === 'state_mismatch') errorKey = 'oauthErrorStateMismatch'
       setMessage({ text: t(errorKey), type: 'error' })
       router.replace('/parametres/connexion-email')
     }

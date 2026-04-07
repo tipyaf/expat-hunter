@@ -23,9 +23,15 @@ export default class ReplyGenerationService {
 
     const language = params.language ?? 'en'
     const country = params.targetCountry ?? ''
-    const userProfileText = params.userProfile
-      ? `User: ${params.userProfile.fullName}${params.userProfile.cvText ? `. Background: ${params.userProfile.cvText.slice(0, 500)}` : ''}`
-      : 'No user profile provided.'
+    let userProfileText: string
+    if (params.userProfile) {
+      const backgroundSuffix = params.userProfile.cvText
+        ? `. Background: ${params.userProfile.cvText.slice(0, 500)}`
+        : ''
+      userProfileText = `User: ${params.userProfile.fullName}${backgroundSuffix}`
+    } else {
+      userProfileText = 'No user profile provided.'
+    }
 
     const prompt = `You are helping write a professional reply to a job application response.
 

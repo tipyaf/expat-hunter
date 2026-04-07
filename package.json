@@ -3,6 +3,11 @@
   "private": true,
   "scripts": {
     "dev": "pnpm --parallel --filter './apps/*' dev",
+    "dev:all": "docker compose --env-file .env -f .devtools/docker-compose.yml --profile sonar up -d && pnpm dev",
+    "db:up": "docker compose --env-file .env -f .devtools/docker-compose.yml up -d",
+    "db:down": "docker compose --env-file .env -f .devtools/docker-compose.yml down",
+    "sonar:up": "docker compose --env-file .env -f .devtools/docker-compose.yml --profile sonar up -d",
+    "sonar:down": "docker compose --env-file .env -f .devtools/docker-compose.yml --profile sonar down",
     "dev:api": "pnpm --filter @expat-hunter/api dev",
     "dev:frontend": "pnpm --filter @expat-hunter/frontend dev",
     "build": "pnpm --filter @expat-hunter/shared build && pnpm --parallel --filter './apps/*' build",

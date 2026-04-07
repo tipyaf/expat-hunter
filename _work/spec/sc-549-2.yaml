@@ -1,0 +1,138 @@
+# =============================================================================
+# STORY FILE — sc-549-2: Email templates — apply a template to a contact
+# =============================================================================
+# This is the BUILD CONTRACT. The developer implements exactly this.
+# The validator checks exactly this. Nothing more, nothing less.
+# =============================================================================
+
+story:
+  id: "sc-549-2"
+  name: "Email templates — apply a template to a contact"
+  parent: "sc-549"
+  type: "feature"
+  priority: "high"
+  estimate: 3  # M — standard feature
+  created_at: "2026-03-28"
+
+  user_story: >
+    As a user,
+    I want to create my email templates in settings and apply them when editing a draft,
+    so that AI personalizes my template for each contact automatically.
+
+  context: >
+    The EmailTemplate model and CRUD API (/api/templates) already exist but have no frontend.
+    The user wants to manage templates in settings and select one from the edit modal (sc-549-1)
+    to have AI personalize it for a specific contact.
+
+scope:
+  included:
+    - "Template management page at /parametres/templates (CRUD connected to existing API)"
+    - "useTemplates hook for frontend state management"
+    - "Template selector dropdown in EmailEditModal (from sc-549-1)"
+    - "Apply template button → sends templateId to regenerate endpoint"
+    - "Backend: regenerate endpoint accepts optional templateId, loads template, injects into prompt"
+    - "Sidebar link to templates settings page"
+    - "i18n keys en/fr for template management and modal"
+  excluded:
+    - "Generation presets / tone / style (sc-549-3)"
+    - "System-provided pre-built templates (users create their own)"
+    - "Changes to EmailTemplate model (schema is sufficient as-is)"
+
+files:
+  to_create:
+    - path: "apps/frontend/src/app/parametres/templates/page.tsx"
+      description: "Template management page: list templates, create/edit/delete with inline form or modal"
+    - path: "apps/frontend/src/hooks/use-templates.ts"
+      description: "Hook for CRUD operations on /api/templates: list, create, update, delete"
+  to_modify:
+    - path: "apps/frontend/src/components/emails/email-edit-modal.tsx"
+      description: "Add template selector dropdown + Apply template button. When applied, calls regenerate with templateId."
+    - path: "apps/frontend/src/components/layout/sidebar.tsx"
+      description: "Add link to /parametres/templates in settings section"
+    - path: "apps/api/app/controllers/emails_controller.ts"
+      description: "regenerate() reads optional templateId from body, passes to service"
+    - path: "apps/api/app/services/email_generation_service.ts"
+      description: "regenerate() loads EmailTemplate by id if templateId provided, passes pattern to composer"
+    - path: "apps/api/app/ai/prompts/email_prompt.ts"
+      description: "buildEmailPrompt() accepts optional template pattern, injects into user prompt section"
+    - path: "apps/frontend/src/i18n/en.json"
+      description: "Add templates namespace keys (title, create, edit, delete, name, subjectPattern, bodyPattern, isDefault, applyTemplate, selectTemplate, noTemplates)"
+    - path: "apps/frontend/src/i18n/fr.json"
+      description: "Same keys in French"
+  to_read:
+    - path: "apps/api/app/models/email_template.ts"
+      description: "Understand existing model schema"
+    - path: "apps/api/app/controllers/templates_controller.ts"
+      description: "Understand existing CRUD API"
+
+dependencies:
+  - "sc-549-1 (EmailEditModal must exist to add template selector)"
+  - "OpenRouter API configured (OPENROUTER_API_KEY env var)"
+
+acceptance_criteria:
+  - id: "AC-FUNC-549-2-01"
+    type: "FUNC"
+    description: "Given I navigate to /parametres/templates / Then I see my list of templates with create/edit/delete actions"
+    verify: "grep -r 'templates' apps/frontend/src/app/parametres/ --include='*.tsx' -l | grep -q 'templates'"
+    tier: 1
+
+  - id: "AC-FUNC-549-2-02"
+    type: "FUNC"
+    description: "Given I create a template with name, subject pattern, body pattern / When I save / Then POST /api/templates is called and the template appears in the list"
+    verify: "grep -r 'subjectPattern' apps/frontend/src/app/parametres/ --include='*.tsx' | grep -q '.'"
+    tier: 1
+
+  - id: "AC-FUNC-549-2-03"
+    type: "FUNC"
+    description: "Given I'm in the EmailEditModal / Then I see a template dropdown with my templates"
+    verify: "grep -r 'template' apps/frontend/src/components/emails/email-edit-modal.tsx | grep -q 'select\\|dropdown\\|template'"
+    tier: 1
+
+  - id: "AC-FUNC-549-2-04"
+    type: "FUNC"
+    description: "Given I select a template and click Apply template / Then POST /api/emails/:id/regenerate is called with { templateId } and the email is regenerated using the template"
+    verify: "grep -r 'templateId' apps/api/app/controllers/emails_controller.ts | grep -q '.'"
+    tier: 1
+
+  - id: "AC-FUNC-549-2-05"
+    type: "FUNC"
+    description: "Given a templateId is provided in regenerate / Then the template subjectPattern and bodyPattern are injected into the AI prompt for personalization"
+    verify: "grep -r 'template' apps/api/app/services/email_generation_service.ts | grep -q 'template'"
+    tier: 1
+
+  - id: "AC-SEC-549-2-01"
+    type: "SEC"
+    description: "Template CRUD is scoped to current user — no cross-user access (every query includes userId filter)"
+    verify: "grep -c 'userId.*user.id\\|where.*userId' apps/api/app/controllers/templates_controller.ts | awk '$1 >= 4'"
+    tier: 1
+
+  - id: "AC-BP-549-2-01"
+    type: "BP"
+    description: "i18n keys for template management page and modal dropdown exist in both en.json and fr.json"
+    verify: "grep -q 'templates' apps/frontend/src/i18n/en.json && grep -q 'templates' apps/frontend/src/i18n/fr.json"
+    tier: 1
+
+  - id: "AC-BP-549-2-02"
+    type: "BP"
+    description: "Sidebar has a link to the templates settings page"
+    verify: "grep -r 'templates' apps/frontend/src/components/layout/sidebar.tsx | grep -q 'parametres/templates\\|templates'"
+    tier: 1
+
+  - id: "AC-BP-549-2-03"
+    type: "BP"
+    description: "TypeScript: 0 errors in frontend"
+    verify: "cd apps/frontend && pnpm tsc --noEmit 2>&1 | grep -c 'error TS' | grep -q '^0$'"
+    tier: 1
+
+edge_cases:
+  - "No templates yet → dropdown hidden or shows empty state 'Create your first template'"
+  - "Template deleted while modal is open → graceful handling, fallback to regular regenerate"
+  - "Template + instructions combined → both passed to AI prompt (template as base, instructions as refinement)"
+  - "Default template → pre-selected in dropdown when modal opens"
+  - "Long template body → no truncation, full pattern sent to AI"
+
+technical_notes:
+  - "The existing TemplatesController CRUD is sufficient — no backend changes needed for template management"
+  - "The regenerate endpoint (modified in sc-549-1) gains an additional optional field: templateId"
+  - "When templateId is provided, the service loads the template and passes subjectPattern + bodyPattern to the prompt"
+  - "The AI prompt receives the template as 'base model to personalize' rather than 'generate from scratch'"

@@ -5,6 +5,33 @@ const VALID_LENGTHS = ['short', 'medium', 'long'] as const
 const VALID_FRAMEWORKS = ['aida', 'pas', 'bab', 'direct'] as const
 const MAX_CUSTOM_INSTRUCTIONS_LENGTH = 500
 
+type FieldValidationError = {
+  code: string
+  message: string
+} | null
+
+function validatePresetFields(
+  length: string | undefined,
+  framework: string | undefined,
+  customInstructions: string | undefined,
+  strictUndefinedCheck: boolean
+): FieldValidationError {
+  const shouldValidateLength = strictUndefinedCheck ? length !== undefined : !!length
+  if (shouldValidateLength && !(VALID_LENGTHS as readonly string[]).includes(length!)) {
+    return { code: 'INVALID_LENGTH', message: `length must be one of: ${VALID_LENGTHS.join(', ')}` }
+  }
+  const shouldValidateFramework = strictUndefinedCheck ? framework !== undefined : !!framework
+  if (shouldValidateFramework && !(VALID_FRAMEWORKS as readonly string[]).includes(framework!)) {
+    return { code: 'INVALID_FRAMEWORK', message: `framework must be one of: ${VALID_FRAMEWORKS.join(', ')}` }
+  }
+  if (typeof customInstructions === 'string' && customInstructions.length > MAX_CUSTOM_INSTRUCTIONS_LENGTH) {
+    return { code: 'INSTRUCTIONS_TOO_LONG', message: `customInstructions must be ${MAX_CUSTOM_INSTRUCTIONS_LENGTH} characters or less` }
+  }
+  return null
+}
+
+const UPDATABLE_FIELDS = ['name', 'length', 'framework', 'tone', 'language', 'customInstructions', 'isDefault'] as const
+
 export default class PresetsController {
   /**
    * GET /api/presets — List user's generation presets.
@@ -33,20 +60,9 @@ export default class PresetsController {
         error: { code: 'MISSING_FIELDS', message: 'name is required' },
       })
     }
-    if (length && !(VALID_LENGTHS as readonly string[]).includes(length)) {
-      return response.unprocessableEntity({
-        error: { code: 'INVALID_LENGTH', message: `length must be one of: ${VALID_LENGTHS.join(', ')}` },
-      })
-    }
-    if (framework && !(VALID_FRAMEWORKS as readonly string[]).includes(framework)) {
-      return response.unprocessableEntity({
-        error: { code: 'INVALID_FRAMEWORK', message: `framework must be one of: ${VALID_FRAMEWORKS.join(', ')}` },
-      })
-    }
-    if (typeof customInstructions === 'string' && customInstructions.length > MAX_CUSTOM_INSTRUCTIONS_LENGTH) {
-      return response.unprocessableEntity({
-        error: { code: 'INSTRUCTIONS_TOO_LONG', message: `customInstructions must be ${MAX_CUSTOM_INSTRUCTIONS_LENGTH} characters or less` },
-      })
+    const validationError = validatePresetFields(length, framework, customInstructions, false)
+    if (validationError) {
+      return response.unprocessableEntity({ error: validationError })
     }
 
     if (isDefault) {
@@ -84,40 +100,27 @@ export default class PresetsController {
       return response.notFound({ error: { code: 'PRESET_NOT_FOUND', message: 'Preset not found' } })
     }
 
-    const { name, length, framework, tone, language, customInstructions, isDefault } = request.only([
+    const fields = request.only([
       'name', 'length', 'framework', 'tone', 'language', 'customInstructions', 'isDefault',
     ])
 
-    if (length !== undefined && !(VALID_LENGTHS as readonly string[]).includes(length)) {
-      return response.unprocessableEntity({
-        error: { code: 'INVALID_LENGTH', message: `length must be one of: ${VALID_LENGTHS.join(', ')}` },
-      })
-    }
-    if (framework !== undefined && !(VALID_FRAMEWORKS as readonly string[]).includes(framework)) {
-      return response.unprocessableEntity({
-        error: { code: 'INVALID_FRAMEWORK', message: `framework must be one of: ${VALID_FRAMEWORKS.join(', ')}` },
-      })
-    }
-    if (typeof customInstructions === 'string' && customInstructions.length > MAX_CUSTOM_INSTRUCTIONS_LENGTH) {
-      return response.unprocessableEntity({
-        error: { code: 'INSTRUCTIONS_TOO_LONG', message: `customInstructions must be ${MAX_CUSTOM_INSTRUCTIONS_LENGTH} characters or less` },
-      })
+    const validationError = validatePresetFields(fields.length, fields.framework, fields.customInstructions, true)
+    if (validationError) {
+      return response.unprocessableEntity({ error: validationError })
     }
 
-    if (isDefault && !preset.isDefault) {
+    if (fields.isDefault && !preset.isDefault) {
       await GenerationPreset.query()
         .where('userId', user.id)
         .where('isDefault', true)
         .update({ isDefault: false })
     }
 
-    if (name !== undefined) preset.name = name
-    if (length !== undefined) preset.length = length
-    if (framework !== undefined) preset.framework = framework
-    if (tone !== undefined) preset.tone = tone
-    if (language !== undefined) preset.language = language
-    if (customInstructions !== undefined) preset.customInstructions = customInstructions
-    if (isDefault !== undefined) preset.isDefault = isDefault
+    for (const key of UPDATABLE_FIELDS) {
+      if (fields[key] !== undefined) {
+        ;(preset as unknown as Record<string, unknown>)[key] = fields[key]
+      }
+    }
 
     await preset.save()
     return response.ok({ data: this.serialize(preset) })

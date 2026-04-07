@@ -4,9 +4,9 @@ import ProfileService from '#services/profile_service'
 import TipsService from '#services/tips_service'
 
 export default class TipsController {
-  private dashboardService = new DashboardService()
-  private profileService = new ProfileService()
-  private tipsService = new TipsService()
+  private readonly dashboardService = new DashboardService()
+  private readonly profileService = new ProfileService()
+  private readonly tipsService = new TipsService()
 
   async contextual({ auth, request, response }: HttpContext) {
     const user = auth.getUserOrFail()

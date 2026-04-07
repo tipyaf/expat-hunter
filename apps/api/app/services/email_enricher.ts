@@ -27,9 +27,9 @@ interface ApolloPersonResponse {
 }
 
 export default class EmailEnricher {
-  private cache = new CacheService()
-  private hunterApiKey = env.get('HUNTER_API_KEY')
-  private apolloApiKey = env.get('APOLLO_API_KEY')
+  private readonly cache = new CacheService()
+  private readonly hunterApiKey = env.get('HUNTER_API_KEY')
+  private readonly apolloApiKey = env.get('APOLLO_API_KEY')
 
   async enrich(fullName: string, domain: string): Promise<EmailEnrichmentResult> {
     const { firstName, lastName } = this.parseFullName(fullName)

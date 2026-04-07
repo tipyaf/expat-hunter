@@ -36,8 +36,8 @@ const MAX_RESULTS_PER_DOMAIN = 20
 export class HunterCompanySearchScraper extends BaseScraper {
   readonly name = 'hunter_company_search'
   readonly country = '*'
-  private apiKey = env.get('HUNTER_API_KEY')
-  private cache = new CacheService()
+  private readonly apiKey = env.get('HUNTER_API_KEY')
+  private readonly cache = new CacheService()
 
   async scrape(params: ScrapeParams): Promise<RawContact[]> {
     if (!this.apiKey) return []

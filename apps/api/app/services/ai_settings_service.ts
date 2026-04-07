@@ -12,7 +12,7 @@ export interface AiConfig {
 const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
 
 export default class AiSettingsService {
-  private static cache = new Map<string, { config: AiConfig; expiresAt: number }>()
+  private static readonly cache = new Map<string, { config: AiConfig; expiresAt: number }>()
 
   static invalidateCache() {
     this.cache.clear()

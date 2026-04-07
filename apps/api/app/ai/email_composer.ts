@@ -9,7 +9,7 @@ import {
 } from '#ai/prompts/email_prompt'
 
 export class EmailComposer {
-  private client: OpenRouterClient
+  private readonly client: OpenRouterClient
 
   constructor(client?: OpenRouterClient) {
     this.client = client ?? new OpenRouterClient()
