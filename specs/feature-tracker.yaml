@@ -644,3 +644,137 @@ features:
     started_at: "2026-03-30"
     validated_at: "2026-03-30"
     notes: "ioredis rate limiter (login 10/min, register 5/hr, forgot 3/hr), account lockout (5 fails → 15min), honeypot on register, frontend debounce. 11 unit + 5 functional tests. All Tier-1 ACs pass. 0 new TS errors."
+
+  # === JOB OFFERS PIPELINE (Épiques E10-E14) ===
+
+  # --- E10: Recherche & Scraping ---
+
+  - id: "job-search-config"
+    name: "Job Search Configuration"
+    priority: "must-have"
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/job-search-config.yaml"
+    depends_on: ["candidate-profile"]
+    refined_at: "2026-04-07"
+    started_at: "2026-04-07"
+    validated_at: "2026-04-08"
+    notes: "CRUD + quota enforcement + /recherche-offres page. Shortcut sc-810, Epic 809 (E10). L (5 pts). 17 ACs. All 11 gates pass. 26 unit + 12 e2e tests. PR #144."
+
+  - id: "job-scraping-pipeline"
+    name: "Job Scraping Pipeline"
+    priority: "must-have"
+    status: "pending"
+    cycles: 0
+    story_file: ""
+    depends_on: ["job-search-config"]
+    started_at: ""
+    validated_at: ""
+    notes: "Multi-platform scraping (Seek/BuiltIn/Zeil in-house, LinkedIn Apify-only). Cross-platform dedup. Background jobs via BullMQ. E10."
+
+  # --- E11: Évaluation AI ---
+
+  - id: "job-ai-evaluation"
+    name: "Job AI Evaluation"
+    priority: "must-have"
+    status: "pending"
+    cycles: 0
+    story_file: ""
+    depends_on: ["job-scraping-pipeline", "candidate-profile"]
+    started_at: ""
+    validated_at: ""
+    notes: "AI scoring 0-100 (match_summary, selection_reason, application_advice). Exclusion learning from user feedback. E11."
+
+  - id: "job-company-enrichment"
+    name: "Job Company Enrichment"
+    priority: "must-have"
+    status: "pending"
+    cycles: 0
+    story_file: ""
+    depends_on: ["job-scraping-pipeline"]
+    started_at: ""
+    validated_at: ""
+    notes: "CompanyCache (1yr TTL, shared). Company size, sector, tech stack, culture signals. AccreditationCache for immigration. E11."
+
+  # --- E12: Interface Offres ---
+
+  - id: "job-offers-page"
+    name: "Job Offers Page"
+    priority: "must-have"
+    status: "pending"
+    cycles: 0
+    story_file: ""
+    depends_on: ["job-ai-evaluation", "job-company-enrichment"]
+    started_at: ""
+    validated_at: ""
+    notes: "3-tab layout (Nouvelles/Postulées/Archivées). Offer cards with AI badges. Detail page with company panel. Sidebar redesign with collapsible menus + flyout. E12."
+
+  # --- E13: Candidature ---
+
+  - id: "job-cv-generation"
+    name: "Job CV Generation"
+    priority: "must-have"
+    status: "pending"
+    cycles: 0
+    story_file: ""
+    depends_on: ["job-offers-page", "candidate-profile"]
+    started_at: ""
+    validated_at: ""
+    notes: "Hybrid: Google Docs API (recommended) + local DOCX (alternative). Max 7 AI-targeted replacements. Language deduced from country. E13."
+
+  - id: "job-cover-letter"
+    name: "Job Cover Letter"
+    priority: "must-have"
+    status: "pending"
+    cycles: 0
+    story_file: ""
+    depends_on: ["job-cv-generation"]
+    started_at: ""
+    validated_at: ""
+    notes: "AI-generated cover letter. Same language as CV. User instructions before/after. Editable before send. E13."
+
+  - id: "job-application-send"
+    name: "Job Application Send"
+    priority: "must-have"
+    status: "pending"
+    cycles: 0
+    story_file: ""
+    depends_on: ["job-cover-letter"]
+    started_at: ""
+    validated_at: ""
+    notes: "AI email body (3-4 lines). CV + cover letter as attachments. Tone adapts to country. Auto-expiration of offers. E13."
+
+  # --- E14: Automatisation ---
+
+  - id: "job-recurring-search"
+    name: "Job Recurring Search"
+    priority: "should-have"
+    status: "pending"
+    cycles: 0
+    story_file: ""
+    depends_on: ["job-scraping-pipeline"]
+    started_at: ""
+    validated_at: ""
+    notes: "Scheduled searches (daily/weekly). Auto-scrape + auto-evaluate new offers. Notification of new matches. E14."
+
+  - id: "job-custom-platforms"
+    name: "Job Custom Platforms"
+    priority: "should-have"
+    status: "pending"
+    cycles: 0
+    story_file: ""
+    depends_on: ["job-scraping-pipeline"]
+    started_at: ""
+    validated_at: ""
+    notes: "User-defined scraping targets. Custom CSS selectors or API endpoints. E14."
+
+  - id: "job-notifications"
+    name: "Job Notifications"
+    priority: "nice-to-have"
+    status: "pending"
+    cycles: 0
+    story_file: ""
+    depends_on: ["job-recurring-search"]
+    started_at: ""
+    validated_at: ""
+    notes: "Email/push notifications for new high-score offers. Configurable thresholds. E14."

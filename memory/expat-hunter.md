@@ -7,7 +7,7 @@
 - **Started**: 2026-03-17
 - **Current phase**: Phase 2 — Construction (features pending refinement)
 - **Last updated**: 2026-04-07
-- **Framework version**: 4.1.0
+- **Framework version**: 4.1.1
 - **GitHub repo**: https://github.com/tipyaf/expat-hunter (public)
 - **Branches**: main (protected, default), develop (protected, dev base), feature/* → PR to develop
 
@@ -35,7 +35,19 @@
 | analytics | nice-to-have | pending | — | 0 |
 | contact-detail-panel | must-have | ✅ validated | specs/stories/contact-detail-panel.yaml | 1 |
 
-**Summary**: 14 features total — 6 must-have validated (all MVP features + contact-detail-panel) — `/review` done, Sprint 1 in progress
+| job-search-config | must-have | pending | — | 0 |
+| job-scraping-pipeline | must-have | pending | — | 0 |
+| job-ai-evaluation | must-have | pending | — | 0 |
+| job-company-enrichment | must-have | pending | — | 0 |
+| job-offers-page | must-have | pending | — | 0 |
+| job-cv-generation | must-have | pending | — | 0 |
+| job-cover-letter | must-have | pending | — | 0 |
+| job-application-send | must-have | pending | — | 0 |
+| job-recurring-search | should-have | pending | — | 0 |
+| job-custom-platforms | should-have | pending | — | 0 |
+| job-notifications | nice-to-have | pending | — | 0 |
+
+**Summary**: 25 features total — 6 validated (original MVP), 8 new must-have (job offers pipeline), 11 pending. /spec complete for job offers pipeline — all phases done (0.1 Scoping → 0.2 Clarify → 0.3 UX → 0.5 Ordering → 1.0 Architecture). Feature tracker updated. Next: `/refine` for E10 (job-search-config).
 
 ## Architecture Decisions
 
@@ -85,6 +97,10 @@
 | 10 | Dark mode: system preference default + settings toggle | Comfort + user control | 0.5 |
 | 11 | i18n: EN + FR at MVP, browser language default, extensible | Validate i18n early, international target | 0.5 |
 | 12 | Shared design system web + mobile | Visual consistency, single token set | 0.5 |
+| 13 | Sidebar collapsible menus + flyout mode rétracté | Dual pipeline (Prospection + Offres d'emploi) proprement organisé | 0.3-bis |
+| 14 | Job offers page with 3 tabs (Nouvelles/Postulées/Archivées) | Pattern pills cohérent avec contacts existants | 0.3-bis |
+| 15 | Application workspace split 50/50 (CV + LM) + email footer | Page la plus complexe, layout optimisé | 0.3-bis |
+| 16 | CV dual method: Google Docs API (recommandé) + local DOCX templates | Meilleur résultat vs alternative sans Google | 0.3-bis |
 
 ## Phase History
 

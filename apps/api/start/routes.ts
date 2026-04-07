@@ -33,6 +33,7 @@ const EmailConnectionsController = () => import('#controllers/email_connections_
 const EmailOAuthController = () => import('#controllers/email_oauth_controller')
 const OnboardingController = () => import('#controllers/onboarding_controller')
 const NotificationsController = () => import('#controllers/notifications_controller')
+const JobSearchesController = () => import('#controllers/job_searches_controller')
 
 router.get('/', async () => {
   return { name: '@expat-hunter/api', status: 'ok' }
@@ -277,4 +278,15 @@ router
 
 router
   .get('/api/notifications/stream', [NotificationsController, 'stream'])
+  .use(middleware.auth())
+
+router
+  .group(() => {
+    router.get('/', [JobSearchesController, 'index'])
+    router.post('/', [JobSearchesController, 'store'])
+    router.put('/:id', [JobSearchesController, 'update'])
+    router.delete('/:id', [JobSearchesController, 'destroy'])
+    router.post('/:id/run', [JobSearchesController, 'run'])
+  })
+  .prefix('/api/job-searches')
   .use(middleware.auth())

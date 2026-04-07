@@ -6,6 +6,7 @@ import { usePlan } from '@/hooks/use-plan'
 import {
   Home,
   Search,
+  Briefcase,
   Users,
   Mail,
   Kanban,
@@ -48,6 +49,7 @@ export function Sidebar() {
   const mainNav: NavItem[] = [
     { label: t('dashboard'), href: '/', icon: Home },
     { label: t('search'), href: '/recherche', icon: Search },
+    { label: t('jobSearch'), href: '/recherche-offres', icon: Briefcase },
     { label: t('contacts'), href: '/contacts', icon: Users, badge: replyBadge },
     { label: t('emails'), href: '/emails', icon: Mail, badge: emailBadge },
     { label: t('tracking'), href: '/suivi', icon: Kanban },

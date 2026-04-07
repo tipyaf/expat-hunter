@@ -144,6 +144,11 @@ Use `stories-update labels:[{name: "scope:building"}]` at each transition.
 **Root cause**: Agent updates memory/tracker files but forgets to stage and commit them with the rest of the changes.
 **Rule**: Before declaring a story done or pushing a PR, ALWAYS run `git status` and verify that ALL modified files are committed — especially: 1) `memory/expat-hunter.md`, 2) `_work/feature-tracker.yaml`, 3) `_work/spec/*.yaml` story files. These are project artifacts, not throwaway notes. If they are modified, they MUST be in the commit.
 
+### [Workflow] ALL 11 validation gates MUST pass BEFORE commit/PR — no exceptions
+**Problem**: sc-810 — commit and PR created while E2E tests (gate 4-7) and wireframe conformity (gate 5) were still `pending`. Had to add a second commit with E2E + testid fixes after the PR was already created.
+**Root cause**: Agent hit dev environment issues (API port mismatch) and decided to commit/PR anyway to "move forward", treating pending gates as acceptable.
+**Rule**: NEVER create a commit or PR while any applicable validation gate is still `pending`. The correct sequence is: 1) Write ALL tests (unit + functional + E2E), 2) Verify wireframe conformity (data-testid alignment), 3) Run ALL gates, 4) Fix failures, 5) ONLY THEN commit and create PR. If the dev environment blocks a gate, fix the environment first — don't skip the gate. A PR with pending gates is a broken PR.
+
 ### [Shortcut] Story description must use real newlines, not literal \n
 **Problem**: Shortcut story descriptions rendered as a single block of text with no formatting. ACs, scope, and context were unreadable.
 **Root cause**: Agent passed the description string with `\n` escape sequences instead of real newlines. The Shortcut API renders them literally.
