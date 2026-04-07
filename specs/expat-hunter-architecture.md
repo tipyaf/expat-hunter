@@ -53,7 +53,10 @@ expat-hunter/
 │   │   │   │   ├── analysis_controller.ts
 │   │   │   │   ├── emails_controller.ts
 │   │   │   │   ├── pipeline_controller.ts
-│   │   │   │   └── settings_controller.ts
+│   │   │   │   ├── settings_controller.ts
+│   │   │   │   ├── job_searches_controller.ts    # CRUD recherches d'offres
+│   │   │   │   ├── job_offers_controller.ts      # Offres, évaluation, exclusion, statut
+│   │   │   │   └── job_applications_controller.ts # Candidatures, contacts recrutement
 │   │   │   ├── models/
 │   │   │   │   ├── user.ts
 │   │   │   │   ├── candidate_profile.ts
@@ -62,7 +65,15 @@ expat-hunter/
 │   │   │   │   ├── email_message.ts
 │   │   │   │   ├── sourcing_run.ts
 │   │   │   │   ├── sourcing_source.ts
-│   │   │   │   └── follow_up_sequence.ts
+│   │   │   │   ├── follow_up_sequence.ts
+│   │   │   │   ├── job_search.ts                 # Configuration recherche d'offres
+│   │   │   │   ├── job_offer.ts                  # Offre d'emploi scrapée
+│   │   │   │   ├── job_offer_link.ts             # Lien plateforme (Seek, LinkedIn...)
+│   │   │   │   ├── job_offer_exclusion.ts        # Exclusion catégorisée par l'utilisateur
+│   │   │   │   ├── job_application.ts            # Candidature (CV + LM + envoi)
+│   │   │   │   ├── recruitment_contact.ts        # Contact de recrutement (distinct des leads)
+│   │   │   │   ├── company_cache.ts              # Cache entreprise global (TTL 1 an)
+│   │   │   │   └── accreditation_cache.ts        # Cache accréditation immigration (NZ, AU)
 │   │   │   ├── services/
 │   │   │   │   ├── profile_service.ts
 │   │   │   │   ├── sourcing_service.ts
@@ -70,20 +81,33 @@ expat-hunter/
 │   │   │   │   ├── email_generation_service.ts
 │   │   │   │   ├── email_sending_service.ts
 │   │   │   │   ├── pipeline_service.ts
-│   │   │   │   └── cv_parser_service.ts
+│   │   │   │   ├── cv_parser_service.ts
+│   │   │   │   ├── job_search_service.ts         # Gestion recherches d'offres + quotas
+│   │   │   │   ├── job_scraping_service.ts       # Orchestration scraping offres + déduplication
+│   │   │   │   ├── job_ai_evaluation_service.ts  # Évaluation IA des offres (score, match, conseils)
+│   │   │   │   ├── job_company_enrichment_service.ts # Enrichissement entreprise (cache global)
+│   │   │   │   ├── job_cv_generation_service.ts  # Adaptation CV (Google Docs + DOCX local)
+│   │   │   │   ├── job_cover_letter_service.ts   # Génération lettre de motivation
+│   │   │   │   └── job_application_service.ts    # Envoi candidature + contacts recrutement
 │   │   │   ├── validators/
 │   │   │   │   ├── profile_validator.ts
 │   │   │   │   ├── sourcing_validator.ts
 │   │   │   │   ├── contact_validator.ts
 │   │   │   │   ├── email_validator.ts
-│   │   │   │   └── auth_validator.ts
+│   │   │   │   ├── auth_validator.ts
+│   │   │   │   ├── job_search_validator.ts       # Validation config recherche
+│   │   │   │   ├── job_offer_validator.ts        # Validation statut, exclusion, conseil
+│   │   │   │   └── job_application_validator.ts  # Validation candidature + contacts
 │   │   │   ├── mailers/
 │   │   │   │   └── outreach_mailer.ts
 │   │   │   ├── jobs/
 │   │   │   │   ├── sourcing_job.ts
 │   │   │   │   ├── analysis_job.ts
 │   │   │   │   ├── email_send_job.ts
-│   │   │   │   └── follow_up_job.ts
+│   │   │   │   ├── follow_up_job.ts
+│   │   │   │   ├── job_scraping_job.ts           # Scraping offres (par recherche)
+│   │   │   │   ├── job_evaluation_job.ts         # Évaluation IA batch des offres
+│   │   │   │   └── job_enrichment_job.ts         # Enrichissement entreprise batch
 │   │   │   ├── scrapers/
 │   │   │   │   ├── base_scraper.ts          # Classe abstraite
 │   │   │   │   ├── seek_scraper.ts
@@ -92,7 +116,8 @@ expat-hunter/
 │   │   │   │   ├── built_scraper.ts
 │   │   │   │   ├── linkedin_scraper.ts
 │   │   │   │   ├── apify_fallback.ts
-│   │   │   │   └── scraper_registry.ts      # Registry des scrapers par pays
+│   │   │   │   ├── scraper_registry.ts      # Registry des scrapers par pays
+│   │   │   │   └── job_offer_scraper_registry.ts # Registry scrapers offres (réutilise l'infra existante)
 │   │   │   ├── ai/
 │   │   │   │   ├── openrouter_client.ts     # Client OpenRouter (modèles interchangeables)
 │   │   │   │   ├── relevance_analyzer.ts    # Analyse de pertinence contact/profil
@@ -102,7 +127,11 @@ expat-hunter/
 │   │   │   │       ├── relevance_prompt.ts
 │   │   │   │       ├── email_prompt.ts
 │   │   │   │       ├── follow_up_prompt.ts
-│   │   │   │       └── cv_extraction_prompt.ts
+│   │   │   │       ├── cv_extraction_prompt.ts
+│   │   │   │       ├── job_evaluation_prompt.ts  # Évaluation offre vs profil candidat
+│   │   │   │       ├── cv_adaptation_prompt.ts   # Adaptation CV (max 7 remplacements)
+│   │   │   │       ├── cover_letter_prompt.ts    # Génération lettre de motivation (style NZ)
+│   │   │   │       └── application_email_prompt.ts # Email de candidature (3-4 lignes)
 │   │   │   ├── middleware/
 │   │   │   │   └── rate_limiter_middleware.ts
 │   │   │   └── exceptions/
@@ -125,7 +154,15 @@ expat-hunter/
 │   │   │   │   ├── 005_create_email_messages_table.ts
 │   │   │   │   ├── 006_create_sourcing_runs_table.ts
 │   │   │   │   ├── 007_create_sourcing_sources_table.ts
-│   │   │   │   └── 008_create_follow_up_sequences_table.ts
+│   │   │   │   ├── 008_create_follow_up_sequences_table.ts
+│   │   │   │   ├── 009_create_company_caches_table.ts
+│   │   │   │   ├── 010_create_accreditation_caches_table.ts
+│   │   │   │   ├── 011_create_job_searches_table.ts
+│   │   │   │   ├── 012_create_job_offers_table.ts
+│   │   │   │   ├── 013_create_job_offer_links_table.ts
+│   │   │   │   ├── 014_create_job_offer_exclusions_table.ts
+│   │   │   │   ├── 015_create_job_applications_table.ts
+│   │   │   │   └── 016_create_recruitment_contacts_table.ts
 │   │   │   └── seeders/
 │   │   │       ├── user_seeder.ts
 │   │   │       └── sourcing_sources_seeder.ts
@@ -147,7 +184,10 @@ expat-hunter/
 │   │   │       ├── sourcing.spec.ts
 │   │   │       ├── contacts.spec.ts
 │   │   │       ├── emails.spec.ts
-│   │   │       └── pipeline.spec.ts
+│   │   │       ├── pipeline.spec.ts
+│   │   │       ├── job_searches.spec.ts
+│   │   │       ├── job_offers.spec.ts
+│   │   │       └── job_applications.spec.ts
 │   │   ├── adonisrc.ts
 │   │   ├── tsconfig.json
 │   │   └── package.json
@@ -175,6 +215,14 @@ expat-hunter/
 │       │   │   │       └── page.tsx        # Preview/edit email
 │       │   │   ├── pipeline/
 │       │   │   │   └── page.tsx            # Kanban
+│       │   │   ├── offres/                      # NOUVEAU — Pipeline offres d'emploi
+│       │   │   │   ├── page.tsx                 # Page principale (3 onglets)
+│       │   │   │   └── [id]/
+│       │   │   │       ├── page.tsx              # Fiche détail offre
+│       │   │   │       └── candidature/
+│       │   │   │           └── page.tsx          # Workspace candidature (CV + LM)
+│       │   │   ├── recherche-offres/            # NOUVEAU — Config recherche d'offres
+│       │   │   │   └── page.tsx
 │       │   │   └── settings/
 │       │   │       └── page.tsx
 │       │   ├── components/
@@ -214,17 +262,28 @@ expat-hunter/
 │       │   │   │   ├── email-preview.tsx
 │       │   │   │   ├── email-queue.tsx
 │       │   │   │   └── follow-up-config.tsx
-│       │   │   └── pipeline/
+│       │   │   ├── pipeline/
 │       │   │       ├── pipeline-board.tsx
 │       │   │       ├── pipeline-column.tsx
 │       │   │       ├── pipeline-list.tsx
 │       │   │       └── pipeline-filters.tsx
+│       │   │   └── job-offers/                  # NOUVEAU — Composants offres d'emploi
+│       │   │       ├── job-offer-card.tsx        # Card offre (score, match, badges)
+│       │   │       ├── job-offers-page.tsx       # Conteneur page offres (3 onglets)
+│       │   │       ├── job-offer-detail-page.tsx # Page détail offre
+│       │   │       ├── application-workspace.tsx # Split CV/LM avec preview + édition
+│       │   │       ├── exclusion-modal.tsx       # Modal exclusion catégorisée
+│       │   │       ├── recruitment-contact-card.tsx # Card contact recrutement
+│       │   │       └── collapsible-sidebar.tsx   # Sidebar avec menus collapsibles
 │       │   ├── hooks/
 │       │   │   ├── use-api.ts              # Fetch wrapper avec auth
 │       │   │   ├── use-profile.ts
 │       │   │   ├── use-contacts.ts
 │       │   │   ├── use-pipeline.ts
-│       │   │   └── use-theme.ts
+│       │   │   ├── use-theme.ts
+│       │   │   ├── use-job-searches.ts          # CRUD recherches d'offres
+│       │   │   ├── use-job-offers.ts            # Liste + détail offres
+│       │   │   └── use-job-application.ts       # Candidature (CV, LM, envoi)
 │       │   ├── lib/
 │       │   │   ├── api-client.ts           # Client HTTP (fetch-based)
 │       │   │   ├── auth.ts                 # Gestion tokens/session
@@ -250,11 +309,17 @@ expat-hunter/
 │       │   │   ├── email.ts
 │       │   │   ├── sourcing.ts
 │       │   │   ├── pipeline.ts
-│       │   │   └── api-responses.ts
+│       │   │   ├── api-responses.ts
+│       │   │   ├── job-search.ts                # Types JobSearch
+│       │   │   ├── job-offer.ts                 # Types JobOffer, JobOfferLink, JobOfferExclusion
+│       │   │   ├── job-application.ts           # Types JobApplication, RecruitmentContact
+│       │   │   └── company-cache.ts             # Types CompanyCache, AccreditationCache
 │       │   ├── constants/
 │       │   │   ├── pipeline-statuses.ts
 │       │   │   ├── relevance-levels.ts
-│       │   │   └── countries.ts
+│       │   │   ├── countries.ts
+│       │   │   ├── job-offer-statuses.ts        # Statuts offres (new → accepted/rejected)
+│       │   │   └── exclusion-categories.ts      # Catégories d'exclusion structurées
 │       │   └── index.ts
 │       ├── tsconfig.json
 │       └── package.json
@@ -446,6 +511,204 @@ FollowUpSequence *──1 Contact
 **Index** : user_id (UNIQUE) — un seul par user
 **Relations** : belongsTo → User
 
+### Entités Lucid — Pipeline Offres d'emploi
+
+#### Diagramme des relations (Offres)
+
+```
+User 1──* JobSearch
+JobSearch 1──* JobOffer
+JobOffer 1──* JobOfferLink
+JobOffer 1──0..1 JobOfferExclusion
+JobOffer 1──* JobApplication
+JobOffer 1──* RecruitmentContact
+JobOffer *──1 CompanyCache (via company_cache_id)
+CompanyCache (global, partagé entre utilisateurs)
+AccreditationCache (global, par slug + country)
+Contact *──0..1 RecruitmentContact (via linked_lead_id)
+```
+
+#### CompanyCache
+
+> Cache global partagé entre tous les utilisateurs. TTL 1 an. Slug normalisé pour déduplication (strips Ltd, Inc, NZ, etc.).
+
+| Colonne | Type | Contraintes | Description |
+|---------|------|-------------|-------------|
+| id | uuid | PK | |
+| slug | varchar(255) | UNIQUE, NOT NULL | Slug normalisé pour dédup |
+| name | varchar(255) | NOT NULL | Nom affiché |
+| official_name | varchar(255) | NULL | Nom officiel (Companies Register) |
+| company_type | varchar(30) | NULL | recruitment_agency, hiring_company, consulting, unknown |
+| web_domain | varchar(500) | NULL | |
+| sector | varchar(100) | NULL | |
+| industry | varchar(100) | NULL | |
+| size | varchar(50) | NULL | Ex: "51-250 employees" |
+| country | varchar(3) | NULL | |
+| core_business | text | NULL | Description 1-2 phrases |
+| tech_stack | jsonb | NULL | Array de technologies |
+| culture_keywords | jsonb | NULL | Array de mots-clés culture |
+| recent_developments | text | NULL | |
+| linkedin_url | varchar(500) | NULL | |
+| data_source | varchar(50) | NULL | perplexity, serpapi, hunter.io... |
+| expires_at | timestamp | NOT NULL | Expiration cache (1 an TTL) |
+| created_at | timestamp | NOT NULL | |
+
+**Index** : slug (UNIQUE)
+**Index** : expires_at — nettoyage des entrées expirées
+**Relations** : hasMany → JobOffer
+
+#### AccreditationCache
+
+> Cache d'accréditation immigration. Global, par slug + pays. Vérifié pour NZ et AU.
+
+| Colonne | Type | Contraintes | Description |
+|---------|------|-------------|-------------|
+| id | uuid | PK | |
+| slug | varchar(255) | NOT NULL | Slug normalisé entreprise |
+| company_name | varchar(255) | NOT NULL | |
+| country | varchar(3) | NOT NULL | NZ, AU |
+| is_accredited | boolean | NOT NULL | |
+| accreditation_details | jsonb | NULL | Type, expiration, etc. |
+| checked_at | timestamp | NOT NULL | |
+| expires_at | timestamp | NOT NULL | Expiration cache |
+
+**Index** : (slug, country) UNIQUE
+**Relations** : aucune (table de cache standalone)
+
+#### JobSearch
+
+| Colonne | Type | Contraintes | Description |
+|---------|------|-------------|-------------|
+| id | uuid | PK | |
+| user_id | uuid | FK → users, NOT NULL | |
+| roles | jsonb | NOT NULL | Array de rôles cibles |
+| countries | jsonb | NOT NULL | Array de pays cibles |
+| cities | jsonb | NULL | Array de villes (filtre optionnel) |
+| platforms | jsonb | NOT NULL | Array de plateformes (seek, linkedin, builtin, zeil) |
+| seniority | varchar(20) | NULL | junior, mid, senior, lead, indifferent (null = indifferent) |
+| sector | varchar(100) | NULL | Filtre secteur |
+| min_salary | integer | NULL | Salaire minimum (devise locale) |
+| skills | jsonb | NULL | Override compétences profil |
+| frequency | varchar(20) | NOT NULL, default 'weekly' | daily, biweekly, weekly, manual |
+| is_active | boolean | NOT NULL, default true | |
+| last_run_at | timestamp | NULL | |
+| next_run_at | timestamp | NULL | |
+| created_at | timestamp | NOT NULL | |
+| updated_at | timestamp | NOT NULL | |
+
+**Index** : user_id, is_active — filtrage recherches actives
+**Index** : next_run_at — scheduling des runs automatiques
+**Contrainte CHECK** : frequency IN ('daily', 'biweekly', 'weekly', 'manual')
+**Relations** : belongsTo → User, hasMany → JobOffer
+
+#### JobOffer
+
+| Colonne | Type | Contraintes | Description |
+|---------|------|-------------|-------------|
+| id | uuid | PK | |
+| search_id | uuid | FK → job_searches, NOT NULL | |
+| company_cache_id | uuid | FK → company_caches, NULL | Lien vers le cache entreprise |
+| title | varchar(500) | NOT NULL | Titre du poste |
+| description_raw | text | NULL | Description brute scrapée |
+| status | varchar(20) | NOT NULL, default 'new' | |
+| relevance_score | integer | NULL | Score IA 0-100 |
+| match_summary | text | NULL | Résumé IA du match profil |
+| selection_reason | text | NULL | Raison IA de sélection |
+| application_advice | text | NULL | Conseils IA, modifiables par l'utilisateur |
+| salary_min | integer | NULL | |
+| salary_max | integer | NULL | |
+| salary_currency | varchar(5) | NULL | NZD, AUD, etc. |
+| location | varchar(255) | NULL | |
+| remote_type | varchar(10) | NULL | onsite, hybrid, remote |
+| publication_dates | jsonb | NOT NULL, default '[]' | Array de dates (détection republication) |
+| closing_date | timestamp | NULL | |
+| contact_email | varchar(255) | NULL | Email de contact de l'annonce |
+| is_republished | boolean | NOT NULL, default false | Signal : republication |
+| created_at | timestamp | NOT NULL | |
+| updated_at | timestamp | NOT NULL | |
+
+**Index** : search_id, status — filtrage par recherche et statut
+**Index** : company_cache_id — jointure entreprise
+**Index** : relevance_score DESC — tri par pertinence
+**Contrainte CHECK** : status IN ('new', 'interested', 'applied', 'interview', 'proposition', 'accepted', 'rejected', 'excluded', 'expired')
+**Relations** : belongsTo → JobSearch, belongsTo → CompanyCache, hasMany → JobOfferLink, hasOne → JobOfferExclusion, hasMany → JobApplication, hasMany → RecruitmentContact
+
+#### JobOfferLink
+
+| Colonne | Type | Contraintes | Description |
+|---------|------|-------------|-------------|
+| id | uuid | PK | |
+| offer_id | uuid | FK → job_offers, NOT NULL | |
+| platform | varchar(30) | NOT NULL | seek, linkedin, builtin, zeil, custom |
+| url | varchar(1000) | NOT NULL | URL directe de l'annonce |
+| apply_url | varchar(1000) | NULL | URL de candidature directe |
+| external_id | varchar(255) | NULL | ID plateforme pour dédup |
+| scraped_at | timestamp | NOT NULL | |
+
+**Index** : offer_id
+**Index** : (platform, external_id) UNIQUE WHERE external_id IS NOT NULL — déduplication cross-plateforme
+**Relations** : belongsTo → JobOffer
+
+#### JobOfferExclusion
+
+| Colonne | Type | Contraintes | Description |
+|---------|------|-------------|-------------|
+| id | uuid | PK | |
+| offer_id | uuid | FK → job_offers, UNIQUE, NOT NULL | 1-1 avec l'offre |
+| user_id | uuid | FK → users, NOT NULL | |
+| category | varchar(30) | NOT NULL | salary, sector, seniority, company_type, location, role_mismatch, other |
+| reason | text | NOT NULL | Explication libre |
+| created_at | timestamp | NOT NULL | |
+
+**Index** : offer_id (UNIQUE)
+**Index** : user_id, category — agrégation des patterns d'exclusion par catégorie
+**Contrainte CHECK** : category IN ('salary', 'sector', 'seniority', 'company_type', 'location', 'role_mismatch', 'other')
+**Relations** : belongsTo → JobOffer, belongsTo → User
+
+#### JobApplication
+
+| Colonne | Type | Contraintes | Description |
+|---------|------|-------------|-------------|
+| id | uuid | PK | |
+| offer_id | uuid | FK → job_offers, NOT NULL | |
+| user_id | uuid | FK → users, NOT NULL | |
+| cv_text | text | NULL | Texte CV adapté (remplacements appliqués) |
+| cv_replacements | jsonb | NULL | Remplacements IA [{old_text, new_text}] |
+| cv_user_instruction | text | NULL | Instructions utilisateur pour CV |
+| cover_letter_text | text | NULL | Texte lettre de motivation |
+| cover_letter_user_instruction | text | NULL | Instructions utilisateur pour LM |
+| application_email_text | text | NULL | Email d'accompagnement (3-4 lignes) |
+| status | varchar(20) | NOT NULL, default 'draft' | |
+| sent_at | timestamp | NULL | |
+| sent_to_email | varchar(255) | NULL | |
+| language | varchar(5) | NOT NULL, default 'en' | Langue de génération |
+| created_at | timestamp | NOT NULL | |
+| updated_at | timestamp | NOT NULL | |
+
+**Index** : offer_id, user_id
+**Contrainte CHECK** : status IN ('draft', 'ready', 'sent')
+**Relations** : belongsTo → JobOffer, belongsTo → User
+
+#### RecruitmentContact
+
+> Contacts liés à un process de recrutement spécifique. Distincts des contacts leads du pipeline de prospection.
+
+| Colonne | Type | Contraintes | Description |
+|---------|------|-------------|-------------|
+| id | uuid | PK | |
+| offer_id | uuid | FK → job_offers, NOT NULL | |
+| name | varchar(255) | NOT NULL | |
+| role | varchar(255) | NULL | Rôle dans le process (HR, Team Lead, CEO...) |
+| email | varchar(255) | NULL | |
+| linkedin_url | varchar(500) | NULL | |
+| notes | text | NULL | Notes libres |
+| linked_lead_id | uuid | FK → contacts, NULL | Si cette personne était un lead |
+| created_at | timestamp | NOT NULL | |
+
+**Index** : offer_id — tous les contacts d'une offre
+**Index** : linked_lead_id — lien bidirectionnel avec le pipeline leads
+**Relations** : belongsTo → JobOffer, belongsTo → Contact (optionnel, via linked_lead_id)
+
 ---
 
 ## 4. API Routes
@@ -513,6 +776,47 @@ FollowUpSequence *──1 Contact
 | PUT | /api/settings/follow-up | settings#updateFollowUp | Config séquences relance |
 | PUT | /api/settings/locale | settings#updateLocale | Changer langue |
 
+### Job Searches (Recherches d'offres)
+| Méthode | Route | Controller | Description |
+|---------|-------|------------|-------------|
+| POST | /api/job-searches | jobSearches#create | Créer une recherche |
+| GET | /api/job-searches | jobSearches#index | Lister les recherches |
+| PUT | /api/job-searches/:id | jobSearches#update | Modifier les critères |
+| DELETE | /api/job-searches/:id | jobSearches#destroy | Supprimer une recherche |
+| POST | /api/job-searches/:id/run | jobSearches#run | Lancer un run manuellement |
+
+### Job Offers (Offres d'emploi)
+| Méthode | Route | Controller | Description |
+|---------|-------|------------|-------------|
+| GET | /api/job-offers | jobOffers#index | Liste paginée + filtres (searchId, status) |
+| GET | /api/job-offers/:id | jobOffers#show | Détail offre (entreprise, liens, score) |
+| PATCH | /api/job-offers/:id/status | jobOffers#updateStatus | Changer statut suivi |
+| POST | /api/job-offers/:id/exclude | jobOffers#exclude | Exclure avec raison catégorisée |
+| PUT | /api/job-offers/:id/advice | jobOffers#updateAdvice | Modifier conseils de candidature |
+| GET | /api/job-offers/exclusions | jobOffers#exclusions | Patterns d'exclusion de l'utilisateur |
+| GET | /api/job-offers/:id/cross-contacts | jobOffers#crossContacts | Vérifier contacts leads existants chez l'entreprise |
+
+### Job Applications (Candidatures)
+| Méthode | Route | Controller | Description |
+|---------|-------|------------|-------------|
+| POST | /api/job-offers/:id/cv/generate | jobApplications#generateCv | Générer CV adapté |
+| POST | /api/job-offers/:id/cv/refine | jobApplications#refineCv | Raffiner CV avec instructions |
+| PUT | /api/job-offers/:id/cv | jobApplications#updateCv | Modifier CV manuellement |
+| GET | /api/job-offers/:id/cv/pdf | jobApplications#cvPdf | Exporter CV en PDF |
+| POST | /api/job-offers/:id/cover-letter/generate | jobApplications#generateCoverLetter | Générer lettre de motivation |
+| POST | /api/job-offers/:id/cover-letter/refine | jobApplications#refineCoverLetter | Raffiner LM avec instructions |
+| GET | /api/job-offers/:id/cover-letter/pdf | jobApplications#coverLetterPdf | Exporter LM en PDF |
+| POST | /api/job-offers/:id/apply | jobApplications#send | Envoyer candidature (CV + LM en PJ) |
+| POST | /api/job-offers/:id/contacts | jobApplications#addContact | Ajouter contact recrutement |
+| GET | /api/job-offers/:id/contacts | jobApplications#listContacts | Lister contacts recrutement |
+| POST | /api/job-offers/:id/contacts/:contactId/email | jobApplications#draftEmail | Brouillon email IA (suivi, remerciement) |
+
+### Platforms (Plateformes suggérées)
+| Méthode | Route | Controller | Description |
+|---------|-------|------------|-------------|
+| GET | /api/platforms/suggestions | jobSearches#platformSuggestions | Suggestions plateformes par pays |
+| POST | /api/job-searches/:id/platforms | jobSearches#addPlatform | Ajouter plateforme personnalisée |
+
 ---
 
 ## 5. Architecture des scrapers (Connecteurs pluggables)
@@ -554,6 +858,42 @@ class ScraperRegistry {
 5. Les contacts sont persistés, le `SourcingRun` est mis à jour
 6. Si un scraper échoue → `ApifyFallback` pour cette source
 
+### Scrapers d'offres d'emploi (Job Offer Scraper Registry)
+
+Le scraping d'offres réutilise le pattern Strategy + Registry existant, mais produit des `JobOffer` au lieu de `Contact`.
+
+```typescript
+// job_offer_scraper_registry.ts — Réutilise BaseScraper, spécialisé offres
+class JobOfferScraperRegistry {
+  private scrapers: Map<string, BaseScraper[]> = new Map()
+
+  register(scraper: BaseScraper): void { ... }
+  getForPlatform(platform: string): BaseScraper { ... }
+}
+```
+
+#### Stratégie de scraping par plateforme
+
+| Plateforme | Méthode primaire | Fallback | Notes |
+|------------|-----------------|----------|-------|
+| Seek | Playwright in-house | Apify (après 3 échecs consécutifs ou captcha) | |
+| BuiltIn | Playwright in-house | Apify (après 3 échecs consécutifs ou captcha) | |
+| Zeil | Playwright in-house | Apify (après 3 échecs consécutifs ou captcha) | |
+| LinkedIn | Apify uniquement | — | **Jamais de scraping in-house** (risque anti-bot, ban compte) |
+| Custom | Apify si acteur disponible | — | Plateformes ajoutées par l'utilisateur |
+
+#### Flux scraping offres
+1. `JobScrapingJob` dispatché en queue (via BullMQ)
+2. `JobScrapingService` récupère la config `JobSearch` et les plateformes cibles
+3. Pour chaque plateforme : exécution du scraper correspondant
+4. **Déduplication cross-plateforme** (hybride) :
+   - Pré-filtre par règles : même entreprise + même ville + titre similaire → candidat doublon
+   - IA pour les cas ambigus (titre reformulé, entreprise avec variantes de nom)
+5. Détection de **republication** : offre déjà existante trouvée à nouveau → mise à jour `publication_dates`, flag `is_republished`
+6. Création/mise à jour des `JobOffer` + `JobOfferLink` en base
+7. Quotas appliqués : free = top 5 (par score IA), premium = illimité
+8. L'utilisation Apify est loguée et trackée par utilisateur (contrôle de coûts)
+
 ---
 
 ## 6. Architecture IA
@@ -589,11 +929,97 @@ class OpenRouterClient {
    - L'email est sauvé en statut "draft"
 2. Les relances utilisent un prompt différent avec contexte de l'email précédent
 
-### Budget IA
+### Budget IA (Prospection)
 - Modèle par défaut : `gpt-4o-mini` (via OpenRouter) — ~0.15$/1M tokens input
 - Estimation : ~500 tokens/analyse + ~800 tokens/email
 - 100 contacts = ~0.02$ analyse + ~0.02$ emails = ~0.04$ par campagne
 - Budget 30$/mois = ~750 campagnes/mois (largement suffisant)
+
+### Flux évaluation IA des offres d'emploi
+
+1. `JobEvaluationJob` dispatché après le scraping d'une recherche
+2. Pour chaque offre non évaluée :
+   - Construit le contexte : profil candidat + description offre + infos entreprise (CompanyCache)
+   - Injecte les **exclusions structurées** de l'utilisateur comme préférences négatives dans le prompt
+   - Appelle `JobAiEvaluationService.evaluate()` via OpenRouter
+   - Parse la réponse structurée :
+     - `relevance_score` (0-100) — pertinence globale
+     - `match_summary` — résumé de ce qui matche avec le profil et les attentes
+     - `selection_reason` — raison de sélection de cette offre
+     - `application_advice` — conseils pour orienter la candidature (modifiables par l'utilisateur)
+   - Met à jour l'offre en base
+3. Traitement en batch (10 offres/batch) avec rate limiting
+4. L'`application_advice` est utilisé comme instruction pour la génération CV et lettre de motivation
+
+### Flux adaptation CV
+
+Approche hybride offrant deux méthodes (cf. CL-014) :
+
+#### Méthode 1 : Google Docs API (recommandée)
+1. Copie du template CV de l'utilisateur dans Google Drive
+2. Extraction du texte via Google Docs API
+3. L'IA génère **max 7 remplacements ciblés** (`[{old_text, new_text}]`) en utilisant :
+   - Profil candidat, description de l'offre, infos entreprise, `application_advice`
+4. Application des remplacements via `documents.batchUpdate` (méthode `replaceAllText`)
+5. L'utilisateur peut affiner via des instructions (avant ET après génération)
+6. Édition manuelle du texte possible
+7. Export PDF via Google Drive API
+
+#### Méthode 2 : Templates locales DOCX (alternative)
+1. Upload DOCX par l'utilisateur
+2. Traitement avec `jszip` + `xml-parser` + logique de fusion de runs
+3. Même pipeline IA (max 7 remplacements)
+4. Application des remplacements dans le XML du DOCX
+5. Export PDF via LibreOffice headless (`libreoffice --convert-to pdf`)
+
+**UI** : badge "Meilleurs résultats" sur l'option Google Docs.
+
+### Flux génération lettre de motivation
+
+1. L'IA génère une lettre de motivation en utilisant :
+   - CV candidat, description de l'offre, infos entreprise, `application_advice`
+   - **Exception agences de recrutement** : si `company_type === 'recruitment_agency'`, les données de recherche entreprise sont ignorées (seules les données de l'annonce sont utilisées)
+   - Style adapté au pays cible (style NZ par défaut : direct, concis, orienté résultats)
+2. L'utilisateur peut raffiner via des instructions (avant ET après génération)
+3. Édition manuelle du texte possible
+4. Export PDF
+
+### Flux génération email de candidature
+
+1. L'IA génère un email court (3-4 lignes) pour accompagner le CV et la LM en pièces jointes
+2. Le ton est **adapté au pays cible** :
+   - NZ/AU : décontracté, direct
+   - France : formel
+   - Japon : formel, respectueux de la hiérarchie
+3. L'email référence le poste spécifique et l'entreprise
+4. Ne répète **pas** le contenu de la lettre de motivation
+5. Modifiable par l'utilisateur avant envoi
+
+### Flux apprentissage des exclusions
+
+1. Quand l'utilisateur exclut une offre, il fournit :
+   - `category` : salary, sector, seniority, company_type, location, role_mismatch, other
+   - `reason` : texte libre explicatif
+2. Les exclusions sont persistées dans `JobOfferExclusion`
+3. Lors de l'évaluation IA de nouvelles offres, toutes les exclusions passées de l'utilisateur sont **injectées dans le prompt** comme préférences négatives
+4. L'IA ajuste ses scores en conséquence (ex: si l'utilisateur a exclu 3 offres pour "salary too low < 120k", les offres avec salaire < 120k recevront un score réduit)
+
+### Langue de génération (CV, LM, email)
+
+La langue est déduite du pays cible de l'offre (cf. CL-017) :
+- NZ/AU/UK/US → Anglais (défaut)
+- France → Français (défaut)
+- Japon → Anglais (standard pour expats)
+- L'utilisateur peut override via un sélecteur de langue avant chaque génération
+- La même langue s'applique au CV adapté et à la lettre de motivation
+
+### Budget IA (Offres d'emploi)
+- Évaluation offre : ~600 tokens/offre (profil + offre + entreprise + exclusions)
+- Adaptation CV : ~1200 tokens (profil + offre + 7 remplacements)
+- Lettre de motivation : ~1000 tokens
+- Email candidature : ~300 tokens
+- Estimation : 20 offres/semaine = ~0.05$ évaluation + ~0.04$ CV + ~0.03$ LM = ~0.12$/semaine
+- Compatible avec le budget 30$/mois global
 
 ---
 
@@ -745,6 +1171,102 @@ Les features sont regroupées en épiques, ordonnées par dépendances :
 
 ---
 
+### Épiques — Pipeline Offres d'emploi (E10-E14)
+
+#### Épique 10 : Recherche & Scraping d'offres (Features: job-search-config + job-scraping-pipeline)
+```
+10.1  [Data] Migrations company_caches, accreditation_caches, job_searches, job_offers, job_offer_links (009-013)
+10.2  [Data] Models CompanyCache, AccreditationCache, JobSearch, JobOffer, JobOfferLink
+10.3  [Core] JobSearchService (CRUD, quotas free/premium, scheduling)
+10.4  [Core] JobOfferScraperRegistry (réutilise BaseScraper, spécialisé offres)
+10.5  [Core] Scrapers offres : Seek, BuiltIn, Zeil (Playwright in-house + Apify fallback)
+10.6  [Core] Scraper LinkedIn offres (Apify uniquement)
+10.7  [Core] JobScrapingService (orchestration, déduplication cross-plateforme hybride)
+10.8  [Core] Détection de republication (publication_dates, is_republished)
+10.9  [Core] JobScrapingJob (background job BullMQ)
+10.10 [API] Routes job-searches (CRUD, run, platforms)
+10.11 [API] Routes job-offers (index, show)
+10.12 [UI] Page /recherche-offres (config recherche, sélection plateformes)
+10.13 [UI] SearchProgressModal (progression temps réel du scraping)
+10.14 [Test] Tests scraping offres (mocks) + intégration recherche + quotas
+```
+**Dépendances** : Épique 3 (infrastructure scraping), Épique 2 (profil candidat)
+**Estimation** : XL
+**Livrable** : configurer une recherche, lancer le scraping, voir les offres trouvées, déduplication, quotas
+
+#### Épique 11 : Évaluation & Enrichissement (Features: job-ai-evaluation + job-company-enrichment)
+```
+11.1 [Core] JobCompanyEnrichmentService (Perplexity + SerpApi + Hunter.io, cache global TTL 1 an)
+11.2 [Core] AccreditationCache (vérification immigration NZ/AU)
+11.3 [Core] JobAiEvaluationService (score, match_summary, selection_reason, application_advice)
+11.4 [Core] JobEvaluationJob (background job batch)
+11.5 [Core] JobEnrichmentJob (background job batch)
+11.6 [Data] Migration job_offer_exclusions (014)
+11.7 [Data] Model JobOfferExclusion
+11.8 [Core] Exclusion learning (injection dans le prompt d'évaluation)
+11.9 [API] Routes évaluation (exclude, advice, exclusions, cross-contacts)
+11.10 [Test] Tests évaluation IA (mock OpenRouter) + enrichissement + exclusions
+```
+**Dépendances** : Épique 10 (offres nécessaires)
+**Estimation** : L
+**Livrable** : offres évaluées par l'IA, entreprises enrichies, accréditation immigration, exclusions apprises
+
+#### Épique 12 : Page Offres (Feature: job-offers-page)
+```
+12.1 [UI] CollapsibleSidebar (menus parents pliables, état persisté localStorage)
+12.2 [UI] JobOffersPage (3 onglets : Nouvelles, Postulées, Archivées)
+12.3 [UI] JobOfferCard (score, match, badges accréditation, republication, contact croisé)
+12.4 [UI] JobOfferDetailPage (fiche complète, liens, entreprise, score breakdown)
+12.5 [UI] ExclusionModal (catégorie structurée + raison libre)
+12.6 [UI] Cross-pipeline indicators (badge "Vous avez un contact chez cette entreprise")
+12.7 [UI] Statuts de suivi (Nouvelle → Intéressée → Postulée → ... → Acceptée / Rejetée)
+12.8 [UI] Détection expiration silencieuse (onglet Archivées)
+12.9 [API] Route PATCH /api/job-offers/:id/status
+12.10 [Test] Tests page offres + composants + interactions
+```
+**Dépendances** : Épiques 10-11 (offres évaluées + entreprises enrichies)
+**Estimation** : L
+**Livrable** : page offres fonctionnelle avec filtres, badges, statuts, exclusion, sidebar collapsible
+
+#### Épique 13 : Candidature (Features: job-cv-generation + job-cover-letter + job-application-send)
+```
+13.1  [Data] Migrations job_applications, recruitment_contacts (015-016)
+13.2  [Data] Models JobApplication, RecruitmentContact
+13.3  [Core] JobCvGenerationService (Google Docs API + DOCX local, max 7 remplacements)
+13.4  [Core] JobCoverLetterService (style NZ, skip agency data)
+13.5  [Core] JobApplicationService (envoi email, PJ PDF, contacts recrutement)
+13.6  [Core] AI prompts : cv_adaptation, cover_letter, application_email
+13.7  [Core] Gestion langue (déduite du pays, modifiable)
+13.8  [Core] Quotas génération (1/semaine free, illimité premium)
+13.9  [Core] Lien lead ↔ recruitment contact (flag in_recruitment_process, re-prospect)
+13.10 [API] Routes candidature (generate CV, refine, cover letter, apply, contacts, email)
+13.11 [UI] ApplicationWorkspace (split CV gauche / LM droite)
+13.12 [UI] Sélecteur langue + instructions avant/après génération
+13.13 [UI] RecruitmentContactCard (ajout, liste, email IA)
+13.14 [UI] Badge méthode CV (Google Docs = "Meilleurs résultats")
+13.15 [Test] Tests génération CV + LM + envoi candidature + contacts recrutement
+```
+**Dépendances** : Épique 12 (page offres), Épique 5 (infrastructure email existante)
+**Estimation** : XL
+**Livrable** : workspace candidature complet, CV adapté, LM, envoi avec PJ, contacts recrutement
+
+#### Épique 14 : Configuration avancée (Features: job-recurring-search + job-custom-platforms + job-notifications)
+```
+14.1 [Core] Recherche récurrente (fréquence configurable : daily, biweekly, weekly, manual)
+14.2 [Core] Scheduling automatique via cron (next_run_at)
+14.3 [Core] Plateformes personnalisées (ajout URL, suggestions par pays via Apify actors)
+14.4 [UI] Config fréquence dans /recherche-offres
+14.5 [UI] Ajout plateforme personnalisée
+14.6 [UI] Notifications in-app (badge nouvelles offres sur sidebar)
+14.7 [Core] Email digest nouvelles offres (optionnel)
+14.8 [Test] Tests récurrence + plateformes custom + notifications
+```
+**Dépendances** : Épique 10 (recherches d'offres en place)
+**Estimation** : M
+**Livrable** : recherches récurrentes, plateformes custom, notifications nouvelles offres
+
+---
+
 ## 8. Décisions d'architecture (ADR)
 
 ### ADR-001 : TypeScript fullstack (Node.js)
@@ -826,6 +1348,59 @@ Les features sont regroupées en épiques, ordonnées par dépendances :
   - Scripts root dans package.json (`pnpm --filter api dev`, etc.)
   - Suffisant pour un projet à 3 packages
   - Migration vers Turborepo possible plus tard si le build time pose problème
+
+### ADR-021 : Adaptation CV hybride (Google Docs API + templates DOCX locales)
+- **Contexte** : L'adaptation du CV à chaque offre nécessite des remplacements ciblés dans un document mis en forme. Deux cas d'usage : utilisateur avec Google Account et utilisateur sans.
+- **Décision** : Deux méthodes au choix. (1) Google Docs API comme méthode recommandée : copie template, extraction texte, remplacements IA (max 7) via `replaceAllText`, export PDF. (2) Traitement DOCX local comme alternative : jszip + xml-parser + fusion de runs, export PDF via LibreOffice headless.
+- **Alternatives** :
+  - Google Docs uniquement : exclut les utilisateurs sans Google Account
+  - DOCX uniquement : résultats inférieurs (problèmes de runs XML fractionnés)
+  - Markdown / LaTeX : perte de mise en forme originale du CV
+- **Conséquences** :
+  - Dépendance Google APIs (optionnelle, dégradation gracieuse)
+  - LibreOffice headless requis sur le serveur pour la méthode DOCX → PDF
+  - UI indique clairement que Google Docs donne de meilleurs résultats (badge)
+  - Max 7 remplacements : préserve la structure originale du CV
+
+### ADR-022 : Déduplication cross-plateforme des offres (règles + IA)
+- **Contexte** : La même offre peut apparaître sur Seek, LinkedIn, BuiltIn. Il faut éviter les doublons tout en gérant les cas ambigus (titre reformulé, variantes de nom d'entreprise).
+- **Décision** : Approche hybride. (1) Pré-filtre par règles : même entreprise (slug normalisé) + même ville + titre similaire (Levenshtein > 0.8). (2) IA pour les cas ambigus qui passent le pré-filtre avec un score intermédiaire.
+- **Alternatives** :
+  - Règles uniquement : rate les cas ambigus (titres reformulés)
+  - IA pour tout : coûteux et lent pour les cas triviaux
+  - external_id uniquement : les plateformes n'exposent pas toujours un ID stable
+- **Conséquences** :
+  - Entité `JobOfferLink` : une offre = N liens plateformes
+  - Le pré-filtre traite ~90% des cas sans appel IA
+  - Coût IA marginal pour les ~10% ambigus
+  - Slug normalisé dans `CompanyCache` (strips Ltd, Inc, NZ, etc.)
+
+### ADR-023 : Cache entreprise global (CompanyCache partagé entre utilisateurs)
+- **Contexte** : L'enrichissement entreprise (Perplexity, SerpApi, Hunter.io) consomme des tokens et des API calls. Plusieurs utilisateurs peuvent chercher des offres chez la même entreprise.
+- **Décision** : Cache global partagé entre tous les utilisateurs, TTL 1 an, slug normalisé comme clé de dédup.
+- **Alternatives** :
+  - Cache par utilisateur : duplication des données, coûts multipliés
+  - Pas de cache : appels API à chaque offre, coûts prohibitifs
+  - TTL plus court (1 mois) : renouvellement trop fréquent, les données entreprise évoluent lentement
+- **Conséquences** :
+  - Table `company_caches` sans `user_id` (globale)
+  - Table `accreditation_caches` séparée (spécifique immigration NZ/AU)
+  - Slug normalisé : `"Xero NZ Limited"` → `"xero"` pour dédup
+  - Pattern issu du workflow n8n existant (Perplexity + SerpApi + Hunter.io MCP en fallback)
+  - Réduction estimée : 80% des appels API économisés après montée en charge
+
+### ADR-024 : Sidebar collapsible avec menus parents (dual mode)
+- **Contexte** : L'ajout du pipeline offres d'emploi double le nombre d'entrées dans la sidebar. La navigation doit rester lisible sans surcharger l'interface.
+- **Décision** : Menus parents collapsibles regroupant les liens par pipeline (Prospection, Offres d'emploi, Paramètres). État persisté en localStorage. Badges compteurs visibles même quand le menu est fermé.
+- **Alternatives** :
+  - Sidebar plate (tous les liens visibles) : trop long avec 2 pipelines
+  - Tabs en haut de page : perd le contexte de navigation global
+  - Sidebar rétractable (icônes uniquement) : perd les labels, moins accessible
+- **Conséquences** :
+  - Chevron `>` / `v` pour toggle
+  - Animation collapse/expand : hauteur 150ms ease-in-out
+  - Le menu contenant la page active est automatiquement ouvert au chargement
+  - Composant `CollapsibleSidebar` remplace la sidebar actuelle
 
 ---
 
@@ -949,6 +1524,49 @@ shared_components:
     - name: "VisaSponsorBadge"
       path: "visa-sponsor-badge.tsx"
       purpose: "Badge indicating company is a known visa sponsor"
+
+    # === Job Offers Pipeline Components ===
+
+    - name: "AccreditationBadge"
+      path: "accreditation-badge.tsx"
+      purpose: "Badge indicating company has immigration accreditation (NZ/AU)"
+
+    - name: "CollapsibleSidebar"
+      path: "collapsible-sidebar.tsx"
+      purpose: "Sidebar with collapsible parent menus (Prospection, Offres, Paramètres)"
+      note: "Replaces flat sidebar — state persisted in localStorage"
+
+    - name: "CrossContactBadge"
+      path: "cross-contact-badge.tsx"
+      purpose: "Badge 'You have a contact at this company' shown on job offer cards"
+
+    - name: "ExclusionModal"
+      path: "exclusion-modal.tsx"
+      purpose: "Modal with structured category + free text reason for excluding an offer"
+
+    - name: "JobOfferCard"
+      path: "job-offer-card.tsx"
+      purpose: "Card displaying job offer: title, company, AI match, score, badges, links"
+
+    - name: "JobOfferStatusBadge"
+      path: "job-offer-status-badge.tsx"
+      purpose: "Badge for job offer tracking status (new, interested, applied, interview...)"
+
+    - name: "LanguageSelector"
+      path: "language-selector.tsx"
+      purpose: "Compact language selector for CV/cover letter generation (deduced from country, overridable)"
+
+    - name: "RecruitmentContactCard"
+      path: "recruitment-contact-card.tsx"
+      purpose: "Card for recruitment process contacts (distinct from lead contacts)"
+
+    - name: "RepublicationIndicator"
+      path: "republication-indicator.tsx"
+      purpose: "Visual indicator when an offer has been republished (with dates)"
+
+    - name: "SplitWorkspace"
+      path: "split-workspace.tsx"
+      purpose: "Split-panel layout for application workspace (CV left, cover letter right)"
 ```
 
 ## 11. Mapping Pipeline UX → Données

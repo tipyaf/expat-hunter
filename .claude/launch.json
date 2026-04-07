@@ -14,6 +14,12 @@
       "runtimeExecutable": "python3",
       "runtimeArgs": ["-m", "http.server", "8090", "-d", "specs/wireframes"],
       "port": 8090
+    },
+    {
+      "name": "ux-wireframes",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "_work/ux/wireframes", "-l", "8091", "--no-clipboard"],
+      "port": 8091
     }
   ]
 }

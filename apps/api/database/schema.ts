@@ -454,6 +454,47 @@ export class GenerationPresetSchema extends BaseModel {
   declare userId: string
 }
 
+export class JobSearchSchema extends BaseModel {
+  static $columns = ['cities', 'contractType', 'countries', 'createdAt', 'frequency', 'id', 'isActive', 'lastRunAt', 'nextRunAt', 'platforms', 'roles', 'salaryMax', 'salaryMin', 'sector', 'seniority', 'skills', 'updatedAt', 'userId'] as const
+  $columns = JobSearchSchema.$columns
+  @column()
+  declare cities: any | null
+  @column()
+  declare contractType: string | null
+  @column()
+  declare countries: any
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare frequency: string
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare isActive: boolean
+  @column.dateTime()
+  declare lastRunAt: DateTime | null
+  @column.dateTime()
+  declare nextRunAt: DateTime | null
+  @column()
+  declare platforms: any
+  @column()
+  declare roles: any
+  @column()
+  declare salaryMax: number | null
+  @column()
+  declare salaryMin: number | null
+  @column()
+  declare sector: string | null
+  @column()
+  declare seniority: string
+  @column()
+  declare skills: any | null
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare userId: string
+}
+
 export class PasswordResetSchema extends BaseModel {
   static $columns = ['createdAt', 'expiresAt', 'id', 'token', 'used', 'userId'] as const
   $columns = PasswordResetSchema.$columns
