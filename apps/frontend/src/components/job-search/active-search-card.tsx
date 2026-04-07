@@ -27,7 +27,7 @@ function formatRelativeTime(dateStr: string | null, t: ReturnType<typeof useTran
   return t('daysAgo', { count: diffDays })
 }
 
-export function ActiveSearchCard({ search, onEdit, onDelete, onRun, isRunning }: ActiveSearchCardProps) {
+export function ActiveSearchCard({ search, onEdit, onDelete, onRun, isRunning }: Readonly<ActiveSearchCardProps>) {
   const t = useTranslations('jobSearch')
 
   return (

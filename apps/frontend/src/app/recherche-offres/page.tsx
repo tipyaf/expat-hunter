@@ -82,16 +82,20 @@ export default function JobSearchConfigPage() {
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 md:px-8 pb-8 space-y-6">
-          {isLoading ? (
+          {isLoading && (
             <p className="text-sm text-[var(--color-text-muted)]">{tc('loading')}</p>
-          ) : isCreating || isEditing ? (
+          )}
+
+          {!isLoading && (isCreating || isEditing) && (
             <JobSearchForm
               initialData={editingSearchData}
               onSubmit={isEditing ? handleUpdate : handleCreate}
               onCancel={() => { setShowForm(false); setEditingSearch(null) }}
               isSubmitting={isSubmitting}
             />
-          ) : activeSearch ? (
+          )}
+
+          {!isLoading && !isCreating && !isEditing && activeSearch && (
             <>
               <ActiveSearchCard
                 search={activeSearch}
@@ -120,7 +124,9 @@ export default function JobSearchConfigPage() {
                 {t('addSearch')}
               </button>
             </>
-          ) : (
+          )}
+
+          {!isLoading && !isCreating && !isEditing && !activeSearch && (
             <>
               <EmptyState
                 icon={Briefcase}

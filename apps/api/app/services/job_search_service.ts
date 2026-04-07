@@ -91,8 +91,8 @@ export default class JobSearchService {
     const jobSearch = await this.findOrFail(userId, searchId)
 
     // Validate salaryMin <= salaryMax when both are provided or mixed with existing
-    const effectiveMin = data.salaryMin !== undefined ? data.salaryMin : jobSearch.salaryMin
-    const effectiveMax = data.salaryMax !== undefined ? data.salaryMax : jobSearch.salaryMax
+    const effectiveMin = data.salaryMin ?? jobSearch.salaryMin
+    const effectiveMax = data.salaryMax ?? jobSearch.salaryMax
     if (effectiveMin != null && effectiveMax != null && effectiveMin > effectiveMax) {
       const error = new Error('salaryMin must be less than or equal to salaryMax')
       ;(error as any).status = 422
