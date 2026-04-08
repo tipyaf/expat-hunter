@@ -40,6 +40,9 @@ export type {
   JobOfferStatus,
   RemoteType,
   ExclusionCategory,
+  CompanyType,
+  CompanyCache,
+  AccreditationCache,
 } from './types/job-offer'
 export {
   JOB_OFFER_STATUSES,
@@ -52,6 +55,10 @@ export {
   EXCLUSION_CATEGORIES,
   EVALUATION_BATCH_SIZE,
   MAX_DESCRIPTION_LENGTH,
+  COMPANY_TYPES,
+  CACHE_TTL_DAYS,
+  ENRICHMENT_BATCH_SIZE,
+  MAX_COMPANY_NAME_LENGTH,
 } from './constants/job-offer'
 
 // Job search

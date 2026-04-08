@@ -1,0 +1,215 @@
+# ============================================================================
+# Story: job-company-enrichment
+# Feature: Job Company Enrichment (E11)
+# Status: refined
+# Estimate: L (5 points)
+# ============================================================================
+
+story:
+  id: "job-company-enrichment"
+  title: "Job Company Enrichment — Global cache + accreditation"
+  epic: "E11 — Evaluation & Enrichment"
+  shortcut_id: 869
+  estimate: 5
+  priority: "must-have"
+  type: "feature"
+  area: "backend"
+  depends_on:
+    - "job-scraping-pipeline"
+    - "job-ai-evaluation"
+
+  description: |
+    Enrich company data for job offers using OpenRouter AI. Global cache shared
+    across all users (TTL 1 year), keyed by (slug, country) for location-aware
+    dedup. Includes immigration accreditation check for NZ/AU via existing
+    visa_sponsor_registry. Wired into post-scraping flow after AI evaluation.
+    Fail-open: enrichment errors do not block the pipeline.
+
+  scope:
+    files_to_create:
+      - "apps/api/database/migrations/39_create_company_caches_table.ts"
+      - "apps/api/database/migrations/40_create_accreditation_caches_table.ts"
+      - "apps/api/app/models/company_cache.ts"
+      - "apps/api/app/models/accreditation_cache.ts"
+      - "apps/api/app/services/job_company_enrichment_service.ts"
+      - "apps/api/tests/unit/services/job_company_enrichment_service.spec.ts"
+      - "apps/api/tests/functional/job_offers/job_company_enrichment.spec.ts"
+
+    files_to_modify:
+      - "apps/api/app/models/job_offer.ts"  # Add belongsTo CompanyCache
+      - "apps/api/app/controllers/job_offers_controller.ts"  # Preload company in show, serialize
+      - "apps/api/app/services/job_scraping_service.ts"  # Wire enrichment after evaluation
+      - "packages/shared/src/types/job-offer.ts"  # Add CompanyCache + AccreditationCache types
+      - "packages/shared/src/constants/job-offer.ts"  # Add COMPANY_TYPES, CACHE_TTL_DAYS
+      - "packages/shared/src/index.ts"  # Export new types/constants
+
+    files_to_read:
+      - "apps/api/app/ai/openrouter_client.ts"
+      - "apps/api/app/services/job_ai_evaluation_service.ts"
+      - "apps/api/app/models/job_search.ts"
+      - "apps/api/app/services/company_enricher.ts"  # Existing pattern reference
+
+  acceptance_criteria:
+    # --- FUNCTIONAL ---
+    - id: "AC-FUNC-JCE-01"
+      type: "FUNC"
+      description: "Given a job offer with a company name / When enrichment runs / Then a CompanyCache record is created with slug, country, name, sector, size, type"
+      verify: "grep -rn 'CompanyCache' apps/api/app/services/job_company_enrichment_service.ts | wc -l | xargs test 3 -le"
+      tier: 1
+
+    - id: "AC-FUNC-JCE-02"
+      type: "FUNC"
+      description: "Given a company already cached with matching (slug, country) and expires_at in the future / When enrichment is requested / Then cached data is returned without AI call"
+      verify: "grep -rn 'expires_at\\|findBy.*slug.*country\\|cache.*hit' apps/api/app/services/job_company_enrichment_service.ts | grep -v node_modules"
+      tier: 1
+
+    - id: "AC-FUNC-JCE-03"
+      type: "FUNC"
+      description: "Given an offer in NZ or AU / When enrichment runs / Then accreditation status is checked and stored in AccreditationCache with (slug, country) key"
+      verify: "grep -rn 'AccreditationCache\\|accreditation\\|is_accredited' apps/api/app/services/job_company_enrichment_service.ts | wc -l | xargs test 2 -le"
+      tier: 1
+
+    - id: "AC-FUNC-JCE-04"
+      type: "FUNC"
+      description: "Given a company name like 'Xero NZ Limited' / When slug is computed / Then it produces 'xero' (strips Ltd, Inc, NZ, Limited, Corp, etc.)"
+      verify: "grep -rn 'normalizeSlug\\|COMPANY_SUFFIXES\\|stripSuffix' apps/api/app/services/job_company_enrichment_service.ts"
+      tier: 1
+
+    - id: "AC-FUNC-JCE-05"
+      type: "FUNC"
+      description: "Given an offer with companyCacheId set / When GET /api/job-offers/:id / Then response includes company object with name, sector, size, companyType, accreditationStatus"
+      verify: "grep -rn 'company.*name\\|company.*sector\\|company.*size\\|company.*Type\\|accreditation' apps/api/app/controllers/job_offers_controller.ts | wc -l | xargs test 3 -le"
+      tier: 1
+
+    - id: "AC-FUNC-JCE-06"
+      type: "FUNC"
+      description: "Given enrichment fails for a company (AI error) / When processing a batch / Then other offers continue (fail-open), and failed offer's companyCacheId stays null"
+      verify: "grep -rn 'catch\\|fail.*open\\|companyCacheId.*null\\|logger.error' apps/api/app/services/job_company_enrichment_service.ts | wc -l | xargs test 3 -le"
+      tier: 1
+
+    - id: "AC-FUNC-JCE-07"
+      type: "FUNC"
+      description: "Given scraping completes and evaluation finishes / When the pipeline runs / Then enrichment is automatically triggered for unenriched offers"
+      verify: "grep -rn 'JobCompanyEnrichmentService\\|enrichment' apps/api/app/services/job_scraping_service.ts | wc -l | xargs test 1 -le"
+      tier: 1
+
+    - id: "AC-FUNC-JCE-08"
+      type: "FUNC"
+      description: "Given CompanyCache TTL is 365 days / When a cache entry is created / Then expires_at equals created_at + 365 days"
+      verify: "grep -rn 'CACHE_TTL_DAYS\\|365\\|plus.*year\\|plus.*days' apps/api/app/services/job_company_enrichment_service.ts"
+      tier: 1
+
+    - id: "AC-FUNC-JCE-09"
+      type: "FUNC"
+      description: "Given company_type is resolved by AI / When stored / Then value is one of: recruitment_agency, hiring_company, consulting, unknown"
+      verify: "grep -rn 'recruitment_agency\\|hiring_company\\|consulting\\|COMPANY_TYPES' apps/api/app/services/job_company_enrichment_service.ts | wc -l | xargs test 1 -le"
+      tier: 1
+
+    # --- SECURITY ---
+    - id: "AC-SEC-JCE-01"
+      type: "SEC"
+      description: "All job-offers endpoints require auth middleware"
+      verify: "grep -c 'middleware.auth' apps/api/start/routes/job_offers.ts | xargs test 1 -le"
+      tier: 1
+
+    - id: "AC-SEC-JCE-02"
+      type: "SEC"
+      description: "No raw SQL in enrichment service"
+      verify: "grep -rn 'Database.rawQuery\\|\\.raw(' apps/api/app/services/job_company_enrichment_service.ts | wc -l | xargs test 0 -eq"
+      tier: 1
+
+    - id: "AC-SEC-JCE-03"
+      type: "SEC"
+      description: "No hardcoded API keys in enrichment code"
+      verify: "grep -rn 'sk-or-\\|sk-' apps/api/app/services/job_company_enrichment_service.ts | wc -l | xargs test 0 -eq"
+      tier: 1
+
+    - id: "AC-SEC-JCE-04"
+      type: "SEC"
+      description: "Company data sanitized before storage (text fields trimmed and length-capped)"
+      verify: "grep -rn 'trim\\|slice\\|MAX_\\|sanitize' apps/api/app/services/job_company_enrichment_service.ts | wc -l | xargs test 2 -le"
+      tier: 1
+
+    # --- BEST PRACTICES ---
+    - id: "AC-BP-JCE-01"
+      type: "BP"
+      description: "TypeScript 0 errors in changed files"
+      verify: "cd apps/api && npx tsc --noEmit 2>&1 | grep -E 'job_company_enrichment|company_cache|accreditation_cache' | wc -l | xargs test 0 -eq"
+      tier: 1
+
+    - id: "AC-BP-JCE-02"
+      type: "BP"
+      description: "All unit tests pass"
+      verify: "cd apps/api && set -a && source .env.test && set +a && NODE_ENV=test ~/.nvm/versions/node/v22.22.1/bin/node --import tsx/esm bin/test.ts unit --files='tests/unit/services/job_company_enrichment_service.spec.ts'"
+      tier: 1
+
+    - id: "AC-BP-JCE-03"
+      type: "BP"
+      description: "All functions have explicit return types"
+      verify: "grep -n 'async \\|function ' apps/api/app/services/job_company_enrichment_service.ts | grep -v ':' | wc -l | xargs test 0 -eq"
+      tier: 1
+
+  test_intentions:
+    - intent: "normalizeSlug strips company suffixes correctly"
+      cases:
+        - input: "Xero NZ Limited"
+          expected: "xero"
+        - input: "Fisher & Paykel Healthcare Corp"
+          expected: "fisher paykel healthcare"
+        - input: "  Datacom Ltd  "
+          expected: "datacom"
+        - input: "ABC"
+          expected: "abc"
+        - input: ""
+          expected: ""
+
+    - intent: "enrichForOffer returns cached data if (slug, country) match and not expired"
+      cases:
+        - setup: "CompanyCache with slug='xero', country='NZ', expires_at=future"
+          action: "enrichForOffer('Xero NZ Limited', 'NZ')"
+          expected: "returns existing record, no AI call made"
+        - setup: "CompanyCache with slug='xero', country='NZ', expires_at=past"
+          action: "enrichForOffer('Xero NZ Limited', 'NZ')"
+          expected: "AI called, cache entry updated with new data"
+
+    - intent: "enrichForOffer creates new cache entry when not cached"
+      cases:
+        - setup: "No CompanyCache for slug='newcompany' + country='NZ'"
+          action: "enrichForOffer('NewCompany Ltd', 'NZ')"
+          expected: "AI called, CompanyCache created, expires_at = now + 365 days, companyCacheId set on offer"
+
+    - intent: "accreditation check for NZ/AU companies"
+      cases:
+        - setup: "Offer in NZ, company 'Xero'"
+          expected: "AccreditationCache created with is_accredited from visa_sponsor_registry lookup"
+        - setup: "Offer in US, company 'Google'"
+          expected: "No accreditation check, AccreditationCache not created"
+
+    - intent: "fail-open: AI error does not block other offers in batch"
+      cases:
+        - setup: "3 offers, AI fails on 2nd"
+          expected: "1st and 3rd enriched successfully, 2nd offer companyCacheId stays null, result.errors = 1"
+
+    - intent: "same company in same batch is enriched only once"
+      cases:
+        - setup: "2 offers for 'Xero' in NZ, no cache"
+          expected: "AI called once, both offers get same companyCacheId"
+
+  edge_cases:
+    - "Company name is empty or 'N/A' → skip enrichment, companyCacheId stays null"
+    - "Same company appears in multiple offers in same batch → enrich once via slug dedup, link all"
+    - "AI returns partial data (missing sector) → store what's available, null for the rest"
+    - "Non-NZ/AU countries → skip accreditation check entirely"
+    - "Slug collision (different companies normalize to same slug in same country) → first-write-wins, unlikely with suffix stripping"
+    - "Very long company name (>255 chars) → truncate before slug computation"
+    - "CompanyCache table grows large → expires_at index enables periodic cleanup"
+
+  technical_notes: |
+    - CompanyCache is GLOBAL (no user_id) — shared across all users per ADR-023
+    - Cache key is (slug, country) — location-aware dedup
+    - Slug normalization reuses DEDUP_RULES.COMPANY_SUFFIXES from @expat-hunter/shared
+    - AI prompt includes country context for location-relevant results
+    - AccreditationCache leverages existing visa_sponsor_registry for NZ
+    - Enrichment batch processes sequentially with rate limiting (same pattern as evaluation)
+    - CACHE_TTL_DAYS = 365 (constant in shared package)
+    - company_type enum: recruitment_agency | hiring_company | consulting | unknown

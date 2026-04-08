@@ -38,6 +38,7 @@ export default class JobOfferService {
     const query = JobOffer.query()
       .where('searchId', params.searchId)
       .preload('links')
+      .preload('companyCache')
       .orderBy('createdAt', 'desc')
 
     if (params.status && VALID_OFFER_STATUSES.has(params.status)) {
@@ -60,6 +61,7 @@ export default class JobOfferService {
     const offer = await JobOffer.query()
       .where('id', offerId)
       .preload('links')
+      .preload('companyCache')
       .first()
 
     if (!offer) {

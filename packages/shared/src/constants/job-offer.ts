@@ -1,4 +1,4 @@
-import type { ExclusionCategory, JobOfferStatus, RemoteType } from '../types/job-offer.js'
+import type { CompanyType, ExclusionCategory, JobOfferStatus, RemoteType } from '../types/job-offer.js'
 import type { JobSearchPlatform } from '../types/job-search.js'
 
 export const JOB_OFFER_STATUSES: readonly JobOfferStatus[] = [
@@ -61,3 +61,16 @@ export const DEDUP_RULES = {
     ['usa', 'united states'],
   ]),
 } as const
+
+export const COMPANY_TYPES: readonly CompanyType[] = [
+  'recruitment_agency',
+  'hiring_company',
+  'consulting',
+  'unknown',
+] as const
+
+export const CACHE_TTL_DAYS = 365
+
+export const ENRICHMENT_BATCH_SIZE = 10
+
+export const MAX_COMPANY_NAME_LENGTH = 255

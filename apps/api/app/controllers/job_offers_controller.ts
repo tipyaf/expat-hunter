@@ -163,6 +163,7 @@ export default class JobOffersController {
       id: offer.id,
       searchId: offer.searchId,
       title: offer.title,
+      companyName: offer.companyName,
       descriptionRaw: offer.descriptionRaw,
       status: offer.status,
       relevanceScore: offer.relevanceScore,
@@ -186,6 +187,15 @@ export default class JobOffersController {
         externalId: link.externalId,
         scrapedAt: link.scrapedAt,
       })) ?? [],
+      company: offer.companyCache
+        ? {
+            id: offer.companyCache.id,
+            name: offer.companyCache.name,
+            sector: offer.companyCache.sector,
+            size: offer.companyCache.size,
+            companyType: offer.companyCache.companyType,
+          }
+        : null,
       createdAt: offer.createdAt,
       updatedAt: offer.updatedAt,
     }
