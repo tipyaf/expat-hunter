@@ -724,13 +724,13 @@ features:
   - id: "job-offers-list-page"
     name: "Job Offers List Page"
     priority: "must-have"
-    status: "building"
-    cycles: 0
+    status: "validated"
+    cycles: 1
     story_file: "specs/stories/job-offers-list-page.yaml"
     depends_on: ["collapsible-sidebar", "job-ai-evaluation", "job-company-enrichment"]
     started_at: "2026-04-08"
-    validated_at: ""
-    notes: "E12 S2. L (5 pts). /offres with 3 tabs + JobOfferCard + PATCH status API + cross-contacts API. Extends JobOfferStatus. Shortcut sc-884."
+    validated_at: "2026-04-08"
+    notes: "E12 S2. L (5 pts). /offres with 3 tabs + JobOfferCard + PATCH status API + cross-contacts API. Extends JobOfferStatus to 13 statuses. 16 new tests (48 total). Fix: await dynamic route import. Visual validation light+dark. Shortcut sc-884. PR #152."
 
   - id: "job-offer-detail-page"
     name: "Job Offer Detail Page"
