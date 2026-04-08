@@ -46,6 +46,8 @@ export {
   REMOTE_TYPES,
   FREE_MAX_OFFERS,
   OFFER_PAGE_SIZE,
+  OFFER_BATCH_SIZE,
+  DEDUP_RULES,
 } from './constants/job-offer'
 
 // Job search

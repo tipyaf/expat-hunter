@@ -664,8 +664,8 @@ features:
   - id: "job-scraping-pipeline"
     name: "Job Scraping Pipeline"
     priority: "must-have"
-    status: "refined"
-    cycles: 0
+    status: "validated"
+    cycles: 1
     story_file: ""
     depends_on: ["job-search-config"]
     refined_at: "2026-04-08"
@@ -681,7 +681,7 @@ features:
       - id: "job-scraping-orchestration"
         name: "Job Scraping Orchestration — Dedup + API + Quotas"
         story_file: "specs/stories/job-scraping-orchestration.yaml"
-        status: "refined"
+        status: "validated"
         estimate: 5
 
   # --- E11: Évaluation AI ---

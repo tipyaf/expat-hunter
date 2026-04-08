@@ -26,3 +26,24 @@ export const REMOTE_TYPES: readonly RemoteType[] = [
 export const FREE_MAX_OFFERS = 5
 
 export const OFFER_PAGE_SIZE = 20
+
+export const OFFER_BATCH_SIZE = 50
+
+/**
+ * Dedup rule thresholds for normalized string comparison.
+ * Strings are lowercased, trimmed, and common suffixes stripped before comparison.
+ */
+export const DEDUP_RULES = {
+  /** Minimum Dice coefficient for two strings to be considered a match */
+  SIMILARITY_THRESHOLD: 0.85,
+  /** Common company suffixes to strip before comparison */
+  COMPANY_SUFFIXES: ['ltd', 'limited', 'inc', 'corp', 'corporation', 'pty', 'llc', 'gmbh', 'sa', 'sas', 'sarl'],
+  /** Common location aliases to normalize */
+  LOCATION_NORMALIZATIONS: new Map<string, string>([
+    ['nz', 'new zealand'],
+    ['au', 'australia'],
+    ['uk', 'united kingdom'],
+    ['us', 'united states'],
+    ['usa', 'united states'],
+  ]),
+} as const
