@@ -89,10 +89,10 @@ volumes:
   expat_redisdata:
     name: expat-hunter_redisdata
   sonarqube_data:
-    name: sonarqube_sonarqube_data
+    name: devtools_sonarqube_data
   sonarqube_extensions:
-    name: sonarqube_sonarqube_extensions
+    name: devtools_sonarqube_extensions
   sonarqube_logs:
-    name: sonarqube_sonarqube_logs
+    name: devtools_sonarqube_logs
   sonarqube_postgresql_data:
-    name: sonarqube_postgresql_data
+    name: devtools_sonarqube_postgresql_data

@@ -36,7 +36,7 @@
 | contact-detail-panel | must-have | ✅ validated | specs/stories/contact-detail-panel.yaml | 1 |
 
 | job-search-config | must-have | ✅ validated | specs/stories/job-search-config.yaml | 1 |
-| job-scraping-pipeline | must-have | 🔄 refining | — | 0 |
+| job-scraping-pipeline | must-have | ✅ refined | specs/stories/job-scraping-foundation.yaml + job-scraping-orchestration.yaml | 0 |
 | job-ai-evaluation | must-have | pending | — | 0 |
 | job-company-enrichment | must-have | pending | — | 0 |
 | job-offers-page | must-have | pending | — | 0 |
@@ -47,7 +47,7 @@
 | job-custom-platforms | should-have | pending | — | 0 |
 | job-notifications | nice-to-have | pending | — | 0 |
 
-**Summary**: 25 features total — 7 validated (original MVP + job-search-config), 7 new must-have remaining (job offers pipeline), 11 pending. /spec complete for job offers pipeline. Next: finish `/refine job-scraping-pipeline` (3 decisions pending), then `/build`.
+**Summary**: 25 features total — 7 validated (original MVP + job-search-config), 7 new must-have remaining (job offers pipeline), 11 pending. job-scraping-pipeline refined (2 stories: sc-825 + sc-826). Next: `/build job-scraping-foundation` (sc-825).
 
 ## Architecture Decisions
 
@@ -117,19 +117,15 @@
 ### Phase 2 — Construction
 - **Status**: 🔄 In progress — Job Offers pipeline (E10)
 - **Features**: 7 must-have validated (+job-search-config), 2 should-have pending, 6 nice-to-have pending
-- **Current**: Refining job-scraping-pipeline (next in E10 after job-search-config)
+- **Current**: job-scraping-foundation (sc-825) BUILDING — PR #147 open
 - **Last completed**: sc-810 (job-search-config) — PR #144 + PR #145 (SonarQube fixes) merged
 - **Previous sprint**: SonarQube refactoring (sc-755 to sc-808, all validated)
-- **Refinement in progress — job-scraping-pipeline**:
-  - Split proposed: 2 stories (XL → 2×L)
-  - Story 1: Data model + 4 scrapers (Seek/BuiltIn/Zeil/LinkedIn)
-  - Story 2: Orchestration + dedup + API + quotas
-  - 3 decisions pending user validation:
-    1. BullMQ → reporter à E14 (job-recurring-search), garder sync+polling
-    2. Seek scraper → réutiliser pattern Apify existant (pas Playwright)
-    3. Dédup IA → v1 rules-only ou inclure IA dès maintenant?
-  - Wireframe gate: SKIP (backend-only, pas d'UI)
-  - Codebase findings: BaseScraper exists (returns RawContact[]), need new BaseJobOfferScraper (returns RawJobOffer[]), ScraperRegistry pattern reusable, Apify already integrated, last migration=34, BullMQ NOT installed
+- **Refinement done — job-scraping-pipeline** (2026-04-08):
+  - Split: 2 stories (XL → 2×L), both refined
+  - Story 1: sc-825 — Data model + 4 scrapers (12 ACs) — PR #147
+  - Story 2: sc-826 — Orchestration + dedup (rules+AI) + API + quotas (16 ACs)
+  - Decisions validated: BullMQ→E14, Seek/LinkedIn/BuiltIn via Apify, Zeil via Playwright, AI dedup from v1
+  - Next: merge PR #147, then `/build job-scraping-orchestration` (sc-826)
 
 ### Phase 3 — Review
 - **Status**: ✅ Done (all must-have features validated 2026-03-25)

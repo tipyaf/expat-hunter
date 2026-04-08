@@ -158,3 +158,13 @@ Use `stories-update labels:[{name: "scope:building"}]` at each transition.
 **Problem**: sc-810 — PR created and merged without running SonarQube. 17 issues (4 Major) found only after the user asked. Required a follow-up fix PR.
 **Root cause**: Agent skipped Gate 3 (Code Quality) tool check. SonarQube is configured in `.devtools/docker-compose.yml` and `.env` but the agent used "reviewer fallback" instead of the actual tool.
 **Rule**: This project has SonarQube configured. ALWAYS run it via `docker run sonarsource/sonar-scanner-cli` (not local Java) BEFORE creating a commit. The command: `source .env && docker run --rm --network host -e SONAR_HOST_URL -e SONAR_TOKEN -v $(pwd):/usr/src sonarsource/sonar-scanner-cli -Dsonar.projectKey=$SONAR_PROJECT_KEY -Dsonar.sources=. -Dsonar.inclusions="<changed-files>" -Dsonar.exclusions="node_modules/**,dist/**" -Dsonar.projectBaseDir=/usr/src`. Fix all Major issues before committing. Minor issues should be fixed too when feasible.
+
+### [Infra] SonarQube Docker — start properly and never assume token is expired
+**Problem**: sc-825 — SonarQube started with `docker compose --profile sonar up -d` without `--env-file ../.env`, creating new volumes instead of using existing `devtools_*` ones. All data (credentials, token, project) was lost. Agent wrongly concluded "token expired" and regenerated everything.
+**Root cause**: Agent didn't read the reference memory for SonarQube setup. Started SonarQube without the correct env file, which caused Docker to create new named volumes instead of reusing existing ones.
+**Rule**: 
+1. ALWAYS start SonarQube with: `cd .devtools && docker compose --env-file ../.env --profile sonar up -d`
+2. If token validation fails, FIRST check `docker volume ls | grep sonar` to verify the correct `devtools_*` volumes are mounted
+3. NEVER assume "token expired" — check volumes, credentials, and server status first
+4. NEVER delete or recreate SonarQube volumes — data must persist across restarts
+5. Read `memory/reference_sonarqube_setup.md` before any SonarQube operation
