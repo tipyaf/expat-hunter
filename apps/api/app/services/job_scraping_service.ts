@@ -15,6 +15,7 @@ import { DateTime } from 'luxon'
 import { JobOfferScraperRegistry } from '#scrapers/job_offer_scraper_registry'
 import type { JobOfferScrapeParams } from '#scrapers/base_job_offer_scraper'
 import JobOfferDedupService from './job_offer_dedup_service.js'
+import JobAiEvaluationService from './job_ai_evaluation_service.js'
 
 interface ScrapingResult {
   totalScraped: number
@@ -32,10 +33,16 @@ interface ScrapingError {
 export default class JobScrapingService {
   private readonly registry: JobOfferScraperRegistry
   private readonly dedupService: JobOfferDedupService
+  private readonly evaluationService: JobAiEvaluationService
 
-  constructor(registry?: JobOfferScraperRegistry, dedupService?: JobOfferDedupService) {
+  constructor(
+    registry?: JobOfferScraperRegistry,
+    dedupService?: JobOfferDedupService,
+    evaluationService?: JobAiEvaluationService
+  ) {
     this.registry = registry ?? new JobOfferScraperRegistry()
     this.dedupService = dedupService ?? new JobOfferDedupService()
+    this.evaluationService = evaluationService ?? new JobAiEvaluationService()
   }
 
   /**
@@ -91,6 +98,14 @@ export default class JobScrapingService {
     const quotaResult = await this.enforceQuota(search.id, user.plan)
     result.quotaExceeded = quotaResult
     result.newOffers = persistedOffers.length - dedupResult.duplicates - quotaResult
+
+    // Step 5: Trigger AI evaluation for new offers
+    try {
+      await this.evaluationService.evaluateForSearch(searchId, userId)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error'
+      logger.error({ searchId, error: message }, 'JobScrapingService: AI evaluation failed')
+    }
 
     // Update search lastRunAt
     search.lastRunAt = DateTime.now()

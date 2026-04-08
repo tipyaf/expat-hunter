@@ -39,6 +39,7 @@ export type {
   JobOfferLink,
   JobOfferStatus,
   RemoteType,
+  ExclusionCategory,
 } from './types/job-offer'
 export {
   JOB_OFFER_STATUSES,
@@ -48,6 +49,9 @@ export {
   OFFER_PAGE_SIZE,
   OFFER_BATCH_SIZE,
   DEDUP_RULES,
+  EXCLUSION_CATEGORIES,
+  EVALUATION_BATCH_SIZE,
+  MAX_DESCRIPTION_LENGTH,
 } from './constants/job-offer'
 
 // Job search

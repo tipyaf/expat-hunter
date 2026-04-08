@@ -31,6 +31,15 @@ export default class JobOffer extends BaseModel {
   declare relevanceScore: number | null
 
   @column()
+  declare matchSummary: string | null
+
+  @column()
+  declare selectionReason: string | null
+
+  @column()
+  declare applicationAdvice: string | null
+
+  @column()
   declare salaryMin: number | null
 
   @column()

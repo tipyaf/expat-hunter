@@ -689,13 +689,13 @@ features:
   - id: "job-ai-evaluation"
     name: "Job AI Evaluation"
     priority: "must-have"
-    status: "pending"
-    cycles: 0
-    story_file: ""
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/job-ai-evaluation.yaml"
     depends_on: ["job-scraping-pipeline", "candidate-profile"]
-    started_at: ""
-    validated_at: ""
-    notes: "AI scoring 0-100 (match_summary, selection_reason, application_advice). Exclusion learning from user feedback. E11."
+    started_at: "2026-04-08"
+    validated_at: "2026-04-08"
+    notes: "AI scoring 0-100 (match_summary, selection_reason, application_advice). Exclusion learning from user feedback. E11. L (5 pts). 16 ACs. 27 unit + 14 functional tests. 0 SonarQube issues. PR pending. Shortcut sc-856."
 
   - id: "job-company-enrichment"
     name: "Job Company Enrichment"
