@@ -1,0 +1,135 @@
+# ============================================================================
+# Story: collapsible-sidebar
+# Feature: Job Offers Page (E12) — Story 1/3
+# Status: refined
+# Estimate: M (3 points)
+# ============================================================================
+
+story:
+  id: "collapsible-sidebar"
+  title: "Collapsible Sidebar — Menu groups with persistent state"
+  epic: "E12 — Job Offers Page"
+  shortcut_id: 883
+  estimate: 3
+  priority: "must-have"
+  type: "feature"
+  area: "frontend"
+  depends_on: []
+
+  description: |
+    Refactor the flat sidebar navigation into collapsible menu groups matching
+    the UX spec section 8. Four groups: "Prospection" (existing links),
+    "Offres d'emploi" (new links), "Paramètres", "Administration".
+    Open/closed state persisted in localStorage. Active page's group auto-opens.
+    Badge counters visible on parent even when collapsed.
+    Animation: height transition 150ms ease-in-out.
+
+  scope:
+    files_to_create:
+      - "apps/frontend/src/components/layout/collapsible-nav-group.tsx"
+      - "apps/frontend/src/hooks/use-sidebar-state.ts"
+
+    files_to_modify:
+      - "apps/frontend/src/components/layout/sidebar.tsx"  # Refactor flat nav → grouped collapsible
+      - "apps/frontend/src/i18n/en.json"  # Add sidebar group labels
+      - "apps/frontend/src/i18n/fr.json"  # Add sidebar group labels
+
+    files_excluded:
+      - "apps/api/**"  # No backend changes
+      - "apps/frontend/src/app/offres/**"  # Offer pages are S2
+
+  acceptance_criteria:
+    # --- FUNCTIONAL ---
+    - id: "AC-FUNC-CSB-01"
+      type: "FUNC"
+      description: "Given the sidebar / When rendered / Then 4 collapsible groups are visible: Prospection, Offres d'emploi, Paramètres, Administration"
+      verify: "grep -rn 'Prospection\\|Offres.*emploi\\|Paramètres\\|Administration' apps/frontend/src/components/layout/sidebar.tsx apps/frontend/src/components/layout/collapsible-nav-group.tsx"
+      tier: 1
+
+    - id: "AC-FUNC-CSB-02"
+      type: "FUNC"
+      description: "Given a collapsible group / When clicked / Then it toggles open/closed with a chevron icon (> when closed, v when open)"
+      verify: "grep -rn 'ChevronDown\\|ChevronRight\\|chevron\\|toggle\\|isOpen\\|collapsed' apps/frontend/src/components/layout/collapsible-nav-group.tsx"
+      tier: 1
+
+    - id: "AC-FUNC-CSB-03"
+      type: "FUNC"
+      description: "Given a user opens/closes groups / When state changes / Then it is persisted in localStorage and restored on page reload"
+      verify: "grep -rn 'localStorage\\|sidebarState\\|persist' apps/frontend/src/hooks/use-sidebar-state.ts apps/frontend/src/components/layout/sidebar.tsx"
+      tier: 1
+
+    - id: "AC-FUNC-CSB-04"
+      type: "FUNC"
+      description: "Given a page is active / When the sidebar renders / Then the group containing that page is automatically open"
+      verify: "grep -rn 'pathname\\|activeGroup\\|auto.*open\\|contains.*active' apps/frontend/src/hooks/use-sidebar-state.ts apps/frontend/src/components/layout/sidebar.tsx"
+      tier: 1
+
+    - id: "AC-FUNC-CSB-05"
+      type: "FUNC"
+      description: "Given a group with a badge counter (e.g. emails, new offers) / When the group is collapsed / Then the badge is still visible on the parent row"
+      verify: "grep -rn 'badge\\|count.*parent\\|collapsed.*badge' apps/frontend/src/components/layout/collapsible-nav-group.tsx apps/frontend/src/components/layout/sidebar.tsx"
+      tier: 1
+
+    - id: "AC-FUNC-CSB-06"
+      type: "FUNC"
+      description: "Given the 'Offres d'emploi' group / When expanded / Then it contains 'Recherche d'offres' (/recherche-offres) and 'Mes offres' (/offres)"
+      verify: "grep -rn 'recherche-offres\\|/offres' apps/frontend/src/components/layout/sidebar.tsx | wc -l | xargs test 2 -le"
+      tier: 1
+
+    - id: "AC-FUNC-CSB-07"
+      type: "FUNC"
+      description: "Given the collapse/expand animation / When a group toggles / Then height transitions over 150ms ease-in-out"
+      verify: "grep -rn '150ms\\|ease-in-out\\|transition.*height\\|max-height' apps/frontend/src/components/layout/collapsible-nav-group.tsx"
+      tier: 1
+
+    - id: "AC-FUNC-CSB-08"
+      type: "FUNC"
+      description: "Given the 'Tableau de bord' and 'Mon profil' links / When rendered / Then they remain as direct top-level links (not inside any group)"
+      verify: "grep -rn 'Tableau.*bord\\|dashboard\\|profil' apps/frontend/src/components/layout/sidebar.tsx | grep -v 'children\\|group'"
+      tier: 1
+
+    # --- I18N ---
+    - id: "AC-FUNC-CSB-09"
+      type: "FUNC"
+      description: "Given the sidebar / When rendered in English / Then group labels use translated strings from en.json"
+      verify: "grep -rn 'prospection\\|jobOffers\\|settings\\|administration' apps/frontend/src/i18n/en.json | wc -l | xargs test 4 -le"
+      tier: 1
+
+    # --- SECURITY ---
+    - id: "AC-SEC-CSB-01"
+      type: "SEC"
+      description: "Given an admin-only group (Administration) / When user is not admin / Then the group is not rendered"
+      verify: "grep -rn 'admin\\|isAdmin\\|role.*admin' apps/frontend/src/components/layout/sidebar.tsx"
+      tier: 1
+
+    # --- BEST PRACTICES ---
+    - id: "AC-BP-CSB-01"
+      type: "BP"
+      description: "Given the CollapsibleNavGroup / When inspected / Then it uses semantic HTML (nav, ul, li) and aria attributes (aria-expanded, role)"
+      verify: "grep -rn 'aria-expanded\\|role=\\|<nav\\|<ul\\|<li' apps/frontend/src/components/layout/collapsible-nav-group.tsx"
+      tier: 1
+
+  test_intentions:
+    - intent: "CollapsibleNavGroup renders children when open and hides when closed"
+      type: "unit"
+      oracle: "isOpen=true → children visible; isOpen=false → children hidden"
+
+    - intent: "Sidebar renders 4 groups with correct child links"
+      type: "unit"
+      oracle: "Prospection has 4 links, Offres d'emploi has 2 links, Paramètres has 5 links, Administration has 2 links"
+
+    - intent: "useSidebarState persists to localStorage and restores"
+      type: "unit"
+      oracle: "After toggle, localStorage.getItem returns updated state; on re-mount, state matches"
+
+    - intent: "Active page auto-opens its parent group"
+      type: "unit"
+      oracle: "pathname=/emails → Prospection group isOpen=true"
+
+    - intent: "Badge on collapsed parent is visible"
+      type: "unit"
+      oracle: "badge=5 + isOpen=false → badge element present in DOM"
+
+    - intent: "Admin group hidden for non-admin users"
+      type: "unit"
+      oracle: "user.role='user' → Administration group not in DOM"

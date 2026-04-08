@@ -6,7 +6,7 @@
 - **Project**: expat-hunter
 - **Started**: 2026-03-17
 - **Current phase**: Phase 2 — Construction (features pending refinement)
-- **Last updated**: 2026-04-07
+- **Last updated**: 2026-04-08
 - **Framework version**: 4.1.1
 - **GitHub repo**: https://github.com/tipyaf/expat-hunter (public)
 - **Branches**: main (protected, default), develop (protected, dev base), feature/* → PR to develop
@@ -37,9 +37,11 @@
 
 | job-search-config | must-have | ✅ validated | specs/stories/job-search-config.yaml | 1 |
 | job-scraping-pipeline | must-have | ✅ validated | specs/stories/job-scraping-foundation.yaml + job-scraping-orchestration.yaml | 1 |
-| job-ai-evaluation | must-have | pending | — | 0 |
-| job-company-enrichment | must-have | pending | — | 0 |
-| job-offers-page | must-have | pending | — | 0 |
+| job-ai-evaluation | must-have | ✅ validated | specs/stories/job-ai-evaluation.yaml | 1 |
+| job-company-enrichment | must-have | ✅ validated | specs/stories/job-company-enrichment.yaml | 1 |
+| collapsible-sidebar (E12 S1) | must-have | 📝 refined | specs/stories/collapsible-sidebar.yaml (sc-883) | 0 |
+| job-offers-list-page (E12 S2) | must-have | 📝 refined | specs/stories/job-offers-list-page.yaml (sc-884) | 0 |
+| job-offer-detail-page (E12 S3) | must-have | 📝 refined | specs/stories/job-offer-detail-page.yaml (sc-885) | 0 |
 | job-cv-generation | must-have | pending | — | 0 |
 | job-cover-letter | must-have | pending | — | 0 |
 | job-application-send | must-have | pending | — | 0 |
@@ -47,7 +49,7 @@
 | job-custom-platforms | should-have | pending | — | 0 |
 | job-notifications | nice-to-have | pending | — | 0 |
 
-**Summary**: 25 features total — 8 validated (original MVP + job-search-config + job-scraping-pipeline), 6 new must-have remaining (job offers pipeline), 11 pending. Next: `/refine` next feature.
+**Summary**: 27 features total — 10 validated, 3 refined (E12 sidebar + list + detail), 6 must-have remaining (E13-E14), 8 pending. Next: `/build collapsible-sidebar` (sc-883).
 
 ## Architecture Decisions
 
