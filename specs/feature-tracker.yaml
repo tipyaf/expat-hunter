@@ -713,13 +713,13 @@ features:
   - id: "collapsible-sidebar"
     name: "Collapsible Sidebar"
     priority: "must-have"
-    status: "building"
-    cycles: 0
+    status: "validated"
+    cycles: 1
     story_file: "specs/stories/collapsible-sidebar.yaml"
     depends_on: []
     started_at: "2026-04-08"
-    validated_at: ""
-    notes: "E12 S1. M (3 pts). Refactor flat nav → 4 collapsible groups. localStorage persistence. Auto-open active group. Shortcut sc-883."
+    validated_at: "2026-04-08"
+    notes: "E12 S1. M (3 pts). Refactor flat nav → 4 collapsible groups. localStorage persistence. Auto-open active group. 19 unit tests. All 11 ACs pass. 0 TS errors. Shortcut sc-883. PR #151."
 
   - id: "job-offers-list-page"
     name: "Job Offers List Page"
