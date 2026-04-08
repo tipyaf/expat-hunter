@@ -1,4 +1,4 @@
-import type { JobOfferStatus, RemoteType } from '../types/job-offer.js'
+import type { ExclusionCategory, JobOfferStatus, RemoteType } from '../types/job-offer.js'
 import type { JobSearchPlatform } from '../types/job-search.js'
 
 export const JOB_OFFER_STATUSES: readonly JobOfferStatus[] = [
@@ -8,7 +8,21 @@ export const JOB_OFFER_STATUSES: readonly JobOfferStatus[] = [
   'archived',
   'duplicate',
   'quota_exceeded',
+  'excluded',
 ] as const
+
+export const EXCLUSION_CATEGORIES: readonly ExclusionCategory[] = [
+  'salary',
+  'location',
+  'company',
+  'role',
+  'contract',
+  'other',
+] as const
+
+export const EVALUATION_BATCH_SIZE = 10
+
+export const MAX_DESCRIPTION_LENGTH = 5000
 
 export const JOB_OFFER_PLATFORMS: readonly JobSearchPlatform[] = [
   'seek',

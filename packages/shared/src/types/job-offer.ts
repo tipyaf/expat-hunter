@@ -7,6 +7,15 @@ export type JobOfferStatus =
   | 'archived'
   | 'duplicate'
   | 'quota_exceeded'
+  | 'excluded'
+
+export type ExclusionCategory =
+  | 'salary'
+  | 'location'
+  | 'company'
+  | 'role'
+  | 'contract'
+  | 'other'
 
 export type RemoteType = 'onsite' | 'hybrid' | 'remote'
 
@@ -35,6 +44,9 @@ export interface JobOffer {
   descriptionRaw: string | null
   status: JobOfferStatus
   relevanceScore: number | null
+  matchSummary: string | null
+  selectionReason: string | null
+  applicationAdvice: string | null
   salaryMin: number | null
   salaryMax: number | null
   salaryCurrency: string | null
