@@ -81,9 +81,9 @@ export default function JobOffersPage(): React.ReactNode {
 
           {/* Content */}
           <div className="mt-4">
-            {isLoading ? (
-              <JobOfferCardSkeletonList />
-            ) : error ? (
+            {isLoading && <JobOfferCardSkeletonList />}
+
+            {!isLoading && error && (
               <div className="rounded-[var(--radius-md)] border border-[var(--color-error)]/30 bg-[var(--color-error)]/5 p-4 text-center">
                 <p className="text-sm text-[var(--color-error)]">{error}</p>
                 <button
@@ -94,9 +94,13 @@ export default function JobOffersPage(): React.ReactNode {
                   {tc('retry')}
                 </button>
               </div>
-            ) : filteredOffers.length === 0 ? (
+            )}
+
+            {!isLoading && !error && filteredOffers.length === 0 && (
               <JobOffersEmptyState tab={activeTab} />
-            ) : (
+            )}
+
+            {!isLoading && !error && filteredOffers.length > 0 && (
               <div className="grid gap-3">
                 {filteredOffers.map((offer) => (
                   <JobOfferCard

@@ -29,6 +29,13 @@ function getScoreLabel(score: number): string {
   return 'veryLow'
 }
 
+function formatSalary(min: number | null, max: number | null, currency: string | null): string | null {
+  if (min === null) return null
+  const cur = currency ?? ''
+  if (max !== null) return `${min.toLocaleString()}–${max.toLocaleString()} ${cur}`
+  return `${min.toLocaleString()} ${cur}`
+}
+
 interface JobOfferCardProps {
   offer: JobOfferResponse
   hasCrossContact?: boolean
@@ -43,11 +50,7 @@ export function JobOfferCard({ offer, hasCrossContact, onStatusChange }: JobOffe
     ? new Date(offer.publicationDates[offer.publicationDates.length - 1]).toLocaleDateString()
     : null
 
-  const salaryText = offer.salaryMin !== null
-    ? offer.salaryMax !== null
-      ? `${offer.salaryMin.toLocaleString()}–${offer.salaryMax.toLocaleString()} ${offer.salaryCurrency ?? ''}`
-      : `${offer.salaryMin.toLocaleString()} ${offer.salaryCurrency ?? ''}`
-    : null
+  const salaryText = formatSalary(offer.salaryMin, offer.salaryMax, offer.salaryCurrency)
 
   return (
     <article
