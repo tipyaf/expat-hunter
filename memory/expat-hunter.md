@@ -117,15 +117,15 @@
 ### Phase 2 — Construction
 - **Status**: 🔄 In progress — Job Offers pipeline (E10)
 - **Features**: 7 must-have validated (+job-search-config), 2 should-have pending, 6 nice-to-have pending
-- **Current**: job-scraping-pipeline REFINED — ready to `/build`
+- **Current**: job-scraping-foundation (sc-825) BUILDING — PR #147 open
 - **Last completed**: sc-810 (job-search-config) — PR #144 + PR #145 (SonarQube fixes) merged
 - **Previous sprint**: SonarQube refactoring (sc-755 to sc-808, all validated)
 - **Refinement done — job-scraping-pipeline** (2026-04-08):
   - Split: 2 stories (XL → 2×L), both refined
-  - Story 1: sc-825 — Data model + 4 Apify scrapers (12 ACs)
+  - Story 1: sc-825 — Data model + 4 scrapers (12 ACs) — PR #147
   - Story 2: sc-826 — Orchestration + dedup (rules+AI) + API + quotas (16 ACs)
-  - Decisions validated: BullMQ→E14, all scrapers Apify, AI dedup from v1
-  - Next: `/build job-scraping-foundation` (sc-825)
+  - Decisions validated: BullMQ→E14, Seek/LinkedIn/BuiltIn via Apify, Zeil via Playwright, AI dedup from v1
+  - Next: merge PR #147, then `/build job-scraping-orchestration` (sc-826)
 
 ### Phase 3 — Review
 - **Status**: ✅ Done (all must-have features validated 2026-03-25)

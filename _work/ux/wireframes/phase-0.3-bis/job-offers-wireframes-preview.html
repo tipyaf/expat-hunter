@@ -1,0 +1,1806 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ExpatHunter — Wireframes Job Offers (Phase 0.3-bis)</title>
+  <style>
+    :root {
+      --primary: #940d82;
+      --primary-light: #f5d0f0;
+      --primary-hover: #7a0a6b;
+      --secondary: #f97316;
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --text-subtle: #94a3b8;
+      --border: #e2e8f0;
+      --border-focus: #0d9488;
+      --success: #22C55E;
+      --warning: #F59E0B;
+      --error: #EF4444;
+      --info: #3B82F6;
+      --violet: #8B5CF6;
+      --teal: #0d9488;
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --radius-full: 9999px;
+      --shadow-card: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+      --shadow-elevated: 0 4px 6px rgba(0,0,0,0.07);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .page-header {
+      background: var(--primary);
+      color: white;
+      padding: 32px 40px;
+      margin-bottom: 32px;
+    }
+    .page-header h1 { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+    .page-header p { opacity: 0.85; font-size: 15px; }
+
+    .toc {
+      max-width: 1200px;
+      margin: 0 auto 40px;
+      padding: 0 24px;
+    }
+    .toc h2 { font-size: 20px; font-weight: 600; margin-bottom: 12px; color: var(--primary); }
+    .toc ul { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; }
+    .toc a {
+      display: block;
+      padding: 8px 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      color: var(--primary);
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+      box-shadow: var(--shadow-card);
+      transition: all .15s;
+    }
+    .toc a:hover { background: var(--primary-light); border-color: var(--primary); }
+
+    .wireframe-section {
+      max-width: 1200px;
+      margin: 0 auto 48px;
+      padding: 0 24px;
+    }
+    .wireframe-section h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 8px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--primary-light);
+    }
+    .wireframe-section h3 {
+      font-size: 16px;
+      font-weight: 600;
+      margin: 16px 0 8px;
+      color: var(--text);
+    }
+    .wireframe-section p {
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      font-size: 13px;
+    }
+
+    /* === SIDEBAR === */
+    .sidebar-preview {
+      width: 260px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+      font-size: 14px;
+    }
+    .sidebar-logo {
+      padding: 20px 16px 12px;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .sidebar-item {
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 14px;
+      transition: all .15s;
+      position: relative;
+    }
+    .sidebar-item:hover { background: #f1f5f9; }
+    .sidebar-item.active {
+      background: var(--primary-light);
+      color: var(--primary);
+      font-weight: 600;
+    }
+    .sidebar-item.active::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: var(--primary);
+      border-radius: 0 3px 3px 0;
+    }
+    .sidebar-item .badge {
+      margin-left: auto;
+      background: var(--error);
+      color: white;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 1px 7px;
+      border-radius: var(--radius-full);
+    }
+    .sidebar-item.new-item {
+      background: #fefce8;
+      border-left: 3px solid var(--warning);
+    }
+    .sidebar-sep { border-top: 1px solid var(--border); margin: 8px 16px; }
+    .sidebar-section-title { padding: 8px 16px 4px; font-size: 11px; font-weight: 600; color: var(--text-subtle); text-transform: uppercase; letter-spacing: 0.5px; }
+    .sidebar-user {
+      border-top: 1px solid var(--border);
+      padding: 12px 16px;
+    }
+    .sidebar-user .name { font-weight: 600; font-size: 13px; }
+    .sidebar-user .email { font-size: 12px; color: var(--text-muted); }
+    .sidebar-user .logout { font-size: 12px; color: var(--text-subtle); cursor: pointer; margin-top: 4px; }
+
+    .icon { font-size: 16px; width: 20px; text-align: center; }
+
+    /* === BADGES === */
+    .badges-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 12px 0;
+    }
+    .badge-demo {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 12px;
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .badge-outline { border: 1.5px solid; background: transparent; }
+    .badge-filled { color: white; }
+
+    /* === JOB OFFER CARD === */
+    .offer-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+      padding: 20px;
+      transition: all .15s;
+      cursor: pointer;
+      max-width: 900px;
+    }
+    .offer-card:hover {
+      box-shadow: var(--shadow-elevated);
+      border-color: rgba(148, 13, 130, 0.3);
+    }
+    .offer-card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .score-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 52px;
+      height: 28px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 700;
+      color: white;
+    }
+    .score-high { background: var(--success); }
+    .score-med { background: var(--warning); }
+    .score-low { background: var(--info); }
+    .offer-title { font-size: 16px; font-weight: 600; flex: 1; }
+    .status-select {
+      padding: 4px 10px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      color: var(--text-muted);
+      background: var(--surface);
+      cursor: pointer;
+    }
+    .offer-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+    .company-name { font-weight: 600; color: var(--text); }
+    .meta-sep { color: var(--text-subtle); }
+    .meta-text { color: var(--text-muted); }
+    .platform-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 2px 8px;
+      background: #f1f5f9;
+      border-radius: var(--radius-sm);
+      font-size: 11px;
+      color: var(--info);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .repub-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      background: #fef3c7;
+      border-radius: var(--radius-full);
+      font-size: 11px;
+      color: #92400e;
+      font-weight: 500;
+    }
+    .accred-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      background: #dcfce7;
+      border-radius: var(--radius-full);
+      font-size: 11px;
+      color: #166534;
+      font-weight: 500;
+    }
+    .agency-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      background: #fef3c7;
+      border-radius: var(--radius-full);
+      font-size: 11px;
+      color: #92400e;
+      font-weight: 500;
+    }
+    .offer-ai {
+      background: #fafafa;
+      border-radius: var(--radius-md);
+      padding: 12px;
+      margin: 10px 0;
+      border-left: 3px solid var(--primary-light);
+    }
+    .offer-ai .summary { font-style: italic; color: var(--text-muted); font-size: 13px; margin-bottom: 4px; }
+    .offer-ai .reason { color: var(--text-subtle); font-size: 12px; }
+    .offer-salary { font-size: 15px; font-weight: 600; color: var(--success); margin: 8px 0; }
+    .cross-contact-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      background: var(--primary-light);
+      color: var(--primary);
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 500;
+      margin: 8px 0;
+    }
+    .offer-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+    .btn {
+      padding: 6px 16px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      transition: all .15s;
+    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-secondary { background: transparent; border: 1.5px solid var(--border); color: var(--text-muted); }
+    .btn-secondary:hover { border-color: var(--text-muted); }
+    .btn-danger-text { background: transparent; border: none; color: var(--error); font-weight: 500; }
+
+    /* === TABS === */
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .tab {
+      padding: 6px 16px;
+      border-radius: var(--radius-full);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1.5px solid var(--border);
+      color: var(--text-muted);
+      background: transparent;
+      transition: all .15s;
+    }
+    .tab.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+
+    /* === DETAIL PAGE === */
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 20px;
+      max-width: 1100px;
+    }
+    .detail-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+      padding: 20px;
+    }
+    .detail-panel h3 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: var(--text);
+    }
+    .score-bar-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 12px 0;
+    }
+    .score-bar {
+      flex: 1;
+      height: 8px;
+      background: var(--border);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+    }
+    .score-bar-fill {
+      height: 100%;
+      border-radius: var(--radius-full);
+      transition: width .5s;
+    }
+    .score-label { font-size: 20px; font-weight: 700; }
+    .advice-box {
+      background: #fafafa;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      font-size: 13px;
+      color: var(--text-muted);
+      position: relative;
+    }
+    .advice-edit-btn {
+      position: absolute;
+      top: 8px; right: 8px;
+      font-size: 12px;
+      color: var(--primary);
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-weight: 500;
+    }
+    .company-info-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      font-size: 13px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .company-info-label { color: var(--text-muted); }
+    .company-info-value { font-weight: 500; color: var(--text); }
+    .action-bar {
+      display: flex;
+      gap: 10px;
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 2px solid var(--border);
+    }
+
+    /* === APPLICATION WORKSPACE === */
+    .workspace-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      max-width: 1100px;
+    }
+    .workspace-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+      padding: 20px;
+    }
+    .workspace-section h3 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .method-toggle {
+      display: flex;
+      gap: 0;
+      margin-bottom: 16px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+    .method-btn {
+      flex: 1;
+      padding: 8px 12px;
+      font-size: 12px;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      background: transparent;
+      color: var(--text-muted);
+      transition: all .15s;
+    }
+    .method-btn.active {
+      background: var(--primary);
+      color: white;
+    }
+    .rec-badge {
+      display: inline-block;
+      padding: 1px 6px;
+      background: #dcfce7;
+      color: #166534;
+      font-size: 10px;
+      border-radius: var(--radius-sm);
+      margin-left: 4px;
+      font-weight: 600;
+    }
+    .lang-select {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .lang-select select {
+      padding: 4px 8px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+    }
+    .instruction-field {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      margin-bottom: 12px;
+      resize: vertical;
+      font-family: inherit;
+    }
+    .instruction-field:focus { border-color: var(--border-focus); outline: none; }
+    .replacement-list {
+      margin: 12px 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+    .replacement-item {
+      padding: 8px 12px;
+      border-bottom: 1px solid #f1f5f9;
+      font-size: 12px;
+    }
+    .replacement-item:last-child { border-bottom: none; }
+    .replacement-before { color: var(--error); text-decoration: line-through; }
+    .replacement-after { color: var(--success); font-weight: 500; }
+    .replacement-arrow { color: var(--text-subtle); margin: 0 6px; }
+    .letter-preview {
+      background: #fafafa;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      font-size: 13px;
+      color: var(--text-muted);
+      max-height: 250px;
+      overflow-y: auto;
+      line-height: 1.7;
+      margin-bottom: 12px;
+    }
+    .email-footer {
+      grid-column: 1 / -1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+      padding: 20px;
+    }
+    .email-footer h3 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+    .email-field {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+      font-size: 13px;
+    }
+    .email-field label { min-width: 90px; color: var(--text-muted); font-weight: 500; }
+    .email-field input, .email-field select {
+      flex: 1;
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+    }
+    .email-body-preview {
+      background: #fafafa;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      font-size: 13px;
+      color: var(--text-muted);
+      margin: 10px 0;
+      min-height: 60px;
+    }
+    .tone-badges {
+      display: flex;
+      gap: 6px;
+      margin: 8px 0;
+    }
+    .tone-badge {
+      padding: 2px 8px;
+      background: #f1f5f9;
+      border-radius: var(--radius-full);
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .attachments {
+      display: flex;
+      gap: 8px;
+      margin: 10px 0;
+    }
+    .attachment {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      background: #f1f5f9;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    .attachment .x { color: var(--text-subtle); cursor: pointer; }
+
+    /* === EXCLUSION MODAL === */
+    .modal-overlay {
+      display: inline-block;
+      max-width: 440px;
+      width: 100%;
+    }
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+      padding: 24px;
+    }
+    .modal h3 {
+      font-size: 17px;
+      font-weight: 600;
+      margin-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .modal .close { cursor: pointer; color: var(--text-subtle); font-size: 18px; }
+    .modal p { color: var(--text-muted); font-size: 13px; margin-bottom: 16px; }
+    .modal label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px; color: var(--text); }
+    .modal select, .modal input[type="text"] {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      margin-bottom: 14px;
+    }
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    /* === RECRUITMENT CONTACT === */
+    .recruit-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-card);
+      padding: 16px;
+      max-width: 500px;
+    }
+    .recruit-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .recruit-name { font-size: 15px; font-weight: 600; }
+    .recruit-role { color: var(--text-muted); font-size: 13px; }
+    .recruit-contact-info { font-size: 12px; color: var(--text-muted); margin: 2px 0; }
+    .recruit-lead-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 10px;
+      background: var(--primary-light);
+      color: var(--primary);
+      border-radius: var(--radius-full);
+      font-size: 11px;
+      font-weight: 500;
+      margin: 6px 0;
+    }
+    .recruit-notes { font-size: 12px; color: var(--text-muted); font-style: italic; margin: 6px 0; }
+    .recruit-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    /* === SEARCH CONFIG === */
+    .search-config {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+      padding: 24px;
+      max-width: 800px;
+    }
+    .search-config h3 { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 14px;
+    }
+    .form-group { margin-bottom: 14px; }
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 4px;
+      color: var(--text);
+    }
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      font-size: 13px;
+    }
+    .tags-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      padding: 6px 10px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      min-height: 38px;
+      align-items: center;
+    }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      background: var(--primary-light);
+      color: var(--primary);
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .tag .x { cursor: pointer; opacity: 0.6; font-size: 10px; }
+    .tag-add {
+      color: var(--text-subtle);
+      font-size: 12px;
+      cursor: pointer;
+      padding: 2px 6px;
+    }
+    .checkbox-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 6px 0;
+    }
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--text);
+    }
+    .checkbox-item input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--primary);
+    }
+    .radio-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+    .radio-btn {
+      padding: 6px 14px;
+      font-size: 12px;
+      border: none;
+      border-right: 1px solid var(--border);
+      background: transparent;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+    .radio-btn:last-child { border-right: none; }
+    .radio-btn.active { background: var(--primary); color: white; }
+    .premium-note {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      background: #fef3c7;
+      border-radius: var(--radius-md);
+      font-size: 12px;
+      color: #92400e;
+      margin-top: 8px;
+    }
+    .form-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .section-divider {
+      border: none;
+      border-top: 3px solid var(--primary-light);
+      margin: 48px 0;
+    }
+
+    @media (max-width: 768px) {
+      .detail-grid, .workspace-grid { grid-template-columns: 1fr; }
+      .email-footer { grid-column: 1; }
+      .form-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>ExpatHunter — Wireframes Job Offers</h1>
+  <p>Phase 0.3-bis — Design UX/UI pour le pipeline offres d'emploi</p>
+</div>
+
+<div class="toc">
+  <h2>Sommaire</h2>
+  <ul>
+    <li><a href="#sidebar">1. Sidebar mise a jour</a></li>
+    <li><a href="#badges">2. Badges de statut</a></li>
+    <li><a href="#search-config">3. Configuration recherche</a></li>
+    <li><a href="#offers-page">4. Page offres (3 onglets)</a></li>
+    <li><a href="#offer-card">5. Card offre d'emploi</a></li>
+    <li><a href="#detail-page">6. Fiche detail offre</a></li>
+    <li><a href="#workspace">7. Espace candidature (CV + LM + Email)</a></li>
+    <li><a href="#exclusion-modal">8. Modal d'exclusion</a></li>
+    <li><a href="#recruitment-contact">9. Contact de recrutement</a></li>
+  </ul>
+</div>
+
+<!-- =========== 1. SIDEBAR =========== -->
+<div class="wireframe-section" id="sidebar">
+  <h2>1. Sidebar — Deux modes</h2>
+  <p>Mode étendu (240px, click-to-expand) + Mode rétracté (64px, flyout au survol). Toggle via bouton «/».</p>
+
+  <style>
+    .sidebar-parent {
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 600;
+      transition: all .15s;
+      user-select: none;
+    }
+    .sidebar-parent:hover { background: #f1f5f9; }
+    .sidebar-parent .chevron {
+      font-size: 11px;
+      color: var(--text-muted);
+      transition: transform 150ms ease-in-out;
+      width: 14px;
+      text-align: center;
+    }
+    .sidebar-parent .chevron.open { transform: rotate(90deg); }
+    .sidebar-parent .badge { margin-left: auto; }
+    .sidebar-children {
+      overflow: hidden;
+      transition: max-height 150ms ease-in-out;
+    }
+    .sidebar-children.collapsed { max-height: 0; }
+    .sidebar-children.expanded { max-height: 300px; }
+    .sidebar-children .sidebar-item {
+      padding-left: 44px;
+      font-size: 13px;
+    }
+    .sidebar-children .sidebar-item.active::before { left: 0; }
+    .sidebar-toggle {
+      padding: 8px 16px;
+      text-align: right;
+      cursor: pointer;
+      color: var(--text-subtle);
+      font-size: 16px;
+      border-top: 1px solid var(--border);
+      transition: all .15s;
+    }
+    .sidebar-toggle:hover { color: var(--primary); background: #f1f5f9; }
+
+    /* Mode rétracté */
+    .sidebar-collapsed {
+      width: 64px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card);
+      overflow: visible;
+      font-size: 14px;
+      position: relative;
+    }
+    .sidebar-collapsed .sidebar-logo {
+      padding: 16px 0 8px;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--primary);
+      text-align: center;
+    }
+    .sc-icon {
+      width: 64px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+      transition: all .15s;
+      font-size: 18px;
+    }
+    .sc-icon:hover { background: #f1f5f9; }
+    .sc-icon.active {
+      background: var(--primary-light);
+    }
+    .sc-icon.active::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 3px;
+      background: var(--primary);
+      border-radius: 0 3px 3px 0;
+    }
+    .sc-icon .mini-badge {
+      position: absolute;
+      top: 6px; right: 12px;
+      width: 8px; height: 8px;
+      background: var(--error);
+      border-radius: 50%;
+      border: 2px solid var(--surface);
+    }
+    .sc-icon .mini-badge-num {
+      position: absolute;
+      top: 4px; right: 8px;
+      font-size: 9px;
+      font-weight: 700;
+      color: white;
+      background: var(--error);
+      border-radius: 9999px;
+      padding: 0 4px;
+      min-width: 14px;
+      text-align: center;
+      border: 1.5px solid var(--surface);
+      line-height: 14px;
+    }
+    .sc-sep { border-top: 1px solid var(--border); margin: 4px 12px; }
+
+    /* Flyout */
+    .flyout-wrapper { position: relative; }
+    .flyout {
+      display: none;
+      position: absolute;
+      left: 60px;
+      top: 0;
+      width: 200px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-elevated);
+      padding: 6px 0;
+      z-index: 100;
+    }
+    .flyout-wrapper:hover .flyout { display: block; }
+    .flyout-title {
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+      border-bottom: 1px solid #f1f5f9;
+      margin-bottom: 2px;
+    }
+    .flyout-item {
+      padding: 7px 14px;
+      font-size: 13px;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all .1s;
+    }
+    .flyout-item:hover { background: #f1f5f9; color: var(--text); }
+    .flyout-item.active { color: var(--primary); font-weight: 500; background: var(--primary-light); }
+    .flyout-item .badge {
+      margin-left: auto;
+      background: var(--error);
+      color: white;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 1px 6px;
+      border-radius: var(--radius-full);
+    }
+
+    /* Tooltip pour liens directs */
+    .sc-icon .tooltip {
+      display: none;
+      position: absolute;
+      left: 60px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: var(--text);
+      color: white;
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      white-space: nowrap;
+      z-index: 100;
+    }
+    .sc-icon:hover .tooltip { display: block; }
+
+    .sidebar-modes {
+      display: flex;
+      gap: 40px;
+      align-items: flex-start;
+      flex-wrap: wrap;
+    }
+    .mode-label {
+      text-align: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--primary);
+      margin-bottom: 8px;
+      padding: 4px 12px;
+      background: var(--primary-light);
+      border-radius: var(--radius-full);
+    }
+  </style>
+
+  <div class="sidebar-modes">
+    <!-- MODE ÉTENDU -->
+    <div>
+      <div class="mode-label">Mode étendu (240px)</div>
+      <div class="sidebar-preview">
+        <div class="sidebar-logo">ExpatHunter</div>
+        <div class="sidebar-item"><span class="icon">📊</span> Tableau de bord</div>
+
+        <div class="sidebar-parent" onclick="this.querySelector('.chevron').classList.toggle('open'); this.nextElementSibling.classList.toggle('collapsed'); this.nextElementSibling.classList.toggle('expanded');">
+          <span class="chevron open">▶</span>
+          <span>Prospection</span>
+        </div>
+        <div class="sidebar-children expanded">
+          <div class="sidebar-item"><span class="icon">🔍</span> Trouver des contacts</div>
+          <div class="sidebar-item"><span class="icon">👥</span> Mes contacts</div>
+          <div class="sidebar-item"><span class="icon">✉️</span> Mes emails <span class="badge" style="background: var(--info);">11</span></div>
+          <div class="sidebar-item"><span class="icon">📈</span> Suivi</div>
+        </div>
+
+        <div class="sidebar-parent" onclick="this.querySelector('.chevron').classList.toggle('open'); this.nextElementSibling.classList.toggle('collapsed'); this.nextElementSibling.classList.toggle('expanded');">
+          <span class="chevron open">▶</span>
+          <span>Offres d'emploi</span>
+          <span class="badge">8</span>
+        </div>
+        <div class="sidebar-children expanded">
+          <div class="sidebar-item"><span class="icon">💼</span> Recherche d'offres</div>
+          <div class="sidebar-item active"><span class="icon">📋</span> Mes offres</div>
+        </div>
+
+        <div class="sidebar-sep"></div>
+        <div class="sidebar-item"><span class="icon">👤</span> Mon profil</div>
+
+        <div class="sidebar-parent" onclick="this.querySelector('.chevron').classList.toggle('open'); this.nextElementSibling.classList.toggle('collapsed'); this.nextElementSibling.classList.toggle('expanded');">
+          <span class="chevron">▶</span>
+          <span>Paramètres</span>
+        </div>
+        <div class="sidebar-children collapsed">
+          <div class="sidebar-item"><span class="icon">⚙️</span> Général</div>
+          <div class="sidebar-item"><span class="icon">📄</span> Templates</div>
+          <div class="sidebar-item"><span class="icon">🎚️</span> Presets</div>
+          <div class="sidebar-item"><span class="icon">🔗</span> Connexion email</div>
+          <div class="sidebar-item"><span class="icon">🚫</span> Blocages</div>
+        </div>
+
+        <div class="sidebar-parent" onclick="this.querySelector('.chevron').classList.toggle('open'); this.nextElementSibling.classList.toggle('collapsed'); this.nextElementSibling.classList.toggle('expanded');">
+          <span class="chevron">▶</span>
+          <span>Administration</span>
+        </div>
+        <div class="sidebar-children collapsed">
+          <div class="sidebar-item"><span class="icon">🤖</span> Config. IA</div>
+          <div class="sidebar-item"><span class="icon">👥</span> Utilisateurs</div>
+        </div>
+
+        <div class="sidebar-toggle" title="Rétracter la sidebar">«</div>
+        <div class="sidebar-user">
+          <div class="name">Yannick Bouvier</div>
+          <div class="email">yannick@expathunter.com</div>
+          <div class="logout">→ Se déconnecter</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODE RÉTRACTÉ + FLYOUT -->
+    <div>
+      <div class="mode-label">Mode rétracté (64px) + flyout</div>
+      <div class="sidebar-collapsed">
+        <div class="sidebar-logo">EH</div>
+
+        <div class="sc-icon">
+          <span>📊</span>
+          <span class="tooltip">Tableau de bord</span>
+        </div>
+
+        <div class="sc-sep"></div>
+
+        <div class="flyout-wrapper">
+          <div class="sc-icon">
+            <span>🔍</span>
+            <span class="mini-badge-num">11</span>
+          </div>
+          <div class="flyout">
+            <div class="flyout-title">Prospection</div>
+            <div class="flyout-item"><span>🔍</span> Trouver des contacts</div>
+            <div class="flyout-item"><span>👥</span> Mes contacts</div>
+            <div class="flyout-item"><span>✉️</span> Mes emails <span class="badge">11</span></div>
+            <div class="flyout-item"><span>📈</span> Suivi</div>
+          </div>
+        </div>
+
+        <div class="flyout-wrapper">
+          <div class="sc-icon active">
+            <span>💼</span>
+            <span class="mini-badge-num">8</span>
+          </div>
+          <div class="flyout" style="display: block;">
+            <div class="flyout-title">Offres d'emploi</div>
+            <div class="flyout-item"><span>💼</span> Recherche d'offres</div>
+            <div class="flyout-item active"><span>📋</span> Mes offres</div>
+          </div>
+        </div>
+
+        <div class="sc-sep"></div>
+
+        <div class="sc-icon">
+          <span>👤</span>
+          <span class="tooltip">Mon profil</span>
+        </div>
+
+        <div class="flyout-wrapper">
+          <div class="sc-icon">
+            <span>⚙️</span>
+          </div>
+          <div class="flyout">
+            <div class="flyout-title">Paramètres</div>
+            <div class="flyout-item"><span>⚙️</span> Général</div>
+            <div class="flyout-item"><span>📄</span> Templates</div>
+            <div class="flyout-item"><span>🎚️</span> Presets</div>
+            <div class="flyout-item"><span>🔗</span> Connexion email</div>
+            <div class="flyout-item"><span>🚫</span> Blocages</div>
+          </div>
+        </div>
+
+        <div class="flyout-wrapper">
+          <div class="sc-icon">
+            <span>🛡️</span>
+          </div>
+          <div class="flyout">
+            <div class="flyout-title">Administration</div>
+            <div class="flyout-item"><span>🤖</span> Config. IA</div>
+            <div class="flyout-item"><span>👥</span> Utilisateurs</div>
+          </div>
+        </div>
+
+        <div class="sidebar-toggle" title="Étendre la sidebar">»</div>
+        <div style="padding: 8px; text-align: center; border-top: 1px solid var(--border);">
+          <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--primary-light); color: var(--primary); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin: 0 auto;">YB</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- =========== 2. BADGES =========== -->
+<div class="wireframe-section" id="badges">
+  <h2>2. Badges de statut — Offres d'emploi</h2>
+  <p>9 etats de suivi + badges enrichissement entreprise + indicateur republication</p>
+
+  <h3>Statuts des offres</h3>
+  <div class="badges-grid">
+    <span class="badge-demo badge-outline" style="border-color: #3B82F6; color: #3B82F6;">Nouvelle</span>
+    <span class="badge-demo badge-outline" style="border-color: #8B5CF6; color: #8B5CF6;">Intéressée</span>
+    <span class="badge-demo badge-filled" style="background: #940d82;">Postulée</span>
+    <span class="badge-demo badge-filled" style="background: #0d9488;">Entretien</span>
+    <span class="badge-demo badge-outline" style="border-color: #F59E0B; color: #F59E0B;">Proposition</span>
+    <span class="badge-demo badge-filled" style="background: #22C55E;">Acceptée</span>
+    <span class="badge-demo badge-outline" style="border-color: #EF4444; color: #EF4444;">Rejetée</span>
+    <span class="badge-demo badge-filled" style="background: #94a3b8;">Exclue</span>
+    <span class="badge-demo badge-outline" style="border-color: #64748b; color: #64748b;">Expirée</span>
+  </div>
+
+  <h3>Badges entreprise</h3>
+  <div class="badges-grid">
+    <span class="accred-badge">✓ Accréditée immigration</span>
+    <span class="agency-badge">🏢 Agence recrutement</span>
+    <span class="badge-demo badge-outline" style="border-color: #e2e8f0; color: #94a3b8;">? A verifier</span>
+  </div>
+
+  <h3>Cross-pipeline</h3>
+  <div class="badges-grid">
+    <span class="cross-contact-badge">👤 Contact chez Acme Corp</span>
+    <span class="badge-demo" style="background: #eff6ff; color: #3B82F6;">💼 Offre chez Acme Corp</span>
+  </div>
+
+  <h3>Indicateur republication</h3>
+  <div class="badges-grid">
+    <span class="repub-badge">🔄 Republiée le 12 jan</span>
+  </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- =========== 3. SEARCH CONFIG =========== -->
+<div class="wireframe-section" id="search-config">
+  <h2>3. Configuration de la recherche d'offres</h2>
+  <p>Formulaire multi-criteres : postes, pays, plateformes, séniorité, secteur, competences, fréquence</p>
+
+  <div class="search-config">
+    <h3>Nouvelle recherche d'offres</h3>
+
+    <div class="form-group">
+      <label>Postes recherchés</label>
+      <div class="tags-container">
+        <span class="tag">Senior Frontend <span class="x">✕</span></span>
+        <span class="tag">Fullstack <span class="x">✕</span></span>
+        <span class="tag-add">+ Ajouter...</span>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Pays cibles</label>
+        <div class="tags-container">
+          <span class="tag">NZ <span class="x">✕</span></span>
+          <span class="tag">AU <span class="x">✕</span></span>
+          <span class="tag-add">+ Ajouter</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Villes (optionnel)</label>
+        <div class="tags-container">
+          <span class="tag">Auckland <span class="x">✕</span></span>
+          <span class="tag-add">+ Ajouter</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Plateformes</label>
+      <div class="checkbox-group">
+        <label class="checkbox-item"><input type="checkbox" checked> Seek</label>
+        <label class="checkbox-item"><input type="checkbox" checked> LinkedIn</label>
+        <label class="checkbox-item"><input type="checkbox"> BuiltIn</label>
+        <label class="checkbox-item"><input type="checkbox"> Zeil</label>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Séniorité</label>
+      <div class="radio-group">
+        <button class="radio-btn">Junior</button>
+        <button class="radio-btn">Intermédiaire</button>
+        <button class="radio-btn active">Senior</button>
+        <button class="radio-btn">Lead</button>
+        <button class="radio-btn">Indifférent</button>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Secteur (optionnel)</label>
+        <input type="text" placeholder="Tech / SaaS" value="Tech / SaaS">
+      </div>
+      <div class="form-group">
+        <label>Compétences clés</label>
+        <div class="tags-container">
+          <span class="tag">React <span class="x">✕</span></span>
+          <span class="tag">Node.js <span class="x">✕</span></span>
+          <span class="tag-add">+ Ajouter</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Fréquence de recherche</label>
+      <select disabled style="opacity: 0.5;">
+        <option>Hebdomadaire (plan gratuit)</option>
+      </select>
+      <div class="premium-note">
+        ℹ️ Passez en premium pour configurer la fréquence (quotidienne, bihebdo, hebdo)
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-secondary">Annuler</button>
+      <button class="btn btn-primary">Sauvegarder et lancer →</button>
+    </div>
+  </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- =========== 4. OFFERS PAGE =========== -->
+<div class="wireframe-section" id="offers-page">
+  <h2>4. Page Offres d'emploi — 3 onglets</h2>
+  <p>Onglets Nouvelles / Postulées / Archivées avec filtres et tri</p>
+
+  <div style="max-width: 900px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+      <h1 style="font-size: 24px; font-weight: 700; color: var(--primary);">Offres d'emploi</h1>
+    </div>
+    <p style="margin-bottom: 16px;">Gérez vos offres et suivez vos candidatures.</p>
+
+    <div class="tabs">
+      <button class="tab active">Nouvelles (8)</button>
+      <button class="tab">Postulées (3)</button>
+      <button class="tab">Archivées (12)</button>
+    </div>
+
+    <div style="display: flex; gap: 12px; margin-bottom: 16px; font-size: 13px; color: var(--text-muted);">
+      <span>Recherche : <select style="padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 12px;"><option>Toutes mes recherches</option></select></span>
+      <span>Tri : <select style="padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px; font-size: 12px;"><option>Plus recent</option><option>Score decroissant</option></select></span>
+    </div>
+
+    <!-- Card 1 -->
+    <div class="offer-card" style="margin-bottom: 12px;">
+      <div class="offer-card-header">
+        <span class="score-badge score-high">87%</span>
+        <span class="offer-title">Senior Frontend Engineer</span>
+        <select class="status-select"><option>Nouvelle</option></select>
+      </div>
+      <div class="offer-meta">
+        <span class="company-name">Acme Corp</span>
+        <span class="accred-badge">✓ Accréditée</span>
+        <span class="meta-sep">·</span>
+        <span class="meta-text">Auckland, NZ</span>
+        <span class="meta-sep">·</span>
+        <span class="meta-text">Tech / SaaS</span>
+        <span class="meta-sep">·</span>
+        <span class="meta-text">08 jan 2025</span>
+        <span class="platform-link">Seek ↗</span>
+        <span class="platform-link">LinkedIn ↗</span>
+        <span class="repub-badge">🔄 Republiée le 12 jan</span>
+      </div>
+      <div class="offer-ai">
+        <div class="summary">"Correspond bien a votre profil React/Node. Acme recherche un senior avec votre experience SaaS et leadership technique."</div>
+        <div class="reason">Raison : Expertise React + 8 ans exp. + entreprise accreditee immigration</div>
+      </div>
+      <div class="offer-salary">$120k – $140k NZD</div>
+      <div class="cross-contact-badge">👤 Vous avez un contact chez Acme Corp</div>
+      <div class="offer-actions">
+        <button class="btn btn-secondary">Voir les détails</button>
+        <button class="btn btn-primary">Postuler</button>
+        <button class="btn btn-danger-text">Exclure</button>
+      </div>
+    </div>
+
+    <!-- Card 2 -->
+    <div class="offer-card" style="margin-bottom: 12px;">
+      <div class="offer-card-header">
+        <span class="score-badge score-med">68%</span>
+        <span class="offer-title">Fullstack Developer</span>
+        <select class="status-select"><option>Intéressée</option></select>
+      </div>
+      <div class="offer-meta">
+        <span class="company-name">TechRecruit NZ</span>
+        <span class="agency-badge">🏢 Agence</span>
+        <span class="meta-sep">·</span>
+        <span class="meta-text">Wellington, NZ</span>
+        <span class="meta-sep">·</span>
+        <span class="meta-text">12 jan 2025</span>
+        <span class="platform-link">Seek ↗</span>
+      </div>
+      <div class="offer-ai">
+        <div class="summary">"Les competences techniques correspondent, mais le poste est plutot mid-level."</div>
+        <div class="reason">Raison : Stack matching (React, Node, TypeScript)</div>
+      </div>
+      <div class="offer-salary">$95k – $110k NZD</div>
+      <div class="offer-actions">
+        <button class="btn btn-secondary">Voir les détails</button>
+        <button class="btn btn-primary">Postuler</button>
+        <button class="btn btn-danger-text">Exclure</button>
+      </div>
+    </div>
+
+    <!-- Card 3 - Low score -->
+    <div class="offer-card" style="margin-bottom: 12px;">
+      <div class="offer-card-header">
+        <span class="score-badge score-low">45%</span>
+        <span class="offer-title">Junior React Developer</span>
+        <select class="status-select"><option>Nouvelle</option></select>
+      </div>
+      <div class="offer-meta">
+        <span class="company-name">StartupXYZ</span>
+        <span class="meta-sep">·</span>
+        <span class="meta-text">Auckland, NZ</span>
+        <span class="meta-sep">·</span>
+        <span class="meta-text">14 jan 2025</span>
+        <span class="platform-link">LinkedIn ↗</span>
+      </div>
+      <div class="offer-ai">
+        <div class="summary">"Poste junior ne correspondant pas a votre séniorité."</div>
+        <div class="reason">Raison : Mismatch de séniorité (Junior vs Senior)</div>
+      </div>
+      <div class="offer-actions">
+        <button class="btn btn-secondary">Voir les détails</button>
+        <button class="btn btn-danger-text">Exclure</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- =========== 6. DETAIL PAGE =========== -->
+<div class="wireframe-section" id="detail-page">
+  <h2>6. Fiche detail d'une offre</h2>
+  <p>Layout 2/3 + 1/3 : description offre | enrichissement entreprise. Évaluation IA avec conseils editables. Contacts de recrutement.</p>
+
+  <div style="max-width: 1100px;">
+    <div style="margin-bottom: 16px;">
+      <a href="#" style="font-size: 13px; color: var(--primary); text-decoration: none;">← Retour aux offres</a>
+    </div>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+      <h1 style="font-size: 22px; font-weight: 700;">Senior Frontend Engineer</h1>
+      <select class="status-select" style="font-size: 13px;"><option>Nouvelle ▼</option></select>
+    </div>
+    <div style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">
+      Publié le 08 jan 2025 · Fermeture : 31 jan 2025 &nbsp;
+      <span class="platform-link">Voir sur Seek ↗</span>
+      <span class="platform-link">Voir sur LinkedIn ↗</span>
+    </div>
+
+    <div class="detail-grid">
+      <!-- Left: Offer info -->
+      <div class="detail-panel">
+        <div class="offer-salary" style="margin-top: 0;">$120k – $140k NZD</div>
+        <h3>Description de l'offre</h3>
+        <div style="font-size: 13px; color: var(--text-muted); line-height: 1.7;">
+          <p>We're looking for a Senior Frontend Engineer to join our product team at Acme Corp. You'll be working on our flagship SaaS platform used by thousands of businesses across New Zealand and Australia.</p>
+          <br>
+          <p><strong>Requirements:</strong></p>
+          <ul style="margin-left: 16px; margin-top: 4px;">
+            <li>8+ years of experience with React/TypeScript</li>
+            <li>Experience with Next.js and modern build tools</li>
+            <li>Strong understanding of web performance</li>
+            <li>Experience mentoring junior developers</li>
+          </ul>
+          <br>
+          <p><strong>Nice to have:</strong></p>
+          <ul style="margin-left: 16px; margin-top: 4px;">
+            <li>Experience with Node.js backend</li>
+            <li>Knowledge of cloud infrastructure (AWS/GCP)</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Right: Company panel -->
+      <div class="detail-panel">
+        <h3>Entreprise</h3>
+        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+          <span style="font-size: 16px; font-weight: 600;">Acme Corp</span>
+          <span class="accred-badge">✓ Accréditée</span>
+        </div>
+        <div class="company-info-item">
+          <span class="company-info-label">Type</span>
+          <span class="company-info-value">Entreprise</span>
+        </div>
+        <div class="company-info-item">
+          <span class="company-info-label">Secteur</span>
+          <span class="company-info-value">Tech / SaaS</span>
+        </div>
+        <div class="company-info-item">
+          <span class="company-info-label">Taille</span>
+          <span class="company-info-value">50 – 200 pers.</span>
+        </div>
+        <div class="company-info-item">
+          <span class="company-info-label">Pays</span>
+          <span class="company-info-value">Nouvelle-Zélande</span>
+        </div>
+        <div class="company-info-item">
+          <span class="company-info-label">Site web</span>
+          <span class="company-info-value" style="color: var(--info);">acmecorp.nz</span>
+        </div>
+        <div class="company-info-item" style="border: none;">
+          <span class="company-info-label">LinkedIn</span>
+          <span class="company-info-value" style="color: var(--info);">linkedin.com/company/acme</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Evaluation -->
+    <div class="detail-panel" style="margin-top: 20px;">
+      <h3>Évaluation IA</h3>
+      <div class="score-bar-container">
+        <span class="score-label" style="color: var(--success);">87%</span>
+        <div class="score-bar">
+          <div class="score-bar-fill" style="width: 87%; background: var(--success);"></div>
+        </div>
+        <span style="font-size: 12px; color: var(--text-subtle);">Score de pertinence</span>
+      </div>
+
+      <h3 style="font-size: 13px; margin-top: 16px;">Résumé du match</h3>
+      <p style="font-size: 13px; font-style: italic; color: var(--text-muted); margin-bottom: 12px;">
+        "Votre experience React (8 ans) et votre background SaaS correspondent bien au poste. Les technologies mentionnees (TypeScript, Node.js) sont dans votre profil. Entreprise accreditee pour le visa sponsorship."
+      </p>
+
+      <h3 style="font-size: 13px;">Raison de sélection</h3>
+      <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">
+        Expertise React + experience SaaS + matching pays + accreditation visa
+      </p>
+
+      <h3 style="font-size: 13px;">Conseils de candidature</h3>
+      <div class="advice-box">
+        <button class="advice-edit-btn">Modifier</button>
+        Mettre en avant les projets SaaS et l'experience de leadership technique. Mentionner l'interet pour le marche neo-zelandais et la connaissance de la culture tech locale. Insister sur l'experience avec TypeScript et les outils de build modernes.
+      </div>
+    </div>
+
+    <!-- Recruitment contacts -->
+    <div class="detail-panel" style="margin-top: 20px;">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3>Contacts de recrutement</h3>
+        <button class="btn btn-secondary" style="font-size: 12px;">+ Ajouter un contact</button>
+      </div>
+      <div class="recruit-card" style="margin-top: 12px; max-width: 100%;">
+        <div class="recruit-header">
+          <div>
+            <span class="recruit-name">John Doe</span>
+            <span class="recruit-role"> · Engineering Manager</span>
+          </div>
+          <button class="btn btn-secondary" style="font-size: 12px;">Envoyer email</button>
+        </div>
+        <div class="recruit-contact-info">📧 john.doe@acmecorp.nz</div>
+        <div class="recruit-contact-info">🔗 linkedin.com/in/johndoe</div>
+        <div class="recruit-lead-badge">👤 Lead existant</div>
+        <div class="recruit-notes">Notes : "Contacté directement après entretien téléphonique"</div>
+      </div>
+    </div>
+
+    <!-- Action bar -->
+    <div class="action-bar">
+      <button class="btn btn-primary">Adapter mon CV</button>
+      <button class="btn btn-secondary">Générer une lettre</button>
+      <button class="btn btn-primary">Postuler</button>
+      <div style="flex: 1;"></div>
+      <button class="btn btn-danger-text">Exclure cette offre</button>
+    </div>
+  </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- =========== 7. APPLICATION WORKSPACE =========== -->
+<div class="wireframe-section" id="workspace">
+  <h2>7. Espace de candidature — CV + Lettre + Email</h2>
+  <p>Page la plus complexe : split 50/50 (CV gauche, lettre droite) + footer email</p>
+
+  <div style="max-width: 1100px;">
+    <div style="margin-bottom: 16px;">
+      <a href="#" style="font-size: 13px; color: var(--primary); text-decoration: none;">← Retour a l'offre</a>
+      <span style="font-size: 16px; font-weight: 600; margin-left: 12px;">Candidature : Senior Frontend @ Acme Corp</span>
+    </div>
+
+    <div class="workspace-grid">
+      <!-- LEFT: CV -->
+      <div class="workspace-section">
+        <h3>📄 CV adapte</h3>
+
+        <div class="method-toggle">
+          <button class="method-btn active">Google Docs <span class="rec-badge">Recommandé</span></button>
+          <button class="method-btn">Template local</button>
+        </div>
+
+        <div class="lang-select">
+          <label>Langue :</label>
+          <select><option>Anglais (EN)</option><option>Francais (FR)</option></select>
+        </div>
+
+        <textarea class="instruction-field" rows="2" placeholder="Instructions (optionnel) — ex: Mettre en avant le leadership...">Mettre en avant les projets SaaS et le leadership technique</textarea>
+
+        <div style="margin-bottom: 16px;">
+          <button class="btn btn-primary" style="width: 100%; padding: 10px;">Adapter mon CV</button>
+        </div>
+
+        <!-- After generation state -->
+        <div style="margin-top: 16px; padding-top: 16px; border-top: 1px dashed var(--border);">
+          <h3 style="font-size: 13px; color: var(--text-muted);">Remplacements IA (5/7 max) :</h3>
+          <div class="replacement-list">
+            <div class="replacement-item">
+              <span class="replacement-before">5 ans d'experience en developpement web</span>
+              <span class="replacement-arrow">→</span>
+              <span class="replacement-after">8 ans d'experience React/TypeScript en environnement SaaS</span>
+            </div>
+            <div class="replacement-item">
+              <span class="replacement-before">Developpeur Frontend</span>
+              <span class="replacement-arrow">→</span>
+              <span class="replacement-after">Senior Frontend Engineer & Tech Lead</span>
+            </div>
+            <div class="replacement-item">
+              <span class="replacement-before">Maitrise de JavaScript et CSS</span>
+              <span class="replacement-arrow">→</span>
+              <span class="replacement-after">Expert TypeScript, React, Next.js, Tailwind CSS</span>
+            </div>
+            <div class="replacement-item">
+              <span class="replacement-before">Projets web varies</span>
+              <span class="replacement-arrow">→</span>
+              <span class="replacement-after">Plateformes SaaS B2B a fort trafic (100k+ utilisateurs)</span>
+            </div>
+            <div class="replacement-item">
+              <span class="replacement-before">Travail en equipe</span>
+              <span class="replacement-arrow">→</span>
+              <span class="replacement-after">Leadership technique : mentoring de 4 devs juniors, code reviews</span>
+            </div>
+          </div>
+
+          <textarea class="instruction-field" rows="2" placeholder="Instructions supplémentaires (post-generation)...">Insister sur TypeScript et les outils de build modernes</textarea>
+
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-secondary" style="flex: 1;">Régénérer</button>
+            <button class="btn btn-secondary" style="flex: 1;">Modifier manu.</button>
+          </div>
+          <button class="btn btn-primary" style="width: 100%; margin-top: 8px;">Exporter en PDF</button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Cover Letter -->
+      <div class="workspace-section">
+        <h3>✉️ Lettre de motivation</h3>
+
+        <div class="lang-select">
+          <label>Langue :</label>
+          <select><option>Anglais (EN)</option><option>Francais (FR)</option></select>
+        </div>
+
+        <div style="margin-bottom: 16px;">
+          <button class="btn btn-primary" style="width: 100%; padding: 10px;">Générer la lettre</button>
+        </div>
+
+        <!-- After generation state -->
+        <div style="margin-top: 16px; padding-top: 16px; border-top: 1px dashed var(--border);">
+          <div class="letter-preview">
+            <p>Dear Hiring Team,</p>
+            <br>
+            <p>I am writing to express my strong interest in the Senior Frontend Engineer position at Acme Corp. With over 8 years of experience building SaaS platforms using React and TypeScript, I am confident I can make a significant contribution to your product team.</p>
+            <br>
+            <p>Throughout my career, I have led frontend teams in delivering high-performance web applications serving over 100,000 users. My experience with Next.js, modern build tools, and performance optimization aligns closely with your requirements.</p>
+            <br>
+            <p>I am particularly drawn to Acme Corp's commitment to innovation in the New Zealand tech ecosystem. Having recently relocated to Auckland, I am eager to contribute to a growing company with strong engineering culture.</p>
+            <br>
+            <p>I would welcome the opportunity to discuss how my experience can benefit your team.</p>
+            <br>
+            <p>Kind regards,<br>Yannick Bouvier</p>
+          </div>
+
+          <textarea class="instruction-field" rows="2" placeholder="Instructions supplémentaires...">Ton plus formel, mentionner le visa sponsorship</textarea>
+
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-secondary" style="flex: 1;">Régénérer</button>
+            <button class="btn btn-secondary" style="flex: 1;">Modifier manu.</button>
+          </div>
+          <button class="btn btn-primary" style="width: 100%; margin-top: 8px;">Exporter en PDF</button>
+        </div>
+      </div>
+
+      <!-- FOOTER: Email -->
+      <div class="email-footer">
+        <h3>📨 Email d'accompagnement</h3>
+
+        <div class="email-field">
+          <label>Destinataire :</label>
+          <select>
+            <option>john.doe@acmecorp.nz (John Doe — Eng. Manager)</option>
+            <option>hiring@acmecorp.nz</option>
+            <option>Saisir un email...</option>
+          </select>
+        </div>
+
+        <div class="email-field">
+          <label>Sujet :</label>
+          <input type="text" value="Application for Senior Frontend Engineer — Acme Corp">
+        </div>
+
+        <div class="email-body-preview" contenteditable="true">
+          Dear John,<br><br>
+          Please find attached my CV and cover letter for the Senior Frontend Engineer position at Acme Corp. I am excited about the opportunity to bring my 8 years of React and SaaS experience to your team.<br><br>
+          I look forward to hearing from you.<br><br>
+          Best regards,<br>
+          Yannick Bouvier
+        </div>
+
+        <div class="tone-badges">
+          <span class="tone-badge">Professionnel</span>
+          <span class="tone-badge">Adapté NZ</span>
+        </div>
+
+        <div class="attachments">
+          <span class="attachment">📎 CV_Yannick_Bouvier_Acme.pdf <span class="x">✕</span></span>
+          <span class="attachment">📎 LM_Yannick_Bouvier_Acme.pdf <span class="x">✕</span></span>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; margin-top: 12px;">
+          <button class="btn btn-primary" style="padding: 10px 32px; font-size: 15px;">Envoyer la candidature →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- =========== 8. EXCLUSION MODAL =========== -->
+<div class="wireframe-section" id="exclusion-modal">
+  <h2>8. Modal d'exclusion</h2>
+  <p>7 catégories structurées + raison libre — injecté dans les futures évaluations IA</p>
+
+  <div class="modal-overlay">
+    <div class="modal">
+      <h3>Exclure cette offre <span class="close">✕</span></h3>
+      <p>Pourquoi excluez-vous cette offre ? Cela aide l'IA a affiner ses prochaines évaluations.</p>
+
+      <label>Catégorie</label>
+      <select>
+        <option>Rémunération trop basse</option>
+        <option>Secteur ne correspond pas</option>
+        <option>Niveau de séniorité inadéquat</option>
+        <option>Type d'entreprise non voulu</option>
+        <option>Localisation trop éloignée</option>
+        <option>Poste ne correspond pas</option>
+        <option>Autre</option>
+      </select>
+
+      <label>Raison (optionnel)</label>
+      <input type="text" placeholder="Ex: En dessous de 120k NZD" value="En dessous de 120k NZD">
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary">Annuler</button>
+        <button class="btn btn-primary" style="background: var(--error);">Confirmer l'exclusion</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- =========== 9. RECRUITMENT CONTACT =========== -->
+<div class="wireframe-section" id="recruitment-contact">
+  <h2>9. Contact de recrutement</h2>
+  <p>Card contact + formulaire inline d'ajout avec detection cross-pipeline</p>
+
+  <h3>Card contact (affichage)</h3>
+  <div class="recruit-card" style="margin-bottom: 20px;">
+    <div class="recruit-header">
+      <div>
+        <span class="recruit-name">John Doe</span>
+        <span class="recruit-role"> · Engineering Manager</span>
+      </div>
+      <button class="btn btn-secondary" style="font-size: 12px;">Envoyer email</button>
+    </div>
+    <div class="recruit-contact-info">📧 john.doe@acmecorp.nz</div>
+    <div class="recruit-contact-info">🔗 linkedin.com/in/johndoe</div>
+    <div class="recruit-lead-badge">👤 Lead existant — sera retire du pipeline lead pendant ce process</div>
+    <div class="recruit-notes">Notes : "Contacté directement après entretien téléphonique du 15 jan"</div>
+    <div class="recruit-actions">
+      <button class="btn btn-secondary" style="font-size: 12px;">Modifier</button>
+      <button class="btn btn-danger-text" style="font-size: 12px;">Retirer</button>
+    </div>
+  </div>
+
+  <h3>Formulaire d'ajout (inline)</h3>
+  <div class="recruit-card" style="max-width: 100%; border: 1.5px dashed var(--primary); background: #fefbff;">
+    <h3 style="font-size: 14px; font-weight: 600; margin-bottom: 12px;">Ajouter un contact de recrutement</h3>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Nom *</label>
+        <input type="text" placeholder="John Doe">
+      </div>
+      <div class="form-group">
+        <label>Role / Poste</label>
+        <input type="text" placeholder="Engineering Manager">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Email</label>
+        <input type="text" placeholder="john@acmecorp.nz">
+      </div>
+      <div class="form-group">
+        <label>LinkedIn</label>
+        <input type="text" placeholder="linkedin.com/in/johndoe">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Notes</label>
+      <input type="text" placeholder="Premier contact apres entretien telephonique">
+    </div>
+    <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px;">
+      <button class="btn btn-secondary">Annuler</button>
+      <button class="btn btn-primary">Ajouter</button>
+    </div>
+  </div>
+</div>
+
+<div style="text-align: center; padding: 40px; color: var(--text-subtle); font-size: 13px;">
+  ExpatHunter — Wireframes Phase 0.3-bis — Job Offers Pipeline<br>
+  Design System : Violet/Magenta (#940d82) · Inter · Tailwind spacing · WCAG 2.1 AA
+</div>
+
+</body>
+</html>

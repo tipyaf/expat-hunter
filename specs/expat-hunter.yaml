@@ -291,6 +291,333 @@ features:
     description: "Tableau de bord analytique : taux de réponse, meilleurs canaux, optimisation des messages."
     priority: "nice-to-have"
 
+  # === JOB OFFERS — MVP (Phase 1) ===
+
+  - name: "job-search-config"
+    description: "Configuration d'une recherche d'offres multi-postes. L'utilisateur définit ses critères : postes recherchés (plusieurs par recherche), pays/villes, compétences, seniorité, secteur, plateformes cibles. Critères modifiables indépendamment du profil candidat. Quotas : 1 recherche active (free), 3 (premium)."
+    priority: "must-have"
+    acceptance_criteria:
+      - id: "AC-FUNC-JSC-01"
+        type: "FUNC"
+        description: "Given a logged-in user / When they create a job search with multiple target roles, country, and platforms / Then the search is saved and appears in their active searches"
+        verify: "curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:3333/api/job-searches -H 'Authorization: Bearer $TOKEN' -d '{\"roles\":[\"Senior Frontend\",\"Fullstack\"],\"countries\":[\"NZ\"],\"platforms\":[\"seek\",\"linkedin\"]}'"
+        tier: 2
+      - id: "AC-FUNC-JSC-02"
+        type: "FUNC"
+        description: "Given a free user with 1 active search / When they try to create a second search / Then the API returns 403 with quota exceeded message"
+        verify: "curl -s -w '%{http_code}' -X POST http://localhost:3333/api/job-searches -H 'Authorization: Bearer $FREE_TOKEN' -d '{\"roles\":[\"DevOps\"],\"countries\":[\"AU\"],\"platforms\":[\"seek\"]}' | grep 403"
+        tier: 2
+      - id: "AC-FUNC-JSC-03"
+        type: "FUNC"
+        description: "Given a user with an active search / When they modify the criteria (add a role, change country) / Then the search is updated and next run uses new criteria"
+        verify: "curl -s -o /dev/null -w '%{http_code}' -X PUT http://localhost:3333/api/job-searches/1 -H 'Authorization: Bearer $TOKEN' -d '{\"roles\":[\"Senior Frontend\",\"Fullstack\",\"React Developer\"]}'"
+        tier: 2
+      - id: "AC-FUNC-JSC-04"
+        type: "FUNC"
+        description: "Given a search config / When search criteria include seniority set to 'indifferent' / Then no seniority filter is applied during scraping"
+        verify: "grep -r 'indifferent\\|seniority' apps/api/app/services/job_search* | grep -v node_modules"
+        tier: 1
+    api_endpoints:
+      - method: "POST"
+        path: "/api/job-searches"
+        description: "Create a job search configuration"
+      - method: "GET"
+        path: "/api/job-searches"
+        description: "List user's job searches"
+      - method: "PUT"
+        path: "/api/job-searches/{id}"
+        description: "Update a job search configuration"
+      - method: "DELETE"
+        path: "/api/job-searches/{id}"
+        description: "Delete a job search"
+      - method: "POST"
+        path: "/api/job-searches/{id}/run"
+        description: "Manually trigger a search run"
+
+  - name: "job-scraping-pipeline"
+    description: "Pipeline de scraping multi-plateforme pour les offres d'emploi. Scraping maison + Apify fallback pour Seek, BuiltIn, Zeil. Apify obligatoire pour LinkedIn (risque anti-bot). Déduplication cross-plateforme hybride : pré-filtre par règles (entreprise + ville) puis IA pour les cas ambigus. Détection de republication (même offre republiée = signal fort). Les résultats sont limités à 5/recherche (free), illimité (premium)."
+    priority: "must-have"
+    acceptance_criteria:
+      - id: "AC-FUNC-JSP-01"
+        type: "FUNC"
+        description: "Given a search config targeting Seek / When the scraping runs / Then job offers from Seek are fetched, parsed and stored in the database"
+        verify: "curl -s http://localhost:3333/api/job-offers?searchId=1 -H 'Authorization: Bearer $TOKEN' | jq '.data | length > 0'"
+        tier: 2
+      - id: "AC-FUNC-JSP-02"
+        type: "FUNC"
+        description: "Given the same offer exists on Seek and LinkedIn / When both scrapers return it / Then only one JobOffer entry is created with two JobOfferLinks"
+        verify: "curl -s http://localhost:3333/api/job-offers/1 -H 'Authorization: Bearer $TOKEN' | jq '.links | length >= 2'"
+        tier: 2
+      - id: "AC-FUNC-JSP-03"
+        type: "FUNC"
+        description: "Given an offer that was already scraped / When the same offer is found in a new run / Then it is not duplicated"
+        verify: "grep -r 'dedup\\|deduplicate\\|existing.*offer' apps/api/app/services/job_scraping* | grep -v node_modules"
+        tier: 1
+      - id: "AC-FUNC-JSP-04"
+        type: "FUNC"
+        description: "Given an offer that was previously scraped and has been republished / When detected / Then the republication date is added and the user is notified"
+        verify: "grep -r 'republish\\|republication\\|publication_dates' apps/api/app/services/job_scraping* | grep -v node_modules"
+        tier: 1
+      - id: "AC-FUNC-JSP-05"
+        type: "FUNC"
+        description: "Given a free user / When a search returns more than 5 results / Then only the top 5 (highest AI score) are shown"
+        verify: "curl -s http://localhost:3333/api/job-offers?searchId=1 -H 'Authorization: Bearer $FREE_TOKEN' | jq '.data | length <= 5'"
+        tier: 2
+      - id: "AC-FUNC-JSP-06"
+        type: "FUNC"
+        description: "Given LinkedIn scraping / When the pipeline runs / Then Apify is used (never in-house scraping for LinkedIn)"
+        verify: "grep -rL 'apify\\|APIFY' apps/api/app/scrapers/linkedin* | wc -l | grep '^0$'"
+        tier: 1
+    api_endpoints:
+      - method: "GET"
+        path: "/api/job-offers"
+        description: "List job offers for a search (paginated, filterable by status)"
+      - method: "GET"
+        path: "/api/job-offers/{id}"
+        description: "Get a single job offer with all details"
+
+  - name: "job-ai-evaluation"
+    description: "L'IA évalue chaque offre par rapport au profil candidat. Elle produit : un score de pertinence, un résumé de ce qui matche avec le profil et les attentes, la raison de sélection, et des conseils pour orienter la candidature. Les conseils sont modifiables par l'utilisateur et servent d'instructions pour la génération du CV et de la lettre de motivation. Les exclusions structurées (raisons catégorisées) de l'utilisateur sont injectées dans le prompt IA pour affiner les futures évaluations."
+    priority: "must-have"
+    acceptance_criteria:
+      - id: "AC-FUNC-JAE-01"
+        type: "FUNC"
+        description: "Given a new job offer and a user profile / When AI evaluation runs / Then the offer gets a relevance score (0-100), a match summary, a selection reason, and application advice"
+        verify: "curl -s http://localhost:3333/api/job-offers/1 -H 'Authorization: Bearer $TOKEN' | jq '.relevance_score != null and .match_summary != null and .selection_reason != null and .application_advice != null'"
+        tier: 2
+      - id: "AC-FUNC-JAE-02"
+        type: "FUNC"
+        description: "Given a user excludes an offer with reason 'salary too low' (category: salary) / When the exclusion is saved / Then the offer status becomes 'excluded' and the reason is stored"
+        verify: "curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:3333/api/job-offers/1/exclude -H 'Authorization: Bearer $TOKEN' -d '{\"category\":\"salary\",\"reason\":\"Below 120k NZD\"}'"
+        tier: 2
+      - id: "AC-FUNC-JAE-03"
+        type: "FUNC"
+        description: "Given a user has previous exclusions / When AI evaluates new offers / Then exclusion reasons are included in the evaluation prompt as negative preferences"
+        verify: "grep -r 'exclusion\\|excluded.*reason\\|negative.*preference' apps/api/app/services/job_ai_evaluation* | grep -v node_modules"
+        tier: 1
+      - id: "AC-FUNC-JAE-04"
+        type: "FUNC"
+        description: "Given application advice on an offer / When the user modifies the advice text / Then the modified advice is saved and used as instruction for CV/cover letter generation"
+        verify: "curl -s -o /dev/null -w '%{http_code}' -X PUT http://localhost:3333/api/job-offers/1/advice -H 'Authorization: Bearer $TOKEN' -d '{\"application_advice\":\"Emphasize cloud experience\"}'"
+        tier: 2
+    api_endpoints:
+      - method: "POST"
+        path: "/api/job-offers/{id}/exclude"
+        description: "Exclude an offer with structured reason"
+      - method: "PUT"
+        path: "/api/job-offers/{id}/advice"
+        description: "Update application advice (instructions for CV/cover letter gen)"
+      - method: "GET"
+        path: "/api/job-offers/exclusions"
+        description: "List user's exclusion patterns"
+
+  - name: "job-company-enrichment"
+    description: "Enrichissement des informations entreprise pour chaque offre. Cache global partagé entre tous les utilisateurs (TTL 1 an) pour économiser tokens et API calls. Inclut : nom officiel, type (agence de recrutement vs entreprise), secteur, taille, tech stack, culture, développements récents, domaine web, LinkedIn. Vérification de l'accréditation immigration (NZ, AU) avec cache dédié. Pattern issu du n8n existant : Perplexity + SerpApi + Hunter.io MCP en fallback, slug normalisé pour le cache."
+    priority: "must-have"
+    acceptance_criteria:
+      - id: "AC-FUNC-JCE-01"
+        type: "FUNC"
+        description: "Given a job offer with a company name / When company enrichment runs / Then company info is fetched and cached globally (not per-user)"
+        verify: "grep -r 'company_cache\\|CompanyCache\\|cache.*company' apps/api/app/services/job_company* | grep -v node_modules"
+        tier: 1
+      - id: "AC-FUNC-JCE-02"
+        type: "FUNC"
+        description: "Given a company already in cache (< 1 year old) / When another user's offer references the same company / Then cached data is returned without new API calls"
+        verify: "grep -r 'cache.*hit\\|cached.*data\\|ttl\\|expires' apps/api/app/services/job_company* | grep -v node_modules"
+        tier: 1
+      - id: "AC-FUNC-JCE-03"
+        type: "FUNC"
+        description: "Given a company in NZ or AU / When enrichment runs / Then immigration accreditation status is checked and stored"
+        verify: "grep -r 'accredit\\|immigration\\|accredited_employer' apps/api/app/services/ | grep -v node_modules"
+        tier: 1
+      - id: "AC-FUNC-JCE-04"
+        type: "FUNC"
+        description: "Given a job offer / When displayed to the user / Then company info includes: name, type, sector, size, accreditation status, and a link to more details"
+        verify: "curl -s http://localhost:3333/api/job-offers/1 -H 'Authorization: Bearer $TOKEN' | jq '.company.name != null and .company.sector != null and .company.accreditation_status != null'"
+        tier: 2
+
+  - name: "job-offers-page"
+    description: "Page principale des offres d'emploi avec 3 onglets : Nouvelles, Postulées, Archivées. Chaque offre affiche : titre, entreprise (avec badge accréditation immigration si applicable), résumé IA du match, score de pertinence, lien(s) vers l'annonce, lien pour postuler, date de publication, date de fermeture, rémunération (si dispo), raison de sélection, état de suivi. Signalement croisé : si l'utilisateur a déjà un contact lead chez cette entreprise, un badge le signale. Détection de republication visible. États de suivi : Nouvelle → Intéressée → Postulée → Entretien → Proposition → Acceptée / Rejetée / Exclue / Expirée."
+    priority: "must-have"
+    acceptance_criteria:
+      - id: "AC-FUNC-JOP-01"
+        type: "FUNC"
+        description: "Given a user with job offers / When they visit the offers page / Then 3 tabs are visible: New, Applied, Archived"
+        verify: "grep -r 'tab.*new\\|tab.*applied\\|tab.*archived\\|onglet' apps/web/src/app/*offre* apps/web/src/app/*job* | grep -v node_modules"
+        tier: 1
+      - id: "AC-FUNC-JOP-02"
+        type: "FUNC"
+        description: "Given a job offer card / When displayed / Then it shows: title, company name, AI match summary, relevance score, publication date, salary if available, and offer links"
+        verify: "grep -r 'relevance_score\\|match_summary\\|publication_date\\|salary\\|remuneration' apps/web/src/components/*job* apps/web/src/components/*offer* | grep -v node_modules"
+        tier: 1
+      - id: "AC-FUNC-JOP-03"
+        type: "FUNC"
+        description: "Given a user changes an offer status (e.g., New → Interested) / When they select the new status / Then the status is updated via API and the card moves to the correct tab if needed"
+        verify: "curl -s -o /dev/null -w '%{http_code}' -X PATCH http://localhost:3333/api/job-offers/1/status -H 'Authorization: Bearer $TOKEN' -d '{\"status\":\"interested\"}'"
+        tier: 2
+      - id: "AC-FUNC-JOP-04"
+        type: "FUNC"
+        description: "Given a user has a contact lead at company X / When an offer from company X is displayed / Then a badge indicates 'You have a contact at this company'"
+        verify: "grep -r 'existing.*contact\\|contact.*badge\\|has.*contact' apps/web/src/components/*job* apps/web/src/components/*offer* | grep -v node_modules"
+        tier: 1
+      - id: "AC-FUNC-JOP-05"
+        type: "FUNC"
+        description: "Given an offer has been republished / When displayed / Then a visual indicator shows republication with dates"
+        verify: "grep -r 'republish\\|republication\\|re-posted' apps/web/src/components/*job* apps/web/src/components/*offer* | grep -v node_modules"
+        tier: 1
+      - id: "AC-FUNC-JOP-06"
+        type: "FUNC"
+        description: "Given an offer with an email address / When the user views it / Then they can add the email to app contacts or send an application email"
+        verify: "grep -r 'add.*contact\\|send.*application\\|offer.*email' apps/web/src/components/*job* apps/web/src/components/*offer* | grep -v node_modules"
+        tier: 1
+    api_endpoints:
+      - method: "PATCH"
+        path: "/api/job-offers/{id}/status"
+        description: "Update offer tracking status"
+      - method: "GET"
+        path: "/api/job-offers/{id}/cross-contacts"
+        description: "Check if user has existing lead contacts at this company"
+
+  - name: "job-cv-generation"
+    description: "Génération d'un CV adapté à une offre spécifique. Approche hybride : (1) Google Docs API (recommandé, meilleurs résultats) — copie du template, extraction texte, remplacements IA ciblés (max 7) via replaceAll, export PDF ; (2) Templates locales — traitement DOCX (jszip + xml-parser + fusion de runs), remplacements IA, export PDF via LibreOffice headless. L'interface indique que Google Docs donne de meilleurs résultats. L'IA utilise le profil candidat, l'offre, les infos entreprise, et les conseils de candidature modifiables. L'utilisateur peut affiner le CV via des instructions avant ET après génération. Édition manuelle du résultat. Langue déduite du pays cible, modifiable avant génération. Quotas : 1/semaine (free), illimité (premium)."
+    priority: "must-have"
+    acceptance_criteria:
+      - id: "AC-FUNC-JCV-01"
+        type: "FUNC"
+        description: "Given a job offer and a user CV / When the user requests CV adaptation / Then the AI generates targeted text replacements (max 7) using offer + company + advice context"
+        verify: "curl -s -X POST http://localhost:3333/api/job-offers/1/cv/generate -H 'Authorization: Bearer $TOKEN' | jq '.replacements | length <= 7'"
+        tier: 2
+      - id: "AC-FUNC-JCV-02"
+        type: "FUNC"
+        description: "Given a generated CV / When the user provides refinement instructions / Then the AI regenerates with the new instructions taken into account"
+        verify: "curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:3333/api/job-offers/1/cv/refine -H 'Authorization: Bearer $TOKEN' -d '{\"instruction\":\"Emphasize leadership experience\"}'"
+        tier: 2
+      - id: "AC-FUNC-JCV-03"
+        type: "FUNC"
+        description: "Given a generated CV with applied replacements / When the user manually edits the text / Then edits are saved and reflected in the PDF export"
+        verify: "curl -s -o /dev/null -w '%{http_code}' -X PUT http://localhost:3333/api/job-offers/1/cv -H 'Authorization: Bearer $TOKEN' -d '{\"edited_text\":\"...\"}'"
+        tier: 2
+      - id: "AC-FUNC-JCV-04"
+        type: "FUNC"
+        description: "Given a finalized CV / When the user exports to PDF / Then a PDF file is generated and downloadable"
+        verify: "curl -s -o /dev/null -w '%{http_code}' http://localhost:3333/api/job-offers/1/cv/pdf -H 'Authorization: Bearer $TOKEN'"
+        tier: 2
+      - id: "AC-FUNC-JCV-05"
+        type: "FUNC"
+        description: "Given a free user who already generated 1 CV this week / When they try to generate another / Then the API returns 403 with quota exceeded"
+        verify: "grep -r 'cv.*quota\\|generation.*limit\\|FREE_CV_QUOTA' apps/api/app/services/ | grep -v node_modules"
+        tier: 1
+
+  - name: "job-cover-letter"
+    description: "Génération d'une lettre de motivation adaptée à une offre. L'IA utilise le CV, l'offre, les infos entreprise (sauf si agence de recrutement), les conseils de candidature modifiables, et le style NZ. Raffinable avant et après génération via des instructions utilisateur. Édition manuelle. Export PDF. Langue déduite du pays cible, modifiable avant génération. Email d'accompagnement court (3-4 lignes) généré par l'IA, modifiable avant envoi, ton adapté au pays. Mêmes quotas que le CV."
+    priority: "must-have"
+    acceptance_criteria:
+      - id: "AC-FUNC-JCL-01"
+        type: "FUNC"
+        description: "Given a job offer / When the user requests cover letter generation / Then a cover letter is generated using CV + offer + company info + application advice"
+        verify: "curl -s -X POST http://localhost:3333/api/job-offers/1/cover-letter/generate -H 'Authorization: Bearer $TOKEN' | jq '.content != null'"
+        tier: 2
+      - id: "AC-FUNC-JCL-02"
+        type: "FUNC"
+        description: "Given a company of type 'recruitment_agency' / When generating a cover letter / Then company research data is ignored (only job listing data is used)"
+        verify: "grep -r 'recruitment_agency\\|company_type.*ignore\\|skip.*agency' apps/api/app/services/job_cover_letter* | grep -v node_modules"
+        tier: 1
+      - id: "AC-FUNC-JCL-03"
+        type: "FUNC"
+        description: "Given a generated cover letter / When the user provides refinement instructions / Then the AI regenerates taking instructions into account"
+        verify: "curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:3333/api/job-offers/1/cover-letter/refine -H 'Authorization: Bearer $TOKEN' -d '{\"instruction\":\"More formal tone\"}'"
+        tier: 2
+      - id: "AC-FUNC-JCL-04"
+        type: "FUNC"
+        description: "Given a finalized cover letter / When the user exports to PDF / Then a PDF is generated and downloadable"
+        verify: "curl -s -o /dev/null -w '%{http_code}' http://localhost:3333/api/job-offers/1/cover-letter/pdf -H 'Authorization: Bearer $TOKEN'"
+        tier: 2
+
+  - name: "job-application-send"
+    description: "Envoi de la candidature par email avec le CV et la lettre de motivation en pièces jointes via le système d'email existant. Email d'accompagnement court généré par l'IA (3-4 lignes, ton adapté au pays cible), modifiable avant envoi. Gestion des contacts de recrutement : l'utilisateur peut attacher plusieurs interlocuteurs à une offre (RH, chef d'équipe, CEO...) au fil du process. Ces contacts de recrutement sont distincts des contacts leads. Un lead existant qui devient interlocuteur dans un process est retiré du pipeline lead pendant la durée du process. Aide à la rédaction d'emails de suivi (remerciement, relance) sans la logique de prospection cold email. Les offres expirent automatiquement (closing_date atteinte ou offre non retrouvée au scraping suivant) et passent en statut 'expired', visibles dans l'onglet Archivées pour historique."
+    priority: "must-have"
+    acceptance_criteria:
+      - id: "AC-FUNC-JAS-01"
+        type: "FUNC"
+        description: "Given a finalized CV and cover letter for an offer / When the user sends the application / Then an email is sent with both as PDF attachments using the existing email system"
+        verify: "grep -r 'attachment\\|pdf.*attach\\|send.*application' apps/api/app/services/job_application* | grep -v node_modules"
+        tier: 1
+      - id: "AC-FUNC-JAS-02"
+        type: "FUNC"
+        description: "Given an offer in 'interview' status / When the user adds a recruitment contact (name, role, email) / Then the contact is linked to the offer"
+        verify: "curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:3333/api/job-offers/1/contacts -H 'Authorization: Bearer $TOKEN' -d '{\"name\":\"John Doe\",\"role\":\"Engineering Manager\",\"email\":\"john@company.com\"}'"
+        tier: 2
+      - id: "AC-FUNC-JAS-03"
+        type: "FUNC"
+        description: "Given a recruitment contact linked to an offer / When the user wants to email them / Then AI-assisted email drafting is available (follow-up, thank you, etc.) without cold email prospection logic"
+        verify: "grep -r 'recruitment.*contact.*email\\|follow_up\\|thank_you' apps/api/app/services/job_application* | grep -v node_modules"
+        tier: 1
+      - id: "AC-FUNC-JAS-04"
+        type: "FUNC"
+        description: "Given a lead contact exists for company X / When the same person becomes a recruitment contact for an offer at company X / Then the lead is flagged as 'in_recruitment_process' and removed from the lead pipeline"
+        verify: "grep -r 'in_recruitment_process\\|recruitment.*flag\\|lead.*process' apps/api/app/services/ | grep -v node_modules"
+        tier: 1
+      - id: "AC-FUNC-JAS-05"
+        type: "FUNC"
+        description: "Given a recruitment process ended with rejection months ago / When the user explicitly decides to re-prospect / Then the contact can be returned to the lead pipeline"
+        verify: "grep -r 'return.*lead\\|re_prospect\\|restore.*lead' apps/api/app/services/ | grep -v node_modules"
+        tier: 1
+    api_endpoints:
+      - method: "POST"
+        path: "/api/job-offers/{id}/apply"
+        description: "Send application email with CV + cover letter as PDF attachments"
+      - method: "POST"
+        path: "/api/job-offers/{id}/contacts"
+        description: "Add a recruitment contact to an offer"
+      - method: "GET"
+        path: "/api/job-offers/{id}/contacts"
+        description: "List recruitment contacts for an offer"
+      - method: "POST"
+        path: "/api/job-offers/{id}/contacts/{contactId}/email"
+        description: "Draft an AI-assisted follow-up email to a recruitment contact"
+
+  # === JOB OFFERS — Phase 2 (Configuration avancée) ===
+
+  - name: "job-recurring-search"
+    description: "Recherche récurrente avec fréquence configurable (premium uniquement). Free = hebdomadaire fixe. Premium = quotidienne, bihebdo, hebdo, etc."
+    priority: "should-have"
+    acceptance_criteria:
+      - id: "AC-FUNC-JRS-01"
+        type: "FUNC"
+        description: "Given a premium user / When they configure a search frequency / Then the search runs automatically at the configured interval"
+        verify: "grep -r 'frequency\\|recurring\\|schedule.*search\\|cron.*job' apps/api/app/services/job_search* | grep -v node_modules"
+        tier: 1
+      - id: "AC-FUNC-JRS-02"
+        type: "FUNC"
+        description: "Given a free user / When their weekly search runs / Then it executes once per week on a fixed schedule"
+        verify: "grep -r 'free.*weekly\\|WEEKLY_FREQUENCY\\|default.*frequency' apps/api/app/services/job_search* | grep -v node_modules"
+        tier: 1
+
+  - name: "job-custom-platforms"
+    description: "L'utilisateur peut ajouter des plateformes de recherche personnalisées. Le système propose des plateformes selon le pays cible (basé sur les acteurs Apify disponibles)."
+    priority: "should-have"
+    acceptance_criteria:
+      - id: "AC-FUNC-JCP-01"
+        type: "FUNC"
+        description: "Given a user / When they add a custom platform URL / Then it is saved and used in future search runs"
+        verify: "curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:3333/api/job-searches/1/platforms -H 'Authorization: Bearer $TOKEN' -d '{\"name\":\"TradeMe Jobs\",\"url\":\"https://trademe.co.nz/jobs\"}'"
+        tier: 2
+      - id: "AC-FUNC-JCP-02"
+        type: "FUNC"
+        description: "Given a country selected in search config / When the platform list is displayed / Then suggested platforms for that country are shown"
+        verify: "curl -s http://localhost:3333/api/platforms/suggestions?country=NZ -H 'Authorization: Bearer $TOKEN' | jq '.suggestions | length > 0'"
+        tier: 2
+
+  - name: "job-notifications"
+    description: "Notifications in-app et email digest pour les nouvelles offres trouvées."
+    priority: "nice-to-have"
+    acceptance_criteria:
+      - id: "AC-FUNC-JNO-01"
+        type: "FUNC"
+        description: "Given new offers found by a search run / When the user visits the app / Then an in-app notification badge indicates new offers count"
+        verify: "grep -r 'notification.*badge\\|new.*offers.*count\\|unread.*offers' apps/web/src/ | grep -v node_modules"
+        tier: 1
+
 # --- MODÈLE DE DONNÉES ---
 data_model:
   entities:
@@ -490,6 +817,419 @@ data_model:
           target: "Contact"
           field: "contact_id"
 
+    # === JOB OFFERS ENTITIES ===
+
+    - name: "JobSearch"
+      fields:
+        - name: "id"
+          type: "string"
+          required: true
+          unique: true
+          description: "UUID"
+        - name: "roles"
+          type: "string[]"
+          required: true
+          description: "Target roles (e.g., ['Senior Frontend', 'Fullstack Engineer'])"
+        - name: "countries"
+          type: "string[]"
+          required: true
+          description: "Target countries (e.g., ['NZ', 'AU'])"
+        - name: "cities"
+          type: "string[]"
+          required: false
+          description: "Target cities (optional filter)"
+        - name: "platforms"
+          type: "string[]"
+          required: true
+          description: "Platforms to search (e.g., ['seek', 'linkedin', 'builtin', 'zeil'])"
+        - name: "seniority"
+          type: "string"
+          required: false
+          description: "junior | mid | senior | lead | indifferent (null = indifferent)"
+        - name: "sector"
+          type: "string"
+          required: false
+          description: "Target sector filter"
+        - name: "min_salary"
+          type: "number"
+          required: false
+          description: "Minimum salary filter (in local currency)"
+        - name: "skills"
+          type: "string[]"
+          required: false
+          description: "Override skills from profile for this search"
+        - name: "frequency"
+          type: "string"
+          required: true
+          description: "daily | biweekly | weekly | manual (free users = weekly fixed)"
+        - name: "is_active"
+          type: "boolean"
+          required: true
+          description: "Whether this search is currently active"
+        - name: "last_run_at"
+          type: "date"
+          required: false
+        - name: "next_run_at"
+          type: "date"
+          required: false
+        - name: "created_at"
+          type: "date"
+          required: true
+      relations:
+        - type: "many-to-one"
+          target: "User"
+          field: "user_id"
+        - type: "one-to-many"
+          target: "JobOffer"
+          field: "offers"
+
+    - name: "JobOffer"
+      fields:
+        - name: "id"
+          type: "string"
+          required: true
+          unique: true
+          description: "UUID"
+        - name: "title"
+          type: "string"
+          required: true
+          description: "Job title"
+        - name: "description_raw"
+          type: "string"
+          required: false
+          description: "Raw job description text (scraped)"
+        - name: "status"
+          type: "string"
+          required: true
+          description: "new | interested | applied | interview | proposition | accepted | rejected | excluded | expired"
+        - name: "relevance_score"
+          type: "number"
+          required: false
+          description: "AI relevance score 0-100"
+        - name: "match_summary"
+          type: "string"
+          required: false
+          description: "AI summary of what matches the user profile"
+        - name: "selection_reason"
+          type: "string"
+          required: false
+          description: "AI explanation of why this offer was selected"
+        - name: "application_advice"
+          type: "string"
+          required: false
+          description: "AI-generated advice for candidacy, modifiable by user, used as instructions for CV/cover letter generation"
+        - name: "salary_min"
+          type: "number"
+          required: false
+          description: "Minimum salary (if available)"
+        - name: "salary_max"
+          type: "number"
+          required: false
+          description: "Maximum salary (if available)"
+        - name: "salary_currency"
+          type: "string"
+          required: false
+          description: "Salary currency (NZD, AUD, etc.)"
+        - name: "location"
+          type: "string"
+          required: false
+          description: "Job location"
+        - name: "remote_type"
+          type: "string"
+          required: false
+          description: "onsite | hybrid | remote | null"
+        - name: "publication_dates"
+          type: "json"
+          required: true
+          description: "Array of publication dates (tracks republications)"
+        - name: "closing_date"
+          type: "date"
+          required: false
+          description: "Application closing date (if available)"
+        - name: "contact_email"
+          type: "string"
+          required: false
+          description: "Contact email from the listing (if available)"
+        - name: "is_republished"
+          type: "boolean"
+          required: true
+          description: "Whether this offer has been republished (signal: employer struggling to fill)"
+        - name: "created_at"
+          type: "date"
+          required: true
+        - name: "updated_at"
+          type: "date"
+          required: true
+      relations:
+        - type: "many-to-one"
+          target: "JobSearch"
+          field: "search_id"
+        - type: "many-to-one"
+          target: "CompanyCache"
+          field: "company_id"
+        - type: "one-to-many"
+          target: "JobOfferLink"
+          field: "links"
+        - type: "one-to-one"
+          target: "JobOfferExclusion"
+          field: "exclusion"
+        - type: "one-to-many"
+          target: "JobApplication"
+          field: "applications"
+        - type: "one-to-many"
+          target: "RecruitmentContact"
+          field: "recruitment_contacts"
+
+    - name: "JobOfferLink"
+      fields:
+        - name: "id"
+          type: "string"
+          required: true
+          unique: true
+        - name: "platform"
+          type: "string"
+          required: true
+          description: "seek | linkedin | builtin | zeil | custom"
+        - name: "url"
+          type: "string"
+          required: true
+          description: "Direct URL to the listing"
+        - name: "apply_url"
+          type: "string"
+          required: false
+          description: "Direct apply URL (if different from listing URL)"
+        - name: "external_id"
+          type: "string"
+          required: false
+          description: "Platform-specific ID for dedup"
+        - name: "scraped_at"
+          type: "date"
+          required: true
+      relations:
+        - type: "many-to-one"
+          target: "JobOffer"
+          field: "offer_id"
+
+    - name: "JobOfferExclusion"
+      fields:
+        - name: "id"
+          type: "string"
+          required: true
+          unique: true
+        - name: "category"
+          type: "string"
+          required: true
+          description: "salary | sector | seniority | company_type | location | role_mismatch | other"
+        - name: "reason"
+          type: "string"
+          required: true
+          description: "Free text explanation from user"
+        - name: "created_at"
+          type: "date"
+          required: true
+      relations:
+        - type: "one-to-one"
+          target: "JobOffer"
+          field: "offer_id"
+        - type: "many-to-one"
+          target: "User"
+          field: "user_id"
+
+    - name: "JobApplication"
+      fields:
+        - name: "id"
+          type: "string"
+          required: true
+          unique: true
+        - name: "cv_text"
+          type: "string"
+          required: false
+          description: "Adapted CV text (with replacements applied)"
+        - name: "cv_replacements"
+          type: "json"
+          required: false
+          description: "AI-generated replacements [{old_text, new_text}]"
+        - name: "cv_user_instruction"
+          type: "string"
+          required: false
+          description: "User instruction for CV refinement"
+        - name: "cover_letter_text"
+          type: "string"
+          required: false
+          description: "Generated cover letter text"
+        - name: "cover_letter_user_instruction"
+          type: "string"
+          required: false
+          description: "User instruction for cover letter refinement"
+        - name: "status"
+          type: "string"
+          required: true
+          description: "draft | ready | sent"
+        - name: "sent_at"
+          type: "date"
+          required: false
+        - name: "sent_to_email"
+          type: "string"
+          required: false
+          description: "Email address application was sent to"
+        - name: "created_at"
+          type: "date"
+          required: true
+        - name: "updated_at"
+          type: "date"
+          required: true
+      relations:
+        - type: "many-to-one"
+          target: "JobOffer"
+          field: "offer_id"
+        - type: "many-to-one"
+          target: "User"
+          field: "user_id"
+
+    - name: "RecruitmentContact"
+      fields:
+        - name: "id"
+          type: "string"
+          required: true
+          unique: true
+        - name: "name"
+          type: "string"
+          required: true
+        - name: "role"
+          type: "string"
+          required: false
+          description: "Role in the recruitment process (HR, Team Lead, CEO...)"
+        - name: "email"
+          type: "string"
+          required: false
+        - name: "linkedin_url"
+          type: "string"
+          required: false
+        - name: "notes"
+          type: "string"
+          required: false
+          description: "Free text notes about this contact"
+        - name: "linked_lead_id"
+          type: "string"
+          required: false
+          description: "If this person was a lead contact, reference to the lead (flagged as in_recruitment_process)"
+        - name: "created_at"
+          type: "date"
+          required: true
+      relations:
+        - type: "many-to-one"
+          target: "JobOffer"
+          field: "offer_id"
+
+    - name: "CompanyCache"
+      fields:
+        - name: "id"
+          type: "string"
+          required: true
+          unique: true
+        - name: "slug"
+          type: "string"
+          required: true
+          unique: true
+          description: "Normalized company name slug for dedup (strips Ltd, Inc, NZ, etc.)"
+        - name: "name"
+          type: "string"
+          required: true
+          description: "Company display name"
+        - name: "official_name"
+          type: "string"
+          required: false
+          description: "Official registered name (Companies Register)"
+        - name: "company_type"
+          type: "string"
+          required: false
+          description: "recruitment_agency | hiring_company | consulting | unknown"
+        - name: "web_domain"
+          type: "string"
+          required: false
+        - name: "sector"
+          type: "string"
+          required: false
+        - name: "industry"
+          type: "string"
+          required: false
+        - name: "size"
+          type: "string"
+          required: false
+          description: "Estimated size (e.g., '51-250 employees')"
+        - name: "country"
+          type: "string"
+          required: false
+        - name: "core_business"
+          type: "string"
+          required: false
+          description: "1-2 sentence description"
+        - name: "tech_stack"
+          type: "json"
+          required: false
+          description: "Array of technologies"
+        - name: "culture_keywords"
+          type: "json"
+          required: false
+          description: "Array of culture keywords"
+        - name: "recent_developments"
+          type: "string"
+          required: false
+        - name: "linkedin_url"
+          type: "string"
+          required: false
+        - name: "data_source"
+          type: "string"
+          required: false
+          description: "How the data was obtained (perplexity, serpapi, hunter.io, etc.)"
+        - name: "expires_at"
+          type: "date"
+          required: true
+          description: "Cache expiry date (1 year TTL)"
+        - name: "created_at"
+          type: "date"
+          required: true
+      relations:
+        - type: "one-to-many"
+          target: "JobOffer"
+          field: "offers"
+
+    - name: "AccreditationCache"
+      fields:
+        - name: "id"
+          type: "string"
+          required: true
+          unique: true
+        - name: "slug"
+          type: "string"
+          required: true
+          unique: true
+          description: "Normalized company slug"
+        - name: "company_name"
+          type: "string"
+          required: true
+        - name: "country"
+          type: "string"
+          required: true
+          description: "Country code (NZ, AU)"
+        - name: "is_accredited"
+          type: "boolean"
+          required: true
+        - name: "accreditation_details"
+          type: "json"
+          required: false
+          description: "Additional accreditation info (type, expiry, etc.)"
+        - name: "checked_at"
+          type: "date"
+          required: true
+        - name: "expires_at"
+          type: "date"
+          required: true
+          description: "Cache expiry"
+      relations: []
+
+    # === EXISTING ENTITIES ===
+
     - name: "SourcingRun"
       fields:
         - name: "id"
@@ -576,11 +1316,20 @@ context:
   existing_code: ""
   documentation: ""
   notes: |
-    - L'outil cible le marché CACHÉ de l'emploi (postes non publiés)
-    - On contacte les responsables d'équipes opérationnelles, PAS les RH
+    - L'outil cible DEUX marchés : le marché CACHÉ (contacts leads, prospection proactive) ET le marché VISIBLE (offres publiées, candidature réactive)
+    - Pipeline contacts : on contacte les responsables d'équipes opérationnelles, PAS les RH
+    - Pipeline offres : on scrape les plateformes (Seek, LinkedIn, BuiltIn, Zeil...) et l'IA évalue la pertinence
+    - Les deux pipelines coexistent avec signalement croisé (badge "vous avez déjà un contact chez cette entreprise")
+    - Contacts de recrutement (interlocuteurs dans un process) ≠ contacts leads (prospection marché caché)
     - L'IA doit comprendre à qui elle parle ET qui est le candidat
     - Simplicité extrême pour l'utilisateur malgré la complexité technique
     - MVP mono-user, architecturé pour multi-user
     - Budget 30$/mois max (hosting + APIs)
+    - LinkedIn : Apify obligatoire (scraping maison trop risqué), scraping maison + Apify fallback pour les autres
+    - Cache global partagé entre utilisateurs : company info (1 an), accreditation (1 an)
+    - Les exclusions d'offres (raisons structurées) alimentent le prompt IA pour les évaluations futures
+    - CV adapté par remplacements ciblés (max 7), pas de réécriture complète — préserve l'identité du candidat
+    - Export PDF pour CV et lettres de motivation, avec édition manuelle avant export
     - LinkedIn messaging : nécessite étude préalable risque/bénéfice
     - Vision long terme : plateforme complète d'aide à l'expatriation
+    - Architecture n8n existante (Telegram) sert de référence fonctionnelle mais est remplacée par le SaaS
