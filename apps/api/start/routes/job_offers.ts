@@ -13,6 +13,8 @@ router
     router.get('/:id', [JobOffersController, 'show'])
     router.post('/:id/exclude', [JobOffersController, 'exclude'])
     router.put('/:id/advice', [JobOffersController, 'updateAdvice'])
+    router.patch('/:id/status', [JobOffersController, 'updateStatus'])
+    router.get('/:id/cross-contacts', [JobOffersController, 'crossContacts'])
   })
   .prefix('/api/job-offers')
   .use(middleware.auth())

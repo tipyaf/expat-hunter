@@ -44,6 +44,7 @@ export type {
   CompanyCache,
   AccreditationCache,
 } from './types/job-offer'
+export type { JobOfferTab } from './constants/job-offer'
 export {
   JOB_OFFER_STATUSES,
   JOB_OFFER_PLATFORMS,
@@ -59,6 +60,10 @@ export {
   CACHE_TTL_DAYS,
   ENRICHMENT_BATCH_SIZE,
   MAX_COMPANY_NAME_LENGTH,
+  NEW_TAB_STATUSES,
+  APPLIED_TAB_STATUSES,
+  ARCHIVED_TAB_STATUSES,
+  TAB_STATUS_MAP,
 } from './constants/job-offer'
 
 // Job search

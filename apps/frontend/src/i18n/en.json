@@ -795,6 +795,54 @@
     "email_sent": "Email sent",
     "dismiss": "Dismiss"
   },
+  "jobOffersPage": {
+    "title": "Job Offers",
+    "subtitle": "Review and manage your job opportunities.",
+    "tabs": "Offer tabs",
+    "tabNew": "New",
+    "tabApplied": "Applied",
+    "tabArchived": "Archived",
+    "allSearches": "All searches",
+    "unknownCompany": "Unknown company",
+    "republished": "Republished",
+    "crossContact": "Contact found",
+    "score": {
+      "high": "Excellent match",
+      "medium": "Good match",
+      "low": "Moderate match",
+      "veryLow": "Low match"
+    },
+    "statuses": {
+      "new": "New",
+      "evaluated": "Evaluated",
+      "interested": "Interested",
+      "applied": "Applied",
+      "interview": "Interview",
+      "offer_received": "Offer received",
+      "accepted": "Accepted",
+      "rejected": "Rejected",
+      "excluded": "Excluded",
+      "expired": "Expired",
+      "archived": "Archived",
+      "duplicate": "Duplicate",
+      "quota_exceeded": "Quota exceeded"
+    },
+    "emptyState": {
+      "newTitle": "No new offers",
+      "newDescription": "Configure a job search to start receiving offers automatically.",
+      "appliedTitle": "No applications yet",
+      "appliedDescription": "Mark an offer as 'Applied' to track your applications here.",
+      "archivedTitle": "No archived offers",
+      "archivedDescription": "Excluded or expired offers will appear here.",
+      "ctaNewSearch": "Create a search",
+      "ctaExploreOffers": "View new offers"
+    },
+    "pagination": {
+      "prev": "Previous",
+      "next": "Next",
+      "page": "Page {current} of {total}"
+    }
+  },
   "jobSearch": {
     "pageTitle": "Job Search Configuration",
     "pageSubtitle": "Configure your automated job search to find relevant offers across platforms.",

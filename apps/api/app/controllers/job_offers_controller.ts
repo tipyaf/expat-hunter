@@ -10,7 +10,7 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import JobOfferService from '#services/job_offer_service'
 import JobOfferExclusion from '#models/job_offer_exclusion'
-import { excludeJobOfferValidator, updateAdviceValidator } from '#validators/job_offer_validator'
+import { excludeJobOfferValidator, updateAdviceValidator, updateStatusValidator } from '#validators/job_offer_validator'
 
 export default class JobOffersController {
   private readonly service = new JobOfferService()
@@ -22,16 +22,9 @@ export default class JobOffersController {
     const user = auth.getUserOrFail()
     const searchId = request.input('search_id')
 
-    if (!searchId) {
-      response.badRequest({
-        error: { code: 'MISSING_PARAM', message: 'search_id query parameter is required' },
-      })
-      return
-    }
-
     try {
       const result = await this.service.list({
-        searchId,
+        searchId: searchId || undefined,
         userId: user.id,
         status: request.input('status'),
         page: Number(request.input('page', 1)) || 1,
@@ -121,6 +114,48 @@ export default class JobOffersController {
       await offer.save()
 
       response.ok({ data: this.serialize(offer) })
+    } catch (error: any) {
+      if (error.code === 'NOT_FOUND') {
+        response.notFound({
+          error: { code: 'NOT_FOUND', message: error.message },
+        })
+        return
+      }
+      throw error
+    }
+  }
+
+  /**
+   * PATCH /api/job-offers/:id/status — Update offer status.
+   */
+  async updateStatus({ auth, params, request, response }: HttpContext): Promise<void> {
+    const user = auth.getUserOrFail()
+    const payload = await request.validateUsing(updateStatusValidator)
+
+    try {
+      const offer = await this.service.updateStatus(params.id, user.id, payload.status)
+      response.ok({ data: this.serialize(offer) })
+    } catch (error: any) {
+      if (error.code === 'NOT_FOUND') {
+        response.notFound({
+          error: { code: 'NOT_FOUND', message: error.message },
+        })
+        return
+      }
+      throw error
+    }
+  }
+
+  /**
+   * GET /api/job-offers/:id/cross-contacts — Check if user has leads at this company.
+   */
+  async crossContacts({ auth, params, response }: HttpContext): Promise<void> {
+    const user = auth.getUserOrFail()
+
+    try {
+      const offer = await this.service.findOrFail(params.id, user.id)
+      const hasCrossContact = await this.service.hasCrossContact(user.id, offer.companyName)
+      response.ok({ data: { hasCrossContact } })
     } catch (error: any) {
       if (error.code === 'NOT_FOUND') {
         response.notFound({

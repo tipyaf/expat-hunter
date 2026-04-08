@@ -292,4 +292,4 @@ router
   .use(middleware.auth())
 
 // Job offers routes (separate file)
-import('#start/routes/job_offers')
+await import('#start/routes/job_offers')
