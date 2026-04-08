@@ -101,7 +101,7 @@ export class LinkedInJobScraper extends BaseJobOfferScraper {
       location,
       url: item.url ?? '',
       platform: 'linkedin',
-      externalId: item.id != null ? String(item.id) : null,
+      externalId: item.id == null ? null : String(item.id),
       salaryMin: null,
       salaryMax: null,
       currency: null,

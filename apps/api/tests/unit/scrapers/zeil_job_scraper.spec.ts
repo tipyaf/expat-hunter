@@ -28,7 +28,7 @@ test.group('ZeilJobScraper', (group) => {
     // ORACLE: Zeil Playwright scraper returns job data → RawJobOffer with platform='zeil'
     // Mock data mirrors real n8n workflow bQq2XdV0qrJGisGl output shape
     let callCount = 0
-    globalThis.fetch = async (_url: string | URL | Request, init?: RequestInit) => {
+    globalThis.fetch = async (_url: RequestInfo | URL, init?: RequestInit) => {
       callCount++
       const body = JSON.parse((init?.body as string) ?? '{}')
 
@@ -107,7 +107,7 @@ test.group('ZeilJobScraper', (group) => {
   })
 
   test('returns empty array when no jobs are found', async ({ assert }) => {
-    globalThis.fetch = async (_url: string | URL | Request, init?: RequestInit) => {
+    globalThis.fetch = async (_url: RequestInfo | URL, init?: RequestInit) => {
       const body = JSON.parse((init?.body as string) ?? '{}')
 
       if (body.tool === 'navigate') {
@@ -145,7 +145,7 @@ test.group('ZeilJobScraper', (group) => {
 
   test('filters out error entries from scrape results', async ({ assert }) => {
     // ORACLE: jobs with "error" key should be filtered out
-    globalThis.fetch = async (_url: string | URL | Request, init?: RequestInit) => {
+    globalThis.fetch = async (_url: RequestInfo | URL, init?: RequestInit) => {
       const body = JSON.parse((init?.body as string) ?? '{}')
 
       if (body.tool === 'navigate') {
