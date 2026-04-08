@@ -7,6 +7,27 @@
 import { BaseModel, column } from '@adonisjs/lucid/orm'
 import { DateTime } from 'luxon'
 
+export class AccreditationCachSchema extends BaseModel {
+  static $columns = ['checkedAt', 'country', 'createdAt', 'id', 'isAccredited', 'slug', 'source', 'updatedAt'] as const
+  $columns = AccreditationCachSchema.$columns
+  @column.dateTime()
+  declare checkedAt: DateTime
+  @column()
+  declare country: string
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare isAccredited: boolean
+  @column()
+  declare slug: string
+  @column()
+  declare source: string | null
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+}
+
 export class AiSettingSchema extends BaseModel {
   static $columns = ['createdAt', 'featureKey', 'id', 'isEnabled', 'maxTokens', 'model', 'temperature', 'updatedAt', 'value'] as const
   $columns = AiSettingSchema.$columns
@@ -158,6 +179,31 @@ export class CompanySchema extends BaseModel {
   declare visaSponsorStatus: string | null
   @column()
   declare website: string | null
+}
+
+export class CompanyCachSchema extends BaseModel {
+  static $columns = ['companyType', 'country', 'createdAt', 'expiresAt', 'id', 'name', 'sector', 'size', 'slug', 'updatedAt'] as const
+  $columns = CompanyCachSchema.$columns
+  @column()
+  declare companyType: string
+  @column()
+  declare country: string
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column.dateTime()
+  declare expiresAt: DateTime
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare name: string
+  @column()
+  declare sector: string | null
+  @column()
+  declare size: string | null
+  @column()
+  declare slug: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
 }
 
 export class ContactMovementSchema extends BaseModel {
@@ -452,6 +498,91 @@ export class GenerationPresetSchema extends BaseModel {
   declare updatedAt: DateTime
   @column()
   declare userId: string
+}
+
+export class JobOfferExclusionSchema extends BaseModel {
+  static $columns = ['category', 'createdAt', 'id', 'offerId', 'reason', 'userId'] as const
+  $columns = JobOfferExclusionSchema.$columns
+  @column()
+  declare category: string
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare offerId: string
+  @column()
+  declare reason: string
+  @column()
+  declare userId: string
+}
+
+export class JobOfferLinkSchema extends BaseModel {
+  static $columns = ['applyUrl', 'externalId', 'id', 'offerId', 'platform', 'scrapedAt', 'url'] as const
+  $columns = JobOfferLinkSchema.$columns
+  @column()
+  declare applyUrl: string | null
+  @column()
+  declare externalId: string | null
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare offerId: string
+  @column()
+  declare platform: string
+  @column.dateTime()
+  declare scrapedAt: DateTime
+  @column()
+  declare url: string
+}
+
+export class JobOfferSchema extends BaseModel {
+  static $columns = ['applicationAdvice', 'closingDate', 'companyCacheId', 'companyName', 'contactEmail', 'createdAt', 'descriptionRaw', 'id', 'isRepublished', 'location', 'matchSummary', 'publicationDates', 'relevanceScore', 'remoteType', 'salaryCurrency', 'salaryMax', 'salaryMin', 'searchId', 'selectionReason', 'status', 'title', 'updatedAt'] as const
+  $columns = JobOfferSchema.$columns
+  @column()
+  declare applicationAdvice: string | null
+  @column.dateTime()
+  declare closingDate: DateTime | null
+  @column()
+  declare companyCacheId: string | null
+  @column()
+  declare companyName: string | null
+  @column()
+  declare contactEmail: string | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare descriptionRaw: string | null
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare isRepublished: boolean
+  @column()
+  declare location: string | null
+  @column()
+  declare matchSummary: string | null
+  @column()
+  declare publicationDates: any
+  @column()
+  declare relevanceScore: number | null
+  @column()
+  declare remoteType: string | null
+  @column()
+  declare salaryCurrency: string | null
+  @column()
+  declare salaryMax: number | null
+  @column()
+  declare salaryMin: number | null
+  @column()
+  declare searchId: string
+  @column()
+  declare selectionReason: string | null
+  @column()
+  declare status: string
+  @column()
+  declare title: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
 }
 
 export class JobSearchSchema extends BaseModel {

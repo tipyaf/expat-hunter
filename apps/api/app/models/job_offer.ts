@@ -5,6 +5,7 @@ import { DateTime } from 'luxon'
 import type { JobOfferStatus, RemoteType } from '@expat-hunter/shared'
 import JobSearch from './job_search.js'
 import JobOfferLink from './job_offer_link.js'
+import CompanyCache from './company_cache.js'
 
 export default class JobOffer extends BaseModel {
   static readonly table = 'job_offers'
@@ -17,6 +18,9 @@ export default class JobOffer extends BaseModel {
 
   @column()
   declare companyCacheId: string | null
+
+  @column()
+  declare companyName: string | null
 
   @column()
   declare title: string
@@ -80,6 +84,9 @@ export default class JobOffer extends BaseModel {
 
   @hasMany(() => JobOfferLink, { foreignKey: 'offerId' })
   declare links: HasMany<typeof JobOfferLink>
+
+  @belongsTo(() => CompanyCache, { foreignKey: 'companyCacheId' })
+  declare companyCache: BelongsTo<typeof CompanyCache>
 
   @beforeCreate()
   static assignUuid(offer: JobOffer): void {

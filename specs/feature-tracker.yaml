@@ -700,13 +700,13 @@ features:
   - id: "job-company-enrichment"
     name: "Job Company Enrichment"
     priority: "must-have"
-    status: "pending"
-    cycles: 0
-    story_file: ""
-    depends_on: ["job-scraping-pipeline"]
-    started_at: ""
-    validated_at: ""
-    notes: "CompanyCache (1yr TTL, shared). Company size, sector, tech stack, culture signals. AccreditationCache for immigration. E11."
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/job-company-enrichment.yaml"
+    depends_on: ["job-scraping-pipeline", "job-ai-evaluation"]
+    started_at: "2026-04-08"
+    validated_at: "2026-04-08"
+    notes: "Global CompanyCache keyed by (slug, country) — location-aware dedup. TTL 365 days. AccreditationCache for NZ/AU. Slug normalization strips suffixes. company_type enum. Fail-open. E11. L (5 pts). 16 ACs. 27 unit + 9 functional tests. 0 SonarQube issues. Shortcut sc-869."
 
   # --- E12: Interface Offres ---
 

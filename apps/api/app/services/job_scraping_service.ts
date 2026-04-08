@@ -16,6 +16,7 @@ import { JobOfferScraperRegistry } from '#scrapers/job_offer_scraper_registry'
 import type { JobOfferScrapeParams } from '#scrapers/base_job_offer_scraper'
 import JobOfferDedupService from './job_offer_dedup_service.js'
 import JobAiEvaluationService from './job_ai_evaluation_service.js'
+import JobCompanyEnrichmentService from './job_company_enrichment_service.js'
 
 interface ScrapingResult {
   totalScraped: number
@@ -34,15 +35,18 @@ export default class JobScrapingService {
   private readonly registry: JobOfferScraperRegistry
   private readonly dedupService: JobOfferDedupService
   private readonly evaluationService: JobAiEvaluationService
+  private readonly enrichmentService: JobCompanyEnrichmentService
 
   constructor(
     registry?: JobOfferScraperRegistry,
     dedupService?: JobOfferDedupService,
-    evaluationService?: JobAiEvaluationService
+    evaluationService?: JobAiEvaluationService,
+    enrichmentService?: JobCompanyEnrichmentService
   ) {
     this.registry = registry ?? new JobOfferScraperRegistry()
     this.dedupService = dedupService ?? new JobOfferDedupService()
     this.evaluationService = evaluationService ?? new JobAiEvaluationService()
+    this.enrichmentService = enrichmentService ?? new JobCompanyEnrichmentService()
   }
 
   /**
@@ -107,6 +111,14 @@ export default class JobScrapingService {
       logger.error({ searchId, error: message }, 'JobScrapingService: AI evaluation failed')
     }
 
+    // Step 6: Trigger company enrichment (fail-open)
+    try {
+      await this.enrichmentService.enrichForSearch(searchId, userId)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error'
+      logger.error({ searchId, error: message }, 'JobScrapingService: company enrichment failed')
+    }
+
     // Update search lastRunAt
     search.lastRunAt = DateTime.now()
     await search.save()
@@ -152,6 +164,7 @@ export default class JobScrapingService {
         const offer = await JobOffer.create({
           searchId,
           title: raw.title,
+          companyName: raw.company || null,
           descriptionRaw: raw.description,
           status: 'new',
           salaryMin: raw.salaryMin,

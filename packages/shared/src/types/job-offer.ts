@@ -40,6 +40,7 @@ export interface JobOffer {
   id: string
   searchId: string
   companyCacheId: string | null
+  companyName: string | null
   title: string
   descriptionRaw: string | null
   status: JobOfferStatus
@@ -56,6 +57,32 @@ export interface JobOffer {
   closingDate: string | null
   contactEmail: string | null
   isRepublished: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export type CompanyType = 'recruitment_agency' | 'hiring_company' | 'consulting' | 'unknown'
+
+export interface CompanyCache {
+  id: string
+  slug: string
+  country: string
+  name: string
+  sector: string | null
+  size: string | null
+  companyType: CompanyType
+  expiresAt: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface AccreditationCache {
+  id: string
+  slug: string
+  country: string
+  isAccredited: boolean
+  source: string | null
+  checkedAt: string
   createdAt: string
   updatedAt: string
 }
