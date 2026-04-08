@@ -66,7 +66,7 @@ export default class JobOffer extends BaseModel {
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   declare updatedAt: DateTime
 
-  @belongsTo(() => JobSearch)
+  @belongsTo(() => JobSearch, { foreignKey: 'searchId' })
   declare search: BelongsTo<typeof JobSearch>
 
   @hasMany(() => JobOfferLink, { foreignKey: 'offerId' })

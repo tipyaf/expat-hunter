@@ -1,9 +1,12 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import JobSearchService from '#services/job_search_service'
+import JobScrapingService from '#services/job_scraping_service'
+import { jobOfferScraperRegistry } from '#scrapers/job_offer_scraper_registry'
 import { createJobSearchValidator, updateJobSearchValidator } from '#validators/job_search_validator'
 
 export default class JobSearchesController {
   private readonly service = new JobSearchService()
+  private readonly scrapingService = new JobScrapingService(jobOfferScraperRegistry)
 
   /**
    * GET /api/job-searches — List user's job search configurations.
@@ -84,18 +87,20 @@ export default class JobSearchesController {
   }
 
   /**
-   * POST /api/job-searches/:id/run — Manually trigger a job search run.
+   * POST /api/job-searches/:id/run — Trigger scraping for a job search.
+   * Delegates to JobScrapingService which runs all platform scrapers,
+   * persists results, runs dedup, and enforces quotas.
    */
   async run({ auth, params, response }: HttpContext) {
     const user = auth.getUserOrFail()
 
     try {
-      const search = await this.service.triggerRun(user.id, params.id)
-      return response.ok({ data: search })
+      const result = await this.scrapingService.runForSearch(params.id, user.id)
+      return response.ok({ data: result })
     } catch (error: any) {
-      if (error.code === 'NOT_FOUND') {
+      if (error.code === 'E_ROW_NOT_FOUND' || error.code === 'NOT_FOUND') {
         return response.notFound({
-          error: { code: 'NOT_FOUND', message: error.message },
+          error: { code: 'NOT_FOUND', message: 'Job search not found' },
         })
       }
       throw error

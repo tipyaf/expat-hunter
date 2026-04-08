@@ -290,3 +290,6 @@ router
   })
   .prefix('/api/job-searches')
   .use(middleware.auth())
+
+// Job offers routes (separate file)
+import('#start/routes/job_offers')
