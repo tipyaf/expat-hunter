@@ -113,18 +113,18 @@ export class SeekJobScraper extends BaseJobOfferScraper {
 
   private extractExternalId(jobLink?: string): string | null {
     if (!jobLink) return null
-    const match = jobLink.match(/\/job\/(\d+)/)
+    const match = /\/job\/(\d+)/.exec(jobLink)
     return match?.[1] ?? null
   }
 
   private parseSalary(salary?: string): { min: number | null; max: number | null; currency: string | null } {
     if (!salary) return { min: null, max: null, currency: null }
 
-    const rangeMatch = salary.match(/\$?([\d,]+)\s*[-–]\s*\$?([\d,]+)/)
+    const rangeMatch = /\$?([\d,]+)\s*[-–]\s*\$?([\d,]+)/.exec(salary)
     if (rangeMatch) {
       return {
-        min: Number.parseInt(rangeMatch[1].replace(/,/g, ''), 10),
-        max: Number.parseInt(rangeMatch[2].replace(/,/g, ''), 10),
+        min: Number.parseInt(rangeMatch[1].replaceAll(',', ''), 10),
+        max: Number.parseInt(rangeMatch[2].replaceAll(',', ''), 10),
         currency: 'NZD',
       }
     }

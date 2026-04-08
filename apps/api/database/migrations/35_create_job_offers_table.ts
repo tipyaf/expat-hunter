@@ -1,6 +1,6 @@
 import { BaseSchema } from '@adonisjs/lucid/schema'
 
-export default class extends BaseSchema {
+export default class CreateJobOffersTable extends BaseSchema {
   protected tableName = 'job_offers'
 
   async up() {

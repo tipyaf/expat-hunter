@@ -6,8 +6,7 @@
  *
  * Reuses anti-detection utilities from BaseScraper via composition.
  */
-import type { RawJobOffer } from '@expat-hunter/shared'
-import type { JobSearchPlatform } from '@expat-hunter/shared'
+import type { RawJobOffer, JobSearchPlatform } from '@expat-hunter/shared'
 
 export interface JobOfferScrapeParams {
   roles: string[]
