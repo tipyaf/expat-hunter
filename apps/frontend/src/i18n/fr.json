@@ -795,6 +795,54 @@
     "email_sent": "Email envoyé",
     "dismiss": "Fermer"
   },
+  "jobOffersPage": {
+    "title": "Offres d'emploi",
+    "subtitle": "Consultez et gérez vos opportunités professionnelles.",
+    "tabs": "Onglets des offres",
+    "tabNew": "Nouvelles",
+    "tabApplied": "Postulées",
+    "tabArchived": "Archivées",
+    "allSearches": "Toutes les recherches",
+    "unknownCompany": "Entreprise inconnue",
+    "republished": "Republié",
+    "crossContact": "Contact trouvé",
+    "score": {
+      "high": "Excellent match",
+      "medium": "Bon match",
+      "low": "Match modéré",
+      "veryLow": "Match faible"
+    },
+    "statuses": {
+      "new": "Nouvelle",
+      "evaluated": "Évaluée",
+      "interested": "Intéressé",
+      "applied": "Postulée",
+      "interview": "Entretien",
+      "offer_received": "Offre reçue",
+      "accepted": "Acceptée",
+      "rejected": "Refusée",
+      "excluded": "Exclue",
+      "expired": "Expirée",
+      "archived": "Archivée",
+      "duplicate": "Doublon",
+      "quota_exceeded": "Quota dépassé"
+    },
+    "emptyState": {
+      "newTitle": "Aucune nouvelle offre",
+      "newDescription": "Configurez une recherche d'emploi pour recevoir des offres automatiquement.",
+      "appliedTitle": "Aucune candidature",
+      "appliedDescription": "Marquez une offre comme 'Postulée' pour suivre vos candidatures ici.",
+      "archivedTitle": "Aucune offre archivée",
+      "archivedDescription": "Les offres exclues ou expirées apparaîtront ici.",
+      "ctaNewSearch": "Créer une recherche",
+      "ctaExploreOffers": "Voir les nouvelles offres"
+    },
+    "pagination": {
+      "prev": "Précédent",
+      "next": "Suivant",
+      "page": "Page {current} sur {total}"
+    }
+  },
   "jobSearch": {
     "pageTitle": "Configuration recherche d'offres",
     "pageSubtitle": "Configurez votre recherche automatisée pour trouver des offres pertinentes sur les plateformes.",

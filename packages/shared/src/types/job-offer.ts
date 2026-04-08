@@ -3,11 +3,17 @@ import type { JobSearchPlatform } from './job-search.js'
 export type JobOfferStatus =
   | 'new'
   | 'evaluated'
+  | 'interested'
   | 'applied'
+  | 'interview'
+  | 'offer_received'
+  | 'accepted'
+  | 'rejected'
+  | 'excluded'
+  | 'expired'
   | 'archived'
   | 'duplicate'
   | 'quota_exceeded'
-  | 'excluded'
 
 export type ExclusionCategory =
   | 'salary'

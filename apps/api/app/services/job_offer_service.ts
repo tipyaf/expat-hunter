@@ -8,14 +8,16 @@ import { OFFER_PAGE_SIZE } from '@expat-hunter/shared'
 import type { JobOfferStatus } from '@expat-hunter/shared'
 import JobOffer from '#models/job_offer'
 import JobSearch from '#models/job_search'
+import db from '@adonisjs/lucid/services/db'
 import logger from '@adonisjs/core/services/logger'
 
 const VALID_OFFER_STATUSES = new Set([
-  'new', 'evaluated', 'applied', 'archived', 'duplicate', 'quota_exceeded',
+  'new', 'evaluated', 'interested', 'applied', 'interview', 'offer_received',
+  'accepted', 'rejected', 'excluded', 'expired', 'archived', 'duplicate', 'quota_exceeded',
 ])
 
 interface ListOffersParams {
-  searchId: string
+  searchId?: string
   userId: string
   status?: string
   page?: number
@@ -30,16 +32,24 @@ export default class JobOfferService {
     data: JobOffer[]
     meta: Record<string, unknown>
   }> {
-    // Verify ownership
-    await this.verifySearchOwnership(params.searchId, params.userId)
-
     const page = Math.max(1, params.page ?? 1)
 
-    const query = JobOffer.query()
-      .where('searchId', params.searchId)
+    let query = JobOffer.query()
       .preload('links')
       .preload('companyCache')
       .orderBy('createdAt', 'desc')
+
+    if (params.searchId) {
+      // Verify ownership for specific search
+      await this.verifySearchOwnership(params.searchId, params.userId)
+      query = query.where('searchId', params.searchId)
+    } else {
+      // List all offers across all user's searches
+      const userSearchIds = await JobSearch.query()
+        .where('userId', params.userId)
+        .select('id')
+      query = query.whereIn('searchId', userSearchIds.map((s) => s.id))
+    }
 
     if (params.status && VALID_OFFER_STATUSES.has(params.status)) {
       query.where('status', params.status)
@@ -87,6 +97,23 @@ export default class JobOfferService {
 
     logger.info({ offerId, status }, 'JobOfferService: status updated')
     return offer
+  }
+
+  /**
+   * Check if a user has any lead contacts at a given company.
+   * Matches by normalized company name (case-insensitive).
+   */
+  async hasCrossContact(userId: string, companyName: string | null): Promise<boolean> {
+    if (!companyName) return false
+
+    const result = await db
+      .from('companies')
+      .join('contacts', 'contacts.company_id', 'companies.id')
+      .where('contacts.user_id', userId)
+      .whereRaw('LOWER(companies.name) = ?', [companyName.toLowerCase()])
+      .first()
+
+    return !!result
   }
 
   /**

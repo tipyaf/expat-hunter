@@ -4,12 +4,34 @@ import type { JobSearchPlatform } from '../types/job-search.js'
 export const JOB_OFFER_STATUSES: readonly JobOfferStatus[] = [
   'new',
   'evaluated',
+  'interested',
   'applied',
+  'interview',
+  'offer_received',
+  'accepted',
+  'rejected',
+  'excluded',
+  'expired',
   'archived',
   'duplicate',
   'quota_exceeded',
-  'excluded',
 ] as const
+
+/**
+ * Tab → status mapping for the /offres page.
+ * Each tab shows offers matching any of the listed statuses.
+ */
+export const NEW_TAB_STATUSES: readonly JobOfferStatus[] = ['new', 'evaluated', 'interested'] as const
+export const APPLIED_TAB_STATUSES: readonly JobOfferStatus[] = ['applied', 'interview', 'offer_received', 'accepted', 'rejected'] as const
+export const ARCHIVED_TAB_STATUSES: readonly JobOfferStatus[] = ['excluded', 'expired', 'archived', 'duplicate', 'quota_exceeded'] as const
+
+export const TAB_STATUS_MAP = {
+  new: NEW_TAB_STATUSES,
+  applied: APPLIED_TAB_STATUSES,
+  archived: ARCHIVED_TAB_STATUSES,
+} as const
+
+export type JobOfferTab = keyof typeof TAB_STATUS_MAP
 
 export const EXCLUSION_CATEGORIES: readonly ExclusionCategory[] = [
   'salary',
