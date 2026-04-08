@@ -10,20 +10,73 @@ import env from '#start/env'
 import type { RawJobOffer } from '@expat-hunter/shared'
 import { BaseJobOfferScraper, type JobOfferScrapeParams } from './base_job_offer_scraper.js'
 
+/**
+ * Shape verified against real Apify actor `websift~seek-job-scraper` responses
+ * (n8n workflow qqGiDvxKJuVcX67s, execution 6738 — 2026-04-05).
+ *
+ * All top-level fields are always present in the response; nested objects
+ * use `?` only where the Apify actor legitimately omits data (e.g.
+ * companyProfile fields are "N/A" or null for unverified advertisers).
+ */
 interface SeekApifyResult {
-  title?: string
-  advertiser?: { name?: string }
-  companyProfile?: { name?: string | null }
-  joblocationInfo?: {
-    displayLocation?: string
-    location?: string
-    area?: string
+  id: string
+  jobLink: string
+  applyLink: string
+  isExternalApply: boolean
+  roleId: string
+  title: string
+  salary: string
+  content: {
+    bulletPoints: string | string[]
+    jobHook: string
+    unEditedContent: string
+    sections: string[]
   }
-  jobLink?: string
-  salary?: string
-  workTypes?: string
-  description?: string
-  emails?: string[]
+  numApplicants: number
+  workArrangements: string
+  emails: string[]
+  workTypes: string
+  classificationInfo: {
+    classification: string
+    subClassification: string
+  }
+  joblocationInfo: {
+    area: string
+    displayLocation: string
+    location: string
+    country: string
+    countryCode: string
+    suburb: string
+  }
+  advertiser: {
+    logo: string
+    id: string
+    name: string
+    isVerified: boolean
+    isPrivate: string
+    registrationDate: string
+  }
+  companyProfile: {
+    id: string | null
+    name: string | null
+    companyNameSlug: string | null
+    overview: string
+    industry: string
+    size: string
+    profile: string
+    website: string
+    numberOfReviews: string
+    rating: string
+    perksAndBenefits: string | null
+  }
+  companyOpenJobs: string
+  companyTags: string[]
+  employerQuestions: string[]
+  employerVideo: string
+  listedAt: string
+  expiresAtUtc: string
+  isVerified: boolean
+  hasRoleRequirements: boolean
 }
 
 const ACTOR_ID = 'websift~seek-job-scraper'
@@ -83,38 +136,28 @@ export class SeekJobScraper extends BaseJobOfferScraper {
     return items.map((item) => this.toRawJobOffer(item, params.country))
   }
 
-  private toRawJobOffer(item: SeekApifyResult, country: string): RawJobOffer {
-    const company = item.companyProfile?.name ?? item.advertiser?.name ?? 'Unknown'
-    const location =
-      item.joblocationInfo?.displayLocation ??
-      item.joblocationInfo?.location ??
-      item.joblocationInfo?.area ??
-      country
+  private toRawJobOffer(item: SeekApifyResult, _country: string): RawJobOffer {
+    const company = item.companyProfile.name ?? item.advertiser.name
+    const location = item.joblocationInfo.displayLocation || item.joblocationInfo.location
     const salary = this.parseSalary(item.salary)
-    const contactEmail = item.emails?.[0] ?? null
+    const contactEmail = item.emails.length > 0 ? item.emails[0] : null
 
     return {
-      title: item.title ?? 'Untitled',
+      title: item.title,
       company,
       location,
-      url: item.jobLink ?? '',
+      url: item.jobLink,
       platform: 'seek',
-      externalId: this.extractExternalId(item.jobLink),
+      externalId: item.id,
       salaryMin: salary.min,
       salaryMax: salary.max,
       currency: salary.currency,
-      closingDate: null,
-      description: item.description ?? null,
-      remoteType: this.detectRemoteType(item.workTypes),
+      closingDate: item.expiresAtUtc,
+      description: item.content.unEditedContent,
+      remoteType: this.detectRemoteType(item.workArrangements, item.workTypes),
       contactEmail,
-      applyUrl: item.jobLink ?? null,
+      applyUrl: item.applyLink,
     }
-  }
-
-  private extractExternalId(jobLink?: string): string | null {
-    if (!jobLink) return null
-    const match = /\/job\/(\d+)/.exec(jobLink)
-    return match?.[1] ?? null
   }
 
   private parseSalary(salary?: string): { min: number | null; max: number | null; currency: string | null } {
@@ -132,11 +175,10 @@ export class SeekJobScraper extends BaseJobOfferScraper {
     return { min: null, max: null, currency: null }
   }
 
-  private detectRemoteType(workTypes?: string): RawJobOffer['remoteType'] {
-    if (!workTypes) return null
-    const lower = workTypes.toLowerCase()
-    if (lower.includes('remote')) return 'remote'
-    if (lower.includes('hybrid')) return 'hybrid'
+  private detectRemoteType(workArrangements: string, workTypes: string): RawJobOffer['remoteType'] {
+    const combined = `${workArrangements} ${workTypes}`.toLowerCase()
+    if (combined.includes('remote')) return 'remote'
+    if (combined.includes('hybrid')) return 'hybrid'
     return 'onsite'
   }
 }

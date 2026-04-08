@@ -33,17 +33,18 @@ test.group('LinkedInJobScraper', (group) => {
 
   test('returns RawJobOffer[] from Apify LinkedIn actor', async ({ assert }) => {
     // ORACLE: LinkedIn result → RawJobOffer with platform='linkedin'
+    // Mock data mirrors real Apify `ivanvs~linkedin-job-scraper` response shape
     const mockItems = [
       {
+        id: 123456,
         title: 'Backend Engineer',
-        companyName: 'GlobalCorp',
-        location: 'Auckland, New Zealand',
+        description: 'Backend role with Node.js',
         url: 'https://linkedin.com/jobs/view/123456',
-        jobId: '123456',
-        salary: '$100,000 - $140,000',
-        description: 'Backend role',
-        workType: 'Remote',
         applyUrl: 'https://linkedin.com/jobs/apply/123456',
+        company: { name: 'GlobalCorp', url: 'https://globalcorp.com' },
+        location: { city: 'Auckland', country: 'New Zealand' },
+        datePosted: '2026-04-01',
+        isClosed: false,
       },
     ]
 
@@ -64,11 +65,13 @@ test.group('LinkedInJobScraper', (group) => {
     assert.equal(result[0].title, 'Backend Engineer')
     assert.equal(result[0].company, 'GlobalCorp')
     assert.equal(result[0].externalId, '123456')
-    // ORACLE: "$100,000 - $140,000" → min=100000, max=140000
-    assert.equal(result[0].salaryMin, 100000)
-    assert.equal(result[0].salaryMax, 140000)
-    assert.equal(result[0].remoteType, 'remote')
+    assert.equal(result[0].location, 'Auckland, New Zealand')
+    // LinkedIn actor does not return salary data
+    assert.isNull(result[0].salaryMin)
+    assert.isNull(result[0].salaryMax)
+    assert.isNull(result[0].remoteType)
     assert.equal(result[0].applyUrl, 'https://linkedin.com/jobs/apply/123456')
+    assert.equal(result[0].description, 'Backend role with Node.js')
   })
 
   test('throws error when Apify returns error', async ({ assert }) => {

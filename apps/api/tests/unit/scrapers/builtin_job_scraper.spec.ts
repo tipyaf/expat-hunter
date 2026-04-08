@@ -26,17 +26,24 @@ test.group('BuiltInJobScraper', (group) => {
 
   test('returns RawJobOffer[] from Apify BuiltIn actor', async ({ assert }) => {
     // ORACLE: BuiltIn result → RawJobOffer with platform='builtin'
+    // Mock data mirrors real Apify `shahidirfan~builtin-jobs-scraper` response shape
     const mockItems = [
       {
         title: 'React Engineer',
-        company_name: 'TechStartup Inc',
-        location: 'San Francisco, CA',
-        url: 'https://builtin.com/job/react-engineer-456',
-        id: '456',
-        salary: '$130,000 - $170,000',
-        description: 'Join our team',
-        remote_type: 'Hybrid',
-        apply_url: 'https://builtin.com/apply/456',
+        company: 'TechStartup Inc',
+        category: 'Software Engineering',
+        location: 'Auckland, Auckland, NZL',
+        date_posted: '2026-03-16',
+        description_html: '<p>Join our team</p>',
+        description_text: 'Join our team',
+        hiring_remote_in: '',
+        workplace_type: 'Hybrid',
+        salary_range_short: '$130,000 - $170,000',
+        seniority: 'Mid-Level',
+        workplace_type_enum: 'HYBRID',
+        company_overview: 'A tech startup',
+        url: 'https://builtin.com/job/react-engineer/8381456',
+        source: 'builtin.com',
       },
     ]
 
@@ -49,18 +56,21 @@ test.group('BuiltInJobScraper', (group) => {
     const scraper = new BuiltInJobScraper()
     Object.defineProperty(scraper, 'apiToken', { value: 'test-token', writable: false })
 
-    const result = await scraper.scrape({ roles: ['React Engineer'], country: 'US' })
+    const result = await scraper.scrape({ roles: ['React Engineer'], country: 'NZL' })
 
     assert.isArray(result)
     assert.lengthOf(result, 1)
     assert.equal(result[0].platform, 'builtin')
     assert.equal(result[0].title, 'React Engineer')
     assert.equal(result[0].company, 'TechStartup Inc')
-    assert.equal(result[0].externalId, '456')
+    // ORACLE: URL ends with "8381456" → externalId = "BN-8381456"
+    assert.equal(result[0].externalId, 'BN-8381456')
     // ORACLE: "$130,000 - $170,000" → min=130000, max=170000
     assert.equal(result[0].salaryMin, 130000)
     assert.equal(result[0].salaryMax, 170000)
     assert.equal(result[0].remoteType, 'hybrid')
+    assert.equal(result[0].description, 'Join our team')
+    assert.equal(result[0].location, 'Auckland, Auckland, NZL')
   })
 
   test('throws error when Apify returns error', async ({ assert }) => {

@@ -10,20 +10,33 @@ import env from '#start/env'
 import type { RawJobOffer } from '@expat-hunter/shared'
 import { BaseJobOfferScraper, type JobOfferScrapeParams } from './base_job_offer_scraper.js'
 
+/**
+ * Shape verified against real Apify actor `ivanvs~linkedin-job-scraper` responses
+ * (n8n workflow 8B9RoyIysvEJ9vCy — code nodes access these fields).
+ *
+ * Fields use `?` because this is an external API we don't control —
+ * recent executions all returned `{ title: "No jobs found" }` with no
+ * other fields, proving optional is correct here.
+ */
 interface LinkedInApifyResult {
+  id?: number
   title?: string
-  companyName?: string
-  location?: string
-  url?: string
-  jobId?: string
-  salary?: string
   description?: string
-  workType?: string
+  url?: string
   applyUrl?: string
-  postedAt?: string
+  company?: {
+    name?: string
+    url?: string
+  }
+  location?: {
+    city?: string
+    country?: string
+  }
+  datePosted?: string
+  isClosed?: boolean
 }
 
-const ACTOR_ID = 'apify~linkedin-jobs-scraper'
+const ACTOR_ID = 'ivanvs~linkedin-job-scraper'
 
 export class LinkedInJobScraper extends BaseJobOfferScraper {
   readonly name = 'linkedin-jobs'
@@ -56,9 +69,13 @@ export class LinkedInJobScraper extends BaseJobOfferScraper {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          searchTerms: [keywords],
+          keywords,
           location: locationFilter,
-          maxResults,
+          maxRecords: maxResults,
+          datePosted: '1 week',
+          employmentTypes: ['F', 'T'],
+          extractCompanyData: false,
+          jobIds: [],
         }),
       }
     )
@@ -74,46 +91,25 @@ export class LinkedInJobScraper extends BaseJobOfferScraper {
   }
 
   private toRawJobOffer(item: LinkedInApifyResult, country: string): RawJobOffer {
-    const salary = this.parseSalary(item.salary)
+    const location = item.location
+      ? [item.location.city, item.location.country].filter(Boolean).join(', ')
+      : country
 
     return {
       title: item.title ?? 'Untitled',
-      company: item.companyName ?? 'Unknown',
-      location: item.location ?? country,
+      company: item.company?.name ?? 'Unknown',
+      location,
       url: item.url ?? '',
       platform: 'linkedin',
-      externalId: item.jobId ?? null,
-      salaryMin: salary.min,
-      salaryMax: salary.max,
-      currency: salary.currency,
+      externalId: item.id != null ? String(item.id) : null,
+      salaryMin: null,
+      salaryMax: null,
+      currency: null,
       closingDate: null,
       description: item.description ?? null,
-      remoteType: this.detectRemoteType(item.workType),
+      remoteType: null,
       contactEmail: null,
       applyUrl: item.applyUrl ?? null,
     }
-  }
-
-  private parseSalary(salary?: string): { min: number | null; max: number | null; currency: string | null } {
-    if (!salary) return { min: null, max: null, currency: null }
-
-    const rangeMatch = /\$?([\d,]+)\s*[-–]\s*\$?([\d,]+)/.exec(salary)
-    if (rangeMatch) {
-      return {
-        min: Number.parseInt(rangeMatch[1].replaceAll(',', ''), 10),
-        max: Number.parseInt(rangeMatch[2].replaceAll(',', ''), 10),
-        currency: 'USD',
-      }
-    }
-
-    return { min: null, max: null, currency: null }
-  }
-
-  private detectRemoteType(workType?: string): RawJobOffer['remoteType'] {
-    if (!workType) return null
-    const lower = workType.toLowerCase()
-    if (lower.includes('remote')) return 'remote'
-    if (lower.includes('hybrid')) return 'hybrid'
-    return 'onsite'
   }
 }
