@@ -32,6 +32,22 @@ export {
 export type { PlaceholderContactName } from './constants/contacts'
 export { PLACEHOLDER_CONTACT_NAMES } from './constants/contacts'
 
+// Job offers
+export type {
+  RawJobOffer,
+  JobOffer,
+  JobOfferLink,
+  JobOfferStatus,
+  RemoteType,
+} from './types/job-offer'
+export {
+  JOB_OFFER_STATUSES,
+  JOB_OFFER_PLATFORMS,
+  REMOTE_TYPES,
+  FREE_MAX_OFFERS,
+  OFFER_PAGE_SIZE,
+} from './constants/job-offer'
+
 // Job search
 export type {
   JobSearch,

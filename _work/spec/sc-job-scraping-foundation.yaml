@@ -1,0 +1,52 @@
+# Spec overlay — job-scraping-foundation
+# Created: 2026-04-08
+
+overlay:
+  story_id: "job-scraping-foundation"
+  feature: "job-scraping-pipeline"
+
+  schema_changes:
+    - table: "job_offers"
+      type: "create"
+      columns:
+        - "id uuid PK"
+        - "search_id FK NOT NULL → job_searches"
+        - "company_cache_id FK nullable → company_caches"
+        - "title varchar(500) NOT NULL"
+        - "description_raw text"
+        - "status varchar(20) default 'new'"
+        - "relevance_score integer"
+        - "salary_min integer"
+        - "salary_max integer"
+        - "salary_currency varchar(5)"
+        - "location varchar(255)"
+        - "remote_type varchar(10)"
+        - "publication_dates jsonb default '[]'"
+        - "closing_date timestamp"
+        - "contact_email varchar(255)"
+        - "is_republished boolean default false"
+        - "created_at timestamp"
+        - "updated_at timestamp"
+    - table: "job_offer_links"
+      type: "create"
+      columns:
+        - "id uuid PK"
+        - "offer_id FK NOT NULL → job_offers"
+        - "platform varchar(30) NOT NULL"
+        - "url varchar(1000) NOT NULL"
+        - "apply_url varchar(1000)"
+        - "external_id varchar(255)"
+        - "scraped_at timestamp NOT NULL"
+      indexes:
+        - "unique(platform, external_id) WHERE external_id IS NOT NULL"
+
+  new_types:
+    - "RawJobOffer"
+    - "JobOffer"
+    - "JobOfferLink"
+    - "JobOfferStatus"
+
+  new_constants:
+    - "JOB_OFFER_STATUSES"
+    - "JOB_OFFER_PLATFORMS"
+    - "FREE_MAX_OFFERS = 5"
