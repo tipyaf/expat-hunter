@@ -708,18 +708,40 @@ features:
     validated_at: "2026-04-08"
     notes: "Global CompanyCache keyed by (slug, country) — location-aware dedup. TTL 365 days. AccreditationCache for NZ/AU. Slug normalization strips suffixes. company_type enum. Fail-open. E11. L (5 pts). 16 ACs. 27 unit + 9 functional tests. 0 SonarQube issues. Shortcut sc-869."
 
-  # --- E12: Interface Offres ---
+  # --- E12: Interface Offres (split into 3 stories) ---
 
-  - id: "job-offers-page"
-    name: "Job Offers Page"
+  - id: "collapsible-sidebar"
+    name: "Collapsible Sidebar"
     priority: "must-have"
-    status: "pending"
+    status: "building"
     cycles: 0
-    story_file: ""
-    depends_on: ["job-ai-evaluation", "job-company-enrichment"]
+    story_file: "specs/stories/collapsible-sidebar.yaml"
+    depends_on: []
+    started_at: "2026-04-08"
+    validated_at: ""
+    notes: "E12 S1. M (3 pts). Refactor flat nav → 4 collapsible groups. localStorage persistence. Auto-open active group. Shortcut sc-883."
+
+  - id: "job-offers-list-page"
+    name: "Job Offers List Page"
+    priority: "must-have"
+    status: "refined"
+    cycles: 0
+    story_file: "specs/stories/job-offers-list-page.yaml"
+    depends_on: ["collapsible-sidebar", "job-ai-evaluation", "job-company-enrichment"]
     started_at: ""
     validated_at: ""
-    notes: "3-tab layout (Nouvelles/Postulées/Archivées). Offer cards with AI badges. Detail page with company panel. Sidebar redesign with collapsible menus + flyout. E12."
+    notes: "E12 S2. L (5 pts). /offres with 3 tabs + JobOfferCard + PATCH status API + cross-contacts API. Extends JobOfferStatus. Shortcut sc-884."
+
+  - id: "job-offer-detail-page"
+    name: "Job Offer Detail Page"
+    priority: "must-have"
+    status: "refined"
+    cycles: 0
+    story_file: "specs/stories/job-offer-detail-page.yaml"
+    depends_on: ["job-offers-list-page"]
+    started_at: ""
+    validated_at: ""
+    notes: "E12 S3. L (5 pts). /offres/:id with company panel, AI eval, editable advice, ExclusionModal, cross-pipeline badges. Shortcut sc-885."
 
   # --- E13: Candidature ---
 
@@ -729,7 +751,7 @@ features:
     status: "pending"
     cycles: 0
     story_file: ""
-    depends_on: ["job-offers-page", "candidate-profile"]
+    depends_on: ["job-offer-detail-page", "candidate-profile"]
     started_at: ""
     validated_at: ""
     notes: "Hybrid: Google Docs API (recommended) + local DOCX (alternative). Max 7 AI-targeted replacements. Language deduced from country. E13."

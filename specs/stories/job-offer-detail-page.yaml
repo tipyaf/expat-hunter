@@ -1,0 +1,199 @@
+# ============================================================================
+# Story: job-offer-detail-page
+# Feature: Job Offers Page (E12) — Story 3/3
+# Status: refined
+# Estimate: L (5 points)
+# ============================================================================
+
+story:
+  id: "job-offer-detail-page"
+  title: "Job Offer Detail Page — Full view + exclusion modal"
+  epic: "E12 — Job Offers Page"
+  shortcut_id: 885
+  estimate: 5
+  priority: "must-have"
+  type: "feature"
+  area: "fullstack"
+  depends_on:
+    - "job-offers-list-page"
+
+  description: |
+    Build /offres/:id detail page with split layout (2/3 offer description +
+    1/3 company enrichment panel). AI evaluation section with score progress
+    bar, match summary, selection reason, and editable application advice.
+    ExclusionModal with 7 structured categories + free text. Cross-pipeline
+    badges. Status dropdown. Action buttons linking to future /candidature
+    page. Expired/excluded banners. Responsive: stacked on mobile, split on
+    desktop.
+
+  scope:
+    files_to_create:
+      - "apps/frontend/src/app/offres/[id]/page.tsx"
+      - "apps/frontend/src/components/job-offers/job-offer-detail-header.tsx"
+      - "apps/frontend/src/components/job-offers/job-offer-company-panel.tsx"
+      - "apps/frontend/src/components/job-offers/job-offer-ai-evaluation.tsx"
+      - "apps/frontend/src/components/job-offers/exclusion-modal.tsx"
+      - "apps/frontend/src/components/job-offers/job-offer-actions-bar.tsx"
+      - "apps/frontend/src/components/job-offers/score-progress-bar.tsx"
+      - "apps/frontend/src/components/job-offers/cross-pipeline-badge.tsx"
+      - "apps/frontend/src/hooks/use-job-offer-detail.ts"
+
+    files_to_modify:
+      - "apps/frontend/src/lib/job-offers-api.ts"  # Add detail fetch, exclude, updateAdvice
+      - "apps/frontend/src/i18n/en.json"  # Detail page labels
+      - "apps/frontend/src/i18n/fr.json"  # Detail page labels
+
+    files_excluded:
+      - "apps/frontend/src/app/offres/[id]/candidature/**"  # E13 scope
+      - "apps/api/**"  # Backend already has GET /:id, POST /:id/exclude, PUT /:id/advice
+
+  acceptance_criteria:
+    # --- FUNCTIONAL ---
+    - id: "AC-FUNC-JOD-01"
+      type: "FUNC"
+      description: "Given a user visits /offres/:id / When the page loads / Then the full offer is displayed with title, description, dates, salary, platform links"
+      verify: "grep -rn 'data-testid.*job-offer-detail' apps/frontend/src/app/offres/\\[id\\]/ apps/frontend/src/components/job-offers/job-offer-detail-header.tsx"
+      tier: 1
+
+    - id: "AC-FUNC-JOD-02"
+      type: "FUNC"
+      description: "Given an offer with company enrichment / When detail page loads / Then the company panel shows: name, sector, size, company type, accreditation badge"
+      verify: "grep -rn 'data-testid.*job-offer-detail-company-panel\\|companyPanel\\|sector\\|accredit' apps/frontend/src/components/job-offers/job-offer-company-panel.tsx"
+      tier: 1
+
+    - id: "AC-FUNC-JOD-03"
+      type: "FUNC"
+      description: "Given an offer with AI evaluation / When detail page loads / Then score progress bar, match summary, selection reason, and application advice are displayed"
+      verify: "grep -rn 'data-testid.*job-offer-detail-score\\|match-summary\\|advice' apps/frontend/src/components/job-offers/job-offer-ai-evaluation.tsx"
+      tier: 1
+
+    - id: "AC-FUNC-JOD-04"
+      type: "FUNC"
+      description: "Given the application advice section / When user clicks 'Modifier' / Then a textarea replaces the text and a Save button appears"
+      verify: "grep -rn 'data-testid.*advice-edit-button\\|advice-save-button\\|isEditing\\|textarea' apps/frontend/src/components/job-offers/job-offer-ai-evaluation.tsx"
+      tier: 1
+
+    - id: "AC-FUNC-JOD-05"
+      type: "FUNC"
+      description: "Given the user saves modified advice / When Save is clicked / Then PUT /api/job-offers/:id/advice is called and the advice updates"
+      verify: "grep -rn 'updateAdvice\\|PUT.*advice\\|advice.*save' apps/frontend/src/lib/job-offers-api.ts apps/frontend/src/components/job-offers/job-offer-ai-evaluation.tsx"
+      tier: 1
+
+    - id: "AC-FUNC-JOD-06"
+      type: "FUNC"
+      description: "Given the user clicks 'Exclure cette offre' / When the ExclusionModal opens / Then it shows 7 category options in a dropdown and a free-text reason field"
+      verify: "grep -rn 'data-testid.*exclusion-modal\\|exclusion-category-select\\|exclusion-reason-input' apps/frontend/src/components/job-offers/exclusion-modal.tsx"
+      tier: 1
+
+    - id: "AC-FUNC-JOD-07"
+      type: "FUNC"
+      description: "Given the ExclusionModal / When user confirms exclusion / Then POST /api/job-offers/:id/exclude is called with category + reason"
+      verify: "grep -rn 'exclude.*api\\|POST.*exclude\\|onConfirm.*category.*reason' apps/frontend/src/components/job-offers/exclusion-modal.tsx apps/frontend/src/lib/job-offers-api.ts"
+      tier: 1
+
+    - id: "AC-FUNC-JOD-08"
+      type: "FUNC"
+      description: "Given the ExclusionModal / When rendered / Then it has 7 categories: salary, sector, seniority, company_type, location, role_mismatch, other"
+      verify: "grep -rn 'salary\\|sector\\|seniority\\|company_type\\|location\\|role_mismatch\\|other' apps/frontend/src/components/job-offers/exclusion-modal.tsx | wc -l | xargs test 7 -le"
+      tier: 1
+
+    - id: "AC-FUNC-JOD-09"
+      type: "FUNC"
+      description: "Given an offer where the user has a lead contact at the same company / When the detail page loads / Then a cross-pipeline badge 'Vous avez un contact chez [company]' is shown"
+      verify: "grep -rn 'cross.*pipeline\\|cross.*contact\\|data-testid.*cross-pipeline-badge' apps/frontend/src/components/job-offers/cross-pipeline-badge.tsx"
+      tier: 1
+
+    - id: "AC-FUNC-JOD-10"
+      type: "FUNC"
+      description: "Given the score progress bar / When rendered / Then it uses role='progressbar' with aria-valuenow and aria-valuemax"
+      verify: "grep -rn 'role.*progressbar\\|aria-valuenow\\|aria-valuemax' apps/frontend/src/components/job-offers/score-progress-bar.tsx"
+      tier: 1
+
+    - id: "AC-FUNC-JOD-11"
+      type: "FUNC"
+      description: "Given an expired offer / When the detail page loads / Then a warning banner shows 'Cette offre est expirée' with a manual reactivation button"
+      verify: "grep -rn 'expir.*banner\\|expired.*warning\\|reactivat' apps/frontend/src/app/offres/\\[id\\]/page.tsx apps/frontend/src/components/job-offers/job-offer-detail-header.tsx"
+      tier: 1
+
+    - id: "AC-FUNC-JOD-12"
+      type: "FUNC"
+      description: "Given an excluded offer / When the detail page loads / Then a grey banner shows 'Vous avez exclu cette offre' with the exclusion reason and an 'Annuler l'exclusion' button"
+      verify: "grep -rn 'excluded.*banner\\|exclu.*raison\\|cancel.*exclusion\\|annuler.*exclusion' apps/frontend/src/app/offres/\\[id\\]/page.tsx apps/frontend/src/components/job-offers/job-offer-detail-header.tsx"
+      tier: 1
+
+    - id: "AC-FUNC-JOD-13"
+      type: "FUNC"
+      description: "Given the action buttons / When rendered / Then 'Adapter mon CV', 'Générer une lettre', 'Postuler' link to /offres/:id/candidature with section query param"
+      verify: "grep -rn 'candidature\\?section=\\|adapt.*cv\\|generer.*lettre\\|postuler' apps/frontend/src/components/job-offers/job-offer-actions-bar.tsx"
+      tier: 1
+
+    - id: "AC-FUNC-JOD-14"
+      type: "FUNC"
+      description: "Given the detail page layout / When viewed on desktop (>1024px) / Then a 2/3 + 1/3 split layout is used"
+      verify: "grep -rn 'lg:w-2/3\\|lg:w-1/3\\|grid-cols\\|lg:grid' apps/frontend/src/app/offres/\\[id\\]/page.tsx"
+      tier: 1
+
+    # --- SECURITY ---
+    - id: "AC-SEC-JOD-01"
+      type: "SEC"
+      description: "Given the ExclusionModal / When rendering free-text reason / Then user input is sanitized (no raw HTML injection)"
+      verify: "grep -rn 'sanitize\\|dangerouslySetInnerHTML' apps/frontend/src/components/job-offers/exclusion-modal.tsx | grep -v 'dangerouslySetInnerHTML' || echo 'PASS: no dangerouslySetInnerHTML'"
+      tier: 1
+
+    # --- BEST PRACTICES ---
+    - id: "AC-BP-JOD-01"
+      type: "BP"
+      description: "Given the ExclusionModal / When open / Then it uses role='dialog', aria-modal='true', focus trap, and Escape to close"
+      verify: "grep -rn 'role.*dialog\\|aria-modal\\|focus.*trap\\|Escape\\|onKeyDown' apps/frontend/src/components/job-offers/exclusion-modal.tsx"
+      tier: 1
+
+    - id: "AC-BP-JOD-02"
+      type: "BP"
+      description: "Given the breadcrumb / When rendered / Then 'Retour aux offres' links back to /offres"
+      verify: "grep -rn 'Retour.*offres\\|back.*offres\\|href.*offres' apps/frontend/src/app/offres/\\[id\\]/page.tsx apps/frontend/src/components/job-offers/job-offer-detail-header.tsx"
+      tier: 1
+
+  test_intentions:
+    - intent: "Detail page renders all offer fields from API response"
+      type: "unit"
+      oracle: "Given offer with title='Senior FE', salary='120k-140k' → all fields rendered"
+
+    - intent: "Company panel renders enrichment data with correct badges"
+      type: "unit"
+      oracle: "companyType='accredited_employer' → green 'Accréditée immigration' badge; companyType='recruitment_agency' → amber 'Agence recrutement' badge"
+
+    - intent: "AI evaluation section displays score bar and summaries"
+      type: "unit"
+      oracle: "score=87 → progress bar at 87%, match summary text, selection reason text present"
+
+    - intent: "Application advice edit mode toggles correctly"
+      type: "unit"
+      oracle: "Click 'Modifier' → textarea visible with current advice text + Save button; Click 'Sauvegarder' → PUT called + textarea hidden"
+
+    - intent: "ExclusionModal opens with correct categories and submits"
+      type: "unit"
+      oracle: "7 categories in dropdown; on confirm with category='salary', reason='Below 120k' → onConfirm called with both values"
+
+    - intent: "ExclusionModal has focus trap and closes on Escape"
+      type: "unit"
+      oracle: "Press Escape → modal closes; Tab cycles within modal"
+
+    - intent: "Expired offer shows warning banner"
+      type: "unit"
+      oracle: "offer.status='expired' → warning banner visible with reactivation button"
+
+    - intent: "Excluded offer shows grey banner with reason"
+      type: "unit"
+      oracle: "offer.status='excluded' + exclusion.reason='Salary too low' → grey banner with reason text + cancel button"
+
+    - intent: "Cross-pipeline badge renders when hasCrossContact is true"
+      type: "unit"
+      oracle: "hasCrossContact=true, company='Acme' → badge 'Vous avez un contact chez Acme' visible"
+
+    - intent: "Action buttons link to /offres/:id/candidature with correct section params"
+      type: "unit"
+      oracle: "'Adapter mon CV' → href includes 'section=cv'; 'Générer une lettre' → 'section=cover-letter'; 'Postuler' → 'section=email'"
+
+    - intent: "Responsive layout: stacked on mobile, split on desktop"
+      type: "unit"
+      oracle: "At viewport < 768px → single column; At viewport > 1024px → 2/3 + 1/3 grid"

@@ -1,0 +1,203 @@
+# ============================================================================
+# Story: job-offers-list-page
+# Feature: Job Offers Page (E12) — Story 2/3
+# Status: refined
+# Estimate: L (5 points)
+# ============================================================================
+
+story:
+  id: "job-offers-list-page"
+  title: "Job Offers List Page — 3 tabs + cards + status API"
+  epic: "E12 — Job Offers Page"
+  shortcut_id: 884
+  estimate: 5
+  priority: "must-have"
+  type: "feature"
+  area: "fullstack"
+  depends_on:
+    - "collapsible-sidebar"
+    - "job-ai-evaluation"
+    - "job-company-enrichment"
+
+  description: |
+    Build the /offres page with 3 tabs (Nouvelles/Postulées/Archivées), the
+    JobOfferCard component, and the PATCH /api/job-offers/:id/status endpoint.
+    Each tab filters offers by status group. Cards are dense and scannable with
+    AI score badge, company info, match summary, status dropdown, and action
+    buttons. Pagination, search filter, sort, and empty/loading/error states.
+    Extends the shared JobOfferStatus type with new statuses: interested,
+    interview, offer_received, accepted, rejected, expired.
+
+  scope:
+    files_to_create:
+      - "apps/frontend/src/app/offres/page.tsx"
+      - "apps/frontend/src/components/job-offers/job-offer-card.tsx"
+      - "apps/frontend/src/components/job-offers/job-offers-tabs.tsx"
+      - "apps/frontend/src/components/job-offers/job-offer-status-select.tsx"
+      - "apps/frontend/src/components/job-offers/job-offers-empty-state.tsx"
+      - "apps/frontend/src/components/job-offers/job-offer-card-skeleton.tsx"
+      - "apps/frontend/src/hooks/use-job-offers.ts"
+      - "apps/frontend/src/lib/job-offers-api.ts"
+
+    files_to_modify:
+      - "apps/api/app/controllers/job_offers_controller.ts"  # Add updateStatus method
+      - "apps/api/app/services/job_offer_service.ts"  # Add updateStatus + cross-contacts query
+      - "apps/api/app/validators/job_offer_validator.ts"  # Add updateStatus validator
+      - "apps/api/start/routes/job_offers.ts"  # Add PATCH /:id/status + GET /:id/cross-contacts
+      - "packages/shared/src/types/job-offer.ts"  # Extend JobOfferStatus union
+      - "packages/shared/src/constants/job-offer.ts"  # Update JOB_OFFER_STATUSES array + add tab mappings
+      - "packages/shared/src/index.ts"  # Export new constants
+      - "apps/frontend/src/i18n/en.json"  # Job offer labels
+      - "apps/frontend/src/i18n/fr.json"  # Job offer labels
+
+    files_excluded:
+      - "apps/frontend/src/app/offres/[id]/**"  # Detail page is S3
+      - "apps/api/app/models/**"  # No model changes needed
+
+  acceptance_criteria:
+    # --- FUNCTIONAL ---
+    - id: "AC-FUNC-JOL-01"
+      type: "FUNC"
+      description: "Given a user visits /offres / When the page loads / Then 3 tabs are visible: Nouvelles, Postulées, Archivées with offer counts"
+      verify: "grep -rn 'data-testid.*job-offers-tab' apps/frontend/src/app/offres/ apps/frontend/src/components/job-offers/"
+      tier: 1
+
+    - id: "AC-FUNC-JOL-02"
+      type: "FUNC"
+      description: "Given tab 'Nouvelles' is active / When offers are loaded / Then only offers with status new, evaluated, or interested are shown"
+      verify: "grep -rn 'new.*interested\\|TAB_STATUS_MAP\\|NEW_TAB_STATUSES' apps/frontend/src/components/job-offers/ packages/shared/src/constants/job-offer.ts"
+      tier: 1
+
+    - id: "AC-FUNC-JOL-03"
+      type: "FUNC"
+      description: "Given a JobOfferCard / When rendered / Then it displays: title, company name, AI match summary, relevance score (color-coded), publication date, salary (if available), platform links"
+      verify: "grep -rn 'data-testid.*job-offer-card-title\\|job-offer-card-score\\|job-offer-card-company' apps/frontend/src/components/job-offers/job-offer-card.tsx"
+      tier: 1
+
+    - id: "AC-FUNC-JOL-04"
+      type: "FUNC"
+      description: "Given a relevance score / When displayed / Then color matches: 80-100% green, 60-79% amber, 40-59% blue, <40% grey"
+      verify: "grep -rn 'scoreColor\\|SCORE_THRESHOLDS\\|22C55E\\|F59E0B\\|3B82F6\\|64748b' apps/frontend/src/components/job-offers/job-offer-card.tsx"
+      tier: 1
+
+    - id: "AC-FUNC-JOL-05"
+      type: "FUNC"
+      description: "Given a user changes offer status via dropdown / When a new status is selected / Then PATCH /api/job-offers/:id/status is called and the card updates optimistically"
+      verify: "curl -s -o /dev/null -w '%{http_code}' -X PATCH http://localhost:3333/api/job-offers/1/status -H 'Content-Type: application/json' -H 'Authorization: Bearer $TOKEN' -d '{\"status\":\"interested\"}'"
+      tier: 2
+
+    - id: "AC-FUNC-JOL-06"
+      type: "FUNC"
+      description: "Given more than 20 offers in a tab / When the page loads / Then pagination controls appear (previous/next)"
+      verify: "grep -rn 'pagination\\|page.*next\\|page.*prev\\|Pagination' apps/frontend/src/app/offres/ apps/frontend/src/components/job-offers/"
+      tier: 1
+
+    - id: "AC-FUNC-JOL-07"
+      type: "FUNC"
+      description: "Given a user has multiple job searches / When viewing offers / Then a dropdown allows filtering by search"
+      verify: "grep -rn 'data-testid.*job-offers-search-filter\\|search.*filter\\|searchId' apps/frontend/src/app/offres/ apps/frontend/src/components/job-offers/"
+      tier: 1
+
+    - id: "AC-FUNC-JOL-08"
+      type: "FUNC"
+      description: "Given an offer has been republished / When displayed / Then a republication badge shows with dates"
+      verify: "grep -rn 'republish\\|isRepublished\\|republication.*badge\\|data-testid.*republication' apps/frontend/src/components/job-offers/job-offer-card.tsx"
+      tier: 1
+
+    - id: "AC-FUNC-JOL-09"
+      type: "FUNC"
+      description: "Given an offer where the user has a lead contact at the same company / When displayed / Then a cross-contact badge appears"
+      verify: "grep -rn 'cross.*contact\\|has_cross_contact\\|data-testid.*cross-contact' apps/frontend/src/components/job-offers/job-offer-card.tsx"
+      tier: 1
+
+    - id: "AC-FUNC-JOL-10"
+      type: "FUNC"
+      description: "Given no offers in a tab / When rendered / Then an empty state illustration + text + CTA is shown"
+      verify: "grep -rn 'data-testid.*job-offers-empty-state\\|EmptyState' apps/frontend/src/components/job-offers/job-offers-empty-state.tsx"
+      tier: 1
+
+    - id: "AC-FUNC-JOL-11"
+      type: "FUNC"
+      description: "Given offers are loading / When the page renders / Then 3 skeleton cards with pulse animation appear"
+      verify: "grep -rn 'skeleton\\|pulse\\|loading\\|Skeleton' apps/frontend/src/components/job-offers/job-offer-card-skeleton.tsx"
+      tier: 1
+
+    - id: "AC-FUNC-JOL-12"
+      type: "FUNC"
+      description: "Given the shared types / When JobOfferStatus is checked / Then it includes: new, evaluated, interested, applied, interview, offer_received, accepted, rejected, excluded, expired, archived, duplicate, quota_exceeded"
+      verify: "grep -c 'interested\\|interview\\|offer_received\\|accepted\\|rejected\\|expired' packages/shared/src/types/job-offer.ts | xargs test 6 -le"
+      tier: 1
+
+    # --- API ---
+    - id: "AC-FUNC-JOL-13"
+      type: "FUNC"
+      description: "Given PATCH /api/job-offers/:id/status with valid status / When called / Then the offer status is updated and 200 returned"
+      verify: "grep -rn 'updateStatus\\|patch.*status' apps/api/app/controllers/job_offers_controller.ts apps/api/app/services/job_offer_service.ts apps/api/start/routes/job_offers.ts"
+      tier: 1
+
+    - id: "AC-FUNC-JOL-14"
+      type: "FUNC"
+      description: "Given GET /api/job-offers/:id/cross-contacts / When called / Then returns whether user has leads at this company"
+      verify: "grep -rn 'cross.*contact\\|crossContacts' apps/api/app/controllers/job_offers_controller.ts apps/api/app/services/job_offer_service.ts apps/api/start/routes/job_offers.ts"
+      tier: 1
+
+    # --- SECURITY ---
+    - id: "AC-SEC-JOL-01"
+      type: "SEC"
+      description: "Given PATCH /api/job-offers/:id/status / When called with an invalid status value / Then 422 is returned with validation error"
+      verify: "grep -rn 'vine\\|enum\\|status.*validator\\|updateStatusValidator' apps/api/app/validators/job_offer_validator.ts"
+      tier: 1
+
+    - id: "AC-SEC-JOL-02"
+      type: "SEC"
+      description: "Given a user / When accessing offers via API / Then only their own offers are returned (userId filter)"
+      verify: "grep -rn 'userId\\|user.id\\|auth.*user' apps/api/app/services/job_offer_service.ts | wc -l | xargs test 2 -le"
+      tier: 1
+
+    # --- BEST PRACTICES ---
+    - id: "AC-BP-JOL-01"
+      type: "BP"
+      description: "Given the tabs / When inspected / Then proper ARIA roles are used: tablist, tab, aria-selected"
+      verify: "grep -rn 'role.*tablist\\|role.*tab\\|aria-selected' apps/frontend/src/components/job-offers/job-offers-tabs.tsx"
+      tier: 1
+
+  test_intentions:
+    - intent: "JobOfferCard renders all required data fields"
+      type: "unit"
+      oracle: "Given offer with title='Senior FE', company='Acme', score=87 → title, company, score badge all present in DOM"
+
+    - intent: "Score badge uses correct color thresholds"
+      type: "unit"
+      oracle: "score=85 → green (#22C55E); score=65 → amber (#F59E0B); score=45 → blue (#3B82F6); score=30 → grey (#64748b)"
+
+    - intent: "Tabs filter offers by status group"
+      type: "unit"
+      oracle: "Tab 'Nouvelles' shows [new, evaluated, interested]; Tab 'Postulées' shows [applied, interview, offer_received, accepted, rejected]; Tab 'Archivées' shows [excluded, expired]"
+
+    - intent: "PATCH /api/job-offers/:id/status updates status and returns 200"
+      type: "functional"
+      oracle: "PATCH with {status:'interested'} → 200 + offer.status='interested'"
+
+    - intent: "PATCH /api/job-offers/:id/status rejects invalid status with 422"
+      type: "functional"
+      oracle: "PATCH with {status:'invalid_value'} → 422"
+
+    - intent: "GET /api/job-offers/:id/cross-contacts returns boolean hasCrossContact"
+      type: "functional"
+      oracle: "Offer for company 'Acme' + contact with company='Acme' → {hasCrossContact: true}"
+
+    - intent: "Empty state renders correct message per tab"
+      type: "unit"
+      oracle: "Tab 'Nouvelles' empty → 'Aucune nouvelle offre' + CTA link; Tab 'Postulées' empty → 'Aucune candidature'"
+
+    - intent: "Skeleton cards render during loading"
+      type: "unit"
+      oracle: "isLoading=true → 3 skeleton elements with pulse animation class"
+
+    - intent: "Pagination renders when offers exceed page size"
+      type: "unit"
+      oracle: "meta.lastPage > 1 → pagination controls visible; meta.lastPage = 1 → no pagination"
+
+    - intent: "Status select updates optimistically then confirms with API"
+      type: "unit"
+      oracle: "On select change → card immediately shows new status; on API success → no change; on API error → reverts to previous status"
