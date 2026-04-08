@@ -29,11 +29,10 @@ function getScoreLabel(score: number): string {
   return 'veryLow'
 }
 
-function formatSalary(min: number | null, max: number | null, currency: string | null): string | null {
+function formatSalary(min: number | null, max: number | null, currency: string | null = ''): string | null {
   if (min === null) return null
-  const cur = currency ?? ''
-  if (max !== null) return `${min.toLocaleString()}–${max.toLocaleString()} ${cur}`
-  return `${min.toLocaleString()} ${cur}`
+  if (max !== null) return `${min.toLocaleString()}–${max.toLocaleString()} ${currency}`
+  return `${min.toLocaleString()} ${currency}`
 }
 
 interface JobOfferCardProps {
