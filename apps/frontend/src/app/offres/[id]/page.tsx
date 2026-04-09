@@ -9,11 +9,14 @@ import { JobOfferAiEvaluation } from '@/components/job-offers/job-offer-ai-evalu
 import { JobOfferActionsBar } from '@/components/job-offers/job-offer-actions-bar'
 import { CrossPipelineBadge } from '@/components/job-offers/cross-pipeline-badge'
 import { ExclusionModal } from '@/components/job-offers/exclusion-modal'
+import { CvTab } from '@/components/job-offers/cv/cv-tab'
 import { useJobOfferDetail } from '@/hooks/use-job-offer-detail'
 import { useAuth } from '@/contexts/auth-context'
 import { useState, useCallback } from 'react'
 import type { ExclusionCategory } from '@/lib/job-offers-api'
 import type { ReactNode } from 'react'
+
+type DetailTab = 'details' | 'cv'
 
 export default function JobOfferDetailPage(): ReactNode {
   const params = useParams<{ id: string }>()
@@ -33,6 +36,7 @@ export default function JobOfferDetailPage(): ReactNode {
   } = useJobOfferDetail(params.id, token ?? '')
 
   const [isExclusionModalOpen, setIsExclusionModalOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState<DetailTab>('details')
 
   const handleExclude = useCallback(async (category: ExclusionCategory, reason: string): Promise<void> => {
     await excludeOffer(category, reason)
@@ -99,48 +103,84 @@ export default function JobOfferDetailPage(): ReactNode {
               <CrossPipelineBadge companyName={offer.companyName} />
             )}
 
+            {/* Tab navigation */}
+            <div data-testid="detail-tabs" className="flex gap-1 border-b border-[var(--color-border)]">
+              <button
+                type="button"
+                data-testid="tab-details"
+                onClick={() => setActiveTab('details')}
+                className={`px-4 py-2 text-sm font-medium transition-colors ${
+                  activeTab === 'details'
+                    ? 'border-b-2 border-[var(--color-primary)] text-[var(--color-primary)]'
+                    : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]'
+                }`}
+              >
+                {t('tabDetails')}
+              </button>
+              <button
+                type="button"
+                data-testid="tab-cv"
+                onClick={() => setActiveTab('cv')}
+                className={`px-4 py-2 text-sm font-medium transition-colors ${
+                  activeTab === 'cv'
+                    ? 'border-b-2 border-[var(--color-primary)] text-[var(--color-primary)]'
+                    : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]'
+                }`}
+              >
+                {t('tabCv')}
+              </button>
+            </div>
+
             {/* Main content: 2/3 + 1/3 split on desktop */}
             <div className="grid gap-6 lg:grid-cols-3">
               {/* Left column: 2/3 */}
               <div className="space-y-6 lg:col-span-2">
-                {/* Description */}
-                {offer.descriptionRaw && (
-                  <div
-                    data-testid="offer-description"
-                    className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-light)] p-4"
-                  >
-                    <h2 className="mb-3 font-semibold text-[var(--color-text-main)]">{t('descriptionTitle')}</h2>
-                    <div className="prose prose-sm max-w-none text-[var(--color-text-main)] prose-headings:text-[var(--color-text-main)] prose-strong:text-[var(--color-text-main)]">
-                      <p className="whitespace-pre-wrap">{offer.descriptionRaw}</p>
-                    </div>
-                  </div>
+                {activeTab === 'details' && (
+                  <>
+                    {/* Description */}
+                    {offer.descriptionRaw && (
+                      <div
+                        data-testid="offer-description"
+                        className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-light)] p-4"
+                      >
+                        <h2 className="mb-3 font-semibold text-[var(--color-text-main)]">{t('descriptionTitle')}</h2>
+                        <div className="prose prose-sm max-w-none text-[var(--color-text-main)] prose-headings:text-[var(--color-text-main)] prose-strong:text-[var(--color-text-main)]">
+                          <p className="whitespace-pre-wrap">{offer.descriptionRaw}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* AI Evaluation */}
+                    {(offer.relevanceScore !== null || offer.matchSummary || offer.selectionReason || offer.applicationAdvice) && (
+                      <JobOfferAiEvaluation
+                        score={offer.relevanceScore}
+                        matchSummary={offer.matchSummary}
+                        selectionReason={offer.selectionReason}
+                        applicationAdvice={offer.applicationAdvice}
+                        onAdviceSave={updateAdvice}
+                      />
+                    )}
+
+                    {/* Actions */}
+                    {offer.status !== 'excluded' && offer.status !== 'expired' && (
+                      <div className="space-y-4">
+                        <JobOfferActionsBar offerId={offer.id} />
+
+                        <button
+                          type="button"
+                          onClick={() => setIsExclusionModalOpen(true)}
+                          data-testid="exclude-offer-button"
+                          className="text-sm text-[var(--color-error)] hover:underline"
+                        >
+                          {t('excludeThisOffer')}
+                        </button>
+                      </div>
+                    )}
+                  </>
                 )}
 
-                {/* AI Evaluation */}
-                {(offer.relevanceScore !== null || offer.matchSummary || offer.selectionReason || offer.applicationAdvice) && (
-                  <JobOfferAiEvaluation
-                    score={offer.relevanceScore}
-                    matchSummary={offer.matchSummary}
-                    selectionReason={offer.selectionReason}
-                    applicationAdvice={offer.applicationAdvice}
-                    onAdviceSave={updateAdvice}
-                  />
-                )}
-
-                {/* Actions */}
-                {offer.status !== 'excluded' && offer.status !== 'expired' && (
-                  <div className="space-y-4">
-                    <JobOfferActionsBar offerId={offer.id} />
-
-                    <button
-                      type="button"
-                      onClick={() => setIsExclusionModalOpen(true)}
-                      data-testid="exclude-offer-button"
-                      className="text-sm text-[var(--color-error)] hover:underline"
-                    >
-                      {t('excludeThisOffer')}
-                    </button>
-                  </div>
+                {activeTab === 'cv' && (
+                  <CvTab offerId={offer.id} token={token ?? ''} />
                 )}
               </div>
 

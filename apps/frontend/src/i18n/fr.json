@@ -893,7 +893,31 @@
     },
     "actionAdaptCv": "Adapter mon CV",
     "actionCoverLetter": "Générer une lettre",
-    "actionApply": "Postuler"
+    "actionApply": "Postuler",
+    "tabDetails": "Détails",
+    "tabCv": "CV"
+  },
+  "cvTab": {
+    "generateDescription": "Laissez l'IA adapter votre CV pour ce poste en mettant en avant votre expérience et vos compétences pertinentes.",
+    "generateBtn": "Générer le CV",
+    "generating": "Génération...",
+    "quotaExceeded": "Vous avez atteint votre limite hebdomadaire de génération de CV. Passez à un plan supérieur pour plus.",
+    "noCvInProfile": "Téléchargez d'abord votre CV dans votre profil pour utiliser cette fonctionnalité.",
+    "noReplacements": "Votre CV est déjà bien adapté à ce poste. Aucune modification suggérée.",
+    "replacementsTitle": "Modifications suggérées",
+    "adaptedCvTitle": "CV adapté",
+    "refineLabel": "Affiner votre CV",
+    "refinePlaceholder": "ex. Mettre davantage en avant mon expérience en management...",
+    "refineBtn": "Affiner",
+    "refining": "Affinement...",
+    "editBtn": "Modifier manuellement",
+    "editTitle": "Modifier votre CV",
+    "save": "Enregistrer",
+    "saving": "Enregistrement...",
+    "cancel": "Annuler",
+    "downloadPdf": "Télécharger le PDF",
+    "downloading": "Téléchargement...",
+    "dismiss": "Fermer"
   },
   "jobSearch": {
     "pageTitle": "Configuration recherche d'offres",

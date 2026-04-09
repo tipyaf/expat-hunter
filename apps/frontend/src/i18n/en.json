@@ -893,7 +893,31 @@
     },
     "actionAdaptCv": "Adapt my CV",
     "actionCoverLetter": "Generate a letter",
-    "actionApply": "Apply"
+    "actionApply": "Apply",
+    "tabDetails": "Details",
+    "tabCv": "CV"
+  },
+  "cvTab": {
+    "generateDescription": "Let AI adapt your CV for this position by highlighting relevant experience and skills.",
+    "generateBtn": "Generate CV",
+    "generating": "Generating...",
+    "quotaExceeded": "You have reached your weekly CV generation limit. Upgrade your plan for more.",
+    "noCvInProfile": "Upload your CV in your profile first to use this feature.",
+    "noReplacements": "Your CV is already well-suited for this position. No changes suggested.",
+    "replacementsTitle": "Suggested changes",
+    "adaptedCvTitle": "Adapted CV",
+    "refineLabel": "Refine your CV",
+    "refinePlaceholder": "e.g. Emphasize my leadership experience more...",
+    "refineBtn": "Refine",
+    "refining": "Refining...",
+    "editBtn": "Edit manually",
+    "editTitle": "Edit your CV",
+    "save": "Save",
+    "saving": "Saving...",
+    "cancel": "Cancel",
+    "downloadPdf": "Download PDF",
+    "downloading": "Downloading...",
+    "dismiss": "Dismiss"
   },
   "jobSearch": {
     "pageTitle": "Job Search Configuration",
