@@ -1,6 +1,6 @@
 /**
- * Job Applications routes — mounted under /api/job-offers/:id/cv with auth middleware.
- * Handles CV generation, refinement, manual edit, and PDF export.
+ * Job Applications routes — mounted under /api/job-offers/:id/cv and /api/job-offers/:id/cover-letter
+ * with auth middleware. Handles CV and cover letter generation, refinement, manual edit, and PDF export.
  */
 import router from '@adonisjs/core/services/router'
 import { middleware } from '#start/kernel'
@@ -16,4 +16,15 @@ router
     router.get('/pdf', [JobApplicationsController, 'pdf'])
   })
   .prefix('/api/job-offers/:id/cv')
+  .use(middleware.auth())
+
+router
+  .group(() => {
+    router.get('/', [JobApplicationsController, 'showCoverLetter'])
+    router.post('/generate', [JobApplicationsController, 'generateCoverLetter'])
+    router.post('/refine', [JobApplicationsController, 'refineCoverLetter'])
+    router.put('/', [JobApplicationsController, 'saveCoverLetter'])
+    router.get('/pdf', [JobApplicationsController, 'coverLetterPdf'])
+  })
+  .prefix('/api/job-offers/:id/cover-letter')
   .use(middleware.auth())
