@@ -1,11 +1,12 @@
 'use client'
 
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
 import { useJobApplicationSend } from '@/hooks/use-job-application-send'
 import { useRecruitmentContacts } from '@/hooks/use-recruitment-contacts'
 import { Send, Paperclip, CheckCircle, AlertCircle } from 'lucide-react'
 import type { ReactNode } from 'react'
+import type { ApplicationEmailStatus } from '@/lib/job-application-send-api'
 
 interface SendTabProps {
   readonly offerId: string
@@ -15,6 +16,113 @@ interface SendTabProps {
 
 const MANUAL_INPUT_VALUE = '__manual__'
 
+/* ── Attachment indicators (shared between sent + draft views) ── */
+function AttachmentsList(): ReactNode {
+  return (
+    <div data-testid="email-attachments-list" className="flex gap-3">
+      <div className="flex items-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-light)] px-3 py-2">
+        <Paperclip size={14} className="text-[var(--color-text-muted)]" aria-hidden="true" />
+        <span className="text-sm text-[var(--color-text-main)]">CV.pdf</span>
+        <CheckCircle size={14} className="text-[var(--color-success)]" aria-hidden="true" />
+      </div>
+      <div className="flex items-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-light)] px-3 py-2">
+        <Paperclip size={14} className="text-[var(--color-text-muted)]" aria-hidden="true" />
+        <span className="text-sm text-[var(--color-text-main)]">CoverLetter.pdf</span>
+        <CheckCircle size={14} className="text-[var(--color-success)]" aria-hidden="true" />
+      </div>
+    </div>
+  )
+}
+
+/* ── Sent state view ── */
+function SentView({ emailStatus, t }: { readonly emailStatus: ApplicationEmailStatus; readonly t: ReturnType<typeof useTranslations<'sendTab'>> }): ReactNode {
+  const sentDate = emailStatus.sentAt
+    ? new Date(emailStatus.sentAt).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      })
+    : null
+
+  return (
+    <div data-testid="send-tab" className="space-y-4">
+      <div
+        data-testid="send-tab-sent-badge"
+        className="flex items-center gap-3 rounded-[var(--radius-md)] border border-[var(--color-success)]/30 bg-[var(--color-success)]/5 p-4"
+      >
+        <CheckCircle size={20} className="text-[var(--color-success)]" aria-hidden="true" />
+        <div>
+          <p className="text-sm font-medium text-[var(--color-success)]">
+            {sentDate
+              ? t('sentOn', { date: sentDate, email: emailStatus.sentToEmail ?? '' })
+              : t('applicationSent')}
+          </p>
+        </div>
+      </div>
+
+      {emailStatus.emailText && (
+        <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-light)] p-4">
+          <h3 className="mb-2 text-sm font-medium text-[var(--color-text-main)]">{t('emailBodyLabel')}</h3>
+          <p className="whitespace-pre-wrap text-sm text-[var(--color-text-muted)]">{emailStatus.emailText}</p>
+        </div>
+      )}
+
+      <AttachmentsList />
+    </div>
+  )
+}
+
+/* ── Confirmation dialog (uses native <dialog>) ── */
+function SendConfirmDialog({ resolvedEmail, onConfirm, onCancel, t }: {
+  readonly resolvedEmail: string
+  readonly onConfirm: () => void
+  readonly onCancel: () => void
+  readonly t: ReturnType<typeof useTranslations<'sendTab'>>
+}): ReactNode {
+  const dialogRef = useRef<HTMLDialogElement>(null)
+
+  useEffect(() => {
+    dialogRef.current?.showModal()
+  }, [])
+
+  return (
+    <dialog
+      ref={dialogRef}
+      data-testid="send-confirm-dialog"
+      className="fixed inset-0 z-50 w-full max-w-md rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface-light)] p-6 shadow-lg backdrop:bg-black/50"
+      aria-labelledby="send-confirm-title"
+      onClose={onCancel}
+    >
+      <h3 id="send-confirm-title" className="mb-2 text-lg font-semibold text-[var(--color-text-main)]">
+        {t('confirmTitle')}
+      </h3>
+      <p className="mb-4 text-sm text-[var(--color-text-muted)]">
+        {t('confirmMessage', { email: resolvedEmail })}
+      </p>
+      <div className="flex justify-end gap-3">
+        <button
+          type="button"
+          data-testid="send-confirm-cancel"
+          onClick={onCancel}
+          className="rounded-[var(--radius-md)] border border-[var(--color-border)] px-4 py-2 text-sm text-[var(--color-text-main)] hover:bg-[var(--color-surface)]"
+        >
+          {t('cancelBtn')}
+        </button>
+        <button
+          type="button"
+          data-testid="send-confirm-submit"
+          onClick={onConfirm}
+          className="flex items-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+        >
+          <Send size={16} aria-hidden="true" />
+          {t('confirmSendBtn')}
+        </button>
+      </div>
+    </dialog>
+  )
+}
+
+/* ── Main SendTab ── */
 export function SendTab({ offerId, token, contactEmail }: SendTabProps): ReactNode {
   const t = useTranslations('sendTab')
   const {
@@ -37,7 +145,6 @@ export function SendTab({ offerId, token, contactEmail }: SendTabProps): ReactNo
   const [manualEmail, setManualEmail] = useState('')
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
 
-  // Build recipient options from contacts with emails + offer contactEmail
   const recipientOptions = useMemo(() => {
     const options: { value: string; label: string }[] = []
 
@@ -58,13 +165,12 @@ export function SendTab({ offerId, token, contactEmail }: SendTabProps): ReactNo
     return options
   }, [contacts, contactEmail, t])
 
-  // Determine default recipient on first render
   const selectedRecipient = recipientMode || (recipientOptions.length > 1 ? recipientOptions[0].value : MANUAL_INPUT_VALUE)
-
   const resolvedEmail = selectedRecipient === MANUAL_INPUT_VALUE ? manualEmail.trim() : selectedRecipient
-
   const canSend = !!(emailStatus?.hasEmail && resolvedEmail && !isSending)
   const canGenerate = !noCv && !noCoverLetter && !quotaExceeded && !isGenerating
+  const prerequisitesNotMet = noCv || noCoverLetter
+  const noRecipientTooltip = resolvedEmail ? undefined : t('noRecipientTooltip')
 
   const handleRecipientChange = useCallback((value: string): void => {
     setRecipientMode(value)
@@ -73,20 +179,15 @@ export function SendTab({ offerId, token, contactEmail }: SendTabProps): ReactNo
     }
   }, [])
 
-  const handleSendClick = useCallback((): void => {
-    setIsConfirmOpen(true)
-  }, [])
-
-  const handleConfirmSend = useCallback(async (): Promise<void> => {
+  const handleConfirmSend = useCallback((): void => {
     setIsConfirmOpen(false)
-    await sendApplication(resolvedEmail)
+    void sendApplication(resolvedEmail)
   }, [sendApplication, resolvedEmail])
 
   const handleCancelSend = useCallback((): void => {
     setIsConfirmOpen(false)
   }, [])
 
-  // Loading state
   if (isLoading) {
     return (
       <div data-testid="send-tab-loading" className="space-y-3 animate-pulse">
@@ -96,58 +197,10 @@ export function SendTab({ offerId, token, contactEmail }: SendTabProps): ReactNo
     )
   }
 
-  // Already sent state
   if (emailStatus?.status === 'sent') {
-    const sentDate = emailStatus.sentAt
-      ? new Date(emailStatus.sentAt).toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-        })
-      : null
-
-    return (
-      <div data-testid="send-tab" className="space-y-4">
-        <div
-          data-testid="send-tab-sent-badge"
-          className="flex items-center gap-3 rounded-[var(--radius-md)] border border-[var(--color-success)]/30 bg-[var(--color-success)]/5 p-4"
-        >
-          <CheckCircle size={20} className="text-[var(--color-success)]" aria-hidden="true" />
-          <div>
-            <p className="text-sm font-medium text-[var(--color-success)]">
-              {sentDate
-                ? t('sentOn', { date: sentDate, email: emailStatus.sentToEmail ?? '' })
-                : t('applicationSent')}
-            </p>
-          </div>
-        </div>
-
-        {/* Show email body read-only */}
-        {emailStatus.emailText && (
-          <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-light)] p-4">
-            <h3 className="mb-2 text-sm font-medium text-[var(--color-text-main)]">{t('emailBodyLabel')}</h3>
-            <p className="whitespace-pre-wrap text-sm text-[var(--color-text-muted)]">{emailStatus.emailText}</p>
-          </div>
-        )}
-
-        {/* Attachments */}
-        <div data-testid="email-attachments-list" className="flex gap-3">
-          <div className="flex items-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-light)] px-3 py-2">
-            <Paperclip size={14} className="text-[var(--color-text-muted)]" aria-hidden="true" />
-            <span className="text-sm text-[var(--color-text-main)]">CV.pdf</span>
-            <CheckCircle size={14} className="text-[var(--color-success)]" aria-hidden="true" />
-          </div>
-          <div className="flex items-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-light)] px-3 py-2">
-            <Paperclip size={14} className="text-[var(--color-text-muted)]" aria-hidden="true" />
-            <span className="text-sm text-[var(--color-text-main)]">CoverLetter.pdf</span>
-            <CheckCircle size={14} className="text-[var(--color-success)]" aria-hidden="true" />
-          </div>
-        </div>
-      </div>
-    )
+    return <SentView emailStatus={emailStatus} t={t} />
   }
 
-  // Error display
   const errorBanner = error && !quotaExceeded && !noCv && !noCoverLetter ? (
     <div
       data-testid="send-tab-error"
@@ -164,14 +217,10 @@ export function SendTab({ offerId, token, contactEmail }: SendTabProps): ReactNo
     </div>
   ) : null
 
-  // Pre-requisites not met (no CV or cover letter)
-  const prerequisitesNotMet = noCv || noCoverLetter
-
   return (
     <div data-testid="send-tab" className="space-y-4">
       {errorBanner}
 
-      {/* Prerequisite warnings */}
       {noCv && (
         <div
           data-testid="send-tab-no-cv"
@@ -201,7 +250,6 @@ export function SendTab({ offerId, token, contactEmail }: SendTabProps): ReactNo
         </div>
       )}
 
-      {/* Generate email section — only if no email yet */}
       {!emailStatus?.hasEmail && (
         <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-light)] p-6 text-center space-y-3">
           <p className="text-sm text-[var(--color-text-muted)]">
@@ -227,7 +275,6 @@ export function SendTab({ offerId, token, contactEmail }: SendTabProps): ReactNo
         </div>
       )}
 
-      {/* Email body textarea — editable */}
       {emailStatus?.hasEmail && emailStatus.emailText && (
         <div className="space-y-4">
           <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-light)] p-4">
@@ -240,21 +287,8 @@ export function SendTab({ offerId, token, contactEmail }: SendTabProps): ReactNo
             />
           </div>
 
-          {/* Attachments */}
-          <div data-testid="email-attachments-list" className="flex gap-3">
-            <div className="flex items-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-light)] px-3 py-2">
-              <Paperclip size={14} className="text-[var(--color-text-muted)]" aria-hidden="true" />
-              <span className="text-sm text-[var(--color-text-main)]">CV.pdf</span>
-              <CheckCircle size={14} className="text-[var(--color-success)]" aria-hidden="true" />
-            </div>
-            <div className="flex items-center gap-2 rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-light)] px-3 py-2">
-              <Paperclip size={14} className="text-[var(--color-text-muted)]" aria-hidden="true" />
-              <span className="text-sm text-[var(--color-text-main)]">CoverLetter.pdf</span>
-              <CheckCircle size={14} className="text-[var(--color-success)]" aria-hidden="true" />
-            </div>
-          </div>
+          <AttachmentsList />
 
-          {/* Recipient selector */}
           <div className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-light)] p-4">
             <h3 className="mb-2 text-sm font-medium text-[var(--color-text-main)]">{t('recipientLabel')}</h3>
             <select
@@ -284,15 +318,14 @@ export function SendTab({ offerId, token, contactEmail }: SendTabProps): ReactNo
             )}
           </div>
 
-          {/* Send button */}
           <div className="flex justify-end">
             <button
               type="button"
               data-testid="email-send-button"
-              onClick={handleSendClick}
+              onClick={() => setIsConfirmOpen(true)}
               disabled={!canSend}
               aria-disabled={!canSend}
-              title={!resolvedEmail ? t('noRecipientTooltip') : undefined}
+              title={noRecipientTooltip}
               className="flex items-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-primary)] px-6 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSending ? (
@@ -311,50 +344,19 @@ export function SendTab({ offerId, token, contactEmail }: SendTabProps): ReactNo
         </div>
       )}
 
-      {/* Send disabled tooltip when prerequisites not met */}
       {prerequisitesNotMet && !emailStatus?.hasEmail && (
         <p data-testid="send-tab-generate-first" className="text-center text-xs text-[var(--color-text-muted)]">
           {t('generateFirst')}
         </p>
       )}
 
-      {/* Confirmation dialog */}
       {isConfirmOpen && (
-        <div
-          data-testid="send-confirm-dialog"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="send-confirm-title"
-        >
-          <div className="w-full max-w-md rounded-[var(--radius-lg)] border border-[var(--color-border)] bg-[var(--color-surface-light)] p-6 shadow-lg">
-            <h3 id="send-confirm-title" className="mb-2 text-lg font-semibold text-[var(--color-text-main)]">
-              {t('confirmTitle')}
-            </h3>
-            <p className="mb-4 text-sm text-[var(--color-text-muted)]">
-              {t('confirmMessage', { email: resolvedEmail })}
-            </p>
-            <div className="flex justify-end gap-3">
-              <button
-                type="button"
-                data-testid="send-confirm-cancel"
-                onClick={handleCancelSend}
-                className="rounded-[var(--radius-md)] border border-[var(--color-border)] px-4 py-2 text-sm text-[var(--color-text-main)] hover:bg-[var(--color-surface)]"
-              >
-                {t('cancelBtn')}
-              </button>
-              <button
-                type="button"
-                data-testid="send-confirm-submit"
-                onClick={() => void handleConfirmSend()}
-                className="flex items-center gap-2 rounded-[var(--radius-md)] bg-[var(--color-primary)] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
-              >
-                <Send size={16} aria-hidden="true" />
-                {t('confirmSendBtn')}
-              </button>
-            </div>
-          </div>
-        </div>
+        <SendConfirmDialog
+          resolvedEmail={resolvedEmail}
+          onConfirm={handleConfirmSend}
+          onCancel={handleCancelSend}
+          t={t}
+        />
       )}
     </div>
   )

@@ -5,6 +5,10 @@ import messages from '@/i18n/en.json'
 import { SendTab } from './send-tab'
 import type { ApplicationEmailStatus } from '@/lib/job-application-send-api'
 
+// jsdom does not implement HTMLDialogElement.showModal
+HTMLDialogElement.prototype.showModal = vi.fn()
+HTMLDialogElement.prototype.close = vi.fn()
+
 const MOCK_OFFER_ID = 'offer-uuid-123'
 const MOCK_TOKEN = 'valid-token'
 const MOCK_CONTACT_EMAIL = 'hr@acme.com'
