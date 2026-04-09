@@ -748,13 +748,13 @@ features:
   - id: "job-cv-generation"
     name: "Job CV Generation"
     priority: "must-have"
-    status: "pending"
+    status: "refined"
     cycles: 0
-    story_file: ""
+    story_file: "specs/stories/job-cv-generation-backend.yaml, specs/stories/job-cv-generation-frontend.yaml"
     depends_on: ["job-offer-detail-page", "candidate-profile"]
     started_at: ""
     validated_at: ""
-    notes: "Hybrid: Google Docs API (recommended) + local DOCX (alternative). Max 7 AI-targeted replacements. Language deduced from country. E13."
+    notes: "E13 S1. Split into 2 stories: backend (M=3pts, migration+model+AI service+API) + frontend (M=3pts, CV tab+diff view+edit+PDF). 17+16=33 ACs total. Refined 2026-04-09."
 
   - id: "job-cover-letter"
     name: "Job Cover Letter"

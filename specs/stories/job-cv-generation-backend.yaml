@@ -1,0 +1,230 @@
+# ============================================================================
+# Story: job-cv-generation-backend
+# Feature: Job CV Generation (E13) — Story 1/2
+# Status: refined
+# Estimate: M (3 points)
+# ============================================================================
+
+story:
+  id: "job-cv-generation-backend"
+  title: "Job CV Generation — Backend: data model + AI service + API"
+  epic: "E13 — Candidature"
+  shortcut_id: 929
+  estimate: 3
+  priority: "must-have"
+  type: "feature"
+  area: "backend"
+  depends_on:
+    - "job-offer-detail-page"
+    - "candidate-profile"
+
+  description: |
+    Backend foundation for CV adaptation. Creates the JobApplication data model
+    (shared across E13), the AI-powered CV generation service (max 7 targeted
+    replacements using offer + company + profile + advice context), and the API
+    endpoints for generate, refine, manual edit, and PDF export.
+
+    Includes quota enforcement (1 CV/week for free users, unlimited premium)
+    using the existing UsageService pattern. Language is deduced from the
+    target country in the candidate profile, stored in job_applications.language.
+
+    The migration creates the full job_applications table (including cover_letter
+    and application_email columns for future E13 stories).
+
+  ux_ref: null  # Backend only — no wireframe needed
+
+  scope:
+    files_to_create:
+      - "apps/api/database/migrations/41_create_job_applications_table.ts"
+      - "apps/api/app/models/job_application.ts"
+      - "apps/api/app/services/job_cv_generation_service.ts"
+      - "apps/api/app/ai/prompts/cv_adaptation_prompt.ts"
+      - "apps/api/app/validators/job_application_validator.ts"
+      - "apps/api/app/controllers/job_applications_controller.ts"
+      - "apps/api/start/routes/job_applications.ts"
+
+    files_to_modify:
+      - "packages/shared/src/constants/plans.ts"  # Add cvGenerations: 1 to FREE_QUOTAS
+      - "apps/api/start/routes.ts"  # Add await import('#start/routes/job_applications')
+      - "apps/api/app/models/job_offer.ts"  # Add hasMany → JobApplication relation
+
+    files_excluded:
+      - "apps/frontend/**"  # Frontend is Story 2
+      - "apps/api/app/services/job_cover_letter_service.ts"  # Separate feature
+      - "apps/api/app/services/job_application_service.ts"  # Separate feature
+
+  components:
+    reuse:
+      - name: "OpenRouterClient"
+        path: "apps/api/app/ai/openrouter_client.ts"
+        note: "Same AI client as job_ai_evaluation_service"
+      - name: "UsageService"
+        path: "apps/api/app/services/usage_service.ts"
+        note: "Quota checking — add cvGenerations quota type"
+    create:
+      - name: "JobCvGenerationService"
+        type: smart
+        reason: "Orchestrates AI prompt + profile + offer context for CV adaptation"
+      - name: "JobApplication"
+        type: dumb
+        reason: "Lucid model — data persistence layer"
+
+  acceptance_criteria:
+    # --- FUNCTIONAL ---
+    - id: "AC-FUNC-JCV-01"
+      type: "FUNC"
+      description: "Given a job offer and user profile / When POST /api/job-offers/:id/cv/generate / Then AI returns max 7 replacements [{oldText, newText}] using offer + company + profile + advice context"
+      verify: "curl -s -X POST http://localhost:3333/api/job-offers/$OID/cv/generate -H 'Authorization: Bearer $TOKEN' -H 'Content-Type: application/json' | jq '.data.cvReplacements | length <= 7'"
+      tier: 2
+
+    - id: "AC-FUNC-JCV-02"
+      type: "FUNC"
+      description: "Given a generated CV / When POST /api/job-offers/:id/cv/refine with {instruction} / Then AI regenerates with the new instructions taken into account"
+      verify: "curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:3333/api/job-offers/$OID/cv/refine -H 'Authorization: Bearer $TOKEN' -H 'Content-Type: application/json' -d '{\"instruction\":\"Emphasize leadership experience\"}'"
+      tier: 2
+
+    - id: "AC-FUNC-JCV-03"
+      type: "FUNC"
+      description: "Given a CV / When PUT /api/job-offers/:id/cv with {cvText} / Then manual edits are saved to job_applications.cv_text"
+      verify: "curl -s -o /dev/null -w '%{http_code}' -X PUT http://localhost:3333/api/job-offers/$OID/cv -H 'Authorization: Bearer $TOKEN' -H 'Content-Type: application/json' -d '{\"cvText\":\"edited text\"}'"
+      tier: 2
+
+    - id: "AC-FUNC-JCV-04"
+      type: "FUNC"
+      description: "Given a finalized CV / When GET /api/job-offers/:id/cv/pdf / Then a PDF is returned with Content-Type application/pdf"
+      verify: "curl -s -o /dev/null -w '%{http_code}\\n%{content_type}' http://localhost:3333/api/job-offers/$OID/cv/pdf -H 'Authorization: Bearer $TOKEN'"
+      tier: 2
+
+    - id: "AC-FUNC-JCV-05"
+      type: "FUNC"
+      description: "Given a free user who used their weekly CV quota / When POST generate / Then 403 with quota exceeded message"
+      verify: "grep -r 'cvGenerations' packages/shared/src/constants/plans.ts && grep -r 'checkQuota\\|cvGenerations\\|quota' apps/api/app/services/job_cv_generation_service.ts apps/api/app/controllers/job_applications_controller.ts"
+      tier: 1
+
+    - id: "AC-FUNC-JCV-06"
+      type: "FUNC"
+      description: "Given POST generate / When the JobApplication does not exist for this offer+user / Then one is created with status draft"
+      verify: "grep -r 'firstOrCreate\\|findOrCreate\\|draft' apps/api/app/services/job_cv_generation_service.ts"
+      tier: 1
+
+    - id: "AC-FUNC-JCV-07"
+      type: "FUNC"
+      description: "Given a job_applications migration / When migration:run / Then the table has all columns from architecture spec"
+      verify: "grep -c 'table\\.\\(string\\|text\\|uuid\\|jsonb\\|timestamp\\|boolean\\)' apps/api/database/migrations/41_create_job_applications_table.ts"
+      tier: 1
+
+    # --- SECURITY ---
+    - id: "AC-SEC-JCV-01"
+      type: "SEC"
+      description: "All endpoints validate input through VineJS validators"
+      verify: "grep -r 'vine\\|validator\\|request.validateUsing' apps/api/app/controllers/job_applications_controller.ts apps/api/app/validators/job_application_validator.ts"
+      tier: 1
+
+    - id: "AC-SEC-JCV-02"
+      type: "SEC"
+      description: "All endpoints require authentication (middleware.auth)"
+      verify: "grep -r 'middleware.*auth\\|auth()' apps/api/start/routes/job_applications.ts"
+      tier: 1
+
+    - id: "AC-SEC-JCV-03"
+      type: "SEC"
+      description: "All queries are scoped to auth.user (no cross-user data access)"
+      verify: "grep -r 'auth\\.user\\|userId.*auth\\|user_id.*auth' apps/api/app/services/job_cv_generation_service.ts apps/api/app/controllers/job_applications_controller.ts"
+      tier: 1
+
+    - id: "AC-SEC-JCV-04"
+      type: "SEC"
+      description: "No raw SQL string interpolation — Lucid ORM only"
+      verify: "! grep -rn 'db\\.rawQuery\\|\\.raw(' apps/api/app/services/job_cv_generation_service.ts apps/api/app/controllers/job_applications_controller.ts"
+      tier: 1
+
+    - id: "AC-SEC-JCV-05"
+      type: "SEC"
+      description: "AI prompt does not inject user-controlled content without sanitization"
+      verify: "grep -r 'JSON\\.stringify\\|replace.*<\\|sanitize\\|escape' apps/api/app/ai/prompts/cv_adaptation_prompt.ts"
+      tier: 1
+
+    # --- BEST PRACTICES ---
+    - id: "AC-BP-JCV-TYPING"
+      type: "BP"
+      description: "All functions have explicit return types and VineJS validation schemas"
+      verify: "grep -c 'Promise<\\|: void\\|: string\\|: number\\|: boolean' apps/api/app/services/job_cv_generation_service.ts"
+      tier: 1
+
+    - id: "AC-BP-JCV-QUERIES"
+      type: "BP"
+      description: "Lucid preload() used for related data (no N+1)"
+      verify: "grep -r 'preload\\|\\.load(' apps/api/app/services/job_cv_generation_service.ts apps/api/app/controllers/job_applications_controller.ts"
+      tier: 1
+
+    - id: "AC-BP-JCV-COMPILE"
+      type: "BP"
+      description: "Project compiles without errors"
+      verify: "pnpm --filter frontend exec tsc --noEmit && pnpm --filter api exec tsc --noEmit"
+      tier: 1
+
+    - id: "AC-BP-JCV-TU"
+      type: "BP"
+      description: "All unit tests pass"
+      verify: "pnpm --filter frontend exec vitest run"
+      tier: 1
+
+    - id: "AC-BP-JCV-CONSOLE"
+      type: "BP"
+      description: "Zero console errors/stacktraces (backend server logs)"
+      verify: "curl -s http://localhost:3333/api/job-offers/$OID/cv/generate -H 'Authorization: Bearer $TOKEN' -X POST 2>&1 | grep -v stacktrace"
+      tier: 2
+
+  test_intentions:
+    - function: "generateCv"
+      description: "AI generates max 7 targeted replacements from profile + offer context"
+      inputs:
+        cvText: "5 years of experience in web development"
+        offerTitle: "Senior Full-Stack Developer"
+        offerDescription: "We need 8+ years React experience"
+        applicationAdvice: "Highlight TypeScript expertise"
+      oracle:
+        final: "replacements.length <= 7 AND each replacement has {oldText, newText}"
+      assertions:
+        - "result.cvReplacements.length <= 7"
+        - "result.cvReplacements[0].oldText !== undefined"
+        - "result.cvReplacements[0].newText !== undefined"
+      edge_cases:
+        - description: "Empty CV text in profile"
+          inputs: { cvText: null }
+          oracle: { final: "returns error: No CV found in profile" }
+          assertions: ["throws Error('No CV found')"]
+        - description: "AI returns 0 replacements (perfect CV)"
+          inputs: { cvText: "Perfect match CV" }
+          oracle: { final: "replacements = [] (empty array)" }
+          assertions: ["result.cvReplacements.length === 0"]
+
+    - function: "checkQuota (cvGenerations)"
+      description: "Free users limited to 1 CV generation per week"
+      inputs:
+        plan: "free"
+        currentUsage: 1
+      oracle:
+        final: "FREE_QUOTAS.cvGenerations = 1, used = 1, remaining = 0 → allowed = false"
+      assertions:
+        - "result.allowed === false"
+        - "result.quota.remaining === 0"
+      edge_cases:
+        - description: "Premium user — unlimited"
+          inputs: { plan: "premium", currentUsage: 100 }
+          oracle: { final: "premium → limit = null → allowed = true" }
+          assertions: ["result.allowed === true"]
+        - description: "Free user first generation"
+          inputs: { plan: "free", currentUsage: 0 }
+          oracle: { final: "used = 0 < limit 1 → allowed = true" }
+          assertions: ["result.allowed === true"]
+
+  edge_cases:
+    - "User has no CV in profile → 400 'Upload your CV first'"
+    - "Offer has no description → use title + company name only"
+    - "OpenRouter API timeout/error → 503 with retry guidance"
+    - "Concurrent generation requests → idempotent (reuse existing draft JobApplication)"
+    - "PDF generation with empty cv_text → 400 'Generate or edit CV first'"
+    - "Language deduction: if profile.targetCountries includes NZ → 'en', FR → 'fr'"
+
+  adr_required: true  # New database schema (job_applications) + new AI integration

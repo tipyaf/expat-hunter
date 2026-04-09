@@ -1,0 +1,220 @@
+# ============================================================================
+# Story: job-cv-generation-frontend
+# Feature: Job CV Generation (E13) — Story 2/2
+# Status: refined
+# Estimate: M (3 points)
+# ============================================================================
+
+story:
+  id: "job-cv-generation-frontend"
+  title: "Job CV Generation — Frontend: CV tab UI + diff view + PDF download"
+  epic: "E13 — Candidature"
+  shortcut_id: 930
+  estimate: 3
+  priority: "must-have"
+  type: "feature"
+  area: "frontend"
+  depends_on:
+    - "job-cv-generation-backend"
+
+  description: |
+    Frontend UI for CV adaptation. Adds a "CV" tab to the job offer detail page
+    with a side-by-side diff view (original vs adapted), AI replacement highlights,
+    a refinement instruction input, manual edit mode, and PDF download button.
+
+    Uses the backend API from Story 1. Shows quota status for free users.
+    Respects existing design system (CSS variables, dark/light mode).
+
+  ux_ref: "specs/ux/wireframes/job-cv-generation.md"  # To be created during /ux
+
+  scope:
+    files_to_create:
+      - "apps/frontend/src/components/job-offers/cv/cv-tab.tsx"
+      - "apps/frontend/src/components/job-offers/cv/cv-diff-view.tsx"
+      - "apps/frontend/src/components/job-offers/cv/cv-replacement-card.tsx"
+      - "apps/frontend/src/components/job-offers/cv/cv-refine-input.tsx"
+      - "apps/frontend/src/components/job-offers/cv/cv-edit-mode.tsx"
+      - "apps/frontend/src/hooks/use-job-cv.ts"
+      - "apps/frontend/src/lib/job-cv-api.ts"
+
+    files_to_modify:
+      - "apps/frontend/src/app/[locale]/offres/[id]/page.tsx"  # Add CV tab
+      - "apps/frontend/src/lib/job-offers-api.ts"  # Add CV API methods if needed
+
+    files_excluded:
+      - "apps/api/**"  # Backend is Story 1
+      - "apps/frontend/src/components/job-offers/cover-letter/**"  # Separate feature
+
+  components:
+    reuse:
+      - name: "useJobOfferDetail"
+        path: "apps/frontend/src/hooks/use-job-offer-detail.ts"
+        note: "Existing hook for offer data — CV tab adds to this page"
+      - name: "Design system CSS variables"
+        path: "apps/frontend/src/app/globals.css"
+        note: "All colors via var(--color-*), never hardcoded Tailwind colors"
+    create:
+      - name: "CvTab"
+        type: smart
+        reason: "Orchestrates CV generation flow: generate → review diff → refine → edit → download"
+      - name: "CvDiffView"
+        type: dumb
+        reason: "Renders side-by-side original vs adapted CV with highlighted replacements"
+      - name: "useJobCv"
+        type: smart
+        reason: "Hook managing CV state, API calls, loading/error states"
+
+  acceptance_criteria:
+    # --- FUNCTIONAL ---
+    - id: "AC-FUNC-JCVF-01"
+      type: "FUNC"
+      description: "Given the job offer detail page / When user navigates to it / Then a 'CV' tab is visible alongside existing tabs"
+      verify: "grep -r 'cv.*tab\\|CV.*tab\\|TabCV\\|cv-tab' apps/frontend/src/app/\\[locale\\]/offres/\\[id\\]/page.tsx apps/frontend/src/components/job-offers/cv/"
+      tier: 1
+
+    - id: "AC-FUNC-JCVF-02"
+      type: "FUNC"
+      description: "Given no CV generated yet / When user clicks the CV tab / Then a 'Generate CV' button is shown with the user's current CV preview"
+      verify: "grep -r 'generate.*cv\\|Generate.*CV\\|data-testid.*generate-cv' apps/frontend/src/components/job-offers/cv/"
+      tier: 1
+
+    - id: "AC-FUNC-JCVF-03"
+      type: "FUNC"
+      description: "Given user clicks 'Generate CV' / When API call succeeds / Then replacements are shown in a diff view (original left, adapted right)"
+      verify: "grep -r 'replacement\\|diff\\|oldText\\|newText\\|CvDiffView\\|cv-diff' apps/frontend/src/components/job-offers/cv/"
+      tier: 1
+
+    - id: "AC-FUNC-JCVF-04"
+      type: "FUNC"
+      description: "Given replacements are displayed / When user reads them / Then each replacement highlights what changed (old → new)"
+      verify: "grep -r 'CvReplacementCard\\|replacement-card\\|oldText.*newText\\|highlight' apps/frontend/src/components/job-offers/cv/cv-replacement-card.tsx apps/frontend/src/components/job-offers/cv/cv-diff-view.tsx"
+      tier: 1
+
+    - id: "AC-FUNC-JCVF-05"
+      type: "FUNC"
+      description: "Given a generated CV / When user types a refinement instruction and submits / Then the API is called with the instruction and new replacements are shown"
+      verify: "grep -r 'refine\\|instruction\\|CvRefineInput\\|refine-input' apps/frontend/src/components/job-offers/cv/cv-refine-input.tsx apps/frontend/src/hooks/use-job-cv.ts"
+      tier: 1
+
+    - id: "AC-FUNC-JCVF-06"
+      type: "FUNC"
+      description: "Given a generated CV / When user clicks 'Edit' / Then a textarea appears with the full CV text for manual editing"
+      verify: "grep -r 'edit.*mode\\|CvEditMode\\|textarea\\|manual.*edit\\|setEditing' apps/frontend/src/components/job-offers/cv/cv-edit-mode.tsx apps/frontend/src/hooks/use-job-cv.ts"
+      tier: 1
+
+    - id: "AC-FUNC-JCVF-07"
+      type: "FUNC"
+      description: "Given user edits the CV text / When user clicks 'Save' / Then PUT /api/job-offers/:id/cv is called and the view updates"
+      verify: "grep -r 'saveCv\\|updateCv\\|PUT.*cv\\|save.*cv' apps/frontend/src/hooks/use-job-cv.ts apps/frontend/src/lib/job-cv-api.ts"
+      tier: 1
+
+    - id: "AC-FUNC-JCVF-08"
+      type: "FUNC"
+      description: "Given a finalized CV / When user clicks 'Download PDF' / Then the PDF is downloaded via GET /api/job-offers/:id/cv/pdf"
+      verify: "grep -r 'pdf\\|download.*pdf\\|PDF\\|blob\\|application/pdf' apps/frontend/src/components/job-offers/cv/ apps/frontend/src/hooks/use-job-cv.ts apps/frontend/src/lib/job-cv-api.ts"
+      tier: 1
+
+    - id: "AC-FUNC-JCVF-09"
+      type: "FUNC"
+      description: "Given a free user who has exhausted their weekly quota / When they try to generate / Then a quota exceeded message is shown (no API call)"
+      verify: "grep -r 'quota\\|exceeded\\|limit\\|remaining' apps/frontend/src/components/job-offers/cv/ apps/frontend/src/hooks/use-job-cv.ts"
+      tier: 1
+
+    - id: "AC-FUNC-JCVF-10"
+      type: "FUNC"
+      description: "Given API calls in progress / When user waits / Then loading spinners are shown on generate, refine, save, and download actions"
+      verify: "grep -r 'isLoading\\|isGenerating\\|isRefining\\|isSaving\\|spinner\\|loading' apps/frontend/src/components/job-offers/cv/ apps/frontend/src/hooks/use-job-cv.ts"
+      tier: 1
+
+    # --- SECURITY ---
+    - id: "AC-SEC-JCVF-01"
+      type: "SEC"
+      description: "All API calls include the auth token in Authorization header"
+      verify: "grep -r 'Authorization\\|Bearer\\|token' apps/frontend/src/lib/job-cv-api.ts apps/frontend/src/hooks/use-job-cv.ts"
+      tier: 1
+
+    # --- BEST PRACTICES ---
+    - id: "AC-BP-JCVF-DESIGN"
+      type: "BP"
+      description: "All UI uses CSS variables from design system — no hardcoded Tailwind colors"
+      verify: "! grep -rn 'text-blue-\\|text-red-\\|text-green-\\|bg-blue-\\|bg-red-\\|bg-green-\\|text-gray-\\|bg-gray-' apps/frontend/src/components/job-offers/cv/"
+      tier: 1
+
+    - id: "AC-BP-JCVF-DARKMODE"
+      type: "BP"
+      description: "CV tab renders correctly in both dark and light mode"
+      verify: "grep -r 'var(--color' apps/frontend/src/components/job-offers/cv/"
+      tier: 1
+
+    - id: "AC-BP-JCVF-TESTID"
+      type: "BP"
+      description: "All interactive elements have data-testid attributes for e2e testing"
+      verify: "grep -c 'data-testid' apps/frontend/src/components/job-offers/cv/cv-tab.tsx"
+      tier: 1
+
+    - id: "AC-BP-JCVF-COMPILE"
+      type: "BP"
+      description: "Project compiles without errors"
+      verify: "pnpm --filter frontend exec tsc --noEmit && pnpm --filter api exec tsc --noEmit"
+      tier: 1
+
+    - id: "AC-BP-JCVF-TU"
+      type: "BP"
+      description: "All unit tests pass"
+      verify: "pnpm --filter frontend exec vitest run"
+      tier: 1
+
+  test_intentions:
+    - function: "useJobCv hook"
+      description: "Hook manages CV generation state lifecycle"
+      inputs:
+        offerId: "uuid-123"
+        token: "valid-token"
+      oracle:
+        final: "initial state: cvReplacements=[], isGenerating=false, cvText=null"
+      assertions:
+        - "result.cvReplacements.length === 0"
+        - "result.isGenerating === false"
+        - "result.cvText === null"
+
+    - function: "CvDiffView"
+      description: "Renders replacement highlights correctly"
+      inputs:
+        replacements:
+          - oldText: "5 years experience"
+            newText: "8+ years experience in React and TypeScript"
+      oracle:
+        final: "Both old and new text visible, old text has deletion style, new text has addition style"
+      assertions:
+        - "screen.getByText('5 years experience') is visible"
+        - "screen.getByText('8+ years experience in React and TypeScript') is visible"
+
+    - function: "CvTab quota exceeded"
+      description: "Shows quota message when free user has no remaining generations"
+      inputs:
+        quota: { allowed: false, remaining: 0 }
+      oracle:
+        final: "Generate button disabled, quota exceeded message visible"
+      assertions:
+        - "screen.getByTestId('generate-cv-btn').disabled === true"
+        - "screen.getByText(/quota/i) is visible"
+
+    - function: "PDF download"
+      description: "Triggers file download on button click"
+      inputs:
+        cvText: "Adapted CV content"
+      oracle:
+        final: "Blob URL created and anchor click triggered"
+      assertions:
+        - "URL.createObjectURL was called"
+        - "anchor.click was called"
+
+  edge_cases:
+    - "User has no CV in profile → show message 'Upload your CV first' with link to profile"
+    - "API returns 503 (AI timeout) → show retry button with error message"
+    - "Empty replacements array → show 'Your CV is already well-suited' message"
+    - "Very long CV text in edit mode → textarea scrollable, no layout overflow"
+    - "Multiple rapid generate clicks → button disabled during loading, no duplicate requests"
+    - "PDF download fails → show error toast, don't navigate away"
+
+  adr_required: false  # Uses existing frontend patterns
