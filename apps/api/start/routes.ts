@@ -293,3 +293,6 @@ router
 
 // Job offers routes (separate file)
 await import('#start/routes/job_offers')
+
+// Job applications routes (CV generation, refinement, PDF export)
+await import('#start/routes/job_applications')

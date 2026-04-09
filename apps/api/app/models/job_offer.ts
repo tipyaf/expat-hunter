@@ -5,6 +5,7 @@ import { DateTime } from 'luxon'
 import type { JobOfferStatus, RemoteType } from '@expat-hunter/shared'
 import JobSearch from './job_search.js'
 import JobOfferLink from './job_offer_link.js'
+import JobApplication from './job_application.js'
 import CompanyCache from './company_cache.js'
 
 export default class JobOffer extends BaseModel {
@@ -84,6 +85,9 @@ export default class JobOffer extends BaseModel {
 
   @hasMany(() => JobOfferLink, { foreignKey: 'offerId' })
   declare links: HasMany<typeof JobOfferLink>
+
+  @hasMany(() => JobApplication, { foreignKey: 'offerId' })
+  declare applications: HasMany<typeof JobApplication>
 
   @belongsTo(() => CompanyCache, { foreignKey: 'companyCacheId' })
   declare companyCache: BelongsTo<typeof CompanyCache>

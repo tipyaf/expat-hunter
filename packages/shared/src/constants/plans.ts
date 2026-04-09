@@ -8,6 +8,7 @@ export const FREE_QUOTAS = {
   results: 5,
   emails: 5,
   chatQuestions: 15,
+  cvGenerations: 1,
 } as const
 
 export type QuotaType = keyof typeof FREE_QUOTAS

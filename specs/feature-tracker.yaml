@@ -748,13 +748,13 @@ features:
   - id: "job-cv-generation"
     name: "Job CV Generation"
     priority: "must-have"
-    status: "refined"
-    cycles: 0
+    status: "building"
+    cycles: 1
     story_file: "specs/stories/job-cv-generation-backend.yaml, specs/stories/job-cv-generation-frontend.yaml"
     depends_on: ["job-offer-detail-page", "candidate-profile"]
-    started_at: ""
+    started_at: "2026-04-09"
     validated_at: ""
-    notes: "E13 S1. Split into 2 stories: backend (M=3pts, migration+model+AI service+API) + frontend (M=3pts, CV tab+diff view+edit+PDF). 17+16=33 ACs total. Refined 2026-04-09."
+    notes: "E13. Backend story (sc-929) validated: 12 PASS, 0 FAIL, 5 NOT_VERIFIABLE (Tier 2). 22 unit tests. 0 TS errors. Frontend story (sc-930) pending. pdfkit added for PDF export."
 
   - id: "job-cover-letter"
     name: "Job Cover Letter"
