@@ -895,7 +895,8 @@
     "actionCoverLetter": "Générer une lettre",
     "actionApply": "Postuler",
     "tabDetails": "Détails",
-    "tabCv": "CV"
+    "tabCv": "CV",
+    "tabSend": "Envoyer"
   },
   "cvTab": {
     "generateDescription": "Laissez l'IA adapter votre CV pour ce poste en mettant en avant votre expérience et vos compétences pertinentes.",
@@ -917,6 +918,48 @@
     "cancel": "Annuler",
     "downloadPdf": "Télécharger le PDF",
     "downloading": "Téléchargement...",
+    "dismiss": "Fermer"
+  },
+  "sendTab": {
+    "generateDescription": "Générez un email de candidature grâce à l'IA, basé sur votre CV et lettre de motivation.",
+    "generateFirst": "Générez d'abord votre CV et votre lettre de motivation.",
+    "generateBtn": "Générer l'email",
+    "generating": "Génération...",
+    "emailBodyLabel": "Corps de l'email",
+    "recipientLabel": "Destinataire",
+    "offerContact": "Contact de l'offre",
+    "manualInput": "Saisir un email manuellement",
+    "manualInputPlaceholder": "destinataire@entreprise.com",
+    "noRecipientTooltip": "Sélectionnez ou saisissez un email destinataire",
+    "sendBtn": "Envoyer la candidature",
+    "sending": "Envoi...",
+    "confirmTitle": "Confirmer l'envoi",
+    "confirmMessage": "Vous êtes sur le point d'envoyer votre candidature à {email}. Cette action est irréversible.",
+    "confirmSendBtn": "Envoyer",
+    "cancelBtn": "Annuler",
+    "applicationSent": "Candidature envoyée",
+    "sentOn": "Envoyée le {date} à {email}",
+    "quotaExceeded": "Vous avez atteint votre limite de génération d'emails. Passez à Premium pour en avoir plus.",
+    "noCv": "Générez d'abord votre CV avant d'envoyer une candidature.",
+    "noCoverLetter": "Générez d'abord votre lettre de motivation avant d'envoyer une candidature.",
+    "dismiss": "Fermer"
+  },
+  "recruitmentContacts": {
+    "title": "Contacts recrutement",
+    "addBtn": "Ajouter",
+    "emptyState": "Aucun contact de recrutement. Ajoutez un contact pour suivre vos interactions.",
+    "nameLabel": "Nom",
+    "namePlaceholder": "Nom du contact",
+    "roleLabel": "Rôle",
+    "rolePlaceholder": "ex. Responsable recrutement",
+    "emailLabel": "Email",
+    "emailPlaceholder": "email@entreprise.com",
+    "existingLead": "Lead existant",
+    "editLabel": "Modifier {name}",
+    "removeLabel": "Supprimer {name}",
+    "cancelBtn": "Annuler",
+    "addSubmitBtn": "Ajouter le contact",
+    "adding": "Ajout...",
     "dismiss": "Fermer"
   },
   "jobSearch": {

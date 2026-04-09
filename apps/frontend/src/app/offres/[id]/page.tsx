@@ -10,13 +10,15 @@ import { JobOfferActionsBar } from '@/components/job-offers/job-offer-actions-ba
 import { CrossPipelineBadge } from '@/components/job-offers/cross-pipeline-badge'
 import { ExclusionModal } from '@/components/job-offers/exclusion-modal'
 import { CvTab } from '@/components/job-offers/cv/cv-tab'
+import { SendTab } from '@/components/job-offers/send/send-tab'
+import { RecruitmentContactsPanel } from '@/components/job-offers/recruitment-contacts/recruitment-contacts-panel'
 import { useJobOfferDetail } from '@/hooks/use-job-offer-detail'
 import { useAuth } from '@/contexts/auth-context'
 import { useState, useCallback } from 'react'
 import type { ExclusionCategory } from '@/lib/job-offers-api'
 import type { ReactNode } from 'react'
 
-type DetailTab = 'details' | 'cv'
+type DetailTab = 'details' | 'cv' | 'send'
 
 export default function JobOfferDetailPage(): ReactNode {
   const params = useParams<{ id: string }>()
@@ -129,6 +131,18 @@ export default function JobOfferDetailPage(): ReactNode {
               >
                 {t('tabCv')}
               </button>
+              <button
+                type="button"
+                data-testid="tab-send"
+                onClick={() => setActiveTab('send')}
+                className={`px-4 py-2 text-sm font-medium transition-colors ${
+                  activeTab === 'send'
+                    ? 'border-b-2 border-[var(--color-primary)] text-[var(--color-primary)]'
+                    : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]'
+                }`}
+              >
+                {t('tabSend')}
+              </button>
             </div>
 
             {/* Main content: 2/3 + 1/3 split on desktop */}
@@ -182,6 +196,10 @@ export default function JobOfferDetailPage(): ReactNode {
                 {activeTab === 'cv' && (
                   <CvTab offerId={offer.id} token={token ?? ''} />
                 )}
+
+                {activeTab === 'send' && (
+                  <SendTab offerId={offer.id} token={token ?? ''} contactEmail={offer.contactEmail} />
+                )}
               </div>
 
               {/* Right column: 1/3 */}
@@ -189,6 +207,7 @@ export default function JobOfferDetailPage(): ReactNode {
                 {offer.company && (
                   <JobOfferCompanyPanel company={offer.company} />
                 )}
+                <RecruitmentContactsPanel offerId={offer.id} token={token ?? ''} />
               </div>
             </div>
           </div>
