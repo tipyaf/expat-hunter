@@ -80,6 +80,9 @@ export default class Contact extends BaseModel {
   @column()
   declare emailStatus: EmailStatus | null
 
+  @column()
+  declare recruitmentStatus: string | null
+
   @column({
     serialize: (value: string | null) => (value ? JSON.parse(value) : null),
     prepare: (value: string[] | null) => (value ? JSON.stringify(value) : null),

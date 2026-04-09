@@ -6,7 +6,7 @@
 - **Project**: expat-hunter
 - **Started**: 2026-03-17
 - **Current phase**: Phase 2 — Construction (features pending refinement)
-- **Last updated**: 2026-04-08
+- **Last updated**: 2026-04-09
 - **Framework version**: 4.1.1
 - **GitHub repo**: https://github.com/tipyaf/expat-hunter (public)
 - **Branches**: main (protected, default), develop (protected, dev base), feature/* → PR to develop
@@ -42,14 +42,14 @@
 | collapsible-sidebar (E12 S1) | must-have | 📝 refined | specs/stories/collapsible-sidebar.yaml (sc-883) | 0 |
 | job-offers-list-page (E12 S2) | must-have | 📝 refined | specs/stories/job-offers-list-page.yaml (sc-884) | 0 |
 | job-offer-detail-page (E12 S3) | must-have | 📝 refined | specs/stories/job-offer-detail-page.yaml (sc-885) | 0 |
-| job-cv-generation | must-have | pending | — | 0 |
-| job-cover-letter | must-have | pending | — | 0 |
-| job-application-send | must-have | pending | — | 0 |
+| job-cv-generation | must-have | ✅ validated | specs/stories/job-cv-generation-backend.yaml + frontend.yaml | 1 |
+| job-cover-letter | must-have | ✅ validated | specs/stories/job-cover-letter-backend.yaml + frontend.yaml | 0 |
+| job-application-send | must-have | 📝 refined | specs/stories/job-application-send-{contacts,email,frontend}.yaml (sc-989/990/991) | 0 |
 | job-recurring-search | should-have | pending | — | 0 |
 | job-custom-platforms | should-have | pending | — | 0 |
 | job-notifications | nice-to-have | pending | — | 0 |
 
-**Summary**: 27 features total — 10 validated, 3 refined (E12 sidebar + list + detail), 6 must-have remaining (E13-E14), 8 pending. Next: `/build collapsible-sidebar` (sc-883).
+**Summary**: 27 features total — 12 validated, 4 refined (E12 sidebar/list/detail + E13 application-send), 3 must-have remaining, 8 pending. Next: `/build job-application-send-contacts` (sc-989).
 
 ## Architecture Decisions
 

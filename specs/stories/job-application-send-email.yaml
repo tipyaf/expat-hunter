@@ -1,0 +1,258 @@
+# ============================================================================
+# STORY: job-application-send-email — Application email AI generation + send
+# ============================================================================
+# Build contract — the developer implements exactly this, the validator checks exactly this.
+# ============================================================================
+
+story:
+  id: "job-application-send-email"
+  title: "Application email AI generation + send with PDF attachments"
+  parent_spec: "specs/expat-hunter.yaml"
+  status: "refined"
+  size: "L"
+  refined_at: "2026-04-09"
+  refined_by: "refinement"
+
+user_story: >
+  As a job seeker, I want to generate an AI-drafted application email (3-4 lines, tone adapted
+  to the target country) and send my application with my CV and cover letter as PDF attachments,
+  so that I can apply to job offers efficiently. I also want AI-assisted follow-up email drafting
+  for my recruitment contacts (thank you, follow-up) without cold email logic.
+
+scope:
+  files_to_create:
+    - path: "apps/api/app/ai/prompts/application_email_prompt.ts"
+      purpose: "AI prompt for application email body (3-4 lines, tone adapts to country)"
+    - path: "apps/api/app/ai/prompts/follow_up_email_prompt.ts"
+      purpose: "AI prompt for follow-up/thank-you email to recruitment contact"
+    - path: "apps/api/app/services/job_application_send_service.ts"
+      purpose: "Service: generate application email, send with attachments, draft follow-up"
+    - path: "apps/api/tests/unit/ai/application_email_prompt.spec.ts"
+      purpose: "Unit tests for application email prompt builder"
+    - path: "apps/api/tests/unit/ai/follow_up_email_prompt.spec.ts"
+      purpose: "Unit tests for follow-up email prompt builder"
+    - path: "apps/api/tests/unit/services/job_application_send_service.spec.ts"
+      purpose: "Unit tests for JobApplicationSendService"
+  files_to_modify:
+    - path: "apps/api/app/controllers/job_applications_controller.ts"
+      reason: "Add generateApplicationEmail, sendApplication, draftFollowUpEmail methods"
+    - path: "apps/api/app/validators/job_application_validator.ts"
+      reason: "Add sendApplicationValidator, generateApplicationEmailValidator, draftFollowUpEmailValidator"
+    - path: "apps/api/start/routes/job_applications.ts"
+      reason: "Add routes for application email, send, and follow-up email"
+    - path: "apps/api/app/services/email_sending_service.ts"
+      reason: "Add attachments support to sendSingleEmail (Buffer[] parameter)"
+  files_to_read:
+    - path: "apps/api/app/ai/prompts/cover_letter_prompt.ts"
+      reason: "Reference for prompt structure, sanitizeForPrompt, country language deduction"
+    - path: "apps/api/app/services/job_cover_letter_service.ts"
+      reason: "Reference for AI call pattern (OpenRouter), language deduction, quota check"
+    - path: "apps/api/app/services/email_sending_service.ts"
+      reason: "Understand existing email sending infrastructure (OAuth/SMTP)"
+    - path: "apps/api/app/controllers/job_applications_controller.ts"
+      reason: "Understand PDF generation pattern and controller structure"
+    - path: "apps/api/app/models/recruitment_contact.ts"
+      reason: "Understand recruitment contact model (from story 1)"
+
+acceptance_criteria:
+
+  functional:
+    - id: "AC-FUNC-JASE-01"
+      description: "Given CV and cover letter exist for an offer / When POST /api/job-offers/:id/application-email / Then AI generates a 3-4 line email body with tone adapted to target country"
+      verify: "grep -rn 'generateApplicationEmail\\|buildApplicationEmailPrompt' apps/api/app/services/job_application_send_service.ts apps/api/app/ai/prompts/application_email_prompt.ts | head -5"
+      tier: 1
+
+    - id: "AC-FUNC-JASE-02"
+      description: "Given application email exists / When POST /api/job-offers/:id/apply with {recipientEmail} / Then email is sent with CV and cover letter as PDF attachments"
+      verify: "grep -rn 'attachment\\|sendApplication\\|pdf.*buffer\\|Buffer' apps/api/app/services/job_application_send_service.ts | head -5"
+      tier: 1
+
+    - id: "AC-FUNC-JASE-03"
+      description: "Given application sent successfully / Then offer status transitions to 'applied', sentAt is recorded, and sentToEmail is saved"
+      verify: "grep -rn 'applied\\|sentAt\\|sentToEmail' apps/api/app/services/job_application_send_service.ts | head -5"
+      tier: 1
+
+    - id: "AC-FUNC-JASE-04"
+      description: "Given application email prompt / Then the tone adapts based on the target country (NZ/AU=casual-professional, FR=formal, default=professional)"
+      verify: "grep -rn 'TONE_MAP\\|COUNTRY_TONE\\|casual.*professional\\|formal' apps/api/app/ai/prompts/application_email_prompt.ts | head -5"
+      tier: 1
+
+    - id: "AC-FUNC-JASE-05"
+      description: "Given a recruitment contact for an offer / When POST /api/job-offers/:id/contacts/:contactId/email with {type: 'follow_up'|'thank_you', context} / Then AI drafts a follow-up email (not cold email)"
+      verify: "grep -rn 'draftFollowUpEmail\\|buildFollowUpEmailPrompt\\|follow_up\\|thank_you' apps/api/app/services/job_application_send_service.ts apps/api/app/ai/prompts/follow_up_email_prompt.ts | head -5"
+      tier: 1
+
+    - id: "AC-FUNC-JASE-06"
+      description: "Given the email sending service / Then sendSingleEmail supports optional attachments (array of {filename, content: Buffer, contentType})"
+      verify: "grep -rn 'attachment\\|attachments' apps/api/app/services/email_sending_service.ts | head -5"
+      tier: 1
+
+  security:
+    - id: "AC-SEC-JASE-01"
+      description: "All new endpoints use VineJS validators — no unvalidated input"
+      verify: "grep -rn 'validateUsing' apps/api/app/controllers/job_applications_controller.ts | grep -i 'application\\|followUp\\|send' | head -5"
+      tier: 1
+
+    - id: "AC-SEC-JASE-02"
+      description: "Application email prompt sanitizes all user-provided strings (no HTML injection in email body)"
+      verify: "grep -rn 'sanitize\\|escape\\|sanitizeForPrompt' apps/api/app/ai/prompts/application_email_prompt.ts apps/api/app/ai/prompts/follow_up_email_prompt.ts | head -5"
+      tier: 1
+
+    - id: "AC-SEC-JASE-03"
+      description: "Recipient email is validated as a proper email format before sending"
+      verify: "grep -rn 'email.*vine\\|vine.*email' apps/api/app/validators/job_application_validator.ts | head -5"
+      tier: 1
+
+    - id: "AC-SEC-JASE-04"
+      description: "Every query is scoped to authenticated user — no cross-user data access"
+      verify: "grep -rn 'userId\\|user.*id\\|verifyOfferOwnership' apps/api/app/services/job_application_send_service.ts | head -5"
+      tier: 1
+
+  best_practices:
+    - id: "AC-BP-JASE-01"
+      description: "No magic strings — tone map uses named constants, AI parameters use named constants"
+      verify: "grep -rn 'AI_TEMPERATURE\\|AI_MAX_TOKENS\\|TONE_MAP\\|MAX_EMAIL_LENGTH' apps/api/app/ai/prompts/application_email_prompt.ts apps/api/app/services/job_application_send_service.ts | head -5"
+      tier: 1
+
+    - id: "AC-BP-JASE-02"
+      description: "PDF generation is extracted into a shared helper (reused from cv/cover-letter PDF methods)"
+      verify: "grep -rn 'generatePdfBuffer\\|textToPdf\\|pdfFromText' apps/api/app/services/job_application_send_service.ts apps/api/app/controllers/job_applications_controller.ts | head -5"
+      tier: 1
+
+edge_cases:
+  - description: "User tries to send application without CV generated"
+    handling: "Return 400 with error code NO_CV"
+  - description: "User tries to send application without cover letter generated"
+    handling: "Return 400 with error code NO_COVER_LETTER"
+  - description: "User tries to send application without application email generated"
+    handling: "Return 400 with error code NO_APPLICATION_EMAIL"
+  - description: "Email sending fails (SMTP error, OAuth token expired)"
+    handling: "Return 503 with error code EMAIL_SEND_FAILED, do NOT mark as sent"
+  - description: "User sends to an email that bounces"
+    handling: "Mark as sent (we can't know synchronously). Future: webhook for bounces"
+  - description: "AI generates email longer than 4 lines"
+    handling: "Truncate/parse to MAX_EMAIL_LINES=6 (soft limit), let user edit"
+  - description: "No email connection configured for the user"
+    handling: "Return 400 with error code NO_EMAIL_CONNECTION"
+  - description: "Follow-up email for a contact with no email address"
+    handling: "Return 400 with error code CONTACT_NO_EMAIL"
+
+test_intentions:
+  - function: "buildApplicationEmailPrompt"
+    description: "Generates system + user prompt for application email"
+    inputs:
+      candidateName: "Jean Dupont"
+      offerTitle: "Senior Frontend Engineer"
+      companyName: "Acme Corp"
+      country: "NZ"
+      cvSummary: "8 years React, TypeScript, team lead"
+      coverLetterSummary: "Passionate about building products..."
+    oracle:
+      final: "system prompt includes 'casual-professional' tone for NZ, user prompt includes candidate name, offer title, company name"
+    assertions:
+      - "systemPrompt.includes('casual-professional') || systemPrompt.includes('casual professional')"
+      - "userPrompt.includes('Senior Frontend Engineer')"
+      - "userPrompt.includes('Acme Corp')"
+    edge_cases:
+      - description: "French company → formal tone"
+        inputs:
+          country: "FR"
+        oracle:
+          final: "system prompt includes 'formal' tone for France"
+        assertions:
+          - "systemPrompt.includes('formal')"
+      - description: "Unknown country → default professional tone"
+        inputs:
+          country: "JP"
+        oracle:
+          final: "system prompt includes 'professional' (default) tone"
+        assertions:
+          - "systemPrompt.includes('professional')"
+
+  - function: "buildFollowUpEmailPrompt"
+    description: "Generates prompt for follow-up/thank-you email"
+    inputs:
+      type: "thank_you"
+      contactName: "John Smith"
+      contactRole: "Engineering Manager"
+      companyName: "Acme Corp"
+      context: "Had a great phone interview about the frontend role"
+    oracle:
+      final: "prompt includes thank_you type, contact name, context"
+    assertions:
+      - "prompt.includes('thank')"
+      - "prompt.includes('John Smith')"
+      - "prompt.includes('phone interview')"
+    edge_cases:
+      - description: "Follow-up type"
+        inputs:
+          type: "follow_up"
+          context: "Applied 2 weeks ago, no response yet"
+        oracle:
+          final: "prompt includes follow-up instructions, polite tone"
+        assertions:
+          - "prompt.includes('follow') || prompt.includes('Follow')"
+
+  - function: "parseApplicationEmailResponse"
+    description: "Strips markdown fences, trims, enforces max length"
+    inputs:
+      aiResponse: "```\nDear Hiring Team,\n\nPlease find attached...\n```"
+    oracle:
+      final: "stripped fences → 'Dear Hiring Team,\\n\\nPlease find attached...'"
+    assertions:
+      - "result does not contain '```'"
+      - "result.startsWith('Dear')"
+    edge_cases:
+      - description: "Response without fences"
+        inputs:
+          aiResponse: "Dear Hiring Team,\n\nI am writing to apply..."
+        oracle:
+          final: "returned as-is (trimmed)"
+        assertions:
+          - "result === 'Dear Hiring Team,\\n\\nI am writing to apply...'"
+
+ux_ref: null  # Backend-only story
+
+components:
+  reuse: []
+  create: []
+
+depends_on:
+  - "job-application-send-contacts"
+
+notes: |
+  - Reuse deduceLanguage() and sanitizeForPrompt() from cover_letter_prompt.ts
+  - COUNTRY_TONE_MAP: NZ/AU → 'casual-professional', FR/BE → 'formal', default → 'professional'
+  - Application email is short (3-4 lines max), not a full letter — just an intro to the attachments
+  - PDF generation: extract shared textToPdf(text, title) helper from existing controller methods
+  - Email attachments: extend EmailSendingService.sendSingleEmail with optional attachments param
+    Format: { filename: string, content: Buffer, contentType: string }
+  - Follow-up emails are drafted only — user reviews in the frontend before sending
+  - The follow-up email type is one of: 'follow_up', 'thank_you', 'status_check'
+  - Quota: application email generation counts toward the same AI quota as cover letters (FREE_QUOTAS)
+  - ADR: application email send reuses existing EmailSendingService (OAuth/SMTP) rather than
+    creating a separate sender — same infrastructure, different use case
+
+validation_acs:
+  - id: "AC-BP-JASE-COMPILE"
+    type: "BP"
+    description: "Project compiles without errors"
+    verify: "cd /Volumes/Samsung_T5/dev/expat-hunter && pnpm --filter api exec tsc --noEmit 2>&1 | grep -c 'error TS' | awk '{if ($1 == 0) print \"PASS\"; else print \"FAIL\"}'"
+    tier: 1
+  - id: "AC-BP-JASE-TU"
+    type: "BP"
+    description: "All unit tests pass"
+    verify: "cd /Volumes/Samsung_T5/dev/expat-hunter/apps/api && export NVM_DIR=\"$HOME/.nvm\" && . \"$NVM_DIR/nvm.sh\" && nvm use 22.22.1 && node --loader ts-node/esm bin/test.ts -- --files 'tests/unit/ai/application_email_prompt.spec.ts' 'tests/unit/ai/follow_up_email_prompt.spec.ts' 'tests/unit/services/job_application_send_service.spec.ts'"
+    tier: 1
+  - id: "AC-BP-JASE-CONSOLE"
+    type: "BP"
+    description: "Zero console errors/stacktraces in backend server logs"
+    verify: "runtime-only — check server logs during API calls"
+    tier: 2
+
+closing_ac:
+  - id: "AC-BP-JASE-DONE"
+    type: "BP"
+    description: "PR is merged into develop — story closure gate"
+    verify: "gh pr list --base develop --state merged --search 'job-application-send-email' --json number,title | head -5"
+    tier: 1

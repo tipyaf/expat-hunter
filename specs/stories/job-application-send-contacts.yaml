@@ -1,0 +1,219 @@
+# ============================================================================
+# STORY: job-application-send-contacts — Recruitment contacts CRUD + cross-pipeline
+# ============================================================================
+# Build contract — the developer implements exactly this, the validator checks exactly this.
+# ============================================================================
+
+story:
+  id: "job-application-send-contacts"
+  title: "Recruitment contacts CRUD + cross-pipeline detection"
+  parent_spec: "specs/expat-hunter.yaml"
+  status: "refined"
+  size: "M"
+  refined_at: "2026-04-09"
+  refined_by: "refinement"
+
+user_story: >
+  As a job seeker, I want to add and manage recruitment contacts (HR, hiring manager, CEO)
+  linked to a job offer, so that I can track who I interact with during the recruitment process.
+  When a contact is also a lead in my pipeline, I want them flagged as 'in_recruitment_process'
+  so they are excluded from cold outreach during the active process.
+
+scope:
+  files_to_create:
+    - path: "apps/api/database/migrations/042_create_recruitment_contacts_table.ts"
+      purpose: "Migration for recruitment_contacts table"
+    - path: "apps/api/database/migrations/043_add_recruitment_status_to_contacts.ts"
+      purpose: "Add recruitment_status column to contacts table (for cross-pipeline flagging)"
+    - path: "apps/api/app/models/recruitment_contact.ts"
+      purpose: "RecruitmentContact Lucid model"
+    - path: "apps/api/app/services/recruitment_contact_service.ts"
+      purpose: "Service: CRUD, cross-pipeline detection, re-prospect"
+    - path: "apps/api/app/validators/recruitment_contact_validator.ts"
+      purpose: "VineJS validators for recruitment contact endpoints"
+    - path: "apps/api/start/routes/recruitment_contacts.ts"
+      purpose: "Route group for /api/job-offers/:id/contacts"
+    - path: "apps/api/tests/unit/services/recruitment_contact_service.spec.ts"
+      purpose: "Unit tests for RecruitmentContactService"
+  files_to_modify:
+    - path: "apps/api/app/models/contact.ts"
+      reason: "Add recruitmentStatus column (null | 'in_recruitment_process')"
+    - path: "apps/api/start/routes.ts"
+      reason: "Import new recruitment_contacts route file"
+  files_to_read:
+    - path: "apps/api/app/models/job_application.ts"
+      reason: "Understand existing JobApplication model structure"
+    - path: "apps/api/app/models/job_offer.ts"
+      reason: "Understand offer ownership verification pattern"
+    - path: "apps/api/app/controllers/job_applications_controller.ts"
+      reason: "Reuse verifyOfferOwnership pattern"
+    - path: "apps/api/app/models/contact.ts"
+      reason: "Understand lead contact model for cross-pipeline"
+    - path: "apps/api/app/services/email_sending_service.ts"
+      reason: "Reference for service pattern"
+
+acceptance_criteria:
+
+  functional:
+    - id: "AC-FUNC-JASC-01"
+      description: "Given an offer owned by the user / When POST /api/job-offers/:id/contacts with {name, role, email} / Then a RecruitmentContact is created and linked to the offer"
+      verify: "grep -rn 'createContact\\|create.*recruitment' apps/api/app/services/recruitment_contact_service.ts | head -5"
+      tier: 1
+
+    - id: "AC-FUNC-JASC-02"
+      description: "Given recruitment contacts exist for an offer / When GET /api/job-offers/:id/contacts / Then all contacts for that offer are returned"
+      verify: "grep -rn 'listContacts\\|getContacts\\|findByOffer' apps/api/app/services/recruitment_contact_service.ts | head -5"
+      tier: 1
+
+    - id: "AC-FUNC-JASC-03"
+      description: "Given a recruitment contact exists / When PUT /api/job-offers/:id/contacts/:contactId with updated fields / Then the contact is updated"
+      verify: "grep -rn 'updateContact\\|update.*Contact' apps/api/app/services/recruitment_contact_service.ts | head -5"
+      tier: 1
+
+    - id: "AC-FUNC-JASC-04"
+      description: "Given a recruitment contact exists / When DELETE /api/job-offers/:id/contacts/:contactId / Then the contact is removed and if linked to a lead, the lead's recruitmentStatus is cleared"
+      verify: "grep -rn 'removeContact\\|deleteContact' apps/api/app/services/recruitment_contact_service.ts | head -5"
+      tier: 1
+
+    - id: "AC-FUNC-JASC-05"
+      description: "Given a lead contact exists for company X / When a recruitment contact is added with the same email / Then the lead is flagged as 'in_recruitment_process' and the recruitmentContact.leadId is set"
+      verify: "grep -rn 'in_recruitment_process\\|flagLead\\|detectCrossPipeline' apps/api/app/services/recruitment_contact_service.ts | head -5"
+      tier: 1
+
+    - id: "AC-FUNC-JASC-06"
+      description: "Given a lead flagged as in_recruitment_process / When POST /api/job-offers/:id/contacts/:contactId/re-prospect / Then the lead's recruitmentStatus is cleared and returned to the pipeline"
+      verify: "grep -rn 'reProspect\\|clearRecruitmentStatus\\|returnToLeadPipeline' apps/api/app/services/recruitment_contact_service.ts | head -5"
+      tier: 1
+
+  security:
+    - id: "AC-SEC-JASC-01"
+      description: "All recruitment contact endpoints use VineJS validators — no unvalidated input reaches the service layer"
+      verify: "grep -rn 'validateUsing' apps/api/start/routes/recruitment_contacts.ts apps/api/app/services/recruitment_contact_service.ts 2>/dev/null; grep -rn 'vine\\.' apps/api/app/validators/recruitment_contact_validator.ts | head -10"
+      tier: 1
+
+    - id: "AC-SEC-JASC-02"
+      description: "Every query in RecruitmentContactService is scoped to the authenticated user's offers — no cross-user data access"
+      verify: "grep -rn 'userId\\|user.*id\\|verifyOfferOwnership' apps/api/app/services/recruitment_contact_service.ts | head -10"
+      tier: 1
+
+    - id: "AC-SEC-JASC-03"
+      description: "No raw SQL — all queries use Lucid ORM query builder or model methods"
+      verify: "! grep -rn 'rawQuery\\|\\$raw\\|Database.raw' apps/api/app/services/recruitment_contact_service.ts apps/api/app/models/recruitment_contact.ts"
+      tier: 1
+
+  best_practices:
+    - id: "AC-BP-JASC-01"
+      description: "Business logic in service, controller is thin (validate → call service → return response)"
+      verify: "wc -l apps/api/start/routes/recruitment_contacts.ts | awk '{if ($1 < 80) print \"PASS: route file under 80 lines\"; else print \"FAIL: route file too large\"}'"
+      tier: 1
+
+    - id: "AC-BP-JASC-02"
+      description: "RecruitmentContact model uses snake_case DB columns, PascalCase class, camelCase properties"
+      verify: "grep -c 'declare.*:' apps/api/app/models/recruitment_contact.ts | awk '{if ($1 >= 5) print \"PASS\"; else print \"FAIL\"}'"
+      tier: 1
+
+edge_cases:
+  - description: "Adding a contact with the same email as an existing recruitment contact on the same offer"
+    handling: "Return 409 Conflict with error code DUPLICATE_CONTACT"
+  - description: "Adding a contact whose email matches a lead but for a different company"
+    handling: "Do NOT flag as cross-pipeline — the match must be email + same company (via offer.companyCacheId)"
+  - description: "Removing a recruitment contact that was cross-pipeline linked, but the lead was already manually moved to 'rejected'"
+    handling: "Only clear recruitmentStatus if it is still 'in_recruitment_process' — don't override other statuses"
+  - description: "Re-prospect on a contact that has no linked lead (leadId is null)"
+    handling: "Return 400 with error code NO_LINKED_LEAD"
+  - description: "Adding a contact to an offer the user doesn't own"
+    handling: "Return 404 (same as verifyOfferOwnership pattern)"
+
+test_intentions:
+  - function: "detectCrossPipeline"
+    description: "When adding a recruitment contact, check if email matches a lead for the same company"
+    inputs:
+      recruitmentContactEmail: "john@acme.com"
+      offerCompanyCacheId: "company-uuid-1"
+      leadEmail: "john@acme.com"
+      leadCompanyId: "company-uuid-1"
+    oracle:
+      final: "email match + same company → lead.recruitmentStatus = 'in_recruitment_process', recruitmentContact.leadId = lead.id"
+    assertions:
+      - "lead.recruitmentStatus === 'in_recruitment_process'"
+      - "recruitmentContact.leadId === lead.id"
+    edge_cases:
+      - description: "Email matches but different company"
+        inputs:
+          recruitmentContactEmail: "john@acme.com"
+          offerCompanyCacheId: "company-uuid-1"
+          leadEmail: "john@acme.com"
+          leadCompanyId: "company-uuid-2"
+        oracle:
+          final: "email match but company mismatch → no flagging"
+        assertions:
+          - "lead.recruitmentStatus === null"
+          - "recruitmentContact.leadId === null"
+      - description: "No lead exists with that email"
+        inputs:
+          recruitmentContactEmail: "unknown@acme.com"
+        oracle:
+          final: "no match → no flagging, leadId stays null"
+        assertions:
+          - "recruitmentContact.leadId === null"
+
+  - function: "clearRecruitmentStatus (re-prospect)"
+    description: "When re-prospecting, clear the lead's recruitment status"
+    inputs:
+      leadRecruitmentStatus: "in_recruitment_process"
+    oracle:
+      final: "lead.recruitmentStatus = null"
+    assertions:
+      - "lead.recruitmentStatus === null"
+    edge_cases:
+      - description: "Lead was already manually moved (status != in_recruitment_process)"
+        inputs:
+          leadRecruitmentStatus: null
+        oracle:
+          final: "No change — already cleared"
+        assertions:
+          - "lead.recruitmentStatus === null"
+
+ux_ref: null  # Backend-only story, no UI
+
+components:
+  reuse: []
+  create: []
+
+depends_on:
+  - "job-cover-letter"
+
+notes: |
+  - RecruitmentContact model: id (UUID), offerId (FK→job_offers), userId (FK→users), name (string, required),
+    role (string|null), email (string|null), linkedinUrl (string|null), notes (text|null),
+    leadId (string|null, FK→contacts), createdAt, updatedAt
+  - Migration for contacts table: add recruitment_status column (varchar(30)|null, default null)
+  - Cross-pipeline detection runs on create only (not update) — changing email on a recruitment contact
+    does not re-trigger detection (keep it simple for MVP)
+  - The re-prospect endpoint is POST (not DELETE) because it's an action, not a resource deletion
+  - ADR: recruitment contacts are a separate table from leads (contacts table) because they serve
+    different purposes (tracking vs outreach) and have different lifecycles
+
+validation_acs:
+  - id: "AC-BP-JASC-COMPILE"
+    type: "BP"
+    description: "Project compiles without errors"
+    verify: "cd /Volumes/Samsung_T5/dev/expat-hunter && pnpm --filter api exec tsc --noEmit 2>&1 | grep -c 'error TS' | awk '{if ($1 == 0) print \"PASS\"; else print \"FAIL\"}'"
+    tier: 1
+  - id: "AC-BP-JASC-TU"
+    type: "BP"
+    description: "All unit tests pass"
+    verify: "cd /Volumes/Samsung_T5/dev/expat-hunter/apps/api && export NVM_DIR=\"$HOME/.nvm\" && . \"$NVM_DIR/nvm.sh\" && nvm use 22.22.1 && node --loader ts-node/esm bin/test.ts -- --files 'tests/unit/services/recruitment_contact_service.spec.ts'"
+    tier: 1
+  - id: "AC-BP-JASC-CONSOLE"
+    type: "BP"
+    description: "Zero console errors/stacktraces in backend server logs"
+    verify: "runtime-only — check server logs during API calls"
+    tier: 2
+
+closing_ac:
+  - id: "AC-BP-JASC-DONE"
+    type: "BP"
+    description: "PR is merged into develop — story closure gate"
+    verify: "gh pr list --base develop --state merged --search 'job-application-send-contacts' --json number,title | head -5"
+    tier: 1
