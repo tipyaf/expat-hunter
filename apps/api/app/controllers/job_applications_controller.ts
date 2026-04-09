@@ -7,7 +7,10 @@ import {
   saveCvTextValidator,
   refineCoverLetterValidator,
   saveCoverLetterTextValidator,
+  sendApplicationValidator,
+  draftFollowUpEmailValidator,
 } from '#validators/job_application_validator'
+import JobApplicationSendService from '#services/job_application_send_service'
 import JobOffer from '#models/job_offer'
 import type { UserPlan } from '@expat-hunter/shared'
 
@@ -18,6 +21,7 @@ const PDF_LINE_GAP = 4
 export default class JobApplicationsController {
   private readonly cvService = new JobCvGenerationService()
   private readonly coverLetterService = new JobCoverLetterService()
+  private readonly sendService = new JobApplicationSendService()
 
   async generate({ auth, params, response }: HttpContext): Promise<void> {
     const user = auth.getUserOrFail()
@@ -321,6 +325,87 @@ export default class JobApplicationsController {
     })
   }
 
+  async generateApplicationEmail({ auth, params, response }: HttpContext): Promise<void> {
+    const user = auth.getUserOrFail()
+    const offerId = params.id
+
+    try {
+      const result = await this.sendService.generateApplicationEmail(
+        offerId,
+        user.id,
+        (user as unknown as { plan: UserPlan }).plan ?? 'free'
+      )
+
+      response.ok({
+        data: {
+          applicationId: result.application.id,
+          emailText: result.emailText,
+          status: result.application.status,
+        },
+      })
+    } catch (error: unknown) {
+      this.handleServiceError(error, response)
+    }
+  }
+
+  async sendApplication({ auth, params, request, response }: HttpContext): Promise<void> {
+    const user = auth.getUserOrFail()
+    const offerId = params.id
+    const payload = await request.validateUsing(sendApplicationValidator)
+
+    try {
+      const result = await this.sendService.sendApplication(
+        offerId,
+        user.id,
+        payload.recipientEmail
+      )
+
+      response.ok({
+        data: {
+          applicationId: result.application.id,
+          status: result.application.status,
+          sentAt: result.application.sentAt?.toISO() ?? null,
+          sentToEmail: result.application.sentToEmail,
+        },
+      })
+    } catch (error: unknown) {
+      this.handleServiceError(error, response)
+    }
+  }
+
+  async applicationEmailStatus({ auth, params, response }: HttpContext): Promise<void> {
+    const user = auth.getUserOrFail()
+    const offerId = params.id
+
+    try {
+      const status = await this.sendService.getApplicationEmailStatus(offerId, user.id)
+      response.ok({ data: status })
+    } catch (error: unknown) {
+      this.handleServiceError(error, response)
+    }
+  }
+
+  async draftFollowUpEmail({ auth, params, request, response }: HttpContext): Promise<void> {
+    const user = auth.getUserOrFail()
+    const offerId = params.id
+    const contactId = params.contactId
+    const payload = await request.validateUsing(draftFollowUpEmailValidator)
+
+    try {
+      const result = await this.sendService.draftFollowUpEmail(
+        offerId,
+        contactId,
+        user.id,
+        payload.type,
+        payload.context
+      )
+
+      response.ok({ data: { emailText: result.emailText } })
+    } catch (error: unknown) {
+      this.handleServiceError(error, response)
+    }
+  }
+
   private async verifyOfferOwnership(offerId: string, userId: string): Promise<void> {
     const offer = await JobOffer.query()
       .where('id', offerId)
@@ -354,6 +439,34 @@ export default class JobApplicationsController {
     if (typedError.code === 'NO_COVER_LETTER') {
       response.badRequest({
         error: { code: 'NO_COVER_LETTER', message: typedError.message },
+      })
+      return
+    }
+
+    if (typedError.code === 'NO_APPLICATION_EMAIL') {
+      response.badRequest({
+        error: { code: 'NO_APPLICATION_EMAIL', message: typedError.message },
+      })
+      return
+    }
+
+    if (typedError.code === 'NO_EMAIL_CONNECTION') {
+      response.badRequest({
+        error: { code: 'NO_EMAIL_CONNECTION', message: typedError.message },
+      })
+      return
+    }
+
+    if (typedError.code === 'CONTACT_NO_EMAIL') {
+      response.badRequest({
+        error: { code: 'CONTACT_NO_EMAIL', message: typedError.message },
+      })
+      return
+    }
+
+    if (typedError.code === 'EMAIL_SEND_FAILED') {
+      response.serviceUnavailable({
+        error: { code: 'EMAIL_SEND_FAILED', message: typedError.message },
       })
       return
     }

@@ -296,3 +296,6 @@ await import('#start/routes/job_offers')
 
 // Job applications routes (CV generation, refinement, PDF export)
 await import('#start/routes/job_applications')
+
+// Recruitment contacts routes (CRUD + cross-pipeline + re-prospect)
+await import('#start/routes/recruitment_contacts')

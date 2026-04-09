@@ -123,12 +123,13 @@ export default class EmailSendingService {
   private async sendSingleEmail(
     email: EmailMessage,
     recipientEmail: string,
-    connection: EmailConnection | null
+    connection: EmailConnection | null,
+    attachments?: Array<{ filename: string; content: Buffer; contentType: string }>
   ): Promise<void> {
     if (connection?.connectionType === CONNECTION_TYPE.OAUTH) {
-      await this.sendViaOAuth(email, recipientEmail, connection)
+      await this.sendViaOAuth(email, recipientEmail, connection, attachments)
     } else {
-      await this.sendViaDefault(email, recipientEmail)
+      await this.sendViaDefault(email, recipientEmail, attachments)
     }
   }
 
@@ -138,7 +139,8 @@ export default class EmailSendingService {
   private async sendViaOAuth(
     email: EmailMessage,
     recipientEmail: string,
-    connection: EmailConnection
+    connection: EmailConnection,
+    attachments?: Array<{ filename: string; content: Buffer; contentType: string }>
   ): Promise<void> {
     const accessToken = await this.oauthTokenService.ensureFreshToken(connection)
 
@@ -158,6 +160,11 @@ export default class EmailSendingService {
       to: recipientEmail,
       subject: email.subject,
       text: email.body,
+      attachments: attachments?.map((a) => ({
+        filename: a.filename,
+        content: a.content,
+        contentType: a.contentType,
+      })),
     })
   }
 
@@ -166,13 +173,22 @@ export default class EmailSendingService {
    */
   private async sendViaDefault(
     email: EmailMessage,
-    recipientEmail: string
+    recipientEmail: string,
+    attachments?: Array<{ filename: string; content: Buffer; contentType: string }>
   ): Promise<void> {
     await mail.send((message) => {
       message
         .to(recipientEmail)
         .subject(email.subject)
         .text(email.body)
+      if (attachments) {
+        for (const attachment of attachments) {
+          message.attachData(attachment.content, {
+            filename: attachment.filename,
+            contentType: attachment.contentType,
+          })
+        }
+      }
     })
   }
 }

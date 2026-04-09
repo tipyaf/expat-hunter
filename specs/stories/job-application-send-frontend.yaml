@@ -1,0 +1,269 @@
+# ============================================================================
+# STORY: job-application-send-frontend — Send tab + recruitment contacts UI
+# ============================================================================
+# Build contract — the developer implements exactly this, the validator checks exactly this.
+# ============================================================================
+
+story:
+  id: "job-application-send-frontend"
+  title: "Send tab + recruitment contacts UI"
+  parent_spec: "specs/expat-hunter.yaml"
+  status: "refined"
+  size: "L"
+  refined_at: "2026-04-09"
+  refined_by: "refinement"
+
+user_story: >
+  As a job seeker, I want a 'Send' tab on the offer detail page where I can review and edit
+  the AI-generated application email, see my CV and cover letter as attachments, choose a
+  recipient, and send my application. I also want to manage recruitment contacts directly on
+  the offer page and use AI-assisted follow-up email drafting.
+
+scope:
+  files_to_create:
+    - path: "apps/frontend/src/lib/job-application-send-api.ts"
+      purpose: "API client for application email generation + send"
+    - path: "apps/frontend/src/lib/job-recruitment-contacts-api.ts"
+      purpose: "API client for recruitment contacts CRUD"
+    - path: "apps/frontend/src/hooks/use-job-application-send.ts"
+      purpose: "Hook for application email state management"
+    - path: "apps/frontend/src/hooks/use-recruitment-contacts.ts"
+      purpose: "Hook for recruitment contacts CRUD"
+    - path: "apps/frontend/src/components/job-offers/send/send-tab.tsx"
+      purpose: "Send tab component — email body, recipient, attachments, send button"
+    - path: "apps/frontend/src/components/job-offers/send/send-tab.test.tsx"
+      purpose: "Unit tests for SendTab component"
+    - path: "apps/frontend/src/components/job-offers/recruitment-contacts/recruitment-contacts-panel.tsx"
+      purpose: "Recruitment contacts panel — list, add, edit, remove, cross-pipeline badge"
+    - path: "apps/frontend/src/components/job-offers/recruitment-contacts/recruitment-contacts-panel.test.tsx"
+      purpose: "Unit tests for RecruitmentContactsPanel"
+  files_to_modify:
+    - path: "apps/frontend/src/app/offres/[id]/page.tsx"
+      reason: "Add 'send' tab + RecruitmentContactsPanel in right column"
+    - path: "apps/frontend/src/i18n/en.json"
+      reason: "Add sendTab + recruitmentContacts namespaces"
+    - path: "apps/frontend/src/i18n/fr.json"
+      reason: "Add sendTab + recruitmentContacts namespaces (French)"
+  files_to_read:
+    - path: "apps/frontend/src/components/job-offers/cover-letter/cover-letter-tab.tsx"
+      reason: "Reference for tab component pattern"
+    - path: "apps/frontend/src/hooks/use-job-cover-letter.ts"
+      reason: "Reference for hook pattern (state, loading, error handling)"
+    - path: "apps/frontend/src/lib/job-cover-letter-api.ts"
+      reason: "Reference for API client pattern"
+    - path: "apps/frontend/src/app/offres/[id]/page.tsx"
+      reason: "Understand current tab structure"
+
+acceptance_criteria:
+
+  functional:
+    - id: "AC-FUNC-JASF-01"
+      description: "Given the offer detail page / When user clicks the 'Send' tab / Then the send tab is displayed with email body, recipient selector, attachment indicators, and send button"
+      verify: "grep -rn 'data-testid=\"tab-send\"\\|data-testid=\"send-tab' apps/frontend/src/app/offres/\\[id\\]/page.tsx apps/frontend/src/components/job-offers/send/send-tab.tsx | head -5"
+      tier: 1
+
+    - id: "AC-FUNC-JASF-02"
+      description: "Given CV and cover letter are generated / When user clicks 'Generate email' / Then AI generates a 3-4 line email body displayed in an editable textarea"
+      verify: "grep -rn 'data-testid=\"email-generate-button\"\\|data-testid=\"email-body-textarea\"' apps/frontend/src/components/job-offers/send/send-tab.tsx | head -5"
+      tier: 1
+
+    - id: "AC-FUNC-JASF-03"
+      description: "Given the send tab / Then CV.pdf and CoverLetter.pdf are shown as attachment indicators (not downloadable from here)"
+      verify: "grep -rn 'data-testid=\"email-attachments-list\"\\|CV.pdf\\|CoverLetter.pdf\\|attachment' apps/frontend/src/components/job-offers/send/send-tab.tsx | head -5"
+      tier: 1
+
+    - id: "AC-FUNC-JASF-04"
+      description: "Given the send tab / When user clicks 'Send application' / Then a confirmation dialog appears, and after confirmation the API is called and success toast + status update shown"
+      verify: "grep -rn 'data-testid=\"email-send-button\"\\|data-testid=\"send-confirm' apps/frontend/src/components/job-offers/send/send-tab.tsx | head -5"
+      tier: 1
+
+    - id: "AC-FUNC-JASF-05"
+      description: "Given CV or cover letter is not yet generated / Then the send button is disabled with a tooltip explaining why"
+      verify: "grep -rn 'disabled\\|aria-disabled\\|tooltip\\|noCv\\|noCoverLetter' apps/frontend/src/components/job-offers/send/send-tab.tsx | head -5"
+      tier: 1
+
+    - id: "AC-FUNC-JASF-06"
+      description: "Given the offer detail page / Then recruitment contacts panel is visible in the right column showing all contacts with add/edit/remove actions"
+      verify: "grep -rn 'RecruitmentContactsPanel\\|recruitment-contacts-panel' apps/frontend/src/app/offres/\\[id\\]/page.tsx apps/frontend/src/components/job-offers/recruitment-contacts/recruitment-contacts-panel.tsx | head -5"
+      tier: 1
+
+    - id: "AC-FUNC-JASF-07"
+      description: "Given the recruitment contacts panel / When user fills the add form (name, role, email) and submits / Then the contact is created via API and appears in the list"
+      verify: "grep -rn 'data-testid=\"recruitment-contact-add-form\"\\|data-testid=\"recruitment-contact-add-submit-button\"' apps/frontend/src/components/job-offers/recruitment-contacts/recruitment-contacts-panel.tsx | head -5"
+      tier: 1
+
+    - id: "AC-FUNC-JASF-08"
+      description: "Given a recruitment contact that is also a lead / Then a 'Lead existant' badge is displayed on the contact card"
+      verify: "grep -rn 'data-testid=\"recruitment-contact-cross-lead-badge\"\\|isExistingLead\\|leadId' apps/frontend/src/components/job-offers/recruitment-contacts/recruitment-contacts-panel.tsx | head -5"
+      tier: 1
+
+    - id: "AC-FUNC-JASF-09"
+      description: "Given i18n / Then all UI text is translated in both en and fr namespaces (sendTab + recruitmentContacts)"
+      verify: "grep -c 'sendTab' apps/frontend/src/i18n/en.json apps/frontend/src/i18n/fr.json"
+      tier: 1
+
+  security:
+    - id: "AC-SEC-JASF-01"
+      description: "API client passes auth token on every request — no unauthenticated calls"
+      verify: "grep -rn 'Authorization\\|Bearer\\|token' apps/frontend/src/lib/job-application-send-api.ts apps/frontend/src/lib/job-recruitment-contacts-api.ts | head -5"
+      tier: 1
+
+    - id: "AC-SEC-JASF-02"
+      description: "Email body textarea does not render HTML — plain text only (no XSS via user-edited email)"
+      verify: "! grep -rn 'dangerouslySetInnerHTML\\|innerHTML' apps/frontend/src/components/job-offers/send/send-tab.tsx"
+      tier: 1
+
+  best_practices:
+    - id: "AC-BP-JASF-01"
+      description: "All CSS uses design system variables — no hardcoded Tailwind colors"
+      verify: "! grep -Prn '(text|bg|border)-(red|blue|green|gray|slate|zinc|amber|violet)-[0-9]' apps/frontend/src/components/job-offers/send/send-tab.tsx apps/frontend/src/components/job-offers/recruitment-contacts/recruitment-contacts-panel.tsx"
+      tier: 1
+
+    - id: "AC-BP-JASF-02"
+      description: "All interactive elements have data-testid attributes matching the UX spec"
+      verify: "grep -c 'data-testid' apps/frontend/src/components/job-offers/send/send-tab.tsx apps/frontend/src/components/job-offers/recruitment-contacts/recruitment-contacts-panel.tsx"
+      tier: 1
+
+edge_cases:
+  - description: "User navigates to send tab before generating CV or cover letter"
+    handling: "Show disabled state with clear message: 'Generate your CV and cover letter first'"
+  - description: "Email send fails (network error)"
+    handling: "Show error inline with retry button, do NOT clear the email body"
+  - description: "No recruitment contacts exist"
+    handling: "Show empty state: 'No recruitment contacts yet. Add a contact to track your interactions.'"
+  - description: "Recipient email field is empty when sending"
+    handling: "Disable send button, show validation message"
+  - description: "Application already sent (status === 'sent')"
+    handling: "Show sent confirmation with date and recipient, send button replaced with 'Already sent' badge"
+
+test_intentions:
+  - function: "SendTab render — initial state (no CV/CL)"
+    description: "When no CV or cover letter generated, send button is disabled"
+    inputs:
+      hasCv: false
+      hasCoverLetter: false
+    oracle:
+      final: "send button has aria-disabled='true', tooltip visible"
+    assertions:
+      - "screen.getByTestId('email-send-button').toBeDisabled()"
+      - "screen.getByText(t('sendTab.generateFirst')).toBeVisible()"
+    edge_cases:
+      - description: "CV exists but no cover letter"
+        inputs:
+          hasCv: true
+          hasCoverLetter: false
+        oracle:
+          final: "send button still disabled"
+        assertions:
+          - "screen.getByTestId('email-send-button').toBeDisabled()"
+
+  - function: "SendTab render — email generated"
+    description: "When application email is generated, show editable textarea"
+    inputs:
+      applicationEmailText: "Dear Hiring Team,\n\nI am writing to express my interest..."
+    oracle:
+      final: "textarea visible with email text, send button enabled"
+    assertions:
+      - "screen.getByTestId('email-body-textarea').toHaveValue('Dear Hiring Team,...')"
+      - "screen.getByTestId('email-send-button').not.toBeDisabled()"
+
+  - function: "SendTab render — already sent"
+    description: "When application was already sent, show confirmation"
+    inputs:
+      status: "sent"
+      sentAt: "2026-04-09T14:30:00Z"
+      sentToEmail: "hr@acme.com"
+    oracle:
+      final: "show 'Sent on April 9, 2026 to hr@acme.com' badge, no send button"
+    assertions:
+      - "screen.getByText(/Sent on/).toBeVisible()"
+      - "screen.queryByTestId('email-send-button').not.toBeInTheDocument()"
+
+  - function: "RecruitmentContactsPanel — empty state"
+    description: "When no contacts exist, show empty state"
+    inputs:
+      contacts: []
+    oracle:
+      final: "empty state message visible, add button visible"
+    assertions:
+      - "screen.getByText(t('recruitmentContacts.emptyState')).toBeVisible()"
+      - "screen.getByTestId('recruitment-contact-add-form') or add button visible"
+
+  - function: "RecruitmentContactsPanel — cross-pipeline badge"
+    description: "When contact has leadId, show cross-pipeline badge"
+    inputs:
+      contacts:
+        - id: "c1"
+          name: "John Smith"
+          leadId: "lead-123"
+    oracle:
+      final: "badge 'Lead existant' visible on contact card"
+    assertions:
+      - "screen.getByTestId('recruitment-contact-cross-lead-badge').toBeVisible()"
+
+ux_ref: "specs/expat-hunter-ux.md#ApplicationWorkspacePage, specs/expat-hunter-ux.md#RecruitmentContactCard"
+
+components:
+  reuse:
+    - name: "CoverLetterTab"
+      path: "apps/frontend/src/components/job-offers/cover-letter/cover-letter-tab.tsx"
+      note: "Reference for tab pattern — same loading/error/action states"
+    - name: "CrossPipelineBadge"
+      path: "apps/frontend/src/components/job-offers/cross-pipeline-badge.tsx"
+      note: "Reuse for cross-pipeline indicator on recruitment contacts"
+  create:
+    - name: "SendTab"
+      type: smart
+      reason: "Manages application email state, send flow, recipient selection"
+    - name: "RecruitmentContactsPanel"
+      type: smart
+      reason: "Manages CRUD state for recruitment contacts, add form, cross-pipeline display"
+
+depends_on:
+  - "job-application-send-email"
+
+notes: |
+  - Follow exact same pattern as CoverLetterTab for the SendTab component
+  - Recipient selector: dropdown with recruitment contacts + manual email input option
+    Default: offer.contactEmail if available, else first recruitment contact with email
+  - Attachments are indicators only (not downloadable from send tab) — show filename + checkmark
+  - Send confirmation dialog: "You're about to send your application to [email]. This cannot be undone."
+  - After successful send: toast + offer status badge updates to 'Postulée'
+  - RecruitmentContactsPanel goes in the right column of the detail page (below CompanyPanel)
+  - Visible on ALL tabs (not just send tab) — recruitment contacts are global to the offer
+  - Follow-up email: clicking "Email" button on a contact opens an inline composer (textarea + send)
+  - All text via useTranslations — sendTab and recruitmentContacts namespaces
+
+validation_acs:
+  - id: "AC-BP-JASF-COMPILE"
+    type: "BP"
+    description: "Project compiles without errors"
+    verify: "cd /Volumes/Samsung_T5/dev/expat-hunter && pnpm --filter frontend exec tsc --noEmit 2>&1 | tail -5"
+    tier: 1
+  - id: "AC-BP-JASF-TU"
+    type: "BP"
+    description: "All unit tests pass"
+    verify: "cd /Volumes/Samsung_T5/dev/expat-hunter/apps/frontend && npx vitest run src/components/job-offers/send/ src/components/job-offers/recruitment-contacts/ --reporter=verbose 2>&1 | tail -20"
+    tier: 1
+  - id: "AC-BP-JASF-CONSOLE"
+    type: "BP"
+    description: "Zero console errors/stacktraces (browser console)"
+    verify: "runtime-only — check browser console on /offres/:id page"
+    tier: 2
+  - id: "AC-BP-JASF-WCAG"
+    type: "BP"
+    description: "WCAG 2.1 AA — 0 violations on send tab and recruitment contacts"
+    verify: "runtime-only — manual WCAG checklist (contrast, keyboard nav, ARIA)"
+    tier: 2
+  - id: "AC-BP-JASF-WIREFRAME"
+    type: "BP"
+    description: "UI matches wireframe layout, design system, and data-testid attributes"
+    verify: "runtime-only — visual comparison with wireframe spec"
+    tier: 3
+
+closing_ac:
+  - id: "AC-BP-JASF-DONE"
+    type: "BP"
+    description: "PR is merged into develop — story closure gate"
+    verify: "gh pr list --base develop --state merged --search 'job-application-send-frontend' --json number,title | head -5"
+    tier: 1

@@ -770,13 +770,13 @@ features:
   - id: "job-application-send"
     name: "Job Application Send"
     priority: "must-have"
-    status: "pending"
+    status: "building"
     cycles: 0
-    story_file: ""
+    story_file: "specs/stories/job-application-send-contacts.yaml, specs/stories/job-application-send-email.yaml, specs/stories/job-application-send-frontend.yaml"
     depends_on: ["job-cover-letter"]
-    started_at: ""
+    started_at: "2026-04-09"
     validated_at: ""
-    notes: "AI email body (3-4 lines). CV + cover letter as attachments. Tone adapts to country. Auto-expiration of offers. E13."
+    notes: "E13. 3 stories: contacts CRUD+cross-pipeline (sc-989, M=3pts), email AI+send (sc-990, L=5pts), frontend send tab+contacts UI (sc-991, L=5pts). Total 13pts."
 
   # --- E14: Automatisation ---
 
