@@ -895,7 +895,8 @@
     "actionCoverLetter": "Generate a letter",
     "actionApply": "Apply",
     "tabDetails": "Details",
-    "tabCv": "CV"
+    "tabCv": "CV",
+    "tabSend": "Send"
   },
   "cvTab": {
     "generateDescription": "Let AI adapt your CV for this position by highlighting relevant experience and skills.",
@@ -917,6 +918,48 @@
     "cancel": "Cancel",
     "downloadPdf": "Download PDF",
     "downloading": "Downloading...",
+    "dismiss": "Dismiss"
+  },
+  "sendTab": {
+    "generateDescription": "Generate an AI-powered application email based on your CV and cover letter.",
+    "generateFirst": "Generate your CV and cover letter first.",
+    "generateBtn": "Generate email",
+    "generating": "Generating...",
+    "emailBodyLabel": "Email body",
+    "recipientLabel": "Recipient",
+    "offerContact": "Offer contact",
+    "manualInput": "Enter email manually",
+    "manualInputPlaceholder": "recipient@company.com",
+    "noRecipientTooltip": "Select or enter a recipient email",
+    "sendBtn": "Send application",
+    "sending": "Sending...",
+    "confirmTitle": "Confirm sending",
+    "confirmMessage": "You're about to send your application to {email}. This cannot be undone.",
+    "confirmSendBtn": "Send",
+    "cancelBtn": "Cancel",
+    "applicationSent": "Application sent",
+    "sentOn": "Sent on {date} to {email}",
+    "quotaExceeded": "You have reached your email generation limit. Upgrade your plan for more.",
+    "noCv": "Generate your CV first before sending an application.",
+    "noCoverLetter": "Generate your cover letter first before sending an application.",
+    "dismiss": "Dismiss"
+  },
+  "recruitmentContacts": {
+    "title": "Recruitment Contacts",
+    "addBtn": "Add",
+    "emptyState": "No recruitment contacts yet. Add a contact to track your interactions.",
+    "nameLabel": "Name",
+    "namePlaceholder": "Contact name",
+    "roleLabel": "Role",
+    "rolePlaceholder": "e.g. Hiring Manager",
+    "emailLabel": "Email",
+    "emailPlaceholder": "email@company.com",
+    "existingLead": "Existing lead",
+    "editLabel": "Edit {name}",
+    "removeLabel": "Remove {name}",
+    "cancelBtn": "Cancel",
+    "addSubmitBtn": "Add contact",
+    "adding": "Adding...",
     "dismiss": "Dismiss"
   },
   "jobSearch": {
