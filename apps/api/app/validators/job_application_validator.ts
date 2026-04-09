@@ -23,3 +23,16 @@ export const saveCoverLetterTextValidator = vine.compile(
     coverLetterText: vine.string().trim().minLength(1).maxLength(50000),
   })
 )
+
+export const sendApplicationValidator = vine.compile(
+  vine.object({
+    recipientEmail: vine.string().trim().email().maxLength(255),
+  })
+)
+
+export const draftFollowUpEmailValidator = vine.compile(
+  vine.object({
+    type: vine.enum(['follow_up', 'thank_you', 'status_check']),
+    context: vine.string().trim().minLength(1).maxLength(2000),
+  })
+)
