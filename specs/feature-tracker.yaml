@@ -770,13 +770,13 @@ features:
   - id: "job-application-send"
     name: "Job Application Send"
     priority: "must-have"
-    status: "building"
-    cycles: 0
+    status: "validated"
+    cycles: 1
     story_file: "specs/stories/job-application-send-contacts.yaml, specs/stories/job-application-send-email.yaml, specs/stories/job-application-send-frontend.yaml"
     depends_on: ["job-cover-letter"]
     started_at: "2026-04-09"
-    validated_at: ""
-    notes: "E13. 3 stories: contacts CRUD+cross-pipeline (sc-989, M=3pts), email AI+send (sc-990, L=5pts), frontend send tab+contacts UI (sc-991, L=5pts). Total 13pts."
+    validated_at: "2026-04-09"
+    notes: "E13. 3 stories: contacts CRUD+cross-pipeline (sc-989 PR #159), email AI+send (sc-990 PR #160), frontend send tab+contacts UI (sc-991 PR #161). Total 13pts. 25 unit tests, 12 e2e tests, 0 TS errors, 0 SonarQube issues."
 
   # --- E14: Automatisation ---
 
