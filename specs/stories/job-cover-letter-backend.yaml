@@ -1,0 +1,277 @@
+# ============================================================================
+# Story: job-cover-letter-backend
+# Feature: Job Cover Letter (E13) — Story 1/2
+# Status: refined
+# Estimate: M (3 points)
+# ============================================================================
+
+story:
+  id: "job-cover-letter-backend"
+  title: "Job Cover Letter — Backend: AI service + API endpoints"
+  epic: "E13 — Candidature"
+  shortcut_id: 959
+  estimate: 3
+  priority: "must-have"
+  type: "feature"
+  area: "backend"
+  depends_on:
+    - "job-cv-generation"
+
+  description: |
+    Backend for AI cover letter generation. Creates the cover letter service and
+    AI prompt, extends the existing JobApplicationsController with 4 cover letter
+    endpoints (generate, refine, save, PDF export), and adds validators.
+
+    No migration needed — the job_applications table already has cover_letter_text
+    and cover_letter_user_instruction columns (created in the CV generation migration).
+
+    Key difference from CV: generates full text (not replacement-based). For
+    recruitment_agency company types, company research data (sector, size) is
+    ignored — only the job listing data is used in the prompt.
+
+    Uses the same quota mechanism as CV (coverLetterGenerations added to FREE_QUOTAS).
+    Language is inherited from the existing JobApplication record (deduced during CV
+    generation) or deduced from target country if no prior CV generation.
+
+  ux_ref: null  # Backend only — no wireframe needed
+
+  scope:
+    files_to_create:
+      - "apps/api/app/services/job_cover_letter_service.ts"
+      - "apps/api/app/ai/prompts/cover_letter_prompt.ts"
+
+    files_to_modify:
+      - "apps/api/app/controllers/job_applications_controller.ts"  # Add 4 cover letter methods
+      - "apps/api/app/validators/job_application_validator.ts"  # Add cover letter validators
+      - "apps/api/start/routes/job_applications.ts"  # Add /cover-letter/* routes
+      - "packages/shared/src/constants/plans.ts"  # Add coverLetterGenerations: 1 to FREE_QUOTAS
+
+    files_excluded:
+      - "apps/frontend/**"  # Frontend is Story 2
+      - "apps/api/database/migrations/**"  # No migration needed — columns exist
+      - "apps/api/app/models/job_application.ts"  # No model changes needed
+
+  components:
+    reuse:
+      - name: "OpenRouterClient"
+        path: "apps/api/app/ai/openrouter_client.ts"
+        note: "Same AI client as CV generation and AI evaluation"
+      - name: "UsageService"
+        path: "apps/api/app/services/usage_service.ts"
+        note: "Quota checking — add coverLetterGenerations quota type"
+      - name: "JobApplication"
+        path: "apps/api/app/models/job_application.ts"
+        note: "Existing model — write to cover_letter_text and cover_letter_user_instruction"
+      - name: "JobCvGenerationService"
+        path: "apps/api/app/services/job_cv_generation_service.ts"
+        note: "Reference for deduceLanguage pattern and error handling"
+    create:
+      - name: "JobCoverLetterService"
+        type: smart
+        reason: "Orchestrates AI prompt + profile + offer context for cover letter generation"
+
+  acceptance_criteria:
+    # --- FUNCTIONAL ---
+    - id: "AC-FUNC-JCL-01"
+      type: "FUNC"
+      description: "Given a job offer and user profile / When POST /api/job-offers/:id/cover-letter/generate / Then AI generates a cover letter using CV + offer + company + advice context"
+      verify: "curl -s -X POST http://localhost:3333/api/job-offers/$OID/cover-letter/generate -H 'Authorization: Bearer $TOKEN' -H 'Content-Type: application/json' | jq '.data.coverLetterText != null'"
+      tier: 2
+
+    - id: "AC-FUNC-JCL-02"
+      type: "FUNC"
+      description: "Given a company of type 'recruitment_agency' / When generating a cover letter / Then company research data (sector, size) is ignored — only job listing data is used"
+      verify: "grep -r 'recruitment_agency\\|companyType.*ignore\\|skip.*agency\\|isRecruitmentAgency' apps/api/app/services/job_cover_letter_service.ts apps/api/app/ai/prompts/cover_letter_prompt.ts"
+      tier: 1
+
+    - id: "AC-FUNC-JCL-03"
+      type: "FUNC"
+      description: "Given a generated cover letter / When POST /api/job-offers/:id/cover-letter/refine with {instruction} / Then AI regenerates taking instructions into account"
+      verify: "curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:3333/api/job-offers/$OID/cover-letter/refine -H 'Authorization: Bearer $TOKEN' -H 'Content-Type: application/json' -d '{\"instruction\":\"More formal tone\"}'"
+      tier: 2
+
+    - id: "AC-FUNC-JCL-04"
+      type: "FUNC"
+      description: "Given a finalized cover letter / When GET /api/job-offers/:id/cover-letter/pdf / Then a PDF is returned with Content-Type application/pdf"
+      verify: "curl -s -o /dev/null -w '%{http_code}\\n%{content_type}' http://localhost:3333/api/job-offers/$OID/cover-letter/pdf -H 'Authorization: Bearer $TOKEN'"
+      tier: 2
+
+    - id: "AC-FUNC-JCL-05"
+      type: "FUNC"
+      description: "Given an existing cover letter / When GET /api/job-offers/:id/cover-letter / Then the cover letter text and metadata are returned"
+      verify: "curl -s http://localhost:3333/api/job-offers/$OID/cover-letter -H 'Authorization: Bearer $TOKEN' | jq '.data'"
+      tier: 2
+
+    - id: "AC-FUNC-JCL-06"
+      type: "FUNC"
+      description: "Given a cover letter / When PUT /api/job-offers/:id/cover-letter with {coverLetterText} / Then manual edits are saved to job_applications.cover_letter_text"
+      verify: "curl -s -o /dev/null -w '%{http_code}' -X PUT http://localhost:3333/api/job-offers/$OID/cover-letter -H 'Authorization: Bearer $TOKEN' -H 'Content-Type: application/json' -d '{\"coverLetterText\":\"edited text\"}'"
+      tier: 2
+
+    - id: "AC-FUNC-JCL-07"
+      type: "FUNC"
+      description: "Given a free user who used their weekly cover letter quota / When POST generate / Then 403 with quota exceeded message"
+      verify: "grep -r 'coverLetterGenerations' packages/shared/src/constants/plans.ts && grep -r 'checkQuota\\|coverLetterGenerations\\|quota' apps/api/app/services/job_cover_letter_service.ts"
+      tier: 1
+
+    - id: "AC-FUNC-JCL-08"
+      type: "FUNC"
+      description: "Given POST generate / When no JobApplication exists for this offer+user / Then one is created with status draft and language deduced from target country"
+      verify: "grep -r 'firstOrCreate\\|findOrCreate\\|deduceLanguage\\|draft' apps/api/app/services/job_cover_letter_service.ts"
+      tier: 1
+
+    # --- SECURITY ---
+    - id: "AC-SEC-JCL-INPUT"
+      type: "SEC"
+      description: "All cover letter endpoints validate input through VineJS validators"
+      verify: "grep -r 'vine\\|validator\\|request.validateUsing.*coverLetter\\|refineCoverLetterValidator\\|saveCoverLetterValidator' apps/api/app/controllers/job_applications_controller.ts apps/api/app/validators/job_application_validator.ts"
+      tier: 1
+
+    - id: "AC-SEC-JCL-AUTH"
+      type: "SEC"
+      description: "All cover letter endpoints require authentication (middleware.auth)"
+      verify: "grep -r 'middleware.*auth\\|auth()' apps/api/start/routes/job_applications.ts"
+      tier: 1
+
+    - id: "AC-SEC-JCL-SCOPE"
+      type: "SEC"
+      description: "All queries are scoped to auth.user (no cross-user data access)"
+      verify: "grep -r 'auth\\.user\\|userId.*auth\\|user_id.*auth' apps/api/app/services/job_cover_letter_service.ts apps/api/app/controllers/job_applications_controller.ts"
+      tier: 1
+
+    - id: "AC-SEC-JCL-INJECTION"
+      type: "SEC"
+      description: "No raw SQL string interpolation — Lucid ORM only"
+      verify: "! grep -rn 'db\\.rawQuery\\|\\.raw(' apps/api/app/services/job_cover_letter_service.ts"
+      tier: 1
+
+    - id: "AC-SEC-JCL-PROMPT"
+      type: "SEC"
+      description: "AI prompt sanitizes user-controlled content to prevent prompt injection"
+      verify: "grep -r 'sanitize\\|escape\\|replaceAll.*<\\|replaceAll.*>' apps/api/app/ai/prompts/cover_letter_prompt.ts"
+      tier: 1
+
+    # --- BEST PRACTICES ---
+    - id: "AC-BP-JCL-TYPING"
+      type: "BP"
+      description: "All functions have explicit return types"
+      verify: "grep -c 'Promise<\\|: void\\|: string\\|: boolean' apps/api/app/services/job_cover_letter_service.ts"
+      tier: 1
+
+    - id: "AC-BP-JCL-QUERIES"
+      type: "BP"
+      description: "Lucid preload() used for related data (no N+1)"
+      verify: "grep -r 'preload(' apps/api/app/services/job_cover_letter_service.ts"
+      tier: 1
+
+    - id: "AC-BP-JCL-COMPILE"
+      type: "BP"
+      description: "Project compiles without errors"
+      verify: "pnpm --filter frontend exec tsc --noEmit && pnpm --filter api exec tsc --noEmit"
+      tier: 1
+
+    - id: "AC-BP-JCL-TU"
+      type: "BP"
+      description: "All unit tests pass"
+      verify: "pnpm --filter api exec node ace test"
+      tier: 1
+
+    - id: "AC-BP-JCL-CONSOLE"
+      type: "BP"
+      description: "Zero console errors/stacktraces (backend server logs)"
+      verify: "curl -s http://localhost:3333/api/job-offers/$OID/cover-letter -H 'Authorization: Bearer $TOKEN' 2>&1 | grep -v stacktrace"
+      tier: 2
+
+  test_intentions:
+    - function: "generateCoverLetter"
+      description: "AI generates a full cover letter from profile + offer + company context"
+      inputs:
+        cvText: "Senior full-stack developer with 8 years experience in React and Node.js"
+        offerTitle: "Senior Full-Stack Developer"
+        offerDescription: "Join our team building cloud-native applications"
+        companyName: "Acme Corp"
+        companySector: "Technology"
+        applicationAdvice: "Highlight cloud experience"
+        language: "en"
+      oracle:
+        final: "coverLetterText is a non-empty string, cover_letter_text column updated in job_applications"
+      assertions:
+        - "result.application.coverLetterText !== null"
+        - "result.application.coverLetterText.length > 0"
+        - "typeof result.application.coverLetterText === 'string'"
+      edge_cases:
+        - description: "Empty CV text in profile"
+          inputs: { cvText: null }
+          oracle: { final: "throws Error with code NO_CV, status 400" }
+          assertions: ["throws Error('No CV found')"]
+        - description: "AI returns empty response"
+          inputs: { cvText: "Valid CV" }
+          oracle: { final: "throws Error with code AI_ERROR, status 503" }
+          assertions: ["throws Error('generation failed')"]
+
+    - function: "generateCoverLetter (recruitment_agency)"
+      description: "Company research data is excluded for recruitment agencies"
+      inputs:
+        cvText: "Developer with 5 years experience"
+        offerTitle: "Frontend Developer"
+        companyName: "Hays Recruitment"
+        companySector: "Recruitment"
+        companyType: "recruitment_agency"
+      oracle:
+        final: "prompt does NOT include companySector/companySize; only job listing data + company name"
+      assertions:
+        - "promptArgs.companySector === null (ignored)"
+        - "promptArgs.companySize === null (ignored)"
+        - "promptArgs.companyName === 'Hays Recruitment' (kept)"
+      edge_cases:
+        - description: "hiring_company type — full company data included"
+          inputs: { companyType: "hiring_company", companySector: "Technology" }
+          oracle: { final: "prompt includes companySector and companySize" }
+          assertions: ["promptArgs.companySector === 'Technology'"]
+
+    - function: "checkQuota (coverLetterGenerations)"
+      description: "Free users limited to 1 cover letter generation per week"
+      inputs:
+        plan: "free"
+        currentUsage: 1
+      oracle:
+        final: "FREE_QUOTAS.coverLetterGenerations = 1, used = 1, remaining = 0 → allowed = false"
+      assertions:
+        - "result.allowed === false"
+      edge_cases:
+        - description: "Premium user — unlimited"
+          inputs: { plan: "premium", currentUsage: 100 }
+          oracle: { final: "premium → limit = null → allowed = true" }
+          assertions: ["result.allowed === true"]
+        - description: "Free user first generation"
+          inputs: { plan: "free", currentUsage: 0 }
+          oracle: { final: "used = 0 < limit 1 → allowed = true" }
+          assertions: ["result.allowed === true"]
+
+    - function: "refineCoverLetter"
+      description: "AI regenerates cover letter with user instruction"
+      inputs:
+        instruction: "Make it more formal and mention leadership experience"
+        previousCoverLetter: "Dear hiring manager, I am excited to apply..."
+      oracle:
+        final: "cover_letter_text updated, cover_letter_user_instruction saved"
+      assertions:
+        - "result.application.coverLetterText !== previousCoverLetter"
+        - "result.application.coverLetterUserInstruction === instruction"
+      edge_cases:
+        - description: "No existing cover letter (refine before generate)"
+          inputs: { previousCoverLetter: null }
+          oracle: { final: "throws Error — must generate first" }
+          assertions: ["throws Error('Generate a cover letter first')"]
+
+  edge_cases:
+    - "User has no CV in profile → 400 'Upload your CV first'"
+    - "No existing JobApplication → create one during generate (firstOrCreate)"
+    - "recruitment_agency company → exclude sector/size from prompt context"
+    - "OpenRouter API timeout/error → 503 with retry guidance"
+    - "PDF generation with empty cover_letter_text → 400 'Generate or edit cover letter first'"
+    - "Concurrent generation requests → idempotent (reuse existing draft JobApplication)"
+    - "Cover letter generated before CV → language deduced from target country"
+    - "Refine called before generate → 400 error"
+
+  adr_required: false  # Follows established CV generation patterns, no new architecture

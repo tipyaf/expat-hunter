@@ -759,13 +759,13 @@ features:
   - id: "job-cover-letter"
     name: "Job Cover Letter"
     priority: "must-have"
-    status: "pending"
+    status: "building"
     cycles: 0
-    story_file: ""
+    story_file: "specs/stories/job-cover-letter-backend.yaml, specs/stories/job-cover-letter-frontend.yaml"
     depends_on: ["job-cv-generation"]
-    started_at: ""
+    started_at: "2026-04-09"
     validated_at: ""
-    notes: "AI-generated cover letter. Same language as CV. User instructions before/after. Editable before send. E13."
+    notes: "E13. 2 stories. Backend (sc-959): VALIDATED — PR #157, 21 unit tests, all 18 ACs pass, AI service + 5 endpoints + recruitment_agency handling. Frontend (sc-960): pending build."
 
   - id: "job-application-send"
     name: "Job Application Send"

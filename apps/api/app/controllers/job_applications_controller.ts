@@ -1,7 +1,13 @@
 import type { HttpContext } from '@adonisjs/core/http'
 import PDFDocument from 'pdfkit'
 import JobCvGenerationService from '#services/job_cv_generation_service'
-import { refineCvValidator, saveCvTextValidator } from '#validators/job_application_validator'
+import JobCoverLetterService from '#services/job_cover_letter_service'
+import {
+  refineCvValidator,
+  saveCvTextValidator,
+  refineCoverLetterValidator,
+  saveCoverLetterTextValidator,
+} from '#validators/job_application_validator'
 import JobOffer from '#models/job_offer'
 import type { UserPlan } from '@expat-hunter/shared'
 
@@ -11,6 +17,7 @@ const PDF_LINE_GAP = 4
 
 export default class JobApplicationsController {
   private readonly cvService = new JobCvGenerationService()
+  private readonly coverLetterService = new JobCoverLetterService()
 
   async generate({ auth, params, response }: HttpContext): Promise<void> {
     const user = auth.getUserOrFail()
@@ -161,6 +168,159 @@ export default class JobApplicationsController {
     })
   }
 
+  async generateCoverLetter({ auth, params, response }: HttpContext): Promise<void> {
+    const user = auth.getUserOrFail()
+    const offerId = params.id
+
+    await this.verifyOfferOwnership(offerId, user.id)
+
+    try {
+      const result = await this.coverLetterService.generateCoverLetter(
+        offerId,
+        user.id,
+        (user as unknown as { plan: UserPlan }).plan ?? 'free'
+      )
+
+      response.ok({
+        data: {
+          applicationId: result.application.id,
+          coverLetterText: result.coverLetterText,
+          language: result.application.language,
+          status: result.application.status,
+        },
+      })
+    } catch (error: unknown) {
+      this.handleServiceError(error, response)
+    }
+  }
+
+  async refineCoverLetter({ auth, params, request, response }: HttpContext): Promise<void> {
+    const user = auth.getUserOrFail()
+    const offerId = params.id
+    const payload = await request.validateUsing(refineCoverLetterValidator)
+
+    await this.verifyOfferOwnership(offerId, user.id)
+
+    try {
+      const result = await this.coverLetterService.refineCoverLetter(
+        offerId,
+        user.id,
+        payload.instruction
+      )
+
+      response.ok({
+        data: {
+          applicationId: result.application.id,
+          coverLetterText: result.coverLetterText,
+          language: result.application.language,
+          status: result.application.status,
+        },
+      })
+    } catch (error: unknown) {
+      this.handleServiceError(error, response)
+    }
+  }
+
+  async saveCoverLetter({ auth, params, request, response }: HttpContext): Promise<void> {
+    const user = auth.getUserOrFail()
+    const offerId = params.id
+    const payload = await request.validateUsing(saveCoverLetterTextValidator)
+
+    await this.verifyOfferOwnership(offerId, user.id)
+
+    try {
+      const application = await this.coverLetterService.saveCoverLetterText(
+        offerId,
+        user.id,
+        payload.coverLetterText
+      )
+
+      response.ok({
+        data: {
+          applicationId: application.id,
+          coverLetterText: application.coverLetterText,
+          language: application.language,
+          status: application.status,
+        },
+      })
+    } catch (error: unknown) {
+      this.handleServiceError(error, response)
+    }
+  }
+
+  async coverLetterPdf({ auth, params, response }: HttpContext): Promise<void> {
+    const user = auth.getUserOrFail()
+    const offerId = params.id
+
+    await this.verifyOfferOwnership(offerId, user.id)
+
+    const application = await this.coverLetterService.getCoverLetterApplication(offerId, user.id)
+
+    if (!application?.coverLetterText) {
+      response.badRequest({
+        error: { code: 'NO_COVER_LETTER', message: 'Generate or edit your cover letter first.' },
+      })
+      return
+    }
+
+    const doc = new PDFDocument({
+      size: 'A4',
+      margin: PDF_MARGIN,
+      info: {
+        Title: 'Cover Letter — ExpatHunter',
+        Author: 'ExpatHunter',
+      },
+    })
+
+    const chunks: Buffer[] = []
+    doc.on('data', (chunk: Buffer) => chunks.push(chunk))
+
+    await new Promise<void>((resolve, reject) => {
+      doc.on('end', resolve)
+      doc.on('error', reject)
+
+      doc.fontSize(PDF_FONT_SIZE)
+      doc.font('Helvetica')
+
+      const lines = application.coverLetterText!.split('\n')
+      for (const line of lines) {
+        doc.text(line, { lineGap: PDF_LINE_GAP })
+      }
+
+      doc.end()
+    })
+
+    const pdfBuffer = Buffer.concat(chunks)
+
+    response.header('Content-Type', 'application/pdf')
+    response.header('Content-Disposition', 'attachment; filename="cover-letter-expathunter.pdf"')
+    response.header('Content-Length', String(pdfBuffer.length))
+    response.send(pdfBuffer)
+  }
+
+  async showCoverLetter({ auth, params, response }: HttpContext): Promise<void> {
+    const user = auth.getUserOrFail()
+    const offerId = params.id
+
+    await this.verifyOfferOwnership(offerId, user.id)
+
+    const application = await this.coverLetterService.getCoverLetterApplication(offerId, user.id)
+
+    if (!application) {
+      response.ok({ data: null })
+      return
+    }
+
+    response.ok({
+      data: {
+        applicationId: application.id,
+        coverLetterText: application.coverLetterText,
+        language: application.language,
+        status: application.status,
+      },
+    })
+  }
+
   private async verifyOfferOwnership(offerId: string, userId: string): Promise<void> {
     const offer = await JobOffer.query()
       .where('id', offerId)
@@ -187,6 +347,13 @@ export default class JobApplicationsController {
     if (typedError.code === 'NO_CV') {
       response.badRequest({
         error: { code: 'NO_CV', message: typedError.message },
+      })
+      return
+    }
+
+    if (typedError.code === 'NO_COVER_LETTER') {
+      response.badRequest({
+        error: { code: 'NO_COVER_LETTER', message: typedError.message },
       })
       return
     }

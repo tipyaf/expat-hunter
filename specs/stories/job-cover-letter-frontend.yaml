@@ -1,0 +1,260 @@
+# ============================================================================
+# Story: job-cover-letter-frontend
+# Feature: Job Cover Letter (E13) — Story 2/2
+# Status: refined
+# Estimate: M (3 points)
+# ============================================================================
+
+story:
+  id: "job-cover-letter-frontend"
+  title: "Job Cover Letter — Frontend: Cover Letter tab UI + edit + PDF download"
+  epic: "E13 — Candidature"
+  shortcut_id: 960
+  estimate: 3
+  priority: "must-have"
+  type: "feature"
+  area: "frontend"
+  depends_on:
+    - "job-cover-letter-backend"
+
+  description: |
+    Frontend UI for cover letter generation. Adds a "Cover Letter" tab to the
+    job offer detail page (3rd tab after Details and CV) with full text display,
+    AI generation, refinement instructions, manual edit mode, and PDF download.
+
+    Key difference from CV tab: shows full generated text (not replacement-based
+    diff view). Uses similar patterns — loading states, error handling, quota
+    messages, edit mode, and PDF download follow the same UX as the CV tab.
+
+    Reuses the CvRefineInput component pattern for refinement instructions.
+    Respects existing design system (CSS variables, dark/light mode).
+
+  ux_ref: null  # Simple text display — follows established CV tab patterns, no new wireframe needed
+
+  scope:
+    files_to_create:
+      - "apps/frontend/src/lib/job-cover-letter-api.ts"
+      - "apps/frontend/src/hooks/use-job-cover-letter.ts"
+      - "apps/frontend/src/components/job-offers/cover-letter/cover-letter-tab.tsx"
+      - "apps/frontend/src/components/job-offers/cover-letter/cover-letter-tab.test.tsx"
+
+    files_to_modify:
+      - "apps/frontend/src/app/offres/[id]/page.tsx"  # Add Cover Letter tab
+      - "apps/frontend/src/i18n/en.json"  # Add coverLetterTab keys
+      - "apps/frontend/src/i18n/fr.json"  # Add coverLetterTab keys
+
+    files_excluded:
+      - "apps/api/**"  # Backend is Story 1
+      - "apps/frontend/src/components/job-offers/cv/**"  # CV tab is separate feature
+
+  components:
+    reuse:
+      - name: "CvRefineInput pattern"
+        path: "apps/frontend/src/components/job-offers/cv/cv-refine-input.tsx"
+        note: "Same refinement UX — textarea + submit button + char counter. Create cover-letter-specific version or extract shared component."
+      - name: "CvEditMode pattern"
+        path: "apps/frontend/src/components/job-offers/cv/cv-edit-mode.tsx"
+        note: "Same manual edit UX — full textarea with save/cancel. Reuse pattern."
+      - name: "useJobCv pattern"
+        path: "apps/frontend/src/hooks/use-job-cv.ts"
+        note: "Same hook structure — fetch, generate, refine, save, download lifecycle"
+      - name: "Design system CSS variables"
+        path: "apps/frontend/src/app/globals.css"
+        note: "All colors via var(--color-*), never hardcoded Tailwind colors"
+    create:
+      - name: "CoverLetterTab"
+        type: smart
+        reason: "Orchestrates cover letter flow: generate → view text → refine → edit → download"
+      - name: "useJobCoverLetter"
+        type: smart
+        reason: "Hook managing cover letter state, API calls, loading/error states"
+
+  acceptance_criteria:
+    # --- FUNCTIONAL ---
+    - id: "AC-FUNC-JCLF-01"
+      type: "FUNC"
+      description: "Given the job offer detail page / When user navigates to it / Then a 'Cover Letter' tab is visible as the 3rd tab (Details, CV, Cover Letter)"
+      verify: "grep -r 'cover.*letter.*tab\\|CoverLetter.*tab\\|tab-cover-letter\\|tabCoverLetter' apps/frontend/src/app/offres/\\[id\\]/page.tsx"
+      tier: 1
+
+    - id: "AC-FUNC-JCLF-02"
+      type: "FUNC"
+      description: "Given no cover letter generated yet / When user clicks the Cover Letter tab / Then a 'Generate Cover Letter' button is shown"
+      verify: "grep -r 'generate.*cover.*letter\\|Generate.*Cover.*Letter\\|data-testid.*generate-cover-letter' apps/frontend/src/components/job-offers/cover-letter/"
+      tier: 1
+
+    - id: "AC-FUNC-JCLF-03"
+      type: "FUNC"
+      description: "Given user clicks 'Generate Cover Letter' / When API call succeeds / Then the full cover letter text is displayed"
+      verify: "grep -r 'coverLetterText\\|cover-letter-text\\|data-testid.*cover-letter-display' apps/frontend/src/components/job-offers/cover-letter/"
+      tier: 1
+
+    - id: "AC-FUNC-JCLF-04"
+      type: "FUNC"
+      description: "Given a generated cover letter / When user clicks 'Edit' / Then a textarea appears with the full text for manual editing with save/cancel buttons"
+      verify: "grep -r 'edit.*mode\\|isEditing\\|textarea\\|data-testid.*cl-edit' apps/frontend/src/components/job-offers/cover-letter/"
+      tier: 1
+
+    - id: "AC-FUNC-JCLF-05"
+      type: "FUNC"
+      description: "Given user edits the cover letter / When user clicks 'Save' / Then PUT /api/job-offers/:id/cover-letter is called and the view updates"
+      verify: "grep -r 'saveCoverLetter\\|PUT.*cover-letter\\|save.*cover' apps/frontend/src/hooks/use-job-cover-letter.ts apps/frontend/src/lib/job-cover-letter-api.ts"
+      tier: 1
+
+    - id: "AC-FUNC-JCLF-06"
+      type: "FUNC"
+      description: "Given a generated cover letter / When user types a refinement instruction and submits / Then the API is called and updated text is shown"
+      verify: "grep -r 'refine\\|instruction\\|data-testid.*refine.*cover\\|refineCoverLetter' apps/frontend/src/components/job-offers/cover-letter/ apps/frontend/src/hooks/use-job-cover-letter.ts"
+      tier: 1
+
+    - id: "AC-FUNC-JCLF-07"
+      type: "FUNC"
+      description: "Given a finalized cover letter / When user clicks 'Download PDF' / Then the PDF is downloaded via GET /api/job-offers/:id/cover-letter/pdf"
+      verify: "grep -r 'pdf\\|download.*pdf\\|blob\\|application/pdf' apps/frontend/src/components/job-offers/cover-letter/ apps/frontend/src/hooks/use-job-cover-letter.ts apps/frontend/src/lib/job-cover-letter-api.ts"
+      tier: 1
+
+    - id: "AC-FUNC-JCLF-08"
+      type: "FUNC"
+      description: "Given a free user who exhausted their quota / When they try to generate / Then a quota exceeded message is shown and the generate button is disabled"
+      verify: "grep -r 'quota\\|exceeded\\|disabled.*quota' apps/frontend/src/components/job-offers/cover-letter/ apps/frontend/src/hooks/use-job-cover-letter.ts"
+      tier: 1
+
+    - id: "AC-FUNC-JCLF-09"
+      type: "FUNC"
+      description: "Given API calls in progress / When user waits / Then loading states are shown on generate, refine, save, and download actions"
+      verify: "grep -r 'isLoading\\|isGenerating\\|isRefining\\|isSaving\\|loading' apps/frontend/src/components/job-offers/cover-letter/ apps/frontend/src/hooks/use-job-cover-letter.ts"
+      tier: 1
+
+    - id: "AC-FUNC-JCLF-10"
+      type: "FUNC"
+      description: "Given no CV in user profile / When generate fails with 400 / Then a 'no CV' message is shown prompting user to upload their CV"
+      verify: "grep -r 'noCv\\|no.*cv\\|upload.*cv\\|NO_CV\\|no-profile-cv' apps/frontend/src/components/job-offers/cover-letter/ apps/frontend/src/hooks/use-job-cover-letter.ts"
+      tier: 1
+
+    # --- SECURITY ---
+    - id: "AC-SEC-JCLF-01"
+      type: "SEC"
+      description: "All API calls include the auth token in Authorization header"
+      verify: "grep -r 'Authorization\\|Bearer\\|token' apps/frontend/src/lib/job-cover-letter-api.ts"
+      tier: 1
+
+    # --- BEST PRACTICES ---
+    - id: "AC-BP-JCLF-DESIGN"
+      type: "BP"
+      description: "All UI uses CSS variables from design system — no hardcoded Tailwind colors"
+      verify: "! grep -rn 'text-blue-\\|text-red-\\|text-green-\\|bg-blue-\\|bg-red-\\|bg-green-\\|text-gray-\\|bg-gray-' apps/frontend/src/components/job-offers/cover-letter/"
+      tier: 1
+
+    - id: "AC-BP-JCLF-DARKMODE"
+      type: "BP"
+      description: "Cover letter tab renders correctly in both dark and light mode"
+      verify: "grep -r 'var(--color' apps/frontend/src/components/job-offers/cover-letter/"
+      tier: 1
+
+    - id: "AC-BP-JCLF-I18N"
+      type: "BP"
+      description: "All text uses i18n keys — no hardcoded strings"
+      verify: "grep -r 'useTranslations\\|coverLetterTab' apps/frontend/src/components/job-offers/cover-letter/ apps/frontend/src/i18n/en.json"
+      tier: 1
+
+    - id: "AC-BP-JCLF-TESTID"
+      type: "BP"
+      description: "All interactive elements have data-testid attributes for e2e testing"
+      verify: "grep -c 'data-testid' apps/frontend/src/components/job-offers/cover-letter/cover-letter-tab.tsx"
+      tier: 1
+
+    - id: "AC-BP-JCLF-COMPILE"
+      type: "BP"
+      description: "Project compiles without errors"
+      verify: "pnpm --filter frontend exec tsc --noEmit && pnpm --filter api exec tsc --noEmit"
+      tier: 1
+
+    - id: "AC-BP-JCLF-TU"
+      type: "BP"
+      description: "All unit tests pass"
+      verify: "pnpm --filter frontend exec vitest run"
+      tier: 1
+
+  test_intentions:
+    - function: "useJobCoverLetter hook"
+      description: "Hook manages cover letter generation state lifecycle"
+      inputs:
+        offerId: "uuid-123"
+        token: "valid-token"
+      oracle:
+        final: "initial state: coverLetterText=null, isGenerating=false, isLoading=true"
+      assertions:
+        - "result.coverLetterText === null"
+        - "result.isGenerating === false"
+        - "result.isLoading === true"
+
+    - function: "CoverLetterTab loading state"
+      description: "Shows loading skeleton while fetching existing cover letter"
+      inputs:
+        getApplication: "pending promise (never resolves)"
+      oracle:
+        final: "loading skeleton visible via data-testid='cl-tab-loading'"
+      assertions:
+        - "screen.getByTestId('cl-tab-loading') is in document"
+
+    - function: "CoverLetterTab generate flow"
+      description: "Shows generate button when no cover letter, calls API on click"
+      inputs:
+        getApplication: { data: null }
+        generate: { data: { coverLetterText: "Dear hiring manager..." } }
+      oracle:
+        final: "generate button visible → click → API called → text displayed"
+      assertions:
+        - "screen.getByTestId('generate-cl-btn') is in document"
+        - "after click: mockGenerate called with (offerId, token)"
+        - "after resolve: screen.getByTestId('cl-text-display') shows 'Dear hiring manager...'"
+
+    - function: "CoverLetterTab edit mode"
+      description: "Switches to textarea edit mode on Edit button click"
+      inputs:
+        application: { coverLetterText: "Existing cover letter text" }
+      oracle:
+        final: "edit button → textarea with existing text → save calls API"
+      assertions:
+        - "screen.getByTestId('cl-edit-btn') is in document"
+        - "after click: screen.getByTestId('cl-edit-textarea').value === 'Existing cover letter text'"
+
+    - function: "CoverLetterTab quota exceeded"
+      description: "Shows quota message when free user has no remaining generations"
+      inputs:
+        generateError: { status: 403, message: "Quota exceeded" }
+      oracle:
+        final: "Generate button disabled, quota exceeded message visible"
+      assertions:
+        - "screen.getByTestId('generate-cl-btn').disabled === true"
+        - "screen.getByTestId('cl-quota-exceeded') is in document"
+
+    - function: "CoverLetterTab no CV"
+      description: "Shows no-CV message when API returns 400"
+      inputs:
+        generateError: { status: 400, message: "Upload your CV first" }
+      oracle:
+        final: "'Upload your CV' message visible"
+      assertions:
+        - "screen.getByTestId('cl-no-profile-cv') is in document"
+
+    - function: "PDF download"
+      description: "Triggers file download on button click"
+      inputs:
+        coverLetterText: "Final cover letter content"
+      oracle:
+        final: "Blob URL created and anchor click triggered"
+      assertions:
+        - "URL.createObjectURL was called"
+        - "anchor.click was called"
+
+  edge_cases:
+    - "User has no CV in profile → show message 'Upload your CV first' with link to profile"
+    - "API returns 503 (AI timeout) → show retry button with error message"
+    - "Very long cover letter text in edit mode → textarea scrollable, no layout overflow"
+    - "Multiple rapid generate clicks → button disabled during loading, no duplicate requests"
+    - "PDF download fails → show error message, don't navigate away"
+    - "Cancel edit mode → return to text display without saving"
+    - "Refine with empty instruction → submit button disabled"
+
+  adr_required: false  # Uses existing frontend patterns from CV tab
