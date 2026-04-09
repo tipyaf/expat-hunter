@@ -9,8 +9,8 @@ import { CvEditMode } from './cv-edit-mode'
 import type { ReactNode } from 'react'
 
 interface CvTabProps {
-  offerId: string
-  token: string
+  readonly offerId: string
+  readonly token: string
 }
 
 export function CvTab({ offerId, token }: CvTabProps): ReactNode {

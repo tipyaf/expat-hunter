@@ -2,8 +2,8 @@ import type { ReactNode } from 'react'
 import type { CvReplacement } from '@/lib/job-cv-api'
 
 interface CvReplacementCardProps {
-  replacement: CvReplacement
-  index: number
+  readonly replacement: CvReplacement
+  readonly index: number
 }
 
 export function CvReplacementCard({ replacement, index }: CvReplacementCardProps): ReactNode {

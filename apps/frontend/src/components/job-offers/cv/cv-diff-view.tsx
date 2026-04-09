@@ -4,8 +4,8 @@ import { CvReplacementCard } from './cv-replacement-card'
 import type { CvReplacement } from '@/lib/job-cv-api'
 
 interface CvDiffViewProps {
-  cvText: string
-  replacements: CvReplacement[]
+  readonly cvText: string
+  readonly replacements: CvReplacement[]
 }
 
 export function CvDiffView({ cvText, replacements }: CvDiffViewProps): ReactNode {
@@ -31,7 +31,7 @@ export function CvDiffView({ cvText, replacements }: CvDiffViewProps): ReactNode
         </h3>
         <div className="space-y-2">
           {replacements.map((replacement, index) => (
-            <CvReplacementCard key={index} replacement={replacement} index={index} />
+            <CvReplacementCard key={`${replacement.oldText}-${replacement.newText}`} replacement={replacement} index={index} />
           ))}
         </div>
       </div>

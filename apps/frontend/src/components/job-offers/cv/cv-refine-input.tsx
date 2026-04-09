@@ -7,8 +7,8 @@ import type { ReactNode } from 'react'
 const MAX_INSTRUCTION_LENGTH = 2000
 
 interface CvRefineInputProps {
-  onRefine: (instruction: string) => Promise<void>
-  isRefining: boolean
+  readonly onRefine: (instruction: string) => Promise<void>
+  readonly isRefining: boolean
 }
 
 export function CvRefineInput({ onRefine, isRefining }: CvRefineInputProps): ReactNode {

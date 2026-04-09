@@ -5,10 +5,10 @@ import { useTranslations } from 'next-intl'
 import type { ReactNode } from 'react'
 
 interface CvEditModeProps {
-  initialText: string
-  onSave: (text: string) => Promise<void>
-  onCancel: () => void
-  isSaving: boolean
+  readonly initialText: string
+  readonly onSave: (text: string) => Promise<void>
+  readonly onCancel: () => void
+  readonly isSaving: boolean
 }
 
 export function CvEditMode({ initialText, onSave, onCancel, isSaving }: CvEditModeProps): ReactNode {

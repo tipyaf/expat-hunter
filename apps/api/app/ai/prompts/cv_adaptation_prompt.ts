@@ -27,7 +27,7 @@ const MAX_DESCRIPTION_LENGTH = 5000
 const MAX_REPLACEMENTS = 7
 
 function sanitizeForPrompt(text: string): string {
-  return text.replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  return text.replaceAll('<', '&lt;').replaceAll('>', '&gt;')
 }
 
 function truncate(text: string, maxLength: number): string {
@@ -65,8 +65,9 @@ Respond ONLY with valid JSON (no markdown, no comments):
   ]
 }`
 
+  const sectorSuffix = context.companySector ? ` (${sanitizeForPrompt(context.companySector)})` : ''
   const companyInfo = context.companyName
-    ? `- **Company**: ${sanitizeForPrompt(context.companyName)}${context.companySector ? ` (${sanitizeForPrompt(context.companySector)})` : ''}`
+    ? `- **Company**: ${sanitizeForPrompt(context.companyName)}${sectorSuffix}`
     : ''
 
   const adviceInfo = context.applicationAdvice
@@ -146,7 +147,7 @@ export function parseCvAdaptationResponse(raw: string): CvAdaptationResult | nul
     cleaned = cleaned.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '')
   }
 
-  const jsonMatch = cleaned.match(/\{[\s\S]*\}/)
+  const jsonMatch = /\{[\s\S]*\}/.exec(cleaned)
   if (!jsonMatch) {
     return null
   }
