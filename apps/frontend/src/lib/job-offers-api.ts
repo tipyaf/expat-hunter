@@ -81,10 +81,21 @@ export interface JobOffersListResponse {
   }
 }
 
+export type ExclusionCategory = 'salary' | 'location' | 'company' | 'role' | 'contract' | 'other'
+
+export const EXCLUSION_CATEGORIES: readonly ExclusionCategory[] = [
+  'salary', 'location', 'company', 'role', 'contract', 'other',
+] as const
+
 export interface CrossContactResponse {
   data: {
     hasCrossContact: boolean
   }
+}
+
+export interface ExcludeOfferPayload {
+  category: ExclusionCategory
+  reason?: string
 }
 
 interface ListOffersParams {
@@ -113,5 +124,17 @@ export const jobOffersApi = {
 
   getCrossContacts(offerId: string, token: string): Promise<CrossContactResponse> {
     return apiClient.get<CrossContactResponse>(`/api/job-offers/${offerId}/cross-contacts`, { token })
+  },
+
+  getDetail(offerId: string, token: string): Promise<{ data: JobOfferResponse }> {
+    return apiClient.get<{ data: JobOfferResponse }>(`/api/job-offers/${offerId}`, { token })
+  },
+
+  exclude(offerId: string, payload: ExcludeOfferPayload, token: string): Promise<{ data: JobOfferResponse }> {
+    return apiClient.post<{ data: JobOfferResponse }>(`/api/job-offers/${offerId}/exclude`, payload, { token })
+  },
+
+  updateAdvice(offerId: string, applicationAdvice: string, token: string): Promise<{ data: JobOfferResponse }> {
+    return apiClient.put<{ data: JobOfferResponse }>(`/api/job-offers/${offerId}/advice`, { applicationAdvice }, { token })
   },
 }

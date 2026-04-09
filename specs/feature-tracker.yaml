@@ -735,13 +735,13 @@ features:
   - id: "job-offer-detail-page"
     name: "Job Offer Detail Page"
     priority: "must-have"
-    status: "refined"
-    cycles: 0
+    status: "validated"
+    cycles: 1
     story_file: "specs/stories/job-offer-detail-page.yaml"
     depends_on: ["job-offers-list-page"]
-    started_at: ""
-    validated_at: ""
-    notes: "E12 S3. L (5 pts). /offres/:id with company panel, AI eval, editable advice, ExclusionModal, cross-pipeline badges. Shortcut sc-885."
+    started_at: "2026-04-09"
+    validated_at: "2026-04-09"
+    notes: "E12 S3. L (5 pts). /offres/:id with company panel, AI eval, editable advice, ExclusionModal, cross-pipeline badges. 9 new components/hooks, 27 new tests (75 total). 0 TS errors, 0 SonarQube issues. Visual validation light+dark. Shortcut sc-885. PR #153."
 
   # --- E13: Candidature ---
 
