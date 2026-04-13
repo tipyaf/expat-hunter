@@ -4,8 +4,11 @@ import { Sidebar } from '@/components/layout/sidebar'
 import { EmptyState } from '@/components/ui/empty-state'
 import { JobSearchForm } from '@/components/job-search/job-search-form'
 import { ActiveSearchCard } from '@/components/job-search/active-search-card'
+import { CustomPlatformForm } from '@/components/job-search/custom-platform-form'
+import { CustomPlatformList } from '@/components/job-search/custom-platform-list'
 import { useAuth } from '@/contexts/auth-context'
 import { useJobSearches } from '@/hooks/use-job-searches'
+import { useCustomPlatforms } from '@/hooks/use-custom-platforms'
 import { Briefcase } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import { useState } from 'react'
@@ -14,13 +17,16 @@ import type { CreateJobSearchPayload } from '@/hooks/use-job-searches'
 export default function JobSearchConfigPage() {
   const { user, isLoading: authLoading } = useAuth()
   const { searches, isLoading, create, update, remove, triggerRun } = useJobSearches()
+  const { platforms: customPlatforms, create: createPlatform, remove: removePlatform } = useCustomPlatforms()
   const t = useTranslations('jobSearch')
+  const tp = useTranslations('customPlatforms')
   const tc = useTranslations('common')
 
   const [showForm, setShowForm] = useState(false)
   const [editingSearch, setEditingSearch] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [runningId, setRunningId] = useState<string | null>(null)
+  const [isAddingPlatform, setIsAddingPlatform] = useState(false)
 
   if (authLoading || !user) {
     return (
@@ -138,6 +144,33 @@ export default function JobSearchConfigPage() {
                 isSubmitting={isSubmitting}
               />
             </>
+          )}
+
+          {/* Custom Platforms Section */}
+          {!isLoading && (
+            <section data-testid="custom-platforms-section" className="mt-8 space-y-4">
+              <div>
+                <h2 className="text-lg font-semibold text-[var(--color-text-main)]">
+                  {tp('sectionTitle')}
+                </h2>
+                <p className="text-sm text-[var(--color-text-muted)]">{tp('sectionSubtitle')}</p>
+              </div>
+              <CustomPlatformForm
+                onAdd={async (name, url) => {
+                  setIsAddingPlatform(true)
+                  try {
+                    await createPlatform({ name, url })
+                  } finally {
+                    setIsAddingPlatform(false)
+                  }
+                }}
+                isSubmitting={isAddingPlatform}
+              />
+              <CustomPlatformList
+                platforms={customPlatforms}
+                onDelete={(id) => void removePlatform(id)}
+              />
+            </section>
           )}
         </div>
       </main>
