@@ -1,7 +1,7 @@
 'use client'
 
 import type { JobSearch } from '@/hooks/use-job-searches'
-import { Play, Pencil, Trash2 } from 'lucide-react'
+import { Play, Pencil, Trash2, Clock } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 
 interface ActiveSearchCardProps {
@@ -25,6 +25,17 @@ function formatRelativeTime(dateStr: string | null, t: ReturnType<typeof useTran
   if (diffMinutes < 60) return t('minutesAgo', { count: diffMinutes })
   if (diffHours < 24) return t('hoursAgo', { count: diffHours })
   return t('daysAgo', { count: diffDays })
+}
+
+function formatNextRunDate(dateStr: string | null): string {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  return date.toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 }
 
 export function ActiveSearchCard({ search, onEdit, onDelete, onRun, isRunning }: Readonly<ActiveSearchCardProps>) {
@@ -67,11 +78,25 @@ export function ActiveSearchCard({ search, onEdit, onDelete, onRun, isRunning }:
             </div>
           </div>
 
-          {/* Last run */}
-          <div className="flex items-center gap-4 text-xs text-[var(--color-text-muted)]">
+          {/* Frequency badge + Last run + Next run */}
+          <div className="flex items-center flex-wrap gap-4 text-xs text-[var(--color-text-muted)]">
+            {search.frequency !== 'manual' && (
+              <span
+                data-testid="job-search-frequency-badge"
+                className="inline-flex items-center gap-1 rounded-full bg-[var(--color-primary)]/10 px-2 py-0.5 text-xs font-medium text-[var(--color-primary)]"
+              >
+                <Clock className="h-3 w-3" aria-hidden="true" />
+                {t(`frequency_${search.frequency}`)}
+              </span>
+            )}
             <span data-testid="job-search-last-run">
               {t('lastRun')}: {formatRelativeTime(search.lastRunAt, t)}
             </span>
+            {search.frequency !== 'manual' && search.nextRunAt && (
+              <span data-testid="job-search-next-run">
+                {t('nextRun')}: {formatNextRunDate(search.nextRunAt)}
+              </span>
+            )}
           </div>
         </div>
 

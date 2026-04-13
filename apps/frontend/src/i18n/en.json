@@ -1034,7 +1034,9 @@
     "errorPlatformsRequired": "At least one platform is required.",
     "errorSalaryRange": "Minimum salary must be less than maximum salary.",
     "errorGeneric": "An error occurred. Please try again.",
-    "quotaExceeded": "You have reached the maximum number of searches for your plan. Upgrade to Premium for more."
+    "quotaExceeded": "You have reached the maximum number of searches for your plan. Upgrade to Premium for more.",
+    "nextRun": "Next run",
+    "contractType": "Contract type"
   },
   "premium": {
     "badge": "Premium",
