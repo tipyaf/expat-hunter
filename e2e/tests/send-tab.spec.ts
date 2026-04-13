@@ -178,10 +178,9 @@ test.describe('Recruitment contacts panel — /offres/:id', () => {
     await page.goto(`/offres/${testOfferId}`)
     await expect(page.getByTestId('recruitment-contacts-panel')).toBeVisible({ timeout: 10_000 })
 
-    // Should show empty state or the add button
-    const emptyState = page.getByTestId('recruitment-contacts-empty')
-    const addBtn = page.getByTestId('recruitment-contact-add-button')
-    await expect(emptyState.or(addBtn)).toBeVisible()
+    // Should show empty state message and the add button
+    await expect(page.getByTestId('recruitment-contacts-empty')).toBeVisible()
+    await expect(page.getByTestId('recruitment-contact-add-button')).toBeVisible()
   })
 
   test('can open add contact form', async ({ page }) => {
