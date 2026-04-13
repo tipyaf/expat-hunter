@@ -7,6 +7,7 @@ import { JobOffersEmptyState } from '@/components/job-offers/job-offers-empty-st
 import { JobOfferCardSkeletonList } from '@/components/job-offers/job-offer-card-skeleton'
 import { useAuth } from '@/contexts/auth-context'
 import { useJobOffers } from '@/hooks/use-job-offers'
+import { useJobSearches } from '@/hooks/use-job-searches'
 import { useTranslations } from 'next-intl'
 import { useEffect, useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
@@ -27,6 +28,7 @@ export default function JobOffersPage(): React.ReactNode {
     }
   }, [authLoading, user])
 
+  const { searches } = useJobSearches()
   const [searchFilter, setSearchFilter] = useState<string>('')
   const {
     offers,
@@ -79,6 +81,11 @@ export default function JobOffersPage(): React.ReactNode {
               className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-light)] px-3 py-2 text-sm text-[var(--color-text-main)] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
             >
               <option value="">{t('allSearches')}</option>
+              {searches.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.roles.join(', ')} — {s.countries.join(', ')}
+                </option>
+              ))}
             </select>
           </div>
 

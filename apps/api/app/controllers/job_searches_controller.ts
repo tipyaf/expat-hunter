@@ -95,8 +95,9 @@ export default class JobSearchesController {
     const user = auth.getUserOrFail()
 
     try {
-      const result = await this.scrapingService.runForSearch(params.id, user.id)
-      return response.ok({ data: result })
+      const scraping = await this.scrapingService.runForSearch(params.id, user.id)
+      const search = await this.service.findOrFail(user.id, params.id)
+      return response.ok({ data: search, scraping })
     } catch (error: any) {
       if (error.code === 'E_ROW_NOT_FOUND' || error.code === 'NOT_FOUND') {
         return response.notFound({
