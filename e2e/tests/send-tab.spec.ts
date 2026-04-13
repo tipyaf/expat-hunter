@@ -55,12 +55,13 @@ test.beforeAll(async () => {
 test.describe('Send tab — /offres/:id', () => {
   test.skip(() => !testOfferId, 'No job offer available for testing')
 
-  test('detail page shows 3 tabs including Send', async ({ page }) => {
+  test('detail page shows 4 tabs including Send', async ({ page }) => {
     await page.goto(`/offres/${testOfferId}`)
     await expect(page.getByTestId('detail-tabs')).toBeVisible({ timeout: 10_000 })
 
     await expect(page.getByTestId('tab-details')).toBeVisible()
     await expect(page.getByTestId('tab-cv')).toBeVisible()
+    await expect(page.getByTestId('tab-cover-letter')).toBeVisible()
     await expect(page.getByTestId('tab-send')).toBeVisible()
   })
 
