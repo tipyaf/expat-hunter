@@ -740,13 +740,13 @@ features:
   - id: "job-cover-letter"
     name: "Job Cover Letter"
     priority: "must-have"
-    status: "building"
-    cycles: 0
+    status: "validated"
+    cycles: 1
     story_file: "specs/stories/job-cover-letter-backend.yaml, specs/stories/job-cover-letter-frontend.yaml"
     depends_on: ["job-cv-generation"]
     started_at: "2026-04-09"
-    validated_at: ""
-    notes: "E13. 2 stories. Backend (sc-959): VALIDATED — PR #157 merged, 21 unit tests, all 18 ACs pass, AI service + 5 endpoints + recruitment_agency handling. Frontend (sc-960): next to build."
+    validated_at: "2026-04-13"
+    notes: "E13. 2 stories. Backend (sc-959): PR #157, 21 unit tests, all 18 ACs pass. Frontend (sc-960): PR #158, 15 unit + 8 e2e tests, all 17 ACs pass. Bug sc-1048 fixed (missing migration + e2e strict mode) via PR #162."
 
   - id: "job-application-send"
     name: "Job Application Send"
