@@ -786,8 +786,8 @@ features:
   - id: "job-notifications"
     name: "Job Notifications"
     priority: "nice-to-have"
-    status: "building"
-    cycles: 0
+    status: "validated"
+    cycles: 1
     story_file: "specs/stories/job-notifications.yaml"
     depends_on: ["job-recurring-search"]
     started_at: ""
