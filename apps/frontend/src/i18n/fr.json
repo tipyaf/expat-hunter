@@ -76,7 +76,9 @@
     "verificationSent": "Email de vérification envoyé !",
     "disposableEmail": "Les adresses email jetables ne sont pas autorisées. Veuillez utiliser un email permanent.",
     "tooManyAttempts": "Trop de tentatives. Veuillez patienter un moment et réessayer.",
-    "accountLocked": "Compte temporairement verrouillé suite à trop de tentatives échouées. Veuillez réessayer dans quelques minutes."
+    "accountLocked": "Compte temporairement verrouillé suite à trop de tentatives échouées. Veuillez réessayer dans quelques minutes.",
+    "showPassword": "Afficher le mot de passe",
+    "hidePassword": "Masquer le mot de passe"
   },
   "dashboard": {
     "title": "Tableau de bord",
