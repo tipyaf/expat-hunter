@@ -29,7 +29,10 @@ export default class OfferNotificationService {
       .whereIn('searchId', searchIds)
 
     if (user.lastOffersSeenAt !== null) {
-      query = query.where('createdAt', '>', user.lastOffersSeenAt.toISO()!)
+      const iso = user.lastOffersSeenAt.toISO()
+      if (iso) {
+        query = query.where('createdAt', '>', iso)
+      }
     }
 
     const result = await query.count('* as total').first()

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 
+// Matches backend MAX_BADGE_COUNT in offer_notification_service.ts
 const MAX_DISPLAY_COUNT = 99
 
 interface NotificationBadgeProps {

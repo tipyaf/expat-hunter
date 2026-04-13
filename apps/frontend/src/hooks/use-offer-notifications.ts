@@ -25,7 +25,11 @@ export function useOfferNotifications(): UseOfferNotificationsResult {
 
   useEffect(() => {
     void fetchCount()
-    const interval = setInterval(() => void fetchCount(), POLLING_INTERVAL_MS)
+    const interval = setInterval(() => {
+      if (!document.hidden) {
+        void fetchCount()
+      }
+    }, POLLING_INTERVAL_MS)
     return () => clearInterval(interval)
   }, [fetchCount])
 
