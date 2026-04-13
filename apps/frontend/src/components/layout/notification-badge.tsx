@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 const MAX_DISPLAY_COUNT = 99
 
 interface NotificationBadgeProps {
-  count: number
+  readonly count: number
 }
 
 export function NotificationBadge({ count }: NotificationBadgeProps): ReactNode {
