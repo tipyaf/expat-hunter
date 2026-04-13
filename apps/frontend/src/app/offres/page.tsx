@@ -15,18 +15,18 @@ import { TAB_STATUS_MAP, type JobOfferTab } from '@/lib/job-offers-api'
 import { markOffersSeen } from '@/lib/offer-notification-api'
 
 export default function JobOffersPage(): React.ReactNode {
-  const { user, isLoading: authLoading } = useAuth()
+  const { user, token, isLoading: authLoading } = useAuth()
   const t = useTranslations('jobOffersPage')
   const tc = useTranslations('common')
   const hasMarkedSeen = useRef(false)
 
   // Mark offers as seen when the page loads (once)
   useEffect(() => {
-    if (!authLoading && user && !hasMarkedSeen.current) {
+    if (!authLoading && user && token && !hasMarkedSeen.current) {
       hasMarkedSeen.current = true
-      void markOffersSeen()
+      void markOffersSeen(token)
     }
-  }, [authLoading, user])
+  }, [authLoading, user, token])
 
   const { searches } = useJobSearches()
   const [searchFilter, setSearchFilter] = useState<string>('')

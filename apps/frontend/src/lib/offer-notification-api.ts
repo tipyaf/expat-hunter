@@ -5,10 +5,10 @@ interface OffersCountResponse {
   display: string
 }
 
-export async function getOffersUnreadCount(): Promise<OffersCountResponse> {
-  return apiClient.get<OffersCountResponse>('/notifications/offers-count')
+export async function getOffersUnreadCount(token: string): Promise<OffersCountResponse> {
+  return apiClient.get<OffersCountResponse>('/api/notifications/offers-count', { token })
 }
 
-export async function markOffersSeen(): Promise<void> {
-  await apiClient.post<{ success: boolean }>('/notifications/mark-seen')
+export async function markOffersSeen(token: string): Promise<void> {
+  await apiClient.post<{ success: boolean }>('/api/notifications/mark-seen', undefined, { token })
 }
