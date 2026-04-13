@@ -793,7 +793,9 @@
     "search_completed": "Search completed",
     "reply_received": "New reply received",
     "email_sent": "Email sent",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "newOffers": "new offers",
+    "newOffer": "new offer"
   },
   "jobOffersPage": {
     "title": "Job Offers",

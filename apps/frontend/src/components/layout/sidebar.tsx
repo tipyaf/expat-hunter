@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/contexts/auth-context'
 import { useDashboard } from '@/hooks/use-dashboard'
+import { useOfferNotifications } from '@/hooks/use-offer-notifications'
 import { usePlan } from '@/hooks/use-plan'
 import { useSidebarState, type GroupId } from '@/hooks/use-sidebar-state'
 import { CollapsibleNavGroup } from './collapsible-nav-group'
@@ -54,6 +55,7 @@ export function Sidebar(): ReactNode {
   const tc = useTranslations('common')
   const [isOpen, setIsOpen] = useState(false)
   const sidebarState = useSidebarState()
+  const { unreadCount: offersBadge } = useOfferNotifications()
 
   const emailBadge = actions.find((a) => a.type === 'emails_to_validate')?.count ?? 0
   const replyBadge = actions.find((a) => a.type === 'replies_received')?.count ?? 0
@@ -81,8 +83,9 @@ export function Sidebar(): ReactNode {
     label: t('jobOffers'),
     items: [
       { label: t('jobSearch'), href: '/recherche-offres', icon: Search },
-      { label: t('myOffers'), href: '/offres', icon: Briefcase },
+      { label: t('myOffers'), href: '/offres', icon: Briefcase, badge: offersBadge > 0 ? offersBadge : undefined },
     ],
+    badge: offersBadge > 0 ? offersBadge : undefined,
   }
 
   const settingsGroup: NavGroup = {

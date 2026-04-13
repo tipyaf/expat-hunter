@@ -793,7 +793,9 @@
     "search_completed": "Recherche terminée",
     "reply_received": "Nouvelle réponse reçue",
     "email_sent": "Email envoyé",
-    "dismiss": "Fermer"
+    "dismiss": "Fermer",
+    "newOffers": "nouvelles offres",
+    "newOffer": "nouvelle offre"
   },
   "jobOffersPage": {
     "title": "Offres d'emploi",
