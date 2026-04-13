@@ -2,9 +2,12 @@ import {
   FREE_MAX_SEARCHES,
   PREMIUM_MAX_SEARCHES,
   PLAN_PREMIUM,
+  FREE_ALLOWED_FREQUENCIES,
+  computeNextRunAt,
 } from '@expat-hunter/shared'
-import type { UserPlan, CreateJobSearchPayload, UpdateJobSearchPayload } from '@expat-hunter/shared'
+import type { UserPlan, CreateJobSearchPayload, UpdateJobSearchPayload, JobSearchFrequency } from '@expat-hunter/shared'
 import JobSearch from '#models/job_search'
+import User from '#models/user'
 import logger from '@adonisjs/core/services/logger'
 import { DateTime } from 'luxon'
 
@@ -35,6 +38,15 @@ export default class JobSearchService {
       throw error
     }
 
+    const frequency: JobSearchFrequency = data.frequency ?? 'manual'
+
+    // Enforce plan-based frequency restrictions
+    this.enforceFrequencyPlan(plan, frequency)
+
+    // Compute next_run_at from frequency
+    const nextRunAtIso = computeNextRunAt(frequency, new Date())
+    const nextRunAt = nextRunAtIso ? DateTime.fromISO(nextRunAtIso) : null
+
     const jobSearch = await JobSearch.create({
       userId,
       roles: data.roles,
@@ -47,7 +59,8 @@ export default class JobSearchService {
       salaryMin: data.salaryMin ?? null,
       salaryMax: data.salaryMax ?? null,
       contractType: data.contractType ?? null,
-      frequency: data.frequency ?? 'manual',
+      frequency,
+      nextRunAt,
       isActive: true,
     })
 
@@ -110,7 +123,16 @@ export default class JobSearchService {
     if (data.salaryMin !== undefined) jobSearch.salaryMin = data.salaryMin ?? null
     if (data.salaryMax !== undefined) jobSearch.salaryMax = data.salaryMax ?? null
     if (data.contractType !== undefined) jobSearch.contractType = data.contractType ?? null
-    if (data.frequency !== undefined) jobSearch.frequency = data.frequency
+    if (data.frequency !== undefined) {
+      // plan param is not available in update — retrieve from user
+      const user = await User.findOrFail(jobSearch.userId)
+      this.enforceFrequencyPlan(user.plan as UserPlan, data.frequency)
+      jobSearch.frequency = data.frequency
+
+      // Recompute nextRunAt when frequency changes
+      const nextRunAtIso = computeNextRunAt(data.frequency, new Date())
+      jobSearch.nextRunAt = nextRunAtIso ? DateTime.fromISO(nextRunAtIso) : null
+    }
 
     await jobSearch.save()
     logger.info({ userId, searchId }, 'JobSearchService: search updated')
@@ -148,5 +170,22 @@ export default class JobSearchService {
       .count('* as total')
 
     return Number(result[0].$extras.total)
+  }
+
+  /**
+   * Enforce plan-based frequency restrictions.
+   * Free users can only use frequencies in FREE_ALLOWED_FREQUENCIES.
+   */
+  private enforceFrequencyPlan(plan: UserPlan, frequency: JobSearchFrequency): void {
+    if (plan === PLAN_PREMIUM) return
+
+    const allowed = FREE_ALLOWED_FREQUENCIES as readonly string[]
+    if (!allowed.includes(frequency)) {
+      logger.info({ plan, frequency }, 'JobSearchService: frequency restricted by plan')
+      const error = new Error('This frequency requires a premium plan. Upgrade to unlock daily and biweekly searches.')
+      ;(error as any).status = 403
+      ;(error as any).code = 'PLAN_REQUIRED'
+      throw error
+    }
   }
 }

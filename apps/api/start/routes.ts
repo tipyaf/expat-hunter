@@ -299,3 +299,6 @@ await import('#start/routes/job_applications')
 
 // Recruitment contacts routes (CRUD + cross-pipeline + re-prospect)
 await import('#start/routes/recruitment_contacts')
+
+// Scheduler routes (internal cron endpoint for recurring searches)
+await import('#start/routes/scheduler')

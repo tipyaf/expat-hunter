@@ -84,4 +84,9 @@ export {
   MAX_ROLE_LENGTH,
   FREE_MAX_SEARCHES,
   PREMIUM_MAX_SEARCHES,
+  FREQUENCY_INTERVALS_DAYS,
+  FREE_ALLOWED_FREQUENCIES,
 } from './constants/job-search'
+
+// Utilities
+export { computeNextRunAt } from './utils/next-run-at'

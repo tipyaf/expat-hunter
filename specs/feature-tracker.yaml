@@ -764,32 +764,35 @@ features:
   - id: "job-recurring-search"
     name: "Job Recurring Search"
     priority: "should-have"
-    status: "pending"
-    cycles: 0
-    story_file: ""
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/job-recurring-search.yaml"
     depends_on: ["job-scraping-pipeline"]
-    started_at: ""
-    validated_at: ""
-    notes: "Scheduled searches (daily/weekly). Auto-scrape + auto-evaluate new offers. Notification of new matches. E14."
+    refined_at: "2026-04-13"
+    started_at: "2026-04-13"
+    validated_at: "2026-04-13"
+    notes: "E14. M (3 pts). Scheduler service + cron endpoint + computeNextRunAt pure fn + UI badge. 7 FUNC + 2 SEC + 5 BP ACs. 17 unit tests + 6 frontend tests. All gates pass. Shortcut sc-1051."
 
   - id: "job-custom-platforms"
     name: "Job Custom Platforms"
     priority: "should-have"
-    status: "pending"
+    status: "refined"
     cycles: 0
-    story_file: ""
+    story_file: "specs/stories/job-custom-platforms.yaml"
     depends_on: ["job-scraping-pipeline"]
+    refined_at: "2026-04-13"
     started_at: ""
     validated_at: ""
-    notes: "User-defined scraping targets. Custom CSS selectors or API endpoints. E14."
+    notes: "E14. M (3 pts). New table + CRUD + suggestions API + frontend form/list. 8 FUNC + 3 SEC + 6 BP ACs."
 
   - id: "job-notifications"
     name: "Job Notifications"
     priority: "nice-to-have"
-    status: "pending"
+    status: "refined"
     cycles: 0
-    story_file: ""
+    story_file: "specs/stories/job-notifications.yaml"
     depends_on: ["job-recurring-search"]
+    refined_at: "2026-04-13"
     started_at: ""
     validated_at: ""
-    notes: "Email/push notifications for new high-score offers. Configurable thresholds. E14."
+    notes: "E14. S (2 pts). last_offers_seen_at on User + count API + sidebar badge. 5 FUNC + 2 SEC + 5 BP ACs."

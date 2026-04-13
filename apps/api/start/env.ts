@@ -81,4 +81,11 @@ export default await Env.create(new URL('../', import.meta.url), {
   GOOGLE_CLIENT_SECRET: Env.schema.string(),
   APP_URL: Env.schema.string(),
   FRONTEND_URL: Env.schema.string(),
+
+  /*
+  |--------------------------------------------------------------------------
+  | Scheduler (recurring search cron)
+  |--------------------------------------------------------------------------
+  */
+  SCHEDULER_SECRET: Env.schema.string.optional(),
 })

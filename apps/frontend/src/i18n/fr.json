@@ -617,7 +617,7 @@
     "updateSuccess": "Template mis à jour",
     "deleteSuccess": "Template supprimé",
     "validationError": "Nom, objet et corps sont obligatoires",
-    "usageHint": "Vos templates sont propos\u00e9s lors de la g\u00e9n\u00e9ration d'emails. Le template par d\u00e9faut est pr\u00e9-s\u00e9lectionn\u00e9 automatiquement."
+    "usageHint": "Vos templates sont proposés lors de la génération d'emails. Le template par défaut est pré-sélectionné automatiquement."
   },
   "presets": {
     "title": "Mes presets de génération",
@@ -738,7 +738,7 @@
     "saveError": "Erreur lors de l'enregistrement",
     "testSuccess": "Connexion réussie",
     "testError": "Connexion échouée",
-    "noConnection": "Aucune connexion configur\u00e9e",
+    "noConnection": "Aucune connexion configurée",
     "deleteConnection": "Supprimer la connexion",
     "providerLabel": "Fournisseur email",
     "providerGmail": "Gmail",
@@ -746,8 +746,8 @@
     "providerYahoo": "Yahoo",
     "providerCustom": "Autre",
     "helpTitle": "Comment configurer ?",
-    "helpGmail": "Pour Gmail : activez l'acc\u00e8s IMAP dans les param\u00e8tres Gmail (Param\u00e8tres > Transfert et POP/IMAP). Cr\u00e9ez un mot de passe d'application depuis votre compte Google (S\u00e9curit\u00e9 > Mots de passe des applications).",
-    "helpOutlook": "Pour Outlook/Hotmail : utilisez votre adresse email et votre mot de passe. Si la double authentification est activ\u00e9e, cr\u00e9ez un mot de passe d'application.",
+    "helpGmail": "Pour Gmail : activez l'accès IMAP dans les paramètres Gmail (Paramètres > Transfert et POP/IMAP). Créez un mot de passe d'application depuis votre compte Google (Sécurité > Mots de passe des applications).",
+    "helpOutlook": "Pour Outlook/Hotmail : utilisez votre adresse email et votre mot de passe. Si la double authentification est activée, créez un mot de passe d'application.",
     "helpGeneral": "Contactez votre fournisseur email si vous ne connaissez pas les paramètres IMAP/SMTP.",
     "oauthSection": "Connexion rapide",
     "oauthDescription": "Connectez votre compte Google en un clic pour envoyer et recevoir des emails en toute sécurité.",
@@ -1034,7 +1034,8 @@
     "errorPlatformsRequired": "Au moins une plateforme est requise.",
     "errorSalaryRange": "Le salaire minimum doit être inférieur au salaire maximum.",
     "errorGeneric": "Une erreur est survenue. Veuillez réessayer.",
-    "quotaExceeded": "Vous avez atteint le nombre maximum de recherches pour votre plan. Passez à Premium pour en avoir plus."
+    "quotaExceeded": "Vous avez atteint le nombre maximum de recherches pour votre plan. Passez à Premium pour en avoir plus.",
+    "nextRun": "Prochaine exécution"
   },
   "premium": {
     "badge": "Premium",

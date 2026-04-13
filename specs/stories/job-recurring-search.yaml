@@ -1,0 +1,205 @@
+# Story: job-recurring-search
+# Epic: E14 — Automatisation
+# Estimate: M (3 pts)
+# Priority: should-have
+# Depends on: job-search-config (validated), job-scraping-pipeline (validated)
+
+user_story: |
+  As a user who configured a job search with a recurring frequency,
+  I want the system to automatically run my search at the configured interval,
+  so that I receive fresh offers without manually triggering each run.
+
+context: |
+  The DB already has `frequency` (manual|weekly|biweekly|daily) and `next_run_at` columns
+  on `job_searches`. The frontend already has a frequency selector in the search form.
+  What's missing is: (1) computing next_run_at on create/update, (2) a scheduler service
+  that picks up due searches and triggers scraping, (3) displaying next run in the UI.
+
+scope:
+  files_to_create:
+    - apps/api/app/services/recurring_search_scheduler.ts     # Scheduler: find due searches, trigger run, update next_run_at
+    - apps/api/start/routes/scheduler.ts                       # GET /api/scheduler/run-due — internal cron endpoint (auth + secret)
+    - packages/shared/src/utils/next-run-at.ts                 # computeNextRunAt(frequency, referenceDate) pure function
+    - apps/api/tests/unit/services/recurring_search_scheduler.spec.ts
+    - apps/frontend/src/components/job-search/active-search-card.test.tsx
+  files_to_modify:
+    - apps/api/app/services/job_search_service.ts              # Set next_run_at on create/update when frequency != manual
+    - apps/frontend/src/components/job-search/active-search-card.tsx  # Show next run date + frequency badge
+    - apps/frontend/src/i18n/en.json                            # Add nextRun, frequency badge labels
+    - apps/frontend/src/i18n/fr.json                            # Same in French
+    - packages/shared/src/index.ts                              # Export computeNextRunAt
+    - packages/shared/src/constants/job-search.ts               # Add FREE_ALLOWED_FREQUENCIES, FREQUENCY_INTERVALS_DAYS
+  files_to_read:
+    - apps/api/app/services/job_scraping_service.ts             # runForSearch(searchId, userId) entry point
+    - apps/api/app/models/job_search.ts                         # Model with frequency + nextRunAt
+    - stacks/typescript-adonisjs.md                             # Coding conventions
+
+components:
+  reuse:
+    - name: "ActiveSearchCard"
+      path: "apps/frontend/src/components/job-search/active-search-card.tsx"
+      note: "Add next run date display and frequency badge"
+  create: []
+
+acceptance_criteria:
+  # --- FUNCTIONAL ---
+  - id: "AC-FUNC-JRS-01"
+    type: "FUNC"
+    description: "Given a search created with frequency='weekly' / When saved / Then next_run_at is set to 7 days from now"
+    verify: "grep -n 'computeNextRunAt\\|next_run_at\\|nextRunAt.*frequency' apps/api/app/services/job_search_service.ts | grep -v node_modules"
+    tier: 1
+
+  - id: "AC-FUNC-JRS-02"
+    type: "FUNC"
+    description: "Given a search with frequency='manual' / When saved / Then next_run_at is null"
+    verify: "grep -n 'manual.*null\\|frequency.*manual.*nextRunAt' apps/api/app/services/job_search_service.ts packages/shared/src/utils/next-run-at.ts"
+    tier: 1
+
+  - id: "AC-FUNC-JRS-03"
+    type: "FUNC"
+    description: "Given searches with next_run_at <= now() / When the scheduler runs / Then each due search triggers runForSearch and next_run_at is updated"
+    verify: "grep -n 'runForSearch\\|nextRunAt.*<=\\|next_run_at.*<=' apps/api/app/services/recurring_search_scheduler.ts"
+    tier: 1
+
+  - id: "AC-FUNC-JRS-04"
+    type: "FUNC"
+    description: "Given a search frequency updated from 'manual' to 'daily' / When saved / Then next_run_at is set to 1 day from now"
+    verify: "grep -n 'frequency.*nextRunAt\\|computeNextRunAt' apps/api/app/services/job_search_service.ts"
+    tier: 1
+
+  - id: "AC-FUNC-JRS-05"
+    type: "FUNC"
+    description: "Given a free user / When they select 'daily' or 'biweekly' frequency / Then the backend rejects with 403 PLAN_REQUIRED"
+    verify: "grep -n 'FREE_ALLOWED_FREQUENCIES\\|PLAN_REQUIRED\\|free.*frequency' apps/api/app/services/job_search_service.ts packages/shared/src/constants/job-search.ts"
+    tier: 1
+
+  - id: "AC-FUNC-JRS-06"
+    type: "FUNC"
+    description: "Given the scheduler endpoint / When called without the correct secret header / Then it returns 401"
+    verify: "grep -n 'SCHEDULER_SECRET\\|x-scheduler-secret\\|401' apps/api/start/routes/scheduler.ts"
+    tier: 1
+
+  - id: "AC-FUNC-JRS-07"
+    type: "FUNC"
+    description: "Given the active search card / When a search has frequency != manual / Then the next run date is displayed"
+    verify: "grep -n 'nextRunAt\\|next-run\\|data-testid.*next-run' apps/frontend/src/components/job-search/active-search-card.tsx"
+    tier: 1
+
+  # --- SECURITY ---
+  - id: "AC-SEC-JRS-01"
+    type: "SEC"
+    description: "Scheduler endpoint is protected by a secret header, not just auth middleware"
+    verify: "grep -rn 'SCHEDULER_SECRET\\|x-scheduler-secret' apps/api/start/routes/scheduler.ts"
+    tier: 1
+
+  - id: "AC-SEC-JRS-02"
+    type: "SEC"
+    description: "No raw SQL in scheduler service — uses Lucid query builder only"
+    verify: "! grep -rn 'db\\.rawQuery\\|Database\\.rawQuery\\|\\.raw(' apps/api/app/services/recurring_search_scheduler.ts"
+    tier: 1
+
+  # --- BEST PRACTICES ---
+  - id: "AC-BP-JRS-PURE"
+    type: "BP"
+    description: "computeNextRunAt is a pure function in shared package with no DB dependency"
+    verify: "grep -n 'export function computeNextRunAt' packages/shared/src/utils/next-run-at.ts && ! grep -n 'import.*model\\|import.*lucid' packages/shared/src/utils/next-run-at.ts"
+    tier: 1
+
+  - id: "AC-BP-JRS-CONST"
+    type: "BP"
+    description: "Frequency interval days are constants, not magic numbers"
+    verify: "grep -n 'FREQUENCY_INTERVALS_DAYS\\|DAILY.*=.*1\\|WEEKLY.*=.*7\\|BIWEEKLY.*=.*3' packages/shared/src/constants/job-search.ts"
+    tier: 1
+
+  - id: "AC-BP-JRS-COMPILE"
+    type: "BP"
+    description: "Project compiles without errors"
+    verify: "cd apps/api && npx tsc --noEmit 2>&1 | tail -1 && cd ../frontend && npx tsc --noEmit 2>&1 | tail -1"
+    tier: 1
+
+  - id: "AC-BP-JRS-TU"
+    type: "BP"
+    description: "All unit tests pass"
+    verify: "cd apps/api && node --import tsx/esm bin/test.ts 2>&1 | tail -5"
+    tier: 2
+
+  - id: "AC-BP-JRS-CONSOLE"
+    type: "BP"
+    description: "Zero console errors/stacktraces"
+    verify: "runtime-only"
+    tier: 3
+
+test_intentions:
+  - function: computeNextRunAt
+    description: "Computes next run date based on frequency and reference date"
+    inputs:
+      frequency: "weekly"
+      referenceDate: "2026-04-13T10:00:00Z"
+    oracle:
+      final: "2026-04-13 + 7 days = 2026-04-20T10:00:00Z"
+    assertions:
+      - "result.toISO() == '2026-04-20T10:00:00.000Z'"
+    edge_cases:
+      - description: "daily frequency"
+        inputs: { frequency: "daily", referenceDate: "2026-04-13T10:00:00Z" }
+        oracle: { final: "2026-04-13 + 1 day = 2026-04-14T10:00:00Z" }
+        assertions: ["result.toISO() == '2026-04-14T10:00:00.000Z'"]
+      - description: "biweekly frequency (every 3.5 days)"
+        inputs: { frequency: "biweekly", referenceDate: "2026-04-13T10:00:00Z" }
+        oracle: { final: "2026-04-13 + 3 days 12h = 2026-04-16T22:00:00Z" }
+        assertions: ["result.toISO() == '2026-04-16T22:00:00.000Z'"]
+      - description: "manual frequency returns null"
+        inputs: { frequency: "manual", referenceDate: "2026-04-13T10:00:00Z" }
+        oracle: { final: "manual → null" }
+        assertions: ["result == null"]
+
+  - function: RecurringSearchScheduler.runDueSearches
+    description: "Finds and runs all searches where next_run_at <= now"
+    inputs:
+      searches_in_db: [
+        { id: "s1", frequency: "daily", next_run_at: "2026-04-12T10:00:00Z", is_active: true },
+        { id: "s2", frequency: "weekly", next_run_at: "2026-04-20T10:00:00Z", is_active: true },
+        { id: "s3", frequency: "manual", next_run_at: null, is_active: true }
+      ]
+      now: "2026-04-13T10:00:00Z"
+    oracle:
+      final: "Only s1 is due (next_run_at 2026-04-12 <= now 2026-04-13). s2 future, s3 manual."
+    assertions:
+      - "result.searchesRun == 1"
+      - "result.searchIds == ['s1']"
+    edge_cases:
+      - description: "inactive search is not run even if due"
+        inputs: { searches_in_db: [{ id: "s4", frequency: "daily", next_run_at: "2026-04-12T10:00:00Z", is_active: false }] }
+        oracle: { final: "s4 is inactive → skipped" }
+        assertions: ["result.searchesRun == 0"]
+      - description: "no due searches"
+        inputs: { searches_in_db: [] }
+        oracle: { final: "empty → 0 runs" }
+        assertions: ["result.searchesRun == 0"]
+
+  - function: ActiveSearchCard
+    description: "Renders next run date when frequency is not manual"
+    inputs:
+      search: { frequency: "weekly", nextRunAt: "2026-04-20T10:00:00Z" }
+    oracle:
+      final: "formatDate('2026-04-20T10:00:00Z') renders as localized date string"
+    assertions:
+      - "screen.getByTestId('job-search-next-run') is visible"
+    edge_cases:
+      - description: "manual frequency hides next run"
+        inputs: { search: { frequency: "manual", nextRunAt: null } }
+        oracle: { final: "nextRunAt null → next run section hidden" }
+        assertions: ["screen.queryByTestId('job-search-next-run') == null"]
+
+edge_cases:
+  - "Search frequency updated while a run is in progress — scheduler should skip already-running searches"
+  - "Server downtime: if scheduler misses a window (next_run_at in the past), it runs immediately on next tick"
+  - "User deactivates search (isActive=false) — scheduler ignores it"
+  - "Concurrent scheduler runs — use SELECT FOR UPDATE or advisory lock to prevent double-run"
+  - "Free user has existing search with daily frequency (set before plan downgrade) — scheduler skips or resets to manual"
+
+dependencies:
+  - "job-search-config (validated)"
+  - "job-scraping-pipeline (validated)"
+
+ux_ref: null  # Minor UI change (badge + date) — no new page/wireframe needed

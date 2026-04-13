@@ -1,0 +1,191 @@
+# Story: job-notifications
+# Epic: E14 — Automatisation
+# Estimate: S (2 pts)
+# Priority: nice-to-have
+# Depends on: job-recurring-search (must be refined first)
+
+user_story: |
+  As a user with recurring job searches,
+  I want to see a notification badge in the sidebar when new offers are found,
+  so that I know there are fresh results without having to check manually.
+
+context: |
+  When recurring searches run automatically (job-recurring-search), new offers appear
+  in the database. The user has no way to know until they visit /offres. This story adds
+  a lightweight notification system: (1) track when the user last viewed offers,
+  (2) count new offers since last view, (3) display badge in sidebar.
+  No push notifications or email digest in this story — keep it simple.
+
+scope:
+  files_to_create:
+    - apps/api/database/migrations/45_add_last_offers_seen_at_to_users.ts
+    - apps/api/app/services/offer_notification_service.ts
+    - apps/api/app/controllers/offer_notifications_controller.ts
+    - apps/api/start/routes/offer_notifications.ts
+    - apps/api/tests/unit/services/offer_notification_service.spec.ts
+    - apps/frontend/src/hooks/use-offer-notifications.ts
+    - apps/frontend/src/lib/offer-notification-api.ts
+    - apps/frontend/src/components/layout/notification-badge.tsx
+    - apps/frontend/src/components/layout/notification-badge.test.tsx
+  files_to_modify:
+    - apps/api/app/models/user.ts                               # Add lastOffersSeenAt column
+    - apps/frontend/src/components/layout/sidebar.tsx            # Add badge next to "Mes offres" link
+    - apps/frontend/src/app/offres/page.tsx                      # Mark offers as seen on visit (POST /api/notifications/mark-seen)
+    - apps/frontend/src/i18n/en.json                              # Add notification keys
+    - apps/frontend/src/i18n/fr.json                              # Same in French
+  files_to_read:
+    - apps/api/app/models/job_offer.ts                           # createdAt field for counting new offers
+    - apps/frontend/src/components/layout/sidebar.tsx             # Current sidebar structure
+
+components:
+  reuse:
+    - name: "Sidebar"
+      path: "apps/frontend/src/components/layout/sidebar.tsx"
+      note: "Add NotificationBadge next to 'Mes offres' link"
+  create:
+    - name: "NotificationBadge"
+      type: dumb
+      reason: "Small pill showing unread count — reusable for future notification types"
+
+acceptance_criteria:
+  # --- FUNCTIONAL ---
+  - id: "AC-FUNC-JNO-01"
+    type: "FUNC"
+    description: "Given new job offers created after user's last_offers_seen_at / When GET /api/notifications/offers-count / Then unread count is returned"
+    verify: "grep -n 'offersCount\\|unreadCount\\|lastOffersSeenAt\\|last_offers_seen_at' apps/api/app/services/offer_notification_service.ts"
+    tier: 1
+
+  - id: "AC-FUNC-JNO-02"
+    type: "FUNC"
+    description: "Given the user visits /offres / When the page loads / Then POST /api/notifications/mark-seen updates last_offers_seen_at to now"
+    verify: "grep -n 'mark-seen\\|markSeen\\|lastOffersSeenAt.*now\\|last_offers_seen_at' apps/api/app/controllers/offer_notifications_controller.ts apps/api/app/services/offer_notification_service.ts"
+    tier: 1
+
+  - id: "AC-FUNC-JNO-03"
+    type: "FUNC"
+    description: "Given unread offers count > 0 / When the sidebar renders / Then a badge with the count is visible next to 'Mes offres'"
+    verify: "grep -n 'data-testid.*notification-badge\\|NotificationBadge' apps/frontend/src/components/layout/sidebar.tsx apps/frontend/src/components/layout/notification-badge.tsx"
+    tier: 1
+
+  - id: "AC-FUNC-JNO-04"
+    type: "FUNC"
+    description: "Given unread offers count is 0 / When the sidebar renders / Then no badge is visible"
+    verify: "grep -n 'count.*0\\|count.*>.*0\\|count.*===.*0' apps/frontend/src/components/layout/notification-badge.tsx"
+    tier: 1
+
+  - id: "AC-FUNC-JNO-05"
+    type: "FUNC"
+    description: "Given a user who never visited /offres (last_offers_seen_at is null) / When counting / Then all offers are counted as new"
+    verify: "grep -n 'null\\|lastOffersSeenAt.*null' apps/api/app/services/offer_notification_service.ts"
+    tier: 1
+
+  # --- SECURITY ---
+  - id: "AC-SEC-JNO-01"
+    type: "SEC"
+    description: "Notification routes require auth middleware"
+    verify: "grep -n 'middleware.auth' apps/api/start/routes/offer_notifications.ts"
+    tier: 1
+
+  - id: "AC-SEC-JNO-02"
+    type: "SEC"
+    description: "Count query scoped to userId — no cross-user offer counting"
+    verify: "grep -n 'userId' apps/api/app/services/offer_notification_service.ts | wc -l | awk '{if ($1 >= 2) print \"PASS\"; else print \"FAIL\"}'"
+    tier: 1
+
+  # --- BEST PRACTICES ---
+  - id: "AC-BP-JNO-TESTID"
+    type: "BP"
+    description: "NotificationBadge has data-testid"
+    verify: "grep -c 'data-testid' apps/frontend/src/components/layout/notification-badge.tsx | awk '{if ($1 >= 1) print \"PASS\"; else print \"FAIL\"}'"
+    tier: 1
+
+  - id: "AC-BP-JNO-DESIGN"
+    type: "BP"
+    description: "Badge uses design system CSS variables"
+    verify: "! grep -En 'text-(red|blue|green|gray)-[0-9]' apps/frontend/src/components/layout/notification-badge.tsx"
+    tier: 1
+
+  - id: "AC-BP-JNO-COMPILE"
+    type: "BP"
+    description: "Project compiles without errors"
+    verify: "cd apps/api && npx tsc --noEmit 2>&1 | tail -1 && cd ../frontend && npx tsc --noEmit 2>&1 | tail -1"
+    tier: 1
+
+  - id: "AC-BP-JNO-TU"
+    type: "BP"
+    description: "All unit tests pass"
+    verify: "cd apps/api && node --import tsx/esm bin/test.ts 2>&1 | tail -5"
+    tier: 2
+
+  - id: "AC-BP-JNO-CONSOLE"
+    type: "BP"
+    description: "Zero console errors/stacktraces"
+    verify: "runtime-only"
+    tier: 3
+
+test_intentions:
+  - function: OfferNotificationService.getUnreadCount
+    description: "Counts offers created after last_offers_seen_at for a user"
+    inputs:
+      userId: "user-1"
+      lastOffersSeenAt: "2026-04-10T00:00:00Z"
+      offers_in_db: [
+        { id: "o1", userId: "user-1", createdAt: "2026-04-09T00:00:00Z" },
+        { id: "o2", userId: "user-1", createdAt: "2026-04-11T00:00:00Z" },
+        { id: "o3", userId: "user-1", createdAt: "2026-04-12T00:00:00Z" },
+        { id: "o4", userId: "user-2", createdAt: "2026-04-12T00:00:00Z" }
+      ]
+    oracle:
+      final: "o2 (Apr 11) + o3 (Apr 12) are after Apr 10 AND belong to user-1 = 2 unread. o1 too old, o4 wrong user."
+    assertions:
+      - "result == 2"
+    edge_cases:
+      - description: "null lastOffersSeenAt — all offers are new"
+        inputs: { userId: "user-1", lastOffersSeenAt: null }
+        oracle: { final: "3 offers belong to user-1 = 3 unread" }
+        assertions: ["result == 3"]
+      - description: "no offers at all"
+        inputs: { userId: "user-1", lastOffersSeenAt: "2026-04-10T00:00:00Z", offers_in_db: [] }
+        oracle: { final: "0 unread" }
+        assertions: ["result == 0"]
+
+  - function: OfferNotificationService.markSeen
+    description: "Updates user.lastOffersSeenAt to now"
+    inputs:
+      userId: "user-1"
+    oracle:
+      final: "user.lastOffersSeenAt updated to current timestamp"
+    assertions:
+      - "user.lastOffersSeenAt != null"
+      - "user.lastOffersSeenAt >= beforeTimestamp"
+
+  - function: NotificationBadge
+    description: "Renders count badge or nothing"
+    inputs:
+      count: 5
+    oracle:
+      final: "5 → badge visible with text '5'"
+    assertions:
+      - "screen.getByTestId('notification-badge').textContent == '5'"
+    edge_cases:
+      - description: "count is 0 — badge hidden"
+        inputs: { count: 0 }
+        oracle: { final: "0 → no badge rendered" }
+        assertions: ["screen.queryByTestId('notification-badge') == null"]
+      - description: "count > 99 — shows 99+"
+        inputs: { count: 150 }
+        oracle: { final: "150 → display '99+'" }
+        assertions: ["screen.getByTestId('notification-badge').textContent == '99+'"]
+
+edge_cases:
+  - "User has no job searches at all — count should be 0 (no offers exist)"
+  - "Multiple tabs open — mark-seen in one tab, badge persists in other (acceptable, next poll updates)"
+  - "Badge count caps at 99+ for display"
+  - "last_offers_seen_at migration: default null for existing users → all offers show as new on first visit"
+  - "Polling interval: frontend polls every 60 seconds — not real-time (acceptable for MVP)"
+
+dependencies:
+  - "job-recurring-search (for automatic offer creation)"
+  - "job-offers-list-page (validated — /offres page exists)"
+
+ux_ref: null  # Badge is a small addition to existing sidebar — no wireframe needed
