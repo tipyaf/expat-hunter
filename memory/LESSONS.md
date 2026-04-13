@@ -168,3 +168,8 @@ Use `stories-update labels:[{name: "scope:building"}]` at each transition.
 3. NEVER assume "token expired" — check volumes, credentials, and server status first
 4. NEVER delete or recreate SonarQube volumes — data must persist across restarts
 5. Read `memory/reference_sonarqube_setup.md` before any SonarQube operation
+
+### [Quality] Use sonar-project.properties — don't duplicate config in CLI
+**Problem**: sc-1053 — SonarQube scan passed all `-D` params manually, ignoring the existing `sonar-project.properties` at project root. This caused noisy WARN logs (symlink traversal in node_modules) and duplicated config.
+**Root cause**: Agent didn't check for an existing `sonar-project.properties` before building the scan command.
+**Rule**: This project has a `sonar-project.properties` at the root with `projectKey`, `sources`, and `exclusions` already configured. When running SonarQube, ONLY pass `-Dsonar.inclusions="<changed-files>"` and env vars — let the scanner pick up everything else from the properties file. NEVER duplicate `projectKey`, `sources`, or `exclusions` in CLI args when the properties file exists.
