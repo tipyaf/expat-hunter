@@ -896,6 +896,7 @@
     "actionApply": "Apply",
     "tabDetails": "Details",
     "tabCv": "CV",
+    "tabCoverLetter": "Cover Letter",
     "tabSend": "Send"
   },
   "cvTab": {
@@ -913,6 +914,25 @@
     "refining": "Refining...",
     "editBtn": "Edit manually",
     "editTitle": "Edit your CV",
+    "save": "Save",
+    "saving": "Saving...",
+    "cancel": "Cancel",
+    "downloadPdf": "Download PDF",
+    "downloading": "Downloading...",
+    "dismiss": "Dismiss"
+  },
+  "coverLetterTab": {
+    "generateDescription": "Let AI generate a tailored cover letter for this position based on your profile and the job requirements.",
+    "generateBtn": "Generate Cover Letter",
+    "generating": "Generating...",
+    "quotaExceeded": "You have reached your weekly cover letter generation limit. Upgrade your plan for more.",
+    "noCvInProfile": "Upload your CV in your profile first to generate a cover letter.",
+    "refineLabel": "Refine your cover letter",
+    "refinePlaceholder": "e.g. Make the tone more formal and emphasize my management experience...",
+    "refineBtn": "Refine",
+    "refining": "Refining...",
+    "editBtn": "Edit manually",
+    "editTitle": "Edit your cover letter",
     "save": "Save",
     "saving": "Saving...",
     "cancel": "Cancel",

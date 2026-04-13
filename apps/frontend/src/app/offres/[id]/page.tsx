@@ -10,6 +10,7 @@ import { JobOfferActionsBar } from '@/components/job-offers/job-offer-actions-ba
 import { CrossPipelineBadge } from '@/components/job-offers/cross-pipeline-badge'
 import { ExclusionModal } from '@/components/job-offers/exclusion-modal'
 import { CvTab } from '@/components/job-offers/cv/cv-tab'
+import { CoverLetterTab } from '@/components/job-offers/cover-letter/cover-letter-tab'
 import { SendTab } from '@/components/job-offers/send/send-tab'
 import { RecruitmentContactsPanel } from '@/components/job-offers/recruitment-contacts/recruitment-contacts-panel'
 import { useJobOfferDetail } from '@/hooks/use-job-offer-detail'
@@ -18,7 +19,7 @@ import { useState, useCallback } from 'react'
 import type { ExclusionCategory } from '@/lib/job-offers-api'
 import type { ReactNode } from 'react'
 
-type DetailTab = 'details' | 'cv' | 'send'
+type DetailTab = 'details' | 'cv' | 'cover-letter' | 'send'
 
 export default function JobOfferDetailPage(): ReactNode {
   const params = useParams<{ id: string }>()
@@ -133,6 +134,18 @@ export default function JobOfferDetailPage(): ReactNode {
               </button>
               <button
                 type="button"
+                data-testid="tab-cover-letter"
+                onClick={() => setActiveTab('cover-letter')}
+                className={`px-4 py-2 text-sm font-medium transition-colors ${
+                  activeTab === 'cover-letter'
+                    ? 'border-b-2 border-[var(--color-primary)] text-[var(--color-primary)]'
+                    : 'text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]'
+                }`}
+              >
+                {t('tabCoverLetter')}
+              </button>
+              <button
+                type="button"
                 data-testid="tab-send"
                 onClick={() => setActiveTab('send')}
                 className={`px-4 py-2 text-sm font-medium transition-colors ${
@@ -195,6 +208,10 @@ export default function JobOfferDetailPage(): ReactNode {
 
                 {activeTab === 'cv' && (
                   <CvTab offerId={offer.id} token={token ?? ''} />
+                )}
+
+                {activeTab === 'cover-letter' && (
+                  <CoverLetterTab offerId={offer.id} token={token ?? ''} />
                 )}
 
                 {activeTab === 'send' && (

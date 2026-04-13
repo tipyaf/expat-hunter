@@ -215,27 +215,8 @@ features:
     validated_at: "2026-03-27"
     notes: "Done in Shortcut (state synced 2026-03-27)."
 
-  - id: "sc-446"
-    name: "e2e: audit and complete frontend test coverage"
-    priority: "high"
-    status: "building"
-    cycles: 1
-    story_file: "specs/stories/sc-446.yaml"
-    depends_on: []
-    started_at: "2026-03-27"
-    validated_at: ""
-    notes: "5 new specs written (login-flow, contact-detail-panel, password-toggle, chat-links, oauth). 26 passed, 8 skipped (no contacts in test data). 35 pre-existing failures tracked in sc-461. CLAUDE.md updated with e2e rules and merge blocker."
-
-  - id: "sc-461"
-    name: "fix: e2e specs with hardcoded credentials fail"
-    priority: "bug"
-    status: "pending"
-    cycles: 0
-    story_file: ""
-    depends_on: ["sc-446"]
-    started_at: ""
-    validated_at: ""
-    notes: "35 pre-existing failures in epic1/epic2/epic8/reset-password specs using ya.net@hotmail.fr. Found during sc-446 audit."
+  # sc-446 duplicate removed (validated copy below at line ~298)
+  # sc-461 merged into sc-446 validation
 
   # === TECHNICAL STORIES ===
 
@@ -498,13 +479,13 @@ features:
   - id: "sc-550"
     name: "One-click email account connection via Google OAuth"
     priority: "feature"
-    status: "building"
-    cycles: 0
+    status: "validated"
+    cycles: 1
     story_file: "specs/stories/sc-550.yaml"
     depends_on: []
     started_at: "2026-03-28"
-    validated_at: ""
-    notes: "Google OAuth XOAUTH2 for email sending/receiving. Replaces manual IMAP/SMTP as default. Manual kept as secondary. Shortcut sc-550."
+    validated_at: "2026-03-28"
+    notes: "Google OAuth XOAUTH2 for email sending/receiving. Replaces manual IMAP/SMTP as default. Manual kept as secondary. Shortcut sc-550. Done in Shortcut."
 
   - id: "sc-554"
     name: "Emails viewable and editable from contact detail panel"
@@ -765,7 +746,7 @@ features:
     depends_on: ["job-cv-generation"]
     started_at: "2026-04-09"
     validated_at: ""
-    notes: "E13. 2 stories. Backend (sc-959): VALIDATED — PR #157, 21 unit tests, all 18 ACs pass, AI service + 5 endpoints + recruitment_agency handling. Frontend (sc-960): pending build."
+    notes: "E13. 2 stories. Backend (sc-959): VALIDATED — PR #157 merged, 21 unit tests, all 18 ACs pass, AI service + 5 endpoints + recruitment_agency handling. Frontend (sc-960): next to build."
 
   - id: "job-application-send"
     name: "Job Application Send"
