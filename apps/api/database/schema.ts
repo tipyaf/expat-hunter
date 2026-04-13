@@ -837,7 +837,7 @@ export class UsageCounterSchema extends BaseModel {
 }
 
 export class UserSchema extends BaseModel {
-  static $columns = ['createdAt', 'email', 'emailVerifiedAt', 'fullName', 'googleId', 'id', 'isAdmin', 'locale', 'password', 'plan', 'updatedAt'] as const
+  static $columns = ['createdAt', 'email', 'emailVerifiedAt', 'fullName', 'googleId', 'id', 'isAdmin', 'lastOffersSeenAt', 'locale', 'password', 'plan', 'updatedAt'] as const
   $columns = UserSchema.$columns
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
@@ -853,6 +853,8 @@ export class UserSchema extends BaseModel {
   declare id: string
   @column()
   declare isAdmin: boolean
+  @column.dateTime()
+  declare lastOffersSeenAt: DateTime | null
   @column()
   declare locale: string
   @column({ serializeAs: null })

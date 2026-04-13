@@ -8,14 +8,24 @@ import { JobOfferCardSkeletonList } from '@/components/job-offers/job-offer-card
 import { useAuth } from '@/contexts/auth-context'
 import { useJobOffers } from '@/hooks/use-job-offers'
 import { useTranslations } from 'next-intl'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { TAB_STATUS_MAP, type JobOfferTab } from '@/lib/job-offers-api'
+import { markOffersSeen } from '@/lib/offer-notification-api'
 
 export default function JobOffersPage(): React.ReactNode {
   const { user, isLoading: authLoading } = useAuth()
   const t = useTranslations('jobOffersPage')
   const tc = useTranslations('common')
+  const hasMarkedSeen = useRef(false)
+
+  // Mark offers as seen when the page loads (once)
+  useEffect(() => {
+    if (!authLoading && user && !hasMarkedSeen.current) {
+      hasMarkedSeen.current = true
+      void markOffersSeen()
+    }
+  }, [authLoading, user])
 
   const [searchFilter, setSearchFilter] = useState<string>('')
   const {

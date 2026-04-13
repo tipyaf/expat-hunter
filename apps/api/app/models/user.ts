@@ -54,6 +54,9 @@ export default class User extends compose(BaseModel, AuthFinder) {
     return this.emailVerifiedAt !== null
   }
 
+  @column.dateTime()
+  declare lastOffersSeenAt: DateTime | null
+
   @column.dateTime({ autoCreate: true })
   declare createdAt: DateTime
 

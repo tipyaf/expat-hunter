@@ -303,5 +303,8 @@ await import('#start/routes/recruitment_contacts')
 // Scheduler routes (recurring search trigger)
 await import('#start/routes/scheduler')
 
+// Offer notification routes (unread count + mark-seen)
+await import('#start/routes/offer_notifications')
+
 // Custom platforms routes (CRUD + country suggestions)
 await import('#start/routes/custom_platforms')
