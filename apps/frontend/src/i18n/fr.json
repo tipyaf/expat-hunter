@@ -896,6 +896,7 @@
     "actionApply": "Postuler",
     "tabDetails": "Détails",
     "tabCv": "CV",
+    "tabCoverLetter": "Lettre de motivation",
     "tabSend": "Envoyer"
   },
   "cvTab": {
@@ -913,6 +914,25 @@
     "refining": "Affinement...",
     "editBtn": "Modifier manuellement",
     "editTitle": "Modifier votre CV",
+    "save": "Enregistrer",
+    "saving": "Enregistrement...",
+    "cancel": "Annuler",
+    "downloadPdf": "Télécharger le PDF",
+    "downloading": "Téléchargement...",
+    "dismiss": "Fermer"
+  },
+  "coverLetterTab": {
+    "generateDescription": "Laissez l'IA générer une lettre de motivation adaptée à ce poste, basée sur votre profil et les exigences du poste.",
+    "generateBtn": "Générer la lettre de motivation",
+    "generating": "Génération...",
+    "quotaExceeded": "Vous avez atteint votre limite hebdomadaire de génération de lettres. Passez à un plan supérieur pour plus.",
+    "noCvInProfile": "Téléchargez d'abord votre CV dans votre profil pour générer une lettre de motivation.",
+    "refineLabel": "Affiner votre lettre de motivation",
+    "refinePlaceholder": "ex. Rendre le ton plus formel et mettre en avant mon expérience en management...",
+    "refineBtn": "Affiner",
+    "refining": "Affinement...",
+    "editBtn": "Modifier manuellement",
+    "editTitle": "Modifier votre lettre de motivation",
     "save": "Enregistrer",
     "saving": "Enregistrement...",
     "cancel": "Annuler",
