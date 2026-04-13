@@ -90,3 +90,16 @@ export {
 
 // Utilities
 export { computeNextRunAt } from './utils/next-run-at'
+
+// Custom platforms
+export type {
+  CustomPlatform,
+  CreateCustomPlatformPayload,
+  PlatformSuggestion,
+} from './types/custom-platform'
+export {
+  PLATFORM_SUGGESTIONS,
+  FREE_MAX_CUSTOM_PLATFORMS,
+  MAX_PLATFORM_NAME_LENGTH,
+  MAX_PLATFORM_URL_LENGTH,
+} from './constants/platform-suggestions'

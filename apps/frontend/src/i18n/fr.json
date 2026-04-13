@@ -1066,5 +1066,18 @@
       "emailRegenerate": "Modification et régénération d'emails",
       "expertChat": "Chat expert (recherche d'emploi, visas)"
     }
+  },
+  "customPlatforms": {
+    "sectionTitle": "Plateformes personnalisées",
+    "sectionSubtitle": "Ajoutez vos propres sites d'emploi pour élargir votre recherche.",
+    "namePlaceholder": "Nom de la plateforme (ex. TradeMe Jobs)",
+    "urlPlaceholder": "URL de la plateforme (ex. https://trademe.co.nz/jobs)",
+    "add": "Ajouter",
+    "adding": "Ajout...",
+    "emptyList": "Aucune plateforme personnalisée. Ajoutez-en une ci-dessus.",
+    "deletePlatform": "Supprimer {name}",
+    "errorInvalidUrl": "L'URL doit commencer par http:// ou https://",
+    "errorDuplicate": "Cette URL de plateforme existe déjà dans votre liste.",
+    "errorGeneric": "Une erreur est survenue. Veuillez réessayer."
   }
 }

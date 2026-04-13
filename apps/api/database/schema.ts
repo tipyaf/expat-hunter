@@ -224,7 +224,7 @@ export class ContactMovementSchema extends BaseModel {
 }
 
 export class ContactSchema extends BaseModel {
-  static $columns = ['aiRecommendation', 'companyId', 'cooldownUntil', 'createdAt', 'email', 'emailAlternatives', 'emailConfidence', 'emailSource', 'emailStatus', 'emailVerifiedAt', 'emailVerifyMethod', 'fullName', 'githubUrl', 'id', 'lastContactedAt', 'linkedinUrl', 'relevanceLabel', 'relevanceReason', 'relevanceScore', 'role', 'scoreBreakdown', 'scoreVersion', 'source', 'sourceDetail', 'sourcingRunId', 'status', 'updatedAt', 'userId', 'userOverride'] as const
+  static $columns = ['aiRecommendation', 'companyId', 'cooldownUntil', 'createdAt', 'email', 'emailAlternatives', 'emailConfidence', 'emailSource', 'emailStatus', 'emailVerifiedAt', 'emailVerifyMethod', 'fullName', 'githubUrl', 'id', 'lastContactedAt', 'linkedinUrl', 'recruitmentStatus', 'relevanceLabel', 'relevanceReason', 'relevanceScore', 'role', 'scoreBreakdown', 'scoreVersion', 'source', 'sourceDetail', 'sourcingRunId', 'status', 'updatedAt', 'userId', 'userOverride'] as const
   $columns = ContactSchema.$columns
   @column()
   declare aiRecommendation: string | null
@@ -259,6 +259,8 @@ export class ContactSchema extends BaseModel {
   @column()
   declare linkedinUrl: string | null
   @column()
+  declare recruitmentStatus: string | null
+  @column()
   declare relevanceLabel: string | null
   @column()
   declare relevanceReason: string | null
@@ -284,6 +286,27 @@ export class ContactSchema extends BaseModel {
   declare userId: string
   @column()
   declare userOverride: boolean
+}
+
+export class CustomPlatformSchema extends BaseModel {
+  static $columns = ['country', 'createdAt', 'id', 'isActive', 'name', 'updatedAt', 'url', 'userId'] as const
+  $columns = CustomPlatformSchema.$columns
+  @column()
+  declare country: string | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare isActive: boolean
+  @column()
+  declare name: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare url: string
+  @column()
+  declare userId: string
 }
 
 export class EmailConnectionSchema extends BaseModel {
@@ -500,6 +523,41 @@ export class GenerationPresetSchema extends BaseModel {
   declare userId: string
 }
 
+export class JobApplicationSchema extends BaseModel {
+  static $columns = ['applicationEmailText', 'coverLetterText', 'coverLetterUserInstruction', 'createdAt', 'cvReplacements', 'cvText', 'cvUserInstruction', 'id', 'language', 'offerId', 'sentAt', 'sentToEmail', 'status', 'updatedAt', 'userId'] as const
+  $columns = JobApplicationSchema.$columns
+  @column()
+  declare applicationEmailText: string | null
+  @column()
+  declare coverLetterText: string | null
+  @column()
+  declare coverLetterUserInstruction: string | null
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare cvReplacements: any | null
+  @column()
+  declare cvText: string | null
+  @column()
+  declare cvUserInstruction: string | null
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare language: string
+  @column()
+  declare offerId: string
+  @column.dateTime()
+  declare sentAt: DateTime | null
+  @column()
+  declare sentToEmail: string | null
+  @column()
+  declare status: string
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
+  @column()
+  declare userId: string
+}
+
 export class JobOfferExclusionSchema extends BaseModel {
   static $columns = ['category', 'createdAt', 'id', 'offerId', 'reason', 'userId'] as const
   $columns = JobOfferExclusionSchema.$columns
@@ -639,6 +697,33 @@ export class PasswordResetSchema extends BaseModel {
   declare token: string
   @column()
   declare used: boolean
+  @column()
+  declare userId: string
+}
+
+export class RecruitmentContactSchema extends BaseModel {
+  static $columns = ['createdAt', 'email', 'id', 'leadId', 'linkedinUrl', 'name', 'notes', 'offerId', 'role', 'updatedAt', 'userId'] as const
+  $columns = RecruitmentContactSchema.$columns
+  @column.dateTime({ autoCreate: true })
+  declare createdAt: DateTime
+  @column()
+  declare email: string | null
+  @column({ isPrimary: true })
+  declare id: string
+  @column()
+  declare leadId: string | null
+  @column()
+  declare linkedinUrl: string | null
+  @column()
+  declare name: string
+  @column()
+  declare notes: string | null
+  @column()
+  declare offerId: string
+  @column()
+  declare role: string | null
+  @column.dateTime({ autoCreate: true, autoUpdate: true })
+  declare updatedAt: DateTime
   @column()
   declare userId: string
 }

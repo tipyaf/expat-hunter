@@ -1067,5 +1067,18 @@
       "emailRegenerate": "Email modification & regeneration",
       "expertChat": "Expert chat (job search, visas)"
     }
+  },
+  "customPlatforms": {
+    "sectionTitle": "Custom Platforms",
+    "sectionSubtitle": "Add your own job board URLs to extend your search beyond default platforms.",
+    "namePlaceholder": "Platform name (e.g. TradeMe Jobs)",
+    "urlPlaceholder": "Platform URL (e.g. https://trademe.co.nz/jobs)",
+    "add": "Add",
+    "adding": "Adding...",
+    "emptyList": "No custom platforms yet. Add one above to get started.",
+    "deletePlatform": "Delete {name}",
+    "errorInvalidUrl": "URL must start with http:// or https://",
+    "errorDuplicate": "This platform URL already exists in your list.",
+    "errorGeneric": "An error occurred. Please try again."
   }
 }
