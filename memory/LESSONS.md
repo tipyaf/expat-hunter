@@ -169,6 +169,11 @@ Use `stories-update labels:[{name: "scope:building"}]` at each transition.
 4. NEVER delete or recreate SonarQube volumes — data must persist across restarts
 5. Read `memory/reference_sonarqube_setup.md` before any SonarQube operation
 
+### [Git] After squash merge, ALWAYS verify the result compiles
+**Problem**: PR #172 squash-merged into develop, creating a duplicate `import { useAuth }` line in `use-offer-notifications.ts`. The build broke immediately. Required an emergency follow-up PR #173.
+**Root cause**: PR #172 and PR #170 both modified `use-offer-notifications.ts` (adding the same `useAuth` import). Git's squash merge resolved textual conflicts but created a semantic duplicate — two identical import lines. The agent never checked the merge result.
+**Rule**: After EVERY squash merge, ALWAYS: 1) `git pull` the target branch, 2) Run `tsc --noEmit` or the build command, 3) Open the browser and verify the app loads. Squash merges can create subtle duplication when multiple PRs touch the same file. Never assume the merge is clean — verify it compiles before moving on.
+
 ### [Quality] Use sonar-project.properties — don't duplicate config in CLI
 **Problem**: sc-1053 — SonarQube scan passed all `-D` params manually, ignoring the existing `sonar-project.properties` at project root. This caused noisy WARN logs (symlink traversal in node_modules) and duplicated config.
 **Root cause**: Agent didn't check for an existing `sonar-project.properties` before building the scan command.
