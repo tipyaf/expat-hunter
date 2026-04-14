@@ -43,6 +43,9 @@
 - Import shared types from `@expat-hunter/shared` package.
 - Use `import type` for type-only imports to avoid runtime overhead.
 - Avoid circular imports — services should not import controllers, hooks should not import pages.
+- **No duplicate imports**: NEVER import the same module or symbol twice. After any merge or edit, verify there are no duplicate import lines.
+- **No unused imports**: Every import MUST be used. Remove any import that is not referenced in the file. Run `tsc --noEmit` to catch unused imports.
+- **No broken import paths**: Every import path MUST resolve. Use `@/` aliases for frontend, `#` aliases for backend. Never use relative paths that go up more than 2 levels (`../../..` is a code smell — use an alias).
 
 ## Anti-patterns
 
@@ -53,3 +56,6 @@
 | Magic string `'identified'` | Enum member `ContactStatus.IDENTIFIED` |
 | Magic number `50` | Named constant `BATCH_SIZE` |
 | Implicit return type | Explicit `: ReturnType` on every function/method |
+| Duplicate import `import { X } from 'y'` twice | Single import per module — merge symbols into one line |
+| Unused import left after refactor | Delete it — dead imports are noise and can cause build errors |
+| Broken relative path `../../../foo` | Use path alias `@/foo` (frontend) or `#foo` (backend) |
