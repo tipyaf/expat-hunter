@@ -12,8 +12,11 @@ import JobOfferLink from '#models/job_offer_link'
 import User from '#models/user'
 import logger from '@adonisjs/core/services/logger'
 import { DateTime } from 'luxon'
-import { JobOfferScraperRegistry } from '#scrapers/job_offer_scraper_registry'
+import { JobOfferScraperRegistry, jobOfferScraperRegistry } from '#scrapers/job_offer_scraper_registry'
 import type { JobOfferScrapeParams } from '#scrapers/base_job_offer_scraper'
+
+// Side-effect import: registers all job offer scrapers in the singleton registry
+import '#scrapers/register_job_offer_scrapers'
 import JobOfferDedupService from './job_offer_dedup_service.js'
 import JobAiEvaluationService from './job_ai_evaluation_service.js'
 import JobCompanyEnrichmentService from './job_company_enrichment_service.js'
@@ -43,7 +46,7 @@ export default class JobScrapingService {
     evaluationService?: JobAiEvaluationService,
     enrichmentService?: JobCompanyEnrichmentService
   ) {
-    this.registry = registry ?? new JobOfferScraperRegistry()
+    this.registry = registry ?? jobOfferScraperRegistry
     this.dedupService = dedupService ?? new JobOfferDedupService()
     this.evaluationService = evaluationService ?? new JobAiEvaluationService()
     this.enrichmentService = enrichmentService ?? new JobCompanyEnrichmentService()
@@ -161,6 +164,22 @@ export default class JobScrapingService {
       const batch = rawOffers.slice(i, i + OFFER_BATCH_SIZE)
 
       for (const raw of batch) {
+        // Skip if this platform+externalId combo already exists (re-run scenario)
+        if (raw.externalId) {
+          const existingLink = await JobOfferLink.query()
+            .where('platform', raw.platform)
+            .where('externalId', raw.externalId)
+            .first()
+
+          if (existingLink) {
+            logger.debug(
+              { platform: raw.platform, externalId: raw.externalId },
+              'JobScrapingService: skipping duplicate offer'
+            )
+            continue
+          }
+        }
+
         const offer = await JobOffer.create({
           searchId,
           title: raw.title,

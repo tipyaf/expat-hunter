@@ -4,6 +4,9 @@ import JobScrapingService from '#services/job_scraping_service'
 import { jobOfferScraperRegistry } from '#scrapers/job_offer_scraper_registry'
 import { createJobSearchValidator, updateJobSearchValidator } from '#validators/job_search_validator'
 
+// Side-effect import: registers all job offer scrapers in the singleton registry
+import '#scrapers/register_job_offer_scrapers'
+
 export default class JobSearchesController {
   private readonly service = new JobSearchService()
   private readonly scrapingService = new JobScrapingService(jobOfferScraperRegistry)
@@ -95,8 +98,9 @@ export default class JobSearchesController {
     const user = auth.getUserOrFail()
 
     try {
-      const result = await this.scrapingService.runForSearch(params.id, user.id)
-      return response.ok({ data: result })
+      const scraping = await this.scrapingService.runForSearch(params.id, user.id)
+      const search = await this.service.findOrFail(user.id, params.id)
+      return response.ok({ data: search, scraping })
     } catch (error: any) {
       if (error.code === 'E_ROW_NOT_FOUND' || error.code === 'NOT_FOUND') {
         return response.notFound({

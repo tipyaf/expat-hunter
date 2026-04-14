@@ -76,7 +76,9 @@
     "verificationSent": "Verification email sent!",
     "disposableEmail": "Disposable email addresses are not allowed. Please use a permanent email.",
     "tooManyAttempts": "Too many attempts. Please wait a moment and try again.",
-    "accountLocked": "Account temporarily locked due to too many failed attempts. Please try again in a few minutes."
+    "accountLocked": "Account temporarily locked due to too many failed attempts. Please try again in a few minutes.",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
   },
   "dashboard": {
     "title": "Dashboard",
