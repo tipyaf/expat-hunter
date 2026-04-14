@@ -60,9 +60,9 @@ export default function JobOffersPage(): React.ReactNode {
   }
 
   return (
-    <div className="flex min-h-screen bg-[var(--color-surface-main)]">
+    <div className="flex h-dvh overflow-hidden">
       <Sidebar />
-      <main id="main-content" className="flex-1 overflow-y-auto">
+      <main id="main-content" className="flex-1 overflow-y-auto bg-[var(--color-surface-main)]">
         <div className="mx-auto max-w-4xl px-6 py-8">
           {/* Header */}
           <div className="mb-6">

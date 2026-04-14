@@ -55,10 +55,10 @@ export default function JobOfferDetailPage(): ReactNode {
   }, [updateStatus])
 
   return (
-    <div className="flex min-h-screen bg-[var(--color-surface)]">
+    <div className="flex h-dvh overflow-hidden">
       <Sidebar />
 
-      <main id="main-content" className="flex-1 px-4 py-8 lg:px-8">
+      <main id="main-content" className="flex-1 overflow-y-auto bg-[var(--color-surface)] px-4 py-8 lg:px-8">
         {isLoading && (
           <div className="space-y-4 animate-pulse">
             <div className="h-6 w-48 rounded bg-[var(--color-border)]" />
