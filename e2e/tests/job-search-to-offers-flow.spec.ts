@@ -29,6 +29,36 @@ test.beforeAll(async () => {
   authToken = auth.token
 })
 
+/**
+ * Helper: create a search, run it, and return scraping stats.
+ */
+async function createAndRunSearch(
+  platforms: string[],
+  roles: string[],
+  countries: string[],
+  seniority = 'senior'
+) {
+  const createRes = await fetch(`${API_URL}/api/job-searches`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${authToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ roles, countries, platforms, seniority }),
+  })
+  expect(createRes.ok, `Create search failed: ${createRes.status}`).toBe(true)
+  const { data: search } = await createRes.json()
+
+  const runRes = await fetch(`${API_URL}/api/job-searches/${search.id}/run`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${authToken}` },
+  })
+  expect(runRes.ok, `Run search failed: ${runRes.status}`).toBe(true)
+  const body = await runRes.json()
+
+  return { search, scraping: body.scraping, data: body.data }
+}
+
 test.describe('Job Search → Offers Flow', () => {
   test.beforeEach(async () => {
     // Clean up existing searches and their offers via API
@@ -45,36 +75,6 @@ test.describe('Job Search → Offers Flow', () => {
       }
     }
   })
-
-  /**
-   * Helper: create a search, run it, and return scraping stats.
-   */
-  async function createAndRunSearch(
-    platforms: string[],
-    roles: string[],
-    countries: string[],
-    seniority = 'senior'
-  ) {
-    const createRes = await fetch(`${API_URL}/api/job-searches`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${authToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ roles, countries, platforms, seniority }),
-    })
-    expect(createRes.ok, `Create search failed: ${createRes.status}`).toBe(true)
-    const { data: search } = await createRes.json()
-
-    const runRes = await fetch(`${API_URL}/api/job-searches/${search.id}/run`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${authToken}` },
-    })
-    expect(runRes.ok, `Run search failed: ${runRes.status}`).toBe(true)
-    const body = await runRes.json()
-
-    return { search, scraping: body.scraping, data: body.data }
-  }
 
   // =========================================================================
   // SEEK PLATFORM (NZ/AU)
