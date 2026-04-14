@@ -18,6 +18,7 @@ import CandidateProfile from '#models/candidate_profile'
 import JobOffer from '#models/job_offer'
 import JobOfferExclusion from '#models/job_offer_exclusion'
 import JobSearch from '#models/job_search'
+import User from '#models/user'
 import logger from '@adonisjs/core/services/logger'
 
 const BATCH_DELAY_MS = 1000
@@ -53,6 +54,10 @@ export default class JobAiEvaluationService {
       .where('userId', userId)
       .firstOrFail()
 
+    // Load user locale
+    const user = await User.find(userId)
+    const locale = user?.locale
+
     // Load candidate profile
     const profile = await CandidateProfile.query().where('userId', userId).first()
     const candidateContext = this.buildCandidateContext(profile)
@@ -83,7 +88,7 @@ export default class JobAiEvaluationService {
       const batch = offers.slice(i, i + EVALUATION_BATCH_SIZE)
 
       for (const offer of batch) {
-        await this.evaluateOffer(offer, candidateContext, exclusionContext, result)
+        await this.evaluateOffer(offer, candidateContext, exclusionContext, result, locale)
       }
 
       // Rate limit between batches (skip delay after last batch)
@@ -107,13 +112,15 @@ export default class JobAiEvaluationService {
     offer: JobOffer,
     candidateContext: CandidateForEvaluation,
     exclusionContext: ExclusionForPrompt[],
-    result: EvaluationResult
+    result: EvaluationResult,
+    locale?: string
   ): Promise<void> {
     try {
       const evalResult = await this.evaluate(
         this.buildOfferContext(offer),
         candidateContext,
-        exclusionContext
+        exclusionContext,
+        locale
       )
 
       if (evalResult) {
@@ -149,9 +156,10 @@ export default class JobAiEvaluationService {
   async evaluate(
     offer: JobOfferForEvaluation,
     profile: CandidateForEvaluation,
-    exclusions: ExclusionForPrompt[]
+    exclusions: ExclusionForPrompt[],
+    locale?: string
   ): Promise<ReturnType<typeof parseJobEvaluationResponse>> {
-    const { system, user } = buildJobEvaluationPrompt(offer, profile, exclusions)
+    const { system, user } = buildJobEvaluationPrompt(offer, profile, exclusions, locale)
 
     const raw = await this.client.chat({
       messages: [

@@ -7,6 +7,7 @@ import {
   type JobOfferForEvaluation,
 } from '#ai/prompts/job_evaluation_prompt'
 import { MAX_DESCRIPTION_LENGTH } from '@expat-hunter/shared'
+import { LOCALE_NAMES } from '../../../app/constants/locale.js'
 
 test.group('buildJobEvaluationPrompt', () => {
   const baseOffer: JobOfferForEvaluation = {
@@ -122,6 +123,63 @@ test.group('buildJobEvaluationPrompt', () => {
     const { user } = buildJobEvaluationPrompt(baseOffer, emptyProfile, [])
     assert.include(user, 'Not specified')
     assert.notInclude(user, 'CV summary')
+  })
+})
+
+test.group('buildJobEvaluationPrompt — locale support', () => {
+  const baseOffer: JobOfferForEvaluation = {
+    title: 'Dev',
+    descriptionRaw: 'Job description',
+    location: 'Paris',
+    salaryMin: null,
+    salaryMax: null,
+    salaryCurrency: null,
+    remoteType: null,
+  }
+
+  const baseProfile: CandidateForEvaluation = {
+    skills: ['TypeScript'],
+    experienceYears: 5,
+    targetCountries: ['FR'],
+    targetSectors: [],
+    targetRoles: [],
+    cvSummary: null,
+  }
+
+  test("locale='fr' adds 'Respond in French' to system prompt", ({ assert }) => {
+    // ORACLE: LOCALE_NAMES['fr'] = 'French' → system prompt contains 'Respond in French'
+    const { system } = buildJobEvaluationPrompt(baseOffer, baseProfile, [], 'fr')
+    assert.include(system, `Respond in ${LOCALE_NAMES['fr']}`)
+  })
+
+  test("locale='en' adds 'Respond in English' to system prompt", ({ assert }) => {
+    // ORACLE: LOCALE_NAMES['en'] = 'English' → system prompt contains 'Respond in English'
+    const { system } = buildJobEvaluationPrompt(baseOffer, baseProfile, [], 'en')
+    assert.include(system, `Respond in ${LOCALE_NAMES['en']}`)
+  })
+
+  test('locale=undefined defaults to English', ({ assert }) => {
+    // ORACLE: undefined locale → fallback to 'en' → 'Respond in English'
+    const { system } = buildJobEvaluationPrompt(baseOffer, baseProfile, [], undefined)
+    assert.include(system, 'Respond in English')
+  })
+
+  test('no locale parameter defaults to English', ({ assert }) => {
+    // ORACLE: omitted locale → fallback to 'en' → 'Respond in English'
+    const { system } = buildJobEvaluationPrompt(baseOffer, baseProfile, [])
+    assert.include(system, 'Respond in English')
+  })
+
+  test('invalid locale falls back to English', ({ assert }) => {
+    // ORACLE: 'de' not in LOCALE_NAMES → fallback to 'en' → 'Respond in English'
+    const { system } = buildJobEvaluationPrompt(baseOffer, baseProfile, [], 'de')
+    assert.include(system, 'Respond in English')
+  })
+
+  test('empty string locale falls back to English', ({ assert }) => {
+    // ORACLE: '' not in LOCALE_NAMES → fallback to 'en' → 'Respond in English'
+    const { system } = buildJobEvaluationPrompt(baseOffer, baseProfile, [], '')
+    assert.include(system, 'Respond in English')
   })
 })
 

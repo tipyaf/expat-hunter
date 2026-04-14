@@ -794,15 +794,28 @@ features:
     validated_at: ""
     notes: "Email/push notifications for new high-score offers. Configurable thresholds. E14."
 
-  # === BUG FIXES ===
+  # === DISPLAY BUGS (sc-1102, sc-1103) ===
 
   - id: "sc-1102"
     name: "Bug: job description renders raw HTML tags instead of formatted content"
     priority: "bug"
     status: "validated"
     cycles: 1
-    story_file: ""
-    depends_on: ["job-scraping-pipeline"]
+    story_file: "specs/stories/sc-1102.yaml"
+    depends_on: ["job-offer-detail-page"]
+    refined_at: "2026-04-14"
     started_at: "2026-04-14"
     validated_at: "2026-04-14"
-    notes: "SafeHtml component with DOMPurify sanitization. Replaces raw <p> rendering in offer detail page. 7 unit tests."
+    notes: "SafeHtml component with DOMPurify sanitization. Replaces raw <p> rendering in offer detail page. 7 unit tests. PR #175."
+
+  - id: "sc-1103"
+    name: "Bug: AI evaluation always responds in English regardless of user locale"
+    priority: "bug"
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/sc-1103.yaml"
+    depends_on: ["job-ai-evaluation"]
+    refined_at: "2026-04-14"
+    started_at: "2026-04-14"
+    validated_at: "2026-04-14"
+    notes: "Add locale param to buildJobEvaluationPrompt. Load user.locale in evaluation service. Uses LOCALE_NAMES from shared. S (2 pts). PR #176."

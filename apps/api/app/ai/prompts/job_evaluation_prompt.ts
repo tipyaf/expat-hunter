@@ -6,6 +6,9 @@
  * selectionReason, and applicationAdvice.
  */
 import { MAX_DESCRIPTION_LENGTH } from '@expat-hunter/shared'
+import { LOCALE_NAMES } from '../../constants/locale.js'
+
+const DEFAULT_LOCALE = 'en'
 
 export interface JobOfferForEvaluation {
   title: string
@@ -41,8 +44,11 @@ export interface JobEvaluationResult {
 export function buildJobEvaluationPrompt(
   offer: JobOfferForEvaluation,
   profile: CandidateForEvaluation,
-  exclusions: ExclusionForPrompt[]
+  exclusions: ExclusionForPrompt[],
+  locale?: string
 ): { system: string; user: string } {
+  const safeLocale = locale && locale in LOCALE_NAMES ? locale : DEFAULT_LOCALE
+  const languageName = LOCALE_NAMES[safeLocale] ?? LOCALE_NAMES[DEFAULT_LOCALE]
   const exclusionLines = exclusions.map(
     (e) => '- [' + e.category + '] ' + e.reason
   )
@@ -81,7 +87,9 @@ Scoring criteria:
 - Salary range within expectations (+10 pts)
 - Remote type preference match (+10 pts)
 - Seniority/experience fit (+10 pts)
-- Sector alignment (+5 pts)${exclusionBlock}`,
+- Sector alignment (+5 pts)${exclusionBlock}
+
+Respond in ${languageName}.`,
 
     user: `## Job Offer
 - **Title**: ${offer.title}
