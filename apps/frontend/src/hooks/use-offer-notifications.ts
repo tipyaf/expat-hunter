@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '@/contexts/auth-context'
 import { getOffersUnreadCount, markOffersSeen } from '@/lib/offer-notification-api'
-import { useAuth } from '@/contexts/auth-context'
 
 const POLLING_INTERVAL_MS = 60_000
 
