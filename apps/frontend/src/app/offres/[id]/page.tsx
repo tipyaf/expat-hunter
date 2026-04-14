@@ -11,6 +11,7 @@ import { CrossPipelineBadge } from '@/components/job-offers/cross-pipeline-badge
 import { ExclusionModal } from '@/components/job-offers/exclusion-modal'
 import { CvTab } from '@/components/job-offers/cv/cv-tab'
 import { CoverLetterTab } from '@/components/job-offers/cover-letter/cover-letter-tab'
+import { SafeHtml } from '@/components/ui/safe-html'
 import { SendTab } from '@/components/job-offers/send/send-tab'
 import { RecruitmentContactsPanel } from '@/components/job-offers/recruitment-contacts/recruitment-contacts-panel'
 import { useJobOfferDetail } from '@/hooks/use-job-offer-detail'
@@ -171,9 +172,10 @@ export default function JobOfferDetailPage(): ReactNode {
                         className="rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-surface-light)] p-4"
                       >
                         <h2 className="mb-3 font-semibold text-[var(--color-text-main)]">{t('descriptionTitle')}</h2>
-                        <div className="prose prose-sm max-w-none text-[var(--color-text-main)] prose-headings:text-[var(--color-text-main)] prose-strong:text-[var(--color-text-main)]">
-                          <p className="whitespace-pre-wrap">{offer.descriptionRaw}</p>
-                        </div>
+                        <SafeHtml
+                          html={offer.descriptionRaw}
+                          className="prose prose-sm max-w-none text-[var(--color-text-main)] prose-headings:text-[var(--color-text-main)] prose-strong:text-[var(--color-text-main)]"
+                        />
                       </div>
                     )}
 
