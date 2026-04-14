@@ -164,6 +164,22 @@ export default class JobScrapingService {
       const batch = rawOffers.slice(i, i + OFFER_BATCH_SIZE)
 
       for (const raw of batch) {
+        // Skip if this platform+externalId combo already exists (re-run scenario)
+        if (raw.externalId) {
+          const existingLink = await JobOfferLink.query()
+            .where('platform', raw.platform)
+            .where('externalId', raw.externalId)
+            .first()
+
+          if (existingLink) {
+            logger.debug(
+              { platform: raw.platform, externalId: raw.externalId },
+              'JobScrapingService: skipping duplicate offer'
+            )
+            continue
+          }
+        }
+
         const offer = await JobOffer.create({
           searchId,
           title: raw.title,
