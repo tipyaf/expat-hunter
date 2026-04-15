@@ -6,35 +6,37 @@
 import router from '@adonisjs/core/services/router'
 import { middleware } from '#start/kernel'
 
-const JobApplicationsController = () => import('#controllers/job_applications_controller')
+const JobCvController = () => import('#controllers/job_cv_controller')
+const JobCoverLetterController = () => import('#controllers/job_cover_letter_controller')
+const JobApplicationSendController = () => import('#controllers/job_application_send_controller')
 
 router
   .group(() => {
-    router.get('/', [JobApplicationsController, 'show'])
-    router.post('/generate', [JobApplicationsController, 'generate'])
-    router.post('/refine', [JobApplicationsController, 'refine'])
-    router.put('/', [JobApplicationsController, 'save'])
-    router.get('/pdf', [JobApplicationsController, 'pdf'])
+    router.get('/', [JobCvController, 'show'])
+    router.post('/generate', [JobCvController, 'generate'])
+    router.post('/refine', [JobCvController, 'refine'])
+    router.put('/', [JobCvController, 'save'])
+    router.get('/pdf', [JobCvController, 'pdf'])
   })
   .prefix('/api/job-offers/:id/cv')
   .use(middleware.auth())
 
 router
   .group(() => {
-    router.get('/', [JobApplicationsController, 'showCoverLetter'])
-    router.post('/generate', [JobApplicationsController, 'generateCoverLetter'])
-    router.post('/refine', [JobApplicationsController, 'refineCoverLetter'])
-    router.put('/', [JobApplicationsController, 'saveCoverLetter'])
-    router.get('/pdf', [JobApplicationsController, 'coverLetterPdf'])
+    router.get('/', [JobCoverLetterController, 'showCoverLetter'])
+    router.post('/generate', [JobCoverLetterController, 'generateCoverLetter'])
+    router.post('/refine', [JobCoverLetterController, 'refineCoverLetter'])
+    router.put('/', [JobCoverLetterController, 'saveCoverLetter'])
+    router.get('/pdf', [JobCoverLetterController, 'coverLetterPdf'])
   })
   .prefix('/api/job-offers/:id/cover-letter')
   .use(middleware.auth())
 
 router
   .group(() => {
-    router.get('/', [JobApplicationsController, 'applicationEmailStatus'])
-    router.post('/generate', [JobApplicationsController, 'generateApplicationEmail'])
-    router.post('/send', [JobApplicationsController, 'sendApplication'])
+    router.get('/', [JobApplicationSendController, 'applicationEmailStatus'])
+    router.post('/generate', [JobApplicationSendController, 'generateApplicationEmail'])
+    router.post('/send', [JobApplicationSendController, 'sendApplication'])
   })
   .prefix('/api/job-offers/:id/application-email')
   .use(middleware.auth())
@@ -42,6 +44,6 @@ router
 router
   .post(
     '/api/job-offers/:id/contacts/:contactId/email',
-    [JobApplicationsController, 'draftFollowUpEmail']
+    [JobApplicationSendController, 'draftFollowUpEmail']
   )
   .use(middleware.auth())

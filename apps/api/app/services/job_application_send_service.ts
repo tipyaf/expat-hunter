@@ -1,4 +1,3 @@
-import PDFDocument from 'pdfkit'
 import OpenRouterClient from '#ai/openrouter_client'
 import {
   buildApplicationEmailPrompt,
@@ -14,6 +13,7 @@ import JobApplication from '#models/job_application'
 import JobOffer from '#models/job_offer'
 import RecruitmentContact from '#models/recruitment_contact'
 import EmailConnection from '#models/email_connection'
+import PdfService from '#services/pdf_service'
 import UsageService from '#services/usage_service'
 import logger from '@adonisjs/core/services/logger'
 import type { UserPlan } from '@expat-hunter/shared'
@@ -25,9 +25,6 @@ import { CONNECTION_TYPE } from '#models/email_connection'
 
 const AI_TEMPERATURE = 0.3
 const AI_MAX_TOKENS = 1024
-const PDF_FONT_SIZE = 11
-const PDF_MARGIN = 50
-const PDF_LINE_GAP = 4
 
 export interface EmailAttachment {
   filename: string
@@ -39,11 +36,13 @@ export default class JobApplicationSendService {
   private readonly aiClient: OpenRouterClient
   private readonly usageService: UsageService
   private readonly oauthTokenService: OAuthTokenService
+  private readonly pdfService: PdfService
 
   constructor(aiClient?: OpenRouterClient, usageService?: UsageService) {
     this.aiClient = aiClient ?? new OpenRouterClient()
     this.usageService = usageService ?? new UsageService()
     this.oauthTokenService = new OAuthTokenService()
+    this.pdfService = new PdfService()
   }
 
   /**
@@ -171,8 +170,8 @@ export default class JobApplicationSendService {
       this.throwError('No email connection configured. Set up your email first.', 'NO_EMAIL_CONNECTION', 400)
     }
 
-    const cvPdf = await this.textToPdfBuffer(application.cvText!, 'CV — ExpatHunter')
-    const coverLetterPdf = await this.textToPdfBuffer(application.coverLetterText!, 'Cover Letter — ExpatHunter')
+    const cvPdf = await this.pdfService.textToBuffer(application.cvText!, 'CV — ExpatHunter')
+    const coverLetterPdf = await this.pdfService.textToBuffer(application.coverLetterText!, 'Cover Letter — ExpatHunter')
 
     const attachments: EmailAttachment[] = [
       { filename: 'cv-expathunter.pdf', content: cvPdf, contentType: 'application/pdf' },
@@ -314,37 +313,6 @@ export default class JobApplicationSendService {
       sentAt: application.sentAt?.toISO() ?? null,
       sentToEmail: application.sentToEmail,
     }
-  }
-
-  /**
-   * Convert text content to a PDF buffer (shared helper).
-   */
-  async textToPdfBuffer(text: string, title: string): Promise<Buffer> {
-    const doc = new PDFDocument({
-      size: 'A4',
-      margin: PDF_MARGIN,
-      info: { Title: title, Author: 'ExpatHunter' },
-    })
-
-    const chunks: Buffer[] = []
-    doc.on('data', (chunk: Buffer) => chunks.push(chunk))
-
-    await new Promise<void>((resolve, reject) => {
-      doc.on('end', resolve)
-      doc.on('error', reject)
-
-      doc.fontSize(PDF_FONT_SIZE)
-      doc.font('Helvetica')
-
-      const lines = text.split('\n')
-      for (const line of lines) {
-        doc.text(line, { lineGap: PDF_LINE_GAP })
-      }
-
-      doc.end()
-    })
-
-    return Buffer.concat(chunks)
   }
 
   // ─── Private ────────────────────────────────────────────────────────────────
