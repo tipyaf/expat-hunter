@@ -1,0 +1,131 @@
+# Story: sc-1103
+# Epic: E11 — Évaluation AI
+# Estimate: S (2 pts)
+# Priority: bug
+# Depends on: job-ai-evaluation (validated)
+
+user_story: |
+  As a French-speaking user,
+  I want the AI evaluation (match summary, selection reason, application advice)
+  to be written in my language,
+  so that I can understand the analysis without translating it myself.
+
+context: |
+  The AI evaluation prompt in `job_evaluation_prompt.ts` is entirely in English.
+  The response fields (matchSummary, selectionReason, applicationAdvice) are always
+  generated in English regardless of the user's locale setting. The User model already
+  has a `locale` field ('fr' or 'en'). We need to pass the user's locale through the
+  evaluation chain and add a "Respond in {language}" instruction to the system prompt.
+  This follows the same pattern used in sc-679-1 (tips locale) and sc-679-2 (chat locale)
+  which use the LOCALE_NAMES constant from shared package.
+
+scope:
+  files_to_create:
+    - apps/api/tests/unit/ai/job_evaluation_prompt.spec.ts     # Test locale injection in prompt
+  files_to_modify:
+    - apps/api/app/ai/prompts/job_evaluation_prompt.ts          # Add locale param to buildJobEvaluationPrompt
+    - apps/api/app/services/job_ai_evaluation_service.ts        # Load user.locale, pass to prompt builder
+    - apps/api/app/services/job_scraping_service.ts             # Pass userId to evaluation (already has it)
+  files_to_read:
+    - apps/api/app/ai/prompts/job_evaluation_prompt.ts          # Current prompt structure
+    - apps/api/app/services/job_ai_evaluation_service.ts        # Current evaluation chain
+    - apps/api/app/models/user.ts                               # locale field
+    - packages/shared/src/constants/locale.ts                   # LOCALE_NAMES constant
+
+acceptance_criteria:
+  # --- FUNCTIONAL ---
+  - id: "AC-FUNC-EL-01"
+    type: "FUNC"
+    description: "Given buildJobEvaluationPrompt is called / When locale param is provided / Then the system prompt contains a language instruction"
+    verify: "grep -n 'locale\\|language\\|Respond in' apps/api/app/ai/prompts/job_evaluation_prompt.ts"
+    tier: 1
+
+  - id: "AC-FUNC-EL-02"
+    type: "FUNC"
+    description: "Given a user with locale='fr' / When evaluation runs / Then the prompt includes 'Respond in French'"
+    verify: "grep -n 'LOCALE_NAMES\\|locale_names\\|French\\|Français' apps/api/app/ai/prompts/job_evaluation_prompt.ts"
+    tier: 1
+
+  - id: "AC-FUNC-EL-03"
+    type: "FUNC"
+    description: "Given the evaluation service / When evaluateForSearch is called / Then user.locale is loaded and passed to the prompt builder"
+    verify: "grep -n 'locale' apps/api/app/services/job_ai_evaluation_service.ts"
+    tier: 1
+
+  - id: "AC-FUNC-EL-04"
+    type: "FUNC"
+    description: "Given locale is not provided (undefined) / When building the prompt / Then default to English"
+    verify: "grep -n 'default\\|fallback\\|en\\b' apps/api/app/ai/prompts/job_evaluation_prompt.ts | head -5"
+    tier: 1
+
+  # --- SECURITY ---
+  - id: "AC-SEC-EL-01"
+    type: "SEC"
+    description: "Locale value is validated — only 'fr' or 'en' accepted, not arbitrary user input"
+    verify: "grep -n 'fr.*en\\|LOCALE_NAMES\\|supportedLocales\\|SUPPORTED_LOCALES' apps/api/app/ai/prompts/job_evaluation_prompt.ts apps/api/app/services/job_ai_evaluation_service.ts"
+    tier: 1
+
+  # --- BEST PRACTICES ---
+  - id: "AC-BP-EL-CONST"
+    type: "BP"
+    description: "Uses LOCALE_NAMES constant from shared package — no hardcoded language names"
+    verify: "grep -c 'LOCALE_NAMES' apps/api/app/ai/prompts/job_evaluation_prompt.ts | awk '{if ($1 >= 1) print \"PASS\"; else print \"FAIL\"}'"
+    tier: 1
+
+  - id: "AC-BP-EL-COMPILE"
+    type: "BP"
+    description: "Backend compiles without errors"
+    verify: "cd apps/api && npx tsc --noEmit 2>&1 | tail -1"
+    tier: 1
+
+  - id: "AC-BP-EL-TU"
+    type: "BP"
+    description: "All unit tests pass"
+    verify: "cd apps/api && node --import tsx/esm bin/test.ts 2>&1 | tail -5"
+    tier: 2
+
+test_intentions:
+  - function: buildJobEvaluationPrompt
+    description: "Includes locale-specific language instruction in system prompt"
+    inputs:
+      offer: { title: "Dev", descriptionRaw: "Job", location: "Paris" }
+      profile: { skills: ["TypeScript"], experienceYears: 5, targetCountries: ["FR"] }
+      exclusions: []
+      locale: "fr"
+    oracle:
+      final: "System prompt contains 'Respond in French' or 'Réponds en français'"
+    assertions:
+      - "systemPrompt includes 'French' or 'français'"
+    edge_cases:
+      - description: "locale='en' — respond in English"
+        inputs: { locale: "en" }
+        oracle: { final: "System prompt contains 'Respond in English'" }
+        assertions: ["systemPrompt includes 'English'"]
+      - description: "locale=undefined — defaults to English"
+        inputs: { locale: undefined }
+        oracle: { final: "System prompt contains 'Respond in English'" }
+        assertions: ["systemPrompt includes 'English'"]
+
+  - function: JobAiEvaluationService.evaluate
+    description: "Passes locale from user to prompt builder"
+    inputs:
+      offer: { title: "Dev" }
+      profile: { skills: ["TS"] }
+      exclusions: []
+      locale: "fr"
+    oracle:
+      final: "buildJobEvaluationPrompt called with locale='fr'"
+    assertions:
+      - "prompt builder received locale='fr'"
+
+edge_cases:
+  - "User has no locale set (null) — should default to 'en'"
+  - "Locale value is case-sensitive — 'FR' should be normalized to 'fr'"
+  - "Existing cached evaluations remain in their original language — no re-evaluation triggered"
+
+dependencies:
+  - "LOCALE_NAMES constant from @expat-hunter/shared (already exists from sc-679-1)"
+  - "User.locale field (already exists)"
+  - "job-ai-evaluation (validated)"
+
+ux_ref: null  # Backend-only change — no wireframe needed

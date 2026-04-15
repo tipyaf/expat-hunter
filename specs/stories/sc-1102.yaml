@@ -1,0 +1,136 @@
+# Story: sc-1102
+# Epic: E12 — Interface Offres
+# Estimate: S (2 pts)
+# Priority: bug
+# Depends on: job-offer-detail-page (validated)
+
+user_story: |
+  As a user viewing a job offer detail,
+  I want the job description to render HTML formatting (bold, lists, headings) safely,
+  so that I can read the description as it was intended by the employer.
+
+context: |
+  Job descriptions scraped from platforms (LinkedIn, Indeed, etc.) contain HTML markup
+  (bold, lists, paragraphs, headings). Currently the detail page renders `offer.descriptionRaw`
+  inside a `<p>` with `whitespace-pre-wrap`, which displays raw HTML tags as text.
+  We need a SafeHtml component that sanitizes HTML via DOMPurify and renders it safely.
+  The component must strip XSS vectors (script, iframe, onerror, etc.) while preserving
+  safe formatting tags (b, i, ul, ol, li, p, h1-h6, a, br, strong, em, table, etc.).
+
+scope:
+  files_to_create:
+    - apps/frontend/src/components/ui/safe-html.tsx
+    - apps/frontend/src/components/ui/safe-html.test.tsx
+  files_to_modify:
+    - apps/frontend/src/app/offres/[id]/page.tsx              # Replace <p>{descriptionRaw}</p> with <SafeHtml>
+    - apps/frontend/package.json                                # Add dompurify dependency
+  files_to_read:
+    - apps/frontend/src/app/offres/[id]/page.tsx               # Current description rendering (line ~175)
+
+components:
+  create:
+    - name: "SafeHtml"
+      type: dumb
+      reason: "Reusable XSS-safe HTML renderer — needed anywhere scraped content is displayed"
+
+acceptance_criteria:
+  # --- FUNCTIONAL ---
+  - id: "AC-FUNC-SH-01"
+    type: "FUNC"
+    description: "Given a job offer with HTML in descriptionRaw / When the detail page renders / Then the HTML is rendered as formatted content (not raw tags)"
+    verify: "grep -n 'SafeHtml\\|safe-html\\|dangerouslySetInnerHTML' apps/frontend/src/app/offres/\\[id\\]/page.tsx"
+    tier: 1
+
+  - id: "AC-FUNC-SH-02"
+    type: "FUNC"
+    description: "Given HTML with script tags / When passed to SafeHtml / Then script tags are stripped"
+    verify: "grep -n 'DOMPurify\\|dompurify\\|sanitize' apps/frontend/src/components/ui/safe-html.tsx"
+    tier: 1
+
+  - id: "AC-FUNC-SH-03"
+    type: "FUNC"
+    description: "Given HTML with safe tags (b, i, ul, ol, li, p, h1-h6, a, br, strong, em) / When passed to SafeHtml / Then they are preserved in output"
+    verify: "grep -n 'ALLOWED_TAGS\\|allowedTags\\|ADD_TAGS' apps/frontend/src/components/ui/safe-html.tsx"
+    tier: 1
+
+  - id: "AC-FUNC-SH-04"
+    type: "FUNC"
+    description: "Given HTML with onerror/onload/onclick attributes / When passed to SafeHtml / Then event handlers are stripped"
+    verify: "grep -c 'onerror\\|onclick\\|onload' apps/frontend/src/components/ui/safe-html.test.tsx | awk '{if ($1 >= 1) print \"PASS\"; else print \"FAIL\"}'"
+    tier: 1
+
+  - id: "AC-FUNC-SH-05"
+    type: "FUNC"
+    description: "Given null or empty descriptionRaw / When SafeHtml renders / Then nothing is rendered (no crash)"
+    verify: "grep -n 'null\\|empty\\|falsy' apps/frontend/src/components/ui/safe-html.test.tsx"
+    tier: 1
+
+  # --- SECURITY ---
+  - id: "AC-SEC-SH-01"
+    type: "SEC"
+    description: "SafeHtml uses DOMPurify.sanitize — no raw dangerouslySetInnerHTML without sanitization"
+    verify: "grep -B2 'dangerouslySetInnerHTML' apps/frontend/src/components/ui/safe-html.tsx | grep -c 'sanitize\\|DOMPurify' | awk '{if ($1 >= 1) print \"PASS\"; else print \"FAIL\"}'"
+    tier: 1
+
+  - id: "AC-SEC-SH-02"
+    type: "SEC"
+    description: "No other file uses dangerouslySetInnerHTML without SafeHtml"
+    verify: "grep -rn 'dangerouslySetInnerHTML' apps/frontend/src/ --include='*.tsx' | grep -v 'safe-html' | wc -l | awk '{if ($1 == 0) print \"PASS\"; else print \"FAIL\"}'"
+    tier: 1
+
+  # --- BEST PRACTICES ---
+  - id: "AC-BP-SH-TESTID"
+    type: "BP"
+    description: "SafeHtml has data-testid"
+    verify: "grep -c 'data-testid' apps/frontend/src/components/ui/safe-html.tsx | awk '{if ($1 >= 1) print \"PASS\"; else print \"FAIL\"}'"
+    tier: 1
+
+  - id: "AC-BP-SH-COMPILE"
+    type: "BP"
+    description: "Frontend compiles without errors"
+    verify: "cd apps/frontend && npx tsc --noEmit 2>&1 | tail -1"
+    tier: 1
+
+test_intentions:
+  - function: SafeHtml
+    description: "Renders sanitized HTML content"
+    inputs:
+      html: "<p>Hello <strong>world</strong></p>"
+    oracle:
+      final: "Renders p with bold text, no raw tags visible"
+    assertions:
+      - "container.querySelector('strong') exists"
+      - "container.textContent contains 'Hello world'"
+    edge_cases:
+      - description: "XSS script tag stripped"
+        inputs: { html: "<p>text</p><script>alert('xss')</script>" }
+        oracle: { final: "script tag removed, p text preserved" }
+        assertions: ["container.querySelector('script') == null", "container.textContent contains 'text'"]
+      - description: "onerror attribute stripped"
+        inputs: { html: '<img src="x" onerror="alert(1)">' }
+        oracle: { final: "img rendered without onerror" }
+        assertions: ["container.querySelector('img').getAttribute('onerror') == null"]
+      - description: "null input renders nothing"
+        inputs: { html: null }
+        oracle: { final: "empty render, no crash" }
+        assertions: ["container.innerHTML == ''"]
+      - description: "empty string renders nothing"
+        inputs: { html: "" }
+        oracle: { final: "empty render" }
+        assertions: ["container.innerHTML == ''"]
+      - description: "preserves list formatting"
+        inputs: { html: "<ul><li>A</li><li>B</li></ul>" }
+        oracle: { final: "ul with 2 li children" }
+        assertions: ["container.querySelectorAll('li').length == 2"]
+
+edge_cases:
+  - "descriptionRaw is null — detail page should not crash, description section hidden"
+  - "descriptionRaw contains only text (no HTML) — renders as plain text"
+  - "descriptionRaw contains iframe (e.g. embedded video) — iframe stripped"
+  - "descriptionRaw contains style tags — style tags stripped"
+
+dependencies:
+  - "dompurify npm package (+ @types/dompurify)"
+  - "job-offer-detail-page (validated — detail page exists)"
+
+ux_ref: null  # Bug fix — no new wireframe needed

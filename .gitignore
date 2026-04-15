@@ -49,3 +49,9 @@ test-results/
 .worktrees/
 # SonarQube
 .scannerwork/
+
+# Playwright MCP
+.playwright-mcp/
+
+# Validation screenshots (temporary artifacts)
+/*.png
