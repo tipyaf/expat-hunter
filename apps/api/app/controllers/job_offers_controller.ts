@@ -8,9 +8,15 @@
  * GET  /api/job-offers/exclusions                 — list user exclusion patterns
  */
 import type { HttpContext } from '@adonisjs/core/http'
-import JobOfferService from '#services/job_offer_service'
+import JobOffer from '#models/job_offer'
 import JobOfferExclusion from '#models/job_offer_exclusion'
+import JobOfferLink from '#models/job_offer_link'
+import JobOfferService from '#services/job_offer_service'
 import { excludeJobOfferValidator, updateAdviceValidator, updateStatusValidator } from '#validators/job_offer_validator'
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : 'Unexpected error'
+}
 
 export default class JobOffersController {
   private readonly service = new JobOfferService()
@@ -34,10 +40,10 @@ export default class JobOffersController {
         data: result.data.map((offer) => this.serialize(offer)),
         meta: result.meta,
       })
-    } catch (error: any) {
-      if (error.code === 'NOT_FOUND') {
+    } catch (error: unknown) {
+      if ((error as { code?: string }).code === 'NOT_FOUND') {
         response.notFound({
-          error: { code: 'NOT_FOUND', message: error.message },
+          error: { code: 'NOT_FOUND', message: errorMessage(error) },
         })
         return
       }
@@ -55,10 +61,10 @@ export default class JobOffersController {
       const offer = await this.service.findOrFail(params.id, user.id)
 
       response.ok({ data: this.serialize(offer) })
-    } catch (error: any) {
-      if (error.code === 'NOT_FOUND') {
+    } catch (error: unknown) {
+      if ((error as { code?: string }).code === 'NOT_FOUND') {
         response.notFound({
-          error: { code: 'NOT_FOUND', message: error.message },
+          error: { code: 'NOT_FOUND', message: errorMessage(error) },
         })
         return
       }
@@ -89,10 +95,10 @@ export default class JobOffersController {
       await offer.save()
 
       response.ok({ data: this.serialize(offer) })
-    } catch (error: any) {
-      if (error.code === 'NOT_FOUND') {
+    } catch (error: unknown) {
+      if ((error as { code?: string }).code === 'NOT_FOUND') {
         response.notFound({
-          error: { code: 'NOT_FOUND', message: error.message },
+          error: { code: 'NOT_FOUND', message: errorMessage(error) },
         })
         return
       }
@@ -114,10 +120,10 @@ export default class JobOffersController {
       await offer.save()
 
       response.ok({ data: this.serialize(offer) })
-    } catch (error: any) {
-      if (error.code === 'NOT_FOUND') {
+    } catch (error: unknown) {
+      if ((error as { code?: string }).code === 'NOT_FOUND') {
         response.notFound({
-          error: { code: 'NOT_FOUND', message: error.message },
+          error: { code: 'NOT_FOUND', message: errorMessage(error) },
         })
         return
       }
@@ -135,10 +141,10 @@ export default class JobOffersController {
     try {
       const offer = await this.service.updateStatus(params.id, user.id, payload.status)
       response.ok({ data: this.serialize(offer) })
-    } catch (error: any) {
-      if (error.code === 'NOT_FOUND') {
+    } catch (error: unknown) {
+      if ((error as { code?: string }).code === 'NOT_FOUND') {
         response.notFound({
-          error: { code: 'NOT_FOUND', message: error.message },
+          error: { code: 'NOT_FOUND', message: errorMessage(error) },
         })
         return
       }
@@ -156,10 +162,10 @@ export default class JobOffersController {
       const offer = await this.service.findOrFail(params.id, user.id)
       const hasCrossContact = await this.service.hasCrossContact(user.id, offer.companyName)
       response.ok({ data: { hasCrossContact } })
-    } catch (error: any) {
-      if (error.code === 'NOT_FOUND') {
+    } catch (error: unknown) {
+      if ((error as { code?: string }).code === 'NOT_FOUND') {
         response.notFound({
-          error: { code: 'NOT_FOUND', message: error.message },
+          error: { code: 'NOT_FOUND', message: errorMessage(error) },
         })
         return
       }
@@ -193,7 +199,7 @@ export default class JobOffersController {
     response.ok({ data: grouped })
   }
 
-  private serialize(offer: any): Record<string, unknown> {
+  private serialize(offer: JobOffer): Record<string, unknown> {
     return {
       id: offer.id,
       searchId: offer.searchId,
@@ -214,7 +220,7 @@ export default class JobOffersController {
       closingDate: offer.closingDate,
       contactEmail: offer.contactEmail,
       isRepublished: offer.isRepublished,
-      links: offer.links?.map((link: any) => ({
+      links: offer.links?.map((link: JobOfferLink) => ({
         id: link.id,
         platform: link.platform,
         url: link.url,

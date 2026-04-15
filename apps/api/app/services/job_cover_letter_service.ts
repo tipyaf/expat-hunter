@@ -4,6 +4,7 @@ import {
   buildCoverLetterRefinementPrompt,
   parseCoverLetterResponse,
 } from '#ai/prompts/cover_letter_prompt'
+import { deduceLanguage } from '#constants/language'
 import CandidateProfile from '#models/candidate_profile'
 import JobApplication from '#models/job_application'
 import JobOffer from '#models/job_offer'
@@ -11,23 +12,6 @@ import UsageService from '#services/usage_service'
 import logger from '@adonisjs/core/services/logger'
 import type { CompanyType, UserPlan } from '@expat-hunter/shared'
 
-/** Map country codes to cover letter language */
-const COUNTRY_LANGUAGE_MAP: Record<string, string> = {
-  FR: 'fr',
-  CA: 'en',
-  CH: 'fr',
-  BE: 'fr',
-  AU: 'en',
-  NZ: 'en',
-  GB: 'en',
-  SG: 'en',
-  AE: 'en',
-  DE: 'en',
-  NL: 'en',
-  JP: 'en',
-}
-
-const DEFAULT_LANGUAGE = 'en'
 const RECRUITMENT_AGENCY_TYPE: CompanyType = 'recruitment_agency'
 const AI_TEMPERATURE = 0.3
 const AI_MAX_TOKENS = 4096
@@ -75,7 +59,7 @@ export default class JobCoverLetterService {
       throw error
     }
 
-    const language = this.deduceLanguage(profile.targetCountries)
+    const language = deduceLanguage(profile.targetCountries)
     const isAgency = offer.companyCache?.companyType === RECRUITMENT_AGENCY_TYPE
 
     const application = await JobApplication.firstOrCreate(
@@ -257,10 +241,4 @@ export default class JobCoverLetterService {
       .first()
   }
 
-  deduceLanguage(targetCountries: string[]): string {
-    if (!targetCountries || targetCountries.length === 0) {
-      return DEFAULT_LANGUAGE
-    }
-    return COUNTRY_LANGUAGE_MAP[targetCountries[0]] ?? DEFAULT_LANGUAGE
-  }
 }

@@ -7,6 +7,10 @@ import { createJobSearchValidator, updateJobSearchValidator } from '#validators/
 // Side-effect import: registers all job offer scrapers in the singleton registry
 import '#scrapers/register_job_offer_scrapers'
 
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : 'Unexpected error'
+}
+
 export default class JobSearchesController {
   private readonly service = new JobSearchService()
   private readonly scrapingService = new JobScrapingService(jobOfferScraperRegistry)
@@ -30,15 +34,15 @@ export default class JobSearchesController {
     try {
       const search = await this.service.create(user.id, user.plan, data)
       return response.created({ data: search })
-    } catch (error: any) {
-      if (error.code === 'QUOTA_EXCEEDED') {
+    } catch (error: unknown) {
+      if ((error as { code?: string }).code === 'QUOTA_EXCEEDED') {
         return response.forbidden({
-          error: { code: 'QUOTA_EXCEEDED', message: error.message },
+          error: { code: 'QUOTA_EXCEEDED', message: errorMessage(error) },
         })
       }
-      if (error.code === 'VALIDATION_ERROR') {
+      if ((error as { code?: string }).code === 'VALIDATION_ERROR') {
         return response.unprocessableEntity({
-          error: { code: 'VALIDATION_ERROR', message: error.message },
+          error: { code: 'VALIDATION_ERROR', message: errorMessage(error) },
         })
       }
       throw error
@@ -55,15 +59,15 @@ export default class JobSearchesController {
     try {
       const search = await this.service.update(user.id, params.id, data)
       return response.ok({ data: search })
-    } catch (error: any) {
-      if (error.code === 'NOT_FOUND') {
+    } catch (error: unknown) {
+      if ((error as { code?: string }).code === 'NOT_FOUND') {
         return response.notFound({
-          error: { code: 'NOT_FOUND', message: error.message },
+          error: { code: 'NOT_FOUND', message: errorMessage(error) },
         })
       }
-      if (error.code === 'VALIDATION_ERROR') {
+      if ((error as { code?: string }).code === 'VALIDATION_ERROR') {
         return response.unprocessableEntity({
-          error: { code: 'VALIDATION_ERROR', message: error.message },
+          error: { code: 'VALIDATION_ERROR', message: errorMessage(error) },
         })
       }
       throw error
@@ -79,10 +83,10 @@ export default class JobSearchesController {
     try {
       await this.service.remove(user.id, params.id)
       return response.ok({ data: { deleted: true } })
-    } catch (error: any) {
-      if (error.code === 'NOT_FOUND') {
+    } catch (error: unknown) {
+      if ((error as { code?: string }).code === 'NOT_FOUND') {
         return response.notFound({
-          error: { code: 'NOT_FOUND', message: error.message },
+          error: { code: 'NOT_FOUND', message: errorMessage(error) },
         })
       }
       throw error
@@ -101,8 +105,8 @@ export default class JobSearchesController {
       const scraping = await this.scrapingService.runForSearch(params.id, user.id)
       const search = await this.service.findOrFail(user.id, params.id)
       return response.ok({ data: search, scraping })
-    } catch (error: any) {
-      if (error.code === 'E_ROW_NOT_FOUND' || error.code === 'NOT_FOUND') {
+    } catch (error: unknown) {
+      if ((error as { code?: string }).code === 'E_ROW_NOT_FOUND' || (error as { code?: string }).code === 'NOT_FOUND') {
         return response.notFound({
           error: { code: 'NOT_FOUND', message: 'Job search not found' },
         })

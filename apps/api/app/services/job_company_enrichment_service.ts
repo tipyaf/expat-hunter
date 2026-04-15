@@ -22,6 +22,8 @@ import logger from '@adonisjs/core/services/logger'
 import { DateTime } from 'luxon'
 
 const BATCH_DELAY_MS = 1000
+const AI_TEMPERATURE = 0.2
+const AI_MAX_TOKENS = 256
 
 const COUNTRY_SUFFIXES = ['nz', 'au', 'uk', 'us', 'usa']
 
@@ -296,8 +298,8 @@ Rules:
           content: `Company: ${companyName}\nCountry: ${country}\n\nProvide company data.`,
         },
       ],
-      temperature: 0.2,
-      maxTokens: 256,
+      temperature: AI_TEMPERATURE,
+      maxTokens: AI_MAX_TOKENS,
     })
 
     return this.parseAIResponse(raw, companyName)
