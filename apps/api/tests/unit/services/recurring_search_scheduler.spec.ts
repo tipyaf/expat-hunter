@@ -1,5 +1,6 @@
 import { test } from '@japa/runner'
 import { PLAN_FREE, PLAN_PREMIUM, computeNextRunAt, FREE_ALLOWED_FREQUENCIES } from '@expat-hunter/shared'
+import type { JobSearchPlatform } from '@expat-hunter/shared'
 import JobSearchService from '#services/job_search_service'
 import RecurringSearchScheduler from '#services/recurring_search_scheduler'
 import JobSearch from '#models/job_search'
@@ -252,7 +253,7 @@ test.group('RecurringSearchScheduler — runDueSearches', (group) => {
       userId,
       roles: JSON.stringify(['Dev']) as unknown as string[],
       countries: JSON.stringify(['NZ']) as unknown as string[],
-      platforms: JSON.stringify(['seek']) as unknown as string[],
+      platforms: ['seek'] as JobSearchPlatform[],
       seniority: 'senior',
       frequency: 'daily',
       isActive: true,
@@ -280,8 +281,8 @@ test.group('RecurringSearchScheduler — runDueSearches', (group) => {
       userId,
       roles: JSON.stringify(['Dev']) as unknown as string[],
       countries: JSON.stringify(['NZ']) as unknown as string[],
-      platforms: JSON.stringify(['seek']) as unknown as string[],
-      seniority: 'weekly',
+      platforms: ['seek'] as JobSearchPlatform[],
+      seniority: 'senior',
       frequency: 'weekly',
       isActive: true,
       nextRunAt: futureDate,
@@ -300,7 +301,7 @@ test.group('RecurringSearchScheduler — runDueSearches', (group) => {
       userId,
       roles: JSON.stringify(['Dev']) as unknown as string[],
       countries: JSON.stringify(['NZ']) as unknown as string[],
-      platforms: JSON.stringify(['seek']) as unknown as string[],
+      platforms: ['seek'] as JobSearchPlatform[],
       seniority: 'senior',
       frequency: 'manual',
       isActive: true,
@@ -320,7 +321,7 @@ test.group('RecurringSearchScheduler — runDueSearches', (group) => {
       userId,
       roles: JSON.stringify(['Dev']) as unknown as string[],
       countries: JSON.stringify(['NZ']) as unknown as string[],
-      platforms: JSON.stringify(['seek']) as unknown as string[],
+      platforms: ['seek'] as JobSearchPlatform[],
       seniority: 'senior',
       frequency: 'daily',
       isActive: false,
@@ -340,7 +341,7 @@ test.group('RecurringSearchScheduler — runDueSearches', (group) => {
       userId,
       roles: JSON.stringify(['Fail']) as unknown as string[],
       countries: JSON.stringify(['NZ']) as unknown as string[],
-      platforms: JSON.stringify(['seek']) as unknown as string[],
+      platforms: ['seek'] as JobSearchPlatform[],
       seniority: 'senior',
       frequency: 'daily',
       isActive: true,
@@ -350,7 +351,7 @@ test.group('RecurringSearchScheduler — runDueSearches', (group) => {
       userId,
       roles: JSON.stringify(['Pass']) as unknown as string[],
       countries: JSON.stringify(['NZ']) as unknown as string[],
-      platforms: JSON.stringify(['seek']) as unknown as string[],
+      platforms: ['seek'] as JobSearchPlatform[],
       seniority: 'senior',
       frequency: 'daily',
       isActive: true,

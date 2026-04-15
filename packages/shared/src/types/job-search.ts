@@ -41,4 +41,14 @@ export interface CreateJobSearchPayload {
   frequency?: JobSearchFrequency
 }
 
-export type UpdateJobSearchPayload = Partial<CreateJobSearchPayload>
+type NullableUpdateFields = {
+  cities?: string[] | null
+  sector?: string | null
+  skills?: string[] | null
+  salaryMin?: number | null
+  salaryMax?: number | null
+  contractType?: JobSearchContractType | null
+}
+
+export type UpdateJobSearchPayload =
+  Omit<Partial<CreateJobSearchPayload>, keyof NullableUpdateFields> & NullableUpdateFields

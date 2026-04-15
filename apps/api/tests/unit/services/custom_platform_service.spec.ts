@@ -15,7 +15,7 @@ test.group('PLATFORM_SUGGESTIONS', () => {
     assert.isArray(suggestions)
     assert.isTrue(suggestions.length >= 2, 'NZ should have at least 2 suggestions')
     assert.isTrue(
-      suggestions.some((s) => s.name.includes('TradeMe')),
+      suggestions.some((s: { name: string }) => s.name.includes('TradeMe')),
       'NZ should include TradeMe'
     )
   })

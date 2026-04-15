@@ -58,7 +58,7 @@ test.group('Job Offers API', () => {
       roles: ['Developer'],
       countries: ['NZ'],
       platforms: ['seek'],
-      seniority: 'mid',
+      seniority: 'intermediate',
       frequency: 'manual',
       isActive: true,
     })

@@ -54,7 +54,7 @@ test.group('OfferNotificationService', (group) => {
       countries: ['NZ'],
       roles: ['developer'],
       platforms: ['seek'],
-      seniority: 'mid',
+      seniority: 'intermediate',
       frequency: 'manual',
       isActive: true,
     })
@@ -66,7 +66,7 @@ test.group('OfferNotificationService', (group) => {
       countries: ['AU'],
       roles: ['designer'],
       platforms: ['linkedin'],
-      seniority: 'mid',
+      seniority: 'intermediate',
       frequency: 'manual',
       isActive: true,
     })

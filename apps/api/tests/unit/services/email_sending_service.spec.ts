@@ -31,7 +31,7 @@ test.group('EmailSendingService', () => {
     const manualConnection = { connectionType: CONNECTION_TYPE.MANUAL }
 
     assert.isTrue(oauthConnection.connectionType === CONNECTION_TYPE.OAUTH)
-    assert.isFalse(manualConnection.connectionType === CONNECTION_TYPE.OAUTH)
+    assert.isFalse((manualConnection.connectionType as string) === CONNECTION_TYPE.OAUTH)
   })
 
   test('BatchProgress initial state is correctly structured', async ({ assert }) => {

@@ -32,8 +32,8 @@ export default class CustomPlatformService {
         const error = new Error(
           `Free users can add up to ${FREE_MAX_CUSTOM_PLATFORMS} custom platforms. Upgrade to premium for unlimited.`
         )
-        ;(error as any).status = 403
-        ;(error as any).code = 'QUOTA_EXCEEDED'
+        ;(error as Error & { status: number }).status = 403
+        ;(error as Error & { code: string }).code = 'QUOTA_EXCEEDED'
         throw error
       }
     }
@@ -46,8 +46,8 @@ export default class CustomPlatformService {
 
     if (existing) {
       const error = new Error('This platform URL already exists in your list.')
-      ;(error as any).status = 409
-      ;(error as any).code = 'DUPLICATE_PLATFORM'
+      ;(error as Error & { status: number }).status = 409
+      ;(error as Error & { code: string }).code = 'DUPLICATE_PLATFORM'
       throw error
     }
 
@@ -83,8 +83,8 @@ export default class CustomPlatformService {
 
     if (!platform) {
       const error = new Error('Custom platform not found')
-      ;(error as any).status = 404
-      ;(error as any).code = 'NOT_FOUND'
+      ;(error as Error & { status: number }).status = 404
+      ;(error as Error & { code: string }).code = 'NOT_FOUND'
       throw error
     }
 

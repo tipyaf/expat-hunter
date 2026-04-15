@@ -1,4 +1,4 @@
-import { ContactStatus } from './contact'
+import { ContactStatus } from './contact.js'
 
 export interface PipelineColumn {
   id: string

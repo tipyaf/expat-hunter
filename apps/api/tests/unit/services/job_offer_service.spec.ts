@@ -33,7 +33,7 @@ test.group('JobOfferService', (group) => {
       roles: ['Backend Engineer'],
       countries: ['AU'],
       platforms: ['seek'],
-      seniority: 'mid',
+      seniority: 'intermediate',
       frequency: 'weekly',
     })
     searchId = search.id

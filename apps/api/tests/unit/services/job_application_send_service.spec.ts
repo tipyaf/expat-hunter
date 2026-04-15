@@ -42,7 +42,7 @@ test.group('JobApplicationSendService', (group) => {
       roles: ['Developer'],
       countries: ['NZ'],
       platforms: ['seek'],
-      seniority: 'mid',
+      seniority: 'intermediate',
       frequency: 'weekly',
     })
 
