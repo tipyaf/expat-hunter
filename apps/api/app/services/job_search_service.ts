@@ -25,16 +25,16 @@ export default class JobSearchService {
     if (activeCount >= maxSearches) {
       logger.info({ userId, plan, activeCount, maxSearches }, 'JobSearchService: quota exceeded')
       const error = new Error('Job search quota exceeded. Upgrade to premium for more searches.')
-      ;(error as any).status = 403
-      ;(error as any).code = 'QUOTA_EXCEEDED'
+      ;(error as Error & { status: number }).status = 403
+      ;(error as Error & { code: string }).code = 'QUOTA_EXCEEDED'
       throw error
     }
 
     // Validate salaryMin <= salaryMax when both present
     if (data.salaryMin != null && data.salaryMax != null && data.salaryMin > data.salaryMax) {
       const error = new Error('salaryMin must be less than or equal to salaryMax')
-      ;(error as any).status = 422
-      ;(error as any).code = 'VALIDATION_ERROR'
+      ;(error as Error & { status: number }).status = 422
+      ;(error as Error & { code: string }).code = 'VALIDATION_ERROR'
       throw error
     }
 
@@ -89,8 +89,8 @@ export default class JobSearchService {
 
     if (!jobSearch) {
       const error = new Error('Job search not found')
-      ;(error as any).status = 404
-      ;(error as any).code = 'NOT_FOUND'
+      ;(error as Error & { status: number }).status = 404
+      ;(error as Error & { code: string }).code = 'NOT_FOUND'
       throw error
     }
 
@@ -108,8 +108,8 @@ export default class JobSearchService {
     const effectiveMax = data.salaryMax ?? jobSearch.salaryMax
     if (effectiveMin != null && effectiveMax != null && effectiveMin > effectiveMax) {
       const error = new Error('salaryMin must be less than or equal to salaryMax')
-      ;(error as any).status = 422
-      ;(error as any).code = 'VALIDATION_ERROR'
+      ;(error as Error & { status: number }).status = 422
+      ;(error as Error & { code: string }).code = 'VALIDATION_ERROR'
       throw error
     }
 
@@ -183,8 +183,8 @@ export default class JobSearchService {
     if (!allowed.includes(frequency)) {
       logger.info({ plan, frequency }, 'JobSearchService: frequency restricted by plan')
       const error = new Error('This frequency requires a premium plan. Upgrade to unlock daily and biweekly searches.')
-      ;(error as any).status = 403
-      ;(error as any).code = 'PLAN_REQUIRED'
+      ;(error as Error & { status: number }).status = 403
+      ;(error as Error & { code: string }).code = 'PLAN_REQUIRED'
       throw error
     }
   }

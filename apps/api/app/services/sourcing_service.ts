@@ -115,7 +115,7 @@ export default class SourcingService {
    * English-only for now — see US for i18n extension.
    */
   /** Set built from shared constant for O(1) lookup during deduplication. */
-  private static readonly GENERIC_NAMES = new Set(PLACEHOLDER_CONTACT_NAMES)
+  private static readonly GENERIC_NAMES: Set<string> = new Set(PLACEHOLDER_CONTACT_NAMES)
 
   private isGenericName(name: string): boolean {
     return SourcingService.GENERIC_NAMES.has(name.toLowerCase().trim())

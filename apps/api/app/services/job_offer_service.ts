@@ -76,8 +76,8 @@ export default class JobOfferService {
 
     if (!offer) {
       const error = new Error('Job offer not found')
-      ;(error as any).status = 404
-      ;(error as any).code = 'NOT_FOUND'
+      ;(error as Error & { status: number }).status = 404
+      ;(error as Error & { code: string }).code = 'NOT_FOUND'
       throw error
     }
 
@@ -127,8 +127,8 @@ export default class JobOfferService {
 
     if (!search) {
       const error = new Error('Job search not found')
-      ;(error as any).status = 404
-      ;(error as any).code = 'NOT_FOUND'
+      ;(error as Error & { status: number }).status = 404
+      ;(error as Error & { code: string }).code = 'NOT_FOUND'
       throw error
     }
   }

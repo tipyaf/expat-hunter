@@ -1,4 +1,4 @@
-import { ContactStatus } from '../types/contact'
+import { ContactStatus } from '../types/contact.js'
 
 export const PIPELINE_STATUSES = {
   INITIAL: [ContactStatus.IDENTIFIED, ContactStatus.ANALYZED],

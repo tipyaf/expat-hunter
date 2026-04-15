@@ -136,7 +136,7 @@ test.group('OAuthTokenService — email sending dispatch', () => {
   })
 
   test('dispatches to default path when connection is null', ({ assert }) => {
-    const connection: { connectionType: string } | null = null
+    const connection = null as { connectionType: string } | null
     const method = connection?.connectionType === 'oauth' ? 'sendViaOAuth' : 'sendViaDefault'
     assert.equal(method, 'sendViaDefault')
   })

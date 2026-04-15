@@ -79,7 +79,7 @@ test.group('Search quality — full pipeline', (group) => {
     assert.isString(searchRunId)
 
     // Poll until completed or failed (max 5 minutes)
-    let data: { contactsFound: number; status: string } = { contactsFound: 0, status: 'pending' }
+    let data: Record<string, unknown> & { contactsFound: number; status: string } = { contactsFound: 0, status: 'pending' }
     const maxWait = 300_000
     const start = Date.now()
     while (Date.now() - start < maxWait) {
