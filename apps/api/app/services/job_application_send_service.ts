@@ -29,12 +29,6 @@ const PDF_FONT_SIZE = 11
 const PDF_MARGIN = 50
 const PDF_LINE_GAP = 4
 
-const COUNTRY_LANGUAGE_MAP: Record<string, string> = {
-  FR: 'fr', CA: 'en', CH: 'fr', BE: 'fr', AU: 'en', NZ: 'en',
-  GB: 'en', SG: 'en', AE: 'en', DE: 'en', NL: 'en', JP: 'en',
-}
-const DEFAULT_LANGUAGE = 'en'
-
 export interface EmailAttachment {
   filename: string
   content: Buffer

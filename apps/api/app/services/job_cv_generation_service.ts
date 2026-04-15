@@ -5,6 +5,7 @@ import {
   parseCvAdaptationResponse,
   type CvReplacementItem,
 } from '#ai/prompts/cv_adaptation_prompt'
+import { deduceLanguage } from '#constants/language'
 import CandidateProfile from '#models/candidate_profile'
 import JobApplication from '#models/job_application'
 import JobOffer from '#models/job_offer'
@@ -12,23 +13,8 @@ import UsageService from '#services/usage_service'
 import logger from '@adonisjs/core/services/logger'
 import type { UserPlan } from '@expat-hunter/shared'
 
-/** Map country codes to CV language */
-const COUNTRY_LANGUAGE_MAP: Record<string, string> = {
-  FR: 'fr',
-  CA: 'en',
-  CH: 'fr',
-  BE: 'fr',
-  AU: 'en',
-  NZ: 'en',
-  GB: 'en',
-  SG: 'en',
-  AE: 'en',
-  DE: 'en',
-  NL: 'en',
-  JP: 'en',
-}
-
-const DEFAULT_LANGUAGE = 'en'
+const AI_TEMPERATURE = 0.3
+const AI_MAX_TOKENS = 2048
 
 export interface GenerateCvResult {
   application: JobApplication
@@ -69,7 +55,7 @@ export default class JobCvGenerationService {
       throw error
     }
 
-    const language = this.deduceLanguage(profile.targetCountries)
+    const language = deduceLanguage(profile.targetCountries)
 
     const application = await JobApplication.firstOrCreate(
       { offerId, userId },
@@ -102,8 +88,8 @@ export default class JobCvGenerationService {
           { role: 'system', content: system },
           { role: 'user', content: user },
         ],
-        temperature: 0.3,
-        maxTokens: 2048,
+        temperature: AI_TEMPERATURE,
+        maxTokens: AI_MAX_TOKENS,
       })
 
       const result = parseCvAdaptationResponse(raw)
@@ -184,8 +170,8 @@ export default class JobCvGenerationService {
           { role: 'system', content: system },
           { role: 'user', content: user },
         ],
-        temperature: 0.3,
-        maxTokens: 2048,
+        temperature: AI_TEMPERATURE,
+        maxTokens: AI_MAX_TOKENS,
       })
 
       const result = parseCvAdaptationResponse(raw)
@@ -232,13 +218,6 @@ export default class JobCvGenerationService {
       .where('offerId', offerId)
       .where('userId', userId)
       .first()
-  }
-
-  deduceLanguage(targetCountries: string[]): string {
-    if (!targetCountries || targetCountries.length === 0) {
-      return DEFAULT_LANGUAGE
-    }
-    return COUNTRY_LANGUAGE_MAP[targetCountries[0]] ?? DEFAULT_LANGUAGE
   }
 
   private applyReplacements(originalText: string, replacements: CvReplacementItem[]): string {

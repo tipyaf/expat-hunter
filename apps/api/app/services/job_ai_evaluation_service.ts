@@ -22,6 +22,8 @@ import User from '#models/user'
 import logger from '@adonisjs/core/services/logger'
 
 const BATCH_DELAY_MS = 1000
+const AI_TEMPERATURE = 0.2
+const AI_MAX_TOKENS = 512
 
 interface EvaluationResult {
   evaluated: number
@@ -166,8 +168,8 @@ export default class JobAiEvaluationService {
         { role: 'system', content: system },
         { role: 'user', content: user },
       ],
-      temperature: 0.2,
-      maxTokens: 512,
+      temperature: AI_TEMPERATURE,
+      maxTokens: AI_MAX_TOKENS,
     })
 
     return parseJobEvaluationResponse(raw)

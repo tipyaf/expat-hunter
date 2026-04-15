@@ -14,6 +14,9 @@ import OpenRouterClient from '#ai/openrouter_client'
 import logger from '@adonisjs/core/services/logger'
 import { DateTime } from 'luxon'
 
+const AI_TEMPERATURE = 0.1
+const AI_MAX_TOKENS = 10
+
 interface DedupResult {
   duplicates: number
   republished: number
@@ -191,8 +194,8 @@ export default class JobOfferDedupService {
             { role: 'system', content: 'You are a job offer deduplication assistant. Answer only "DUPLICATE" or "UNIQUE". No explanation.' },
             { role: 'user', content: prompt },
           ],
-          temperature: 0.1,
-          maxTokens: 10,
+          temperature: AI_TEMPERATURE,
+          maxTokens: AI_MAX_TOKENS,
         })
         aiCalls++
 
