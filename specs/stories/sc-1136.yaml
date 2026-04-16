@@ -1,0 +1,229 @@
+# Story: sc-1136
+# Epic: infra — tech debt
+# Estimate: S (2 pts)
+# Priority: chore
+# Depends on: none
+
+user_story: |
+  As a maintainer of the ExpatHunter repo,
+  I want to clean up the obsolete and incorrect files in _work/,
+  so that the working directory matches the framework v4.1.1 contract
+  (story contract in specs/stories/, spec delta in _work/spec/, build state in _work/build/)
+  and future /refine and /build runs behave predictably.
+
+context: |
+  After the framework migration to v4.0.0 (commit cd4262f), the project moved
+  its canonical tracker and story files to specs/ but never cleaned up _work/.
+  Auditing the framework v4.1.1 design confirms each folder has a distinct role:
+
+    _work/spec/[id].yaml   — spec OVERLAY (new endpoints, schemas, tables)
+                             consumed by spec-generator → _docs/spec/*.md
+    _work/build/[id].yaml  — pipeline state per story (gates, files, ACs)
+                             consumed by builders
+    _work/ux/wireframes/   — wireframe HTML files
+                             consumed by ux-ui agent + developer
+    _work/feature-tracker.yaml  — OBSOLETE, real tracker is specs/feature-tracker.yaml
+
+  Past /refine runs wrote story-contract content into _work/spec/ instead of
+  spec deltas. Result: 32 files duplicate their specs/stories/ counterpart, and
+  12 orphans contain story-content with no real spec delta. Only sc-810.yaml
+  contains a legitimate overlay (new_table, new_endpoints).
+
+  _docs/spec/ was never generated, so the corrupt overlays have had no runtime
+  impact — but would break spec-generator if it were ever run.
+
+scope:
+  files_to_delete:
+    # Obsolete duplicate tracker
+    - _work/feature-tracker.yaml
+    # 7 sc-<feature> naming variants (identical to specs/stories/<feature>.yaml)
+    - _work/spec/sc-candidate-profile.yaml
+    - _work/spec/sc-contact-sourcing.yaml
+    - _work/spec/sc-pipeline-dashboard.yaml
+    - _work/spec/sc-personalized-emailing.yaml
+    - _work/spec/sc-ai-relevance-analysis.yaml
+    - _work/spec/sc-contact-detail-panel.yaml
+    - _work/spec/sc-shortcut-workflow.yaml
+    # 12 orphans with story-content (stories already in specs/stories/ or completed SonarQube refactors)
+    - _work/spec/sc-0000-initial.yaml
+    - _work/spec/sc-752.yaml
+    - _work/spec/sc-753.yaml
+    - _work/spec/sc-754.yaml
+    - _work/spec/sc-755.yaml
+    - _work/spec/sc-763.yaml
+    - _work/spec/sc-764.yaml
+    - _work/spec/sc-765.yaml
+    - _work/spec/sc-767.yaml
+    - _work/spec/sc-808.yaml
+    - _work/spec/sc-job-scraping-foundation.yaml
+    - _work/spec/sc-job-scraping-orchestration.yaml
+
+  files_to_rewrite_as_stub:
+    # 32 files with story-content that duplicate specs/stories/ — reduce to empty YAML stub
+    # Stub content: "# No spec delta for this story.\n# Framework contract: _work/spec/[id].yaml must exist.\n"
+    # Keep file so builders don't STOP on "No spec overlay" check
+    - _work/spec/sc-30.yaml
+    - _work/spec/sc-181.yaml
+    - _work/spec/sc-185.yaml
+    - _work/spec/sc-191.yaml
+    - _work/spec/sc-198.yaml
+    - _work/spec/sc-205.yaml
+    - _work/spec/sc-216.yaml
+    - _work/spec/sc-335.yaml
+    - _work/spec/sc-336.yaml
+    - _work/spec/sc-340.yaml
+    - _work/spec/sc-352.yaml
+    - _work/spec/sc-353.yaml
+    - _work/spec/sc-398.yaml
+    - _work/spec/sc-399.yaml
+    - _work/spec/sc-422.yaml
+    - _work/spec/sc-431-1.yaml
+    - _work/spec/sc-431-2.yaml
+    - _work/spec/sc-431-3.yaml
+    - _work/spec/sc-431-4.yaml
+    - _work/spec/sc-431-5.yaml
+    - _work/spec/sc-446.yaml
+    - _work/spec/sc-489.yaml
+    - _work/spec/sc-496.yaml
+    - _work/spec/sc-512.yaml
+    - _work/spec/sc-535.yaml
+    - _work/spec/sc-547.yaml
+    - _work/spec/sc-548.yaml
+    - _work/spec/sc-549-1.yaml
+    - _work/spec/sc-549-2.yaml
+    - _work/spec/sc-549-3.yaml
+    - _work/spec/sc-550.yaml
+    - _work/spec/sc-554.yaml
+
+  files_to_keep:
+    # Legitimate overlays/state that framework still consumes
+    - _work/spec/sc-810.yaml            # real spec delta (new_table, new_endpoints)
+    - _work/build/sc-810.yaml           # pipeline state
+    - _work/build/sc-989.yaml           # pipeline state
+    - _work/ux/wireframes/              # wireframes for ux-ui + developer
+    - _work/stacks/                     # stack profile overrides
+
+  files_to_read:
+    - framework/agents/spec-generator.md        # confirm overlay contract
+    - framework/agents/builder-exchange.md      # confirm STOP-on-missing-overlay rule
+    - framework/specs/templates/spec-overlay-template.yaml
+    - specs/feature-tracker.yaml                # canonical tracker
+
+components: {}
+
+acceptance_criteria:
+  # --- FUNCTIONAL ---
+  - id: "AC-FUNC-CLEAN-01"
+    type: "FUNC"
+    description: "Given _work/feature-tracker.yaml exists / When the story is applied / Then the file is removed from the repo"
+    verify: "test ! -f _work/feature-tracker.yaml && echo PASS || echo FAIL"
+    tier: 1
+
+  - id: "AC-FUNC-CLEAN-02"
+    type: "FUNC"
+    description: "Given 7 sc-<feature>.yaml naming variants exist in _work/spec/ / When the story is applied / Then all 7 are removed"
+    verify: "ls _work/spec/sc-candidate-profile.yaml _work/spec/sc-contact-sourcing.yaml _work/spec/sc-pipeline-dashboard.yaml _work/spec/sc-personalized-emailing.yaml _work/spec/sc-ai-relevance-analysis.yaml _work/spec/sc-contact-detail-panel.yaml _work/spec/sc-shortcut-workflow.yaml 2>/dev/null | wc -l | awk '{if ($1==0) print \"PASS\"; else print \"FAIL\"}'"
+    tier: 1
+
+  - id: "AC-FUNC-CLEAN-03"
+    type: "FUNC"
+    description: "Given 12 orphan _work/spec/ files with story-content exist / When the story is applied / Then all 12 are removed"
+    verify: "ls _work/spec/sc-0000-initial.yaml _work/spec/sc-752.yaml _work/spec/sc-753.yaml _work/spec/sc-754.yaml _work/spec/sc-755.yaml _work/spec/sc-763.yaml _work/spec/sc-764.yaml _work/spec/sc-765.yaml _work/spec/sc-767.yaml _work/spec/sc-808.yaml _work/spec/sc-job-scraping-foundation.yaml _work/spec/sc-job-scraping-orchestration.yaml 2>/dev/null | wc -l | awk '{if ($1==0) print \"PASS\"; else print \"FAIL\"}'"
+    tier: 1
+
+  - id: "AC-FUNC-CLEAN-04"
+    type: "FUNC"
+    description: "Given 32 _work/spec/ files duplicate specs/stories/ counterparts / When the story is applied / Then each file is reduced to a minimal stub (<5 non-comment lines)"
+    verify: "for f in _work/spec/sc-30.yaml _work/spec/sc-181.yaml _work/spec/sc-422.yaml _work/spec/sc-535.yaml _work/spec/sc-554.yaml; do lines=$(grep -cvE '^\\s*#|^\\s*$' \"$f\" 2>/dev/null || echo 999); if [ \"$lines\" -gt 5 ]; then echo FAIL; exit 1; fi; done; echo PASS"
+    tier: 1
+
+  - id: "AC-FUNC-CLEAN-05"
+    type: "FUNC"
+    description: "Given _work/spec/sc-810.yaml is a legitimate spec overlay / When the story is applied / Then it is preserved untouched"
+    verify: "grep -qE '^new_table:|^new_endpoints:' _work/spec/sc-810.yaml && echo PASS || echo FAIL"
+    tier: 1
+
+  - id: "AC-FUNC-CLEAN-06"
+    type: "FUNC"
+    description: "Given _work/ux/ and _work/build/ are still consumed by framework / When the story is applied / Then both directories remain intact"
+    verify: "test -d _work/ux/wireframes && test -f _work/build/sc-810.yaml && test -f _work/build/sc-989.yaml && echo PASS || echo FAIL"
+    tier: 1
+
+  - id: "AC-FUNC-CLEAN-07"
+    type: "FUNC"
+    description: "Given stubs preserve the 'No spec overlay = STOP' contract / When builders check the overlay / Then each stub file exists and is valid YAML"
+    verify: "for f in _work/spec/sc-30.yaml _work/spec/sc-554.yaml _work/spec/sc-549-3.yaml; do test -f \"$f\" || { echo FAIL; exit 1; }; done; echo PASS"
+    tier: 1
+
+  # --- SECURITY ---
+  - id: "AC-SEC-CLEAN-01"
+    type: "SEC"
+    description: "No deleted or stubbed file contains secrets, credentials, or PII that would persist in git history"
+    verify: "git diff --cached _work/ 2>/dev/null | grep -iE 'password|secret|api[_-]?key|token|bearer' | grep -vE '^[-+]{0,2}\\s*#' | wc -l | awk '{if ($1==0) print \"PASS\"; else print \"FAIL — review diff\"}'"
+    tier: 1
+
+  # --- BEST PRACTICES ---
+  - id: "AC-BP-CLEAN-COMPILE"
+    type: "BP"
+    description: "Project compiles without errors after cleanup (no code paths broken)"
+    verify: "cd apps/api && pnpm exec tsc --noEmit 2>&1 | tail -5 | grep -qE 'error|Error' && echo FAIL || echo PASS"
+    tier: 1
+
+  - id: "AC-BP-CLEAN-NO-CODE-REFS"
+    type: "BP"
+    description: "No production code (apps/, scripts/) references deleted files"
+    verify: "grep -rn '_work/feature-tracker\\|_work/spec/sc-candidate-profile\\|_work/spec/sc-0000-initial' apps/ scripts/ 2>/dev/null | wc -l | awk '{if ($1==0) print \"PASS\"; else print \"FAIL\"}'"
+    tier: 1
+
+edge_cases:
+  - "If `_work/spec/sc-810.yaml` is deleted by accident → re-verify via AC-FUNC-CLEAN-05"
+  - "If a framework update renames `_work/spec/` → stub contract needs update; out of scope here"
+  - "CI pipeline does not run on _work/ files → no CI break expected"
+  - "Git history preserves all deleted content → no data loss concern"
+
+test_intentions:
+  - intent: "Prove _work/feature-tracker.yaml is gone"
+    oracle: "file does not exist"
+    verify: "test ! -f _work/feature-tracker.yaml"
+
+  - intent: "Prove 19 obsolete files are deleted (7 sc-<feature> + 12 orphans)"
+    oracle: "0 files remaining from the delete list"
+    verify: "ls _work/spec/sc-candidate-profile.yaml _work/spec/sc-0000-initial.yaml 2>/dev/null | wc -l | grep -q '^0$'"
+
+  - intent: "Prove 32 duplicates are stubbed (each file has <5 non-comment lines)"
+    oracle: "each stubbed file has <=5 lines of non-comment, non-empty content"
+    verify: "grep -cvE '^\\s*#|^\\s*$' _work/spec/sc-30.yaml | awk '{if ($1<=5) print \"PASS\"; else print \"FAIL\"}'"
+
+  - intent: "Prove sc-810 overlay is preserved (regression check)"
+    oracle: "file contains new_table: or new_endpoints:"
+    verify: "grep -qE '^new_table:|^new_endpoints:' _work/spec/sc-810.yaml"
+
+  - intent: "Prove no code path reads deleted files"
+    oracle: "0 matches in apps/ and scripts/"
+    verify: "grep -rn '_work/feature-tracker' apps/ scripts/ 2>/dev/null | wc -l | grep -q '^0$'"
+
+ux_ref: null
+
+depends_on: []
+
+notes: |
+  Chore/tech-debt. No functional impact on running app. Framework submodule untouched.
+  After merge: future /refine runs SHOULD write real spec deltas (new endpoints, schemas)
+  into _work/spec/ — not duplicate the story contract. This is a refinement-agent behavior
+  fix that is out of scope for this story but worth tracking separately (sc-TBD).
+
+validation_acs:
+  - AC-BP-CLEAN-COMPILE
+  - AC-BP-CLEAN-NO-CODE-REFS
+
+definition_of_done:
+  - All 10 ACs pass (`verify:` commands return PASS)
+  - Git diff shows only _work/ changes (no framework, apps, specs/ changes except tracker entry)
+  - Tracker updated to status: validated
+  - PR opened targeting develop
+
+closing_ac: |
+  Final check: `git status` shows a clean tree after commit, and `git log -1 --stat`
+  shows only _work/ paths in the diff. Running `ls _work/spec/ | wc -l` returns 33
+  (32 stubs + sc-810 legitimate overlay). Running `cat _work/spec/sc-30.yaml` shows
+  a short stub.
