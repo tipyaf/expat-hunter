@@ -819,3 +819,14 @@ features:
     started_at: "2026-04-14"
     validated_at: "2026-04-14"
     notes: "Add locale param to buildJobEvaluationPrompt. Load user.locale in evaluation service. Uses LOCALE_NAMES from shared. S (2 pts). PR #176."
+
+  - id: "sc-1136"
+    name: "chore: clean up obsolete _work/ files (duplicated tracker, specs, stale build state)"
+    priority: "chore"
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/sc-1136.yaml"
+    depends_on: []
+    started_at: "2026-04-16"
+    validated_at: "2026-04-16"
+    notes: "Delete _work/feature-tracker.yaml + 19 obsolete _work/spec/ files (7 sc-<feature> naming variants, 12 orphans with story-content). Stub 32 _work/spec/ duplicates to 4-line comments. Preserve sc-810 legitimate overlay, _work/build/, _work/ux/. No framework touch. All 10 ACs pass. 0 TS errors (api + frontend). No real secrets in diff."
