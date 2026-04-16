@@ -251,7 +251,6 @@ features:
     depends_on: []
     started_at: "2026-03-26"
     validated_at: "2026-03-26"
-    validated_at: ""
     notes: "PasswordInput component with Eye/EyeOff toggle. Replaces all 6 password fields across 4 pages. i18n keys added to en.json + fr.json."
 
   - id: "sc-335"
@@ -829,4 +828,250 @@ features:
     depends_on: []
     started_at: "2026-04-16"
     validated_at: "2026-04-16"
-    notes: "Delete _work/feature-tracker.yaml + 19 obsolete _work/spec/ files (7 sc-<feature> naming variants, 12 orphans with story-content). Stub 32 _work/spec/ duplicates to 4-line comments. Preserve sc-810 legitimate overlay, _work/build/, _work/ux/. No framework touch. All 10 ACs pass. 0 TS errors (api + frontend). No real secrets in diff."
+    notes: "Delete _work/feature-tracker.yaml + 19 obsolete _work/spec/ files (7 sc-<feature> naming variants, 12 orphans with story-content). Stub 32 _work/spec/ duplicates to 4-line comments. Preserve sc-810 legitimate overlay, _work/build/, _work/ux/. No framework touch. All 10 ACs pass. 0 TS errors (api + frontend). No real secrets in diff. PR #183."
+
+  # === JOB OFFERS & APPLICATIONS (Epic sc-809) ===
+
+  - id: "sc-810"
+    name: "Job Search Configuration"
+    priority: "must-have"
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/job-search-config.yaml"
+    depends_on: []
+    started_at: "2026-04-07"
+    validated_at: "2026-04-08"
+    notes: "Full CRUD for job search configurations with quota enforcement (free: 1 search, premium: 3). Backend API (5 endpoints), shared types/constants, frontend page at /recherche-offres, 26 unit+functional tests, 12 Playwright e2e tests. L (5 pts). PR #144."
+
+  - id: "sc-825"
+    name: "Job Scraping Foundation — Data model + Scrapers"
+    priority: "must-have"
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/job-scraping-foundation.yaml"
+    depends_on: ["sc-810"]
+    started_at: "2026-04-08"
+    validated_at: "2026-04-08"
+    notes: "Data model + 4 Apify scrapers. Foundation for job scraping pipeline. L. PR #147."
+
+  - id: "sc-826"
+    name: "Job Scraping Orchestration — Dedup + API + Quotas"
+    priority: "must-have"
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/job-scraping-orchestration.yaml"
+    depends_on: ["sc-825"]
+    started_at: "2026-04-08"
+    validated_at: "2026-04-08"
+    notes: "Orchestration layer over Apify scrapers: deduplication, API endpoints, quota enforcement. L. PR #148."
+
+  - id: "sc-856"
+    name: "Job AI Evaluation — Scoring + Exclusion Learning"
+    priority: "must-have"
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/job-ai-evaluation.yaml"
+    depends_on: ["sc-826"]
+    started_at: "2026-04-08"
+    validated_at: "2026-04-08"
+    notes: "AI-powered job offer scoring (0-100) with exclusion learning feedback loop. L. PR #149."
+
+  - id: "sc-869"
+    name: "Job Company Enrichment — Global company cache + accreditation"
+    priority: "must-have"
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/job-company-enrichment.yaml"
+    depends_on: ["sc-826"]
+    started_at: "2026-04-08"
+    validated_at: "2026-04-08"
+    notes: "Global company cache with visa accreditation status. Reuses enrichment data across users. PR #150."
+
+  - id: "sc-884"
+    name: "Job Offers List Page"
+    priority: "must-have"
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/job-offers-list-page.yaml"
+    depends_on: ["sc-856"]
+    started_at: "2026-04-08"
+    validated_at: "2026-04-09"
+    notes: "/offres page with 3-tab view (new/applied/archived), dense cards with score badges, optimistic status updates, cross-contacts endpoint, 13 JobOfferStatus values, search, pagination, skeleton loading, i18n en/fr. 16 unit tests. PR #152."
+
+  - id: "sc-885"
+    name: "Job Offer Detail Page"
+    priority: "must-have"
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/job-offer-detail-page.yaml"
+    depends_on: ["sc-884"]
+    started_at: "2026-04-09"
+    validated_at: "2026-04-09"
+    notes: "/offres/:id detail page with 9 new components: header/breadcrumb, score progress bar, AI evaluation panel with editable advice, company panel, cross-pipeline badge, exclusion modal (<dialog> with focus trap), actions bar. use-job-offer-detail hook with optimistic updates + parallel fetching. 27 tests, 0 TS errors, 0 SonarQube issues. PR #153."
+
+  - id: "sc-929"
+    name: "Job CV Generation — Backend"
+    priority: "must-have"
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/job-cv-generation-backend.yaml"
+    depends_on: ["sc-885"]
+    started_at: "2026-04-09"
+    validated_at: "2026-04-09"
+    notes: "Migration 41 (job_applications table), Lucid model, JobCvGenerationService with max 7 AI-targeted replacements, cv_adaptation_prompt with sanitization, VineJS validators, controller (generate/refine/save/pdf), quota via UsageService (free: 1). 22 unit tests. PR #155."
+
+  - id: "sc-930"
+    name: "Job CV Generation — Frontend"
+    priority: "must-have"
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/job-cv-generation-frontend.yaml"
+    depends_on: ["sc-929"]
+    started_at: "2026-04-09"
+    validated_at: "2026-04-09"
+    notes: "CV tab on job offer detail page: API client, useJobCv hook, CvTab orchestrator with generate/diff/edit/PDF download, CvDiffView (old→new highlights), CvRefineInput, CvEditMode, i18n en/fr. 14 unit tests, 16 ACs PASS, 0 TS errors, design-system CSS vars only. PR #156."
+
+  - id: "sc-959"
+    name: "Job Cover Letter — Backend"
+    priority: "must-have"
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/job-cover-letter-backend.yaml"
+    depends_on: ["sc-929"]
+    started_at: "2026-04-09"
+    validated_at: "2026-04-09"
+    notes: "AI cover letter generation/refine/edit/PDF endpoints, following the CV generation pattern. AI prompt with recruitment_agency handling, quota integration, VineJS validators. 21 unit tests. PR #157."
+
+  - id: "sc-960"
+    name: "Job Cover Letter — Frontend"
+    priority: "must-have"
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/job-cover-letter-frontend.yaml"
+    depends_on: ["sc-959", "sc-930"]
+    started_at: "2026-04-13"
+    validated_at: "2026-04-13"
+    notes: "CoverLetterTab as 3rd tab on job offer detail page. API client, hook, 15 unit tests, i18n en/fr, 17 data-testid attrs. 7 Playwright e2e tests (4-tab nav, generate/edit/refine flows). 18 ACs pass, 0 TS errors, 129 total frontend tests. PR #158."
+
+  - id: "sc-990"
+    name: "Job Application Send — Email (Backend)"
+    priority: "must-have"
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/job-application-send-email.yaml"
+    depends_on: ["sc-959"]
+    started_at: "2026-04-09"
+    validated_at: "2026-04-09"
+    notes: "AI application email generation + send with PDF attachments (CV + cover letter). Bundled with sc-989 recruitment contacts backend (migration for recruitment_contacts table, RecruitmentContactService with CRUD + detectCrossPipeline + reProspect, /api/job-offers/:id/contacts routes). L. PR #160."
+
+  - id: "sc-991"
+    name: "Job Application Send — Frontend (Send Tab + Recruitment Contacts UI)"
+    priority: "must-have"
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/job-application-send-frontend.yaml"
+    depends_on: ["sc-990"]
+    started_at: "2026-04-09"
+    validated_at: "2026-04-10"
+    notes: "Send tab with AI email generation, recipient selector, attachment indicators, confirmation <dialog>, sent state. RecruitmentContactsPanel (CRUD, cross-pipeline lead badge) visible on all tabs. 2 API clients, 2 hooks, 39 data-testid attrs, 25 unit tests, i18n en/fr. 9 FUNC + 2 SEC + 2 BP ACs pass. Playwright e2e spec. L. PR #161."
+
+  - id: "sc-1048"
+    name: "Bug: strict mode violation in recruitment contacts empty state e2e test"
+    priority: "bug"
+    status: "validated"
+    cycles: 1
+    story_file: ""
+    depends_on: ["sc-991"]
+    started_at: "2026-04-13"
+    validated_at: "2026-04-13"
+    notes: "Playwright .or() resolved 2 elements in strict mode because both empty state message and add button are visible simultaneously. Replaced with separate assertions. PR #162."
+
+  - id: "sc-1051"
+    name: "Job Recurring Search — scheduler + frequency enforcement"
+    priority: "should-have"
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/job-recurring-search.yaml"
+    depends_on: ["sc-826"]
+    started_at: "2026-04-13"
+    validated_at: "2026-04-13"
+    notes: "computeNextRunAt pure function (daily/weekly/biweekly/manual) in shared, FREE_ALLOWED_FREQUENCIES + FREQUENCY_INTERVALS_DAYS constants, RecurringSearchScheduler service, GET /api/scheduler/run-due protected by x-scheduler-secret header, plan-based frequency restrictions (403 PLAN_REQUIRED for free). ActiveSearchCard shows frequency badge + next run. 17 backend + 6 frontend tests. PR #164."
+
+  - id: "sc-1052"
+    name: "Job Custom Platforms — user-defined scraping targets"
+    priority: "should-have"
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/job-custom-platforms.yaml"
+    depends_on: ["sc-826"]
+    started_at: "2026-04-13"
+    validated_at: "2026-04-13"
+    notes: "Custom platforms CRUD: migration, model, service, controller, auth-protected routes, VineJS validation, per-user URL uniqueness. Free plan limit of 3 platforms, premium unlimited. Country-based suggestions for 7 countries. Frontend form + list in /recherche-offres. 15 backend + 5 frontend tests. PR #165."
+
+  - id: "sc-1053"
+    name: "Job Notifications — unread offers badge in sidebar"
+    priority: "nice-to-have"
+    status: "validated"
+    cycles: 1
+    story_file: "specs/stories/job-notifications.yaml"
+    depends_on: ["sc-1051"]
+    started_at: "2026-04-13"
+    validated_at: "2026-04-13"
+    notes: "Offer notification system: migration (lastOffersSeenAt on users), service (getUnreadCount, markSeen), auth-protected routes. Sidebar badge next to 'Mes offres' with 60s polling (skipped on hidden tab). /offres page auto-marks seen on visit. NotificationBadge caps at 99+. 8 backend + 6 frontend tests. PR #167."
+
+  # === RECENT REFACTORS ===
+
+  - id: "sc-1096"
+    name: "Refactor: split JobApplicationsController into 3 focused controllers"
+    priority: "tech-debt"
+    status: "validated"
+    cycles: 1
+    story_file: ""
+    depends_on: ["sc-991"]
+    started_at: "2026-04-16"
+    validated_at: "2026-04-16"
+    notes: "Split the 490-line JobApplicationsController into JobCvController, JobCoverLetterController, and JobApplicationSendController. Shared handleServiceError (lookup map replacing 68-line if-chain) and verifyOfferOwnership extracted to concerns/application_error_handler.ts. Routes updated. PR #179 (joint with sc-1101)."
+
+  - id: "sc-1097"
+    name: "Refactor: extract shared language util, AI constants, type-safe catch"
+    priority: "tech-debt"
+    status: "validated"
+    cycles: 1
+    story_file: ""
+    depends_on: []
+    started_at: "2026-04-15"
+    validated_at: "2026-04-15"
+    notes: "sc-1097: extract COUNTRY_LANGUAGE_MAP + deduceLanguage() into constants/language.ts (remove duplicates from cv_generation, cover_letter, application_send services). sc-1098: AI_TEMPERATURE/AI_MAX_TOKENS constants. sc-1099: replace catch(error: any) with catch(error: unknown) + type narrowing; typed serialize(). PR #178."
+
+  - id: "sc-1100"
+    name: "Tests: behavioral tests for recruitment_contact, job_offer, job_application_send services"
+    priority: "tech-debt"
+    status: "validated"
+    cycles: 1
+    story_file: ""
+    depends_on: ["sc-991"]
+    started_at: "2026-04-16"
+    validated_at: "2026-04-16"
+    notes: "Replace existence-only isFunction() tests with real database behavioral tests for recruitment_contact_service (create/list/update/delete/reProspect/ownership), job_offer_service (findOrFail/updateStatus/list pagination+filter/hasCrossContact), and job_application_send_service (getApplicationEmailStatus, PdfService.textToBuffer). PR #180."
+
+  - id: "sc-1101"
+    name: "Refactor: extract PdfService"
+    priority: "tech-debt"
+    status: "validated"
+    cycles: 1
+    story_file: ""
+    depends_on: []
+    started_at: "2026-04-16"
+    validated_at: "2026-04-16"
+    notes: "Extract textToPdfBuffer + PDF constants from JobApplicationSendService into a dedicated PdfService. Both service and controllers use it, eliminating duplicated PDFDocument rendering code. PR #179 (joint with sc-1096)."
+
+  - id: "sc-1104"
+    name: "Chore: fix all TypeScript errors across project — 0 errors"
+    priority: "tech-debt"
+    status: "validated"
+    cycles: 1
+    story_file: ""
+    depends_on: []
+    started_at: "2026-04-16"
+    validated_at: "2026-04-16"
+    notes: "packages/shared: add .js extensions to 30 relative imports (TS2835), fix UpdateJobSearchPayload nullable fields, fix cross-file imports. app/services: replace all 'as any' with typed casts in job_search/job_offer/custom_platform services. Widen GENERIC_NAMES Set<string> in sourcing_service. Tests: fix RequestInfo → string | URL | Request, invalid seniority 'mid' → 'intermediate' (5 files), implicit any, JobSearchPlatform[] typing. tsc --noEmit passes with 0 errors. PR #181."
