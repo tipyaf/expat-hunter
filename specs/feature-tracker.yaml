@@ -1075,3 +1075,16 @@ features:
     started_at: "2026-04-16"
     validated_at: "2026-04-16"
     notes: "packages/shared: add .js extensions to 30 relative imports (TS2835), fix UpdateJobSearchPayload nullable fields, fix cross-file imports. app/services: replace all 'as any' with typed casts in job_search/job_offer/custom_platform services. Widen GENERIC_NAMES Set<string> in sourcing_service. Tests: fix RequestInfo → string | URL | Request, invalid seniority 'mid' → 'intermediate' (5 files), implicit any, JobSearchPlatform[] typing. tsc --noEmit passes with 0 errors. PR #181."
+
+  - id: "sc-1134"
+    name: "Bug: fix 9 pre-existing functional test failures (admin, job_offers, search)"
+    priority: "bug"
+    status: "refined"
+    cycles: 0
+    story_file: "specs/stories/sc-1134.yaml"
+    depends_on: []
+    refined_at: "2026-04-17"
+    refined_by: "refinement"
+    started_at: ""
+    validated_at: ""
+    notes: "9 failing functional tests on develop (pre-existing). Groups: admin/users (5), job_offers (1), search (2), search_quality (1 — needs HUNTER_API_KEY gate). Scope: tests only (no production code unless a real bug is surfaced). 9 ACs: 5 FUNC + 1 SEC + 3 BP + DONE. M (3 pts). Epic sc-1105."

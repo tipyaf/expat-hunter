@@ -1,7 +1,7 @@
-import { TEST_USER_PASSWORD } from '#tests/helpers/credentials'
 import db from '@adonisjs/lucid/services/db'
 import type { ApiClient } from '@japa/api-client'
 import { test } from '@japa/runner'
+import { TEST_USER_PASSWORD } from '#tests/helpers/credentials'
 
 const AUTH_URL = '/api/auth'
 const SEARCH_URL = '/api/recherche'
@@ -102,9 +102,7 @@ test.group('GET /api/recherche', (group) => {
   test('returns empty list when no search runs', async ({ client, assert }) => {
     const { token } = await createUser(client, testUser)
 
-    const response = await client
-      .get(SEARCH_URL)
-      .header('Authorization', `Bearer ${token}`)
+    const response = await client.get(SEARCH_URL).header('Authorization', `Bearer ${token}`)
 
     response.assertStatus(200)
     assert.isArray(response.body().data)
@@ -148,9 +146,7 @@ test.group('POST /api/recherche — validation', (group) => {
   })
 
   test('returns 401 without auth', async ({ client }) => {
-    const response = await client
-      .post(SEARCH_URL)
-      .json({ country: 'NZ' })
+    const response = await client.post(SEARCH_URL).json({ country: 'NZ' })
 
     response.assertStatus(401)
   })
@@ -159,7 +155,10 @@ test.group('POST /api/recherche — validation', (group) => {
 // ---------------------------------------------------------------------------
 // POST /api/recherche — async launch behavior
 // ---------------------------------------------------------------------------
-test.group('POST /api/recherche — async launch', () => {
+test.group('POST /api/recherche — async launch', (group) => {
+  group.each.setup(async () => {
+    await cleanupAll()
+  })
 
   const asyncTestUser = {
     email: 'async-search-test@example.com',
@@ -201,7 +200,15 @@ test.group('POST /api/recherche — async launch', () => {
     // Check in DB
     const run = await db.from('search_runs').where('id', searchRunId).first()
     assert.isNotNull(run)
-    assert.oneOf(run.status, ['pending', 'scraping', 'enriching', 'analyzing', 'generating', 'completed', 'failed'])
+    assert.oneOf(run.status, [
+      'pending',
+      'scraping',
+      'enriching',
+      'analyzing',
+      'generating',
+      'completed',
+      'failed',
+    ])
   })
 
   test('progress endpoint returns status for created search run', async ({ client, assert }) => {
@@ -245,8 +252,7 @@ test.group('GET /api/recherche/:id/progress', (group) => {
   })
 
   test('returns 401 without auth', async ({ client }) => {
-    const response = await client
-      .get(`${SEARCH_URL}/00000000-0000-0000-0000-000000000000/progress`)
+    const response = await client.get(`${SEARCH_URL}/00000000-0000-0000-0000-000000000000/progress`)
 
     response.assertStatus(401)
   })

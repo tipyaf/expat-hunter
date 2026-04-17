@@ -1,10 +1,10 @@
 import { test } from '@japa/runner'
-import User from '#models/user'
-import JobSearch from '#models/job_search'
+import { DateTime } from 'luxon'
 import JobOffer from '#models/job_offer'
 import JobOfferLink from '#models/job_offer_link'
+import JobSearch from '#models/job_search'
+import User from '#models/user'
 import { TEST_USER_PASSWORD } from '#tests/helpers/credentials'
-import { DateTime } from 'luxon'
 
 test.group('Job Offers API', () => {
   const TEST_EMAIL = 'job-offers-api-test@example.com'
@@ -101,11 +101,19 @@ test.group('Job Offers API', () => {
     res.assertStatus(401)
   })
 
-  test('GET /api/job-offers returns 400 without search_id', async ({ client }) => {
-    const res = await client
-      .get('/api/job-offers')
-      .header('Authorization', `Bearer ${token}`)
-    res.assertStatus(400)
+  test('GET /api/job-offers without search_id returns all user offers across searches', async ({
+    client,
+    assert,
+  }) => {
+    // Since sc-884 (Job Offers List Page), omitting search_id returns all offers
+    // from every search owned by the authenticated user (used by the /offres kanban).
+    const res = await client.get('/api/job-offers').header('Authorization', `Bearer ${token}`)
+    res.assertStatus(200)
+    assert.isArray(res.body().data)
+    assert.isAbove(res.body().data.length, 0, 'user has at least one seeded offer')
+    for (const offer of res.body().data) {
+      assert.equal(offer.searchId, searchId)
+    }
   })
 
   test('GET /api/job-offers returns paginated offers', async ({ client, assert }) => {
