@@ -1,0 +1,191 @@
+# AC templates for nodejs-express stack (AdonisJS 6 backend)
+#
+# Injected by /refine when a story touches apps/api/. Migrated from
+# v4 _work/stacks/typescript-adonisjs.md §"Auto-generated AC Templates".
+
+ac_sec:
+  - id: AC-SEC-INPUT-VALIDATION
+    applies_to: [endpoint, controller]
+    text: >
+      Given any API endpoint added by this feature,
+      when a request arrives,
+      then the body / query / params are validated by a VineJS schema
+      BEFORE the service is called; invalid payloads return 422 with
+      field-level errors and no stack trace.
+    verify: "pnpm --filter @expat-hunter/api test -- --tags validation"
+
+  - id: AC-SEC-AUTH-REQUIRED
+    applies_to: [endpoint]
+    text: >
+      Given any /api/* endpoint added by this feature (except the
+      auth-register / auth-login / health whitelist),
+      when a request lacks a valid session/token,
+      then a 401 is returned with a generic message (no data leak).
+    verify: "pnpm --filter @expat-hunter/api test -- --tags auth"
+
+  - id: AC-SEC-AUTHZ-USER-SCOPED
+    applies_to: [endpoint, service, repository]
+    text: >
+      Given any data access in this feature,
+      when a query fetches or mutates user-owned rows,
+      then the query is scoped to `auth.user.id` — no cross-user leak
+      is possible through id tampering.
+    verify: "pnpm --filter @expat-hunter/api test -- --tags authorization"
+
+  - id: AC-SEC-SQL-INJECTION
+    applies_to: [service, repository, model]
+    text: >
+      Given database operations in this feature,
+      when building queries,
+      then only Lucid ORM methods are used; if .raw() is strictly
+      required it uses the bindings-array form (no string
+      interpolation of user input).
+    verify: "grep -rnE '\\.raw\\([\"\\x60].*\\$\\{' apps/api/app && exit 1 || exit 0"
+
+  - id: AC-SEC-DATA-EXPOSURE
+    applies_to: [controller, service]
+    text: >
+      Given responses returned by endpoints in this feature,
+      when serialising models or DTOs,
+      then passwords / tokens / internal IDs are never returned
+      (use Lucid `$hidden` / `$visible`, or an explicit DTO).
+    verify: "pnpm --filter @expat-hunter/api test -- --tags serialization"
+
+  - id: AC-SEC-ERROR-RESPONSES
+    applies_to: [endpoint]
+    text: >
+      Given any endpoint in this feature,
+      when an unexpected error occurs,
+      then the client receives a generic error message (no stack
+      trace in production) AND the error is logged via the AdonisJS
+      Logger with a request id.
+    verify: "pnpm --filter @expat-hunter/api test -- --tags error-handling"
+
+  - id: AC-SEC-RATE-LIMIT-LOGIN
+    applies_to: [auth-endpoint]
+    text: >
+      Given the login endpoint,
+      when >5 failed attempts in one minute come from one IP,
+      then subsequent attempts are rate-limited (429).
+    verify: "pnpm --filter @expat-hunter/api test -- --tags rate-limit"
+
+  - id: AC-SEC-FILE-UPLOAD
+    applies_to: [file-upload]
+    text: >
+      Given a file upload endpoint in this feature (e.g. CV),
+      when a file arrives,
+      then the extension is whitelisted (e.g. PDF only) AND the size
+      is ≤10 MB AND storage goes through AdonisJS Drive (not raw fs).
+    verify: "pnpm --filter @expat-hunter/api test -- --tags upload"
+
+  - id: AC-SEC-LOGS-NO-PII
+    applies_to: [service, endpoint]
+    text: >
+      Given logs produced by this feature,
+      when inspecting log output (structured JSON),
+      then no password, token, email body, or raw PII is present;
+      email addresses are masked (e.g. `a***@***.com`).
+    verify: "pnpm --filter @expat-hunter/api test -- --tags log-hygiene"
+
+ac_bp:
+  - id: AC-BP-TYPING-EXPLICIT-RETURNS
+    applies_to: [all]
+    text: >
+      Given all functions, controllers, and services in this feature,
+      when inspecting signatures,
+      then every function has an explicit return type; VineJS input
+      schemas are fully typed (no implicit any).
+    verify: "pnpm --filter @expat-hunter/api exec tsc --noEmit --strict"
+
+  - id: AC-BP-THIN-CONTROLLERS
+    applies_to: [controller]
+    text: >
+      Given controllers added by this feature,
+      when reading a controller method,
+      then it reads as: validate → call service → return response
+      (no SQL, no business branches beyond response shaping).
+    verify: "pnpm --filter @expat-hunter/api test -- --tags controller-discipline"
+
+  - id: AC-BP-IOC-DI
+    applies_to: [controller, service]
+    text: >
+      Given collaborators used by this feature,
+      when instantiating services or repositories,
+      then the AdonisJS IoC container resolves them via @inject() —
+      no manual `new ...Service()` from controllers.
+    verify: "grep -rnE 'new\\s+[A-Z]\\w*Service\\(' apps/api/app/controllers && exit 1 || exit 0"
+
+  - id: AC-BP-PREVENT-N-PLUS-ONE
+    applies_to: [endpoint, service]
+    text: >
+      Given database queries that load related data,
+      when serving a list endpoint,
+      then Lucid `preload()` / `withCount()` is used; N+1 is not
+      observable under load.
+    verify: "pnpm --filter @expat-hunter/api test -- --tags n-plus-one"
+
+  - id: AC-BP-PAGINATION
+    applies_to: [endpoint, list]
+    text: >
+      Given any list endpoint,
+      when called,
+      then the response is paginated (default 20, max 100); the
+      client can pass `page` and `perPage` query params.
+    verify: "pnpm --filter @expat-hunter/api test -- --tags pagination"
+
+  - id: AC-BP-ASYNC-BACKGROUND-JOB
+    applies_to: [endpoint, service]
+    text: >
+      Given a long-running operation (scraping, AI analysis, bulk
+      email),
+      when triggered,
+      then it runs as a BullMQ job and the endpoint returns
+      immediately with a job/run ID.
+    verify: "pnpm --filter @expat-hunter/api test -- --tags background-jobs"
+
+  - id: AC-BP-RETRY-BACKOFF
+    applies_to: [background-job]
+    text: >
+      Given a BullMQ job added by this feature,
+      when it fails transiently,
+      then it retries with exponential backoff (max 3 retries) and
+      logs each failure with the job id.
+    verify: "pnpm --filter @expat-hunter/api test -- --tags retry"
+
+  - id: AC-BP-MIGRATION-REVERSIBLE
+    applies_to: [migration]
+    text: >
+      Given a migration added by this feature,
+      when run via `pnpm db:migrate`,
+      then `node ace migration:rollback` restores the prior schema
+      byte-for-byte on a seeded DB (G13 migration-safety gate).
+    verify: "pnpm --filter @expat-hunter/api exec node ace migration:rollback --dry-run"
+
+  - id: AC-BP-ENV-CONFIG
+    applies_to: [service, config]
+    text: >
+      Given configuration values used in this feature,
+      when reading them at runtime,
+      then they are accessed via `import env from '#start/env'`
+      (typed, validated) — never bare `process.env.X`.
+    verify: "grep -rn 'process\\.env\\.' apps/api/app apps/api/config | grep -v 'env.ts' && exit 1 || exit 0"
+
+ac_perf:
+  - id: AC-PERF-API-P95
+    applies_to: [endpoint]
+    text: >
+      Given each synchronous endpoint in this feature,
+      when load-tested with realistic payload,
+      then p95 latency is ≤500 ms and regression vs baseline ≤5 %.
+    verify: "pnpm --filter @expat-hunter/api test -- --tags perf-p95"
+
+ac_obs:
+  - id: AC-OBS-STRUCTURED-LOG
+    applies_to: [service, endpoint, background-job]
+    text: >
+      Given all significant events in this feature (business event,
+      external call, error),
+      when logging,
+      then the log is structured (JSON) and includes request id,
+      user id, and an event name.
+    verify: "pnpm --filter @expat-hunter/api test -- --tags log-structure"

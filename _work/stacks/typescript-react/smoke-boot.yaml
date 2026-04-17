@@ -1,0 +1,39 @@
+# G4.1 Smoke boot strategy for the Next.js frontend.
+#
+# Runs after G4 (build). The orchestrator executes this to prove the
+# frontend actually starts and serves the home page without console
+# errors. If any step fails, the gate fails — no PR.
+
+strategy: nextjs_start_healthcheck
+
+steps:
+  - name: build-if-needed
+    cmd: "pnpm --filter @expat-hunter/frontend build"
+    skip_if: "test -d apps/frontend/.next"
+
+  - name: start-prod-server
+    cmd: "pnpm --filter @expat-hunter/frontend start --port 3100"
+    background: true
+    ready_when: "curl -sf http://localhost:3100 > /dev/null"
+    ready_timeout_s: 60
+
+  - name: fetch-home-200
+    cmd: "curl -sSf -o /dev/null -w '%{http_code}' http://localhost:3100 | grep -q 200"
+    timeout_s: 10
+
+  - name: assert-no-console-errors
+    # Runs a Playwright smoke test (must already exist).
+    cmd: "pnpm test:smoke -- --project=smoke-boot"
+    timeout_s: 60
+
+teardown:
+  # Always run, even when a step above fails.
+  - cmd: "pkill -f 'next start --port 3100' || true"
+
+# If Docker Compose is preferred over raw pnpm (e.g. CI):
+alternative:
+  strategy: docker_compose_healthcheck
+  compose_file: .devtools/docker-compose.yml
+  service: frontend
+  healthcheck_url: "http://localhost:3000/"
+  timeout_s: 90

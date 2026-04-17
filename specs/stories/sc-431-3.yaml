@@ -148,3 +148,158 @@ definition_of_done:
   - "i18n en + fr"
   - "0 TS errors"
   - "PR merged"
+
+# ─────────────────────────────────────────────────────────────────────────
+# v5 interactions: contract (G9.4 — interaction verification)
+#
+# Each item is a user trigger + its expected side effects (DOM, URL,
+# API, state, console). generate-interaction-tests.py reads this block
+# and emits a Playwright spec that asserts every `expected` item.
+# G9.4 fails (and /ship refuses to create a PR) if any assertion
+# misses.
+#
+# Required attributes on the rendered UI:
+#   - data-testid      : stable selector for the element
+#   - data-action      : intent label that matches the `action` below
+# ─────────────────────────────────────────────────────────────────────────
+
+interactions:
+  # --- Sidebar upgrade CTA (visible to free users only) -------------------
+  - action: click-upgrade-cta-sidebar
+    description: "Free user clicks the upgrade button in the sidebar"
+    pre_state:
+      - plan: free
+    trigger: click data-testid=sidebar-upgrade-cta
+    expected:
+      - url: /upgrade
+      - dom: data-testid=upgrade-page-pricing-table is visible
+      - no_console_errors: true
+
+  # --- Upgrade page --------------------------------------------------------
+  - action: visit-upgrade-page
+    description: "Any user navigates directly to the upgrade page"
+    trigger: navigate /upgrade
+    expected:
+      - dom: data-testid=upgrade-page-pricing-table is visible
+      - dom: data-testid=upgrade-free-column is visible
+      - dom: data-testid=upgrade-premium-column is visible
+      - dom: data-testid=upgrade-primary-cta is visible
+      - no_console_errors: true
+
+  - action: click-upgrade-contact-cta
+    description: "Free user clicks the upgrade CTA on the upgrade page"
+    pre_state:
+      - plan: free
+    trigger: click data-testid=upgrade-primary-cta
+    expected:
+      # Stripe wiring is out of scope of sc-431-3 (per notes); for now
+      # the CTA opens a mailto / admin contact flow.
+      - href_starts_with: "mailto:"
+      - no_console_errors: true
+
+  # --- Kanban gated for free users ----------------------------------------
+  - action: visit-kanban-free
+    description: "Free user navigates to /suivi — page is visible but locked"
+    pre_state:
+      - plan: free
+    trigger: navigate /suivi
+    expected:
+      - dom: data-testid=kanban-board is visible
+      - dom: data-testid=kanban-locked-overlay is visible
+      - dom: data-testid=kanban-upgrade-prompt is visible
+      - no_console_errors: true
+
+  - action: drag-kanban-card-free
+    description: "Free user tries to drag a kanban card — nothing moves"
+    pre_state:
+      - plan: free
+      - dom: data-testid=kanban-board is visible
+    trigger: drag data-testid=kanban-card-0 to data-testid=kanban-column-contacted
+    expected:
+      # Strict behavioural assertion — the card must NOT move.
+      - dom_attr: data-testid=kanban-card-0 has data-column="to-contact"
+      - no_console_errors: true
+
+  - action: visit-kanban-premium
+    description: "Premium user can drag cards normally"
+    pre_state:
+      - plan: premium
+    trigger: navigate /suivi
+    expected:
+      - dom: data-testid=kanban-board is visible
+      - dom: data-testid=kanban-locked-overlay is absent
+      - no_console_errors: true
+
+  # --- Kanban backend enforcement (server-side PlanGuard) -----------------
+  - action: api-kanban-free-direct
+    description: "Free user hits the kanban API directly — backend enforces PlanGuard"
+    pre_state:
+      - plan: free
+    trigger: fetch GET /api/pipeline
+    expected:
+      - api_status: 403
+      - api_body_contains: plan_required
+      # Client intercepts 403 and shows the upgrade prompt (no crash).
+      - no_console_errors: true
+
+  # --- Contacts page with fake blurred rows for free users ----------------
+  - action: visit-contacts-free
+    description: "Free user on contacts page sees real contacts + fake blurred ones"
+    pre_state:
+      - plan: free
+      - fixture: user-with-2-real-contacts
+    trigger: navigate /contacts
+    expected:
+      - dom_count: "data-testid=contact-row=2"             # real contacts
+      - dom_count_min: "data-testid=fake-contact-row=3"    # fake blurred contacts
+      - dom: data-testid=fake-contact-row[data-blurred=true] is visible
+      - no_console_errors: true
+
+  - action: click-fake-contact-free
+    description: "Free user clicks a fake blurred contact — nothing selectable"
+    pre_state:
+      - plan: free
+    trigger: click data-testid=fake-contact-row
+    expected:
+      - dom: data-testid=fake-contact-row is still visible  # no navigation
+      - dom: data-testid=contact-detail-panel is absent     # no detail opens
+      - no_console_errors: true
+
+  - action: visit-contacts-premium
+    description: "Premium user on contacts page sees only real contacts"
+    pre_state:
+      - plan: premium
+      - fixture: user-with-2-real-contacts
+    trigger: navigate /contacts
+    expected:
+      - dom_count: "data-testid=contact-row=2"
+      - dom_count: "data-testid=fake-contact-row=0"
+      - no_console_errors: true
+
+  # --- Relevance badges hidden for free users -----------------------------
+  - action: relevance-hidden-free
+    description: "Free user sees NO relevance badges on contacts (analysis is premium)"
+    pre_state:
+      - plan: free
+    trigger: navigate /contacts
+    expected:
+      - dom_count: "data-testid=relevance-badge=0"
+      - no_console_errors: true
+
+  # --- Emails page: modify / regenerate buttons show PremiumBadge ---------
+  - action: emails-premium-badge-visible
+    description: "Free user on emails page sees PremiumBadge on gated actions"
+    pre_state:
+      - plan: free
+    trigger: navigate /emails
+    expected:
+      - dom: data-testid=email-modify-btn[data-premium=true] is visible
+      - dom: data-testid=email-regenerate-btn[data-premium=true] is visible
+      # Clicking a gated action shows the upgrade prompt inline.
+      - after_click[data-testid=email-modify-btn]:
+          - dom: data-testid=inline-upgrade-prompt is visible
+      - no_console_errors: true
+
+# v5 migration note: this `interactions:` block was added post-migration
+# (2026-04-17) based on the existing AC catalogue and the notes/DoD.
+# It will be re-checked during the next /refine pass before /build.

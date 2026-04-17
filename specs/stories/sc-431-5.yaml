@@ -116,3 +116,87 @@ definition_of_done:
   - "i18n en + fr"
   - "0 TS errors"
   - "PR merged"
+
+# ─────────────────────────────────────────────────────────────────────────
+# v5 interactions: contract (G9.4 — interaction verification)
+# ─────────────────────────────────────────────────────────────────────────
+
+interactions:
+  # --- Admin navigates to the users page ----------------------------------
+  - action: admin-visit-users-page
+    description: "Admin navigates to /admin/users — sees the user table"
+    pre_state:
+      - role: admin
+      - fixture: 3-users-mixed-plans
+    trigger: navigate /admin/users
+    expected:
+      - api_matches: GET /api/admin/users
+      - api_status: 200
+      - dom: data-testid=admin-users-table is visible
+      - dom_count_min: "data-testid=admin-user-row=3"
+      - dom: data-testid=admin-user-plan-badge[data-plan=free] is visible
+      - dom: data-testid=admin-user-plan-badge[data-plan=premium] is visible
+      - no_console_errors: true
+
+  # --- Non-admin is refused ----------------------------------------------
+  - action: non-admin-visit-users-page
+    description: "Regular user hits /admin/users — blocked by AdminMiddleware"
+    pre_state:
+      - role: user
+    trigger: navigate /admin/users
+    expected:
+      # Frontend redirects, backend would 403.
+      - url_is_not: /admin/users
+      - dom: data-testid=admin-users-table is absent
+      - no_console_errors: true
+
+  - action: api-admin-non-admin-direct
+    description: "Non-admin user calls the admin API directly — 403"
+    pre_state:
+      - role: user
+    trigger: fetch GET /api/admin/users
+    expected:
+      - api_status: 403
+      - no_console_errors: true
+
+  # --- Toggle a user's plan ----------------------------------------------
+  - action: admin-toggle-plan-free-to-premium
+    description: "Admin toggles a free user to premium via the row switch"
+    pre_state:
+      - role: admin
+      - fixture: user-id=42-plan=free
+    trigger: click data-testid=admin-user-row-42 data-testid=plan-toggle-42
+    expected:
+      - api_matches: "PATCH /api/admin/users/42/plan with body { plan: \"premium\" }"
+      - api_status: 200
+      - dom_attr: data-testid=admin-user-plan-badge-42 has data-plan="premium"
+      - dom: data-testid=admin-toast-success is visible
+      - no_console_errors: true
+
+  - action: admin-toggle-plan-premium-to-free
+    description: "Admin toggles a premium user back to free"
+    pre_state:
+      - role: admin
+      - fixture: user-id=43-plan=premium
+    trigger: click data-testid=plan-toggle-43
+    expected:
+      - api_matches: "PATCH /api/admin/users/43/plan with body { plan: \"free\" }"
+      - api_status: 200
+      - dom_attr: data-testid=admin-user-plan-badge-43 has data-plan="free"
+      - no_console_errors: true
+
+  # --- Filter by plan ----------------------------------------------------
+  - action: admin-filter-plan-premium
+    description: "Admin filters the list by plan=premium"
+    pre_state:
+      - role: admin
+      - fixture: 2-premium-3-free
+    trigger: click data-testid=admin-filter-plan-premium
+    expected:
+      - api_matches: "GET /api/admin/users?plan=premium"
+      - dom_count: "data-testid=admin-user-row=2"
+      - dom_count: "data-testid=admin-user-plan-badge[data-plan=free]=0"
+      - no_console_errors: true
+
+# v5 migration note: this interactions: block was added post-migration
+# (2026-04-17) from the AC catalogue. Re-check during next /refine.

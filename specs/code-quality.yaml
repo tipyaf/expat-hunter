@@ -1,0 +1,97 @@
+# G3 — Code Quality tool declaration
+#
+# v5 makes G3 MANDATORY and removes the subjective reviewer-fallback.
+# Every project must declare at least one tool that inspects the
+# committed code and produces a machine-readable verdict.
+#
+# The framework accepts ANY of:
+#   * SonarQube / SonarCloud
+#   * semgrep (semgrep-ci or CLI with custom rules)
+#   * eslint + ruff + mypy (or equivalent per language)
+#
+# This project satisfies G3 via Biome (primary) + SonarQube (optional,
+# deeper audit when the developer runs `pnpm sonar:up`).
+#
+# Read by scripts/orchestrator.py at G3 execution time.
+
+version: 1
+
+primary:
+  tool: biome
+  version: "1.9.0"
+  config_file: biome.json
+  # Single command covers linting + formatting + import organisation.
+  command: "pnpm lint"
+  fix_command: "pnpm lint:fix"
+  must_exit_zero: true
+  coverage:
+    # Biome runs on everything under the repo root except node_modules,
+    # dist, .next, build, and tmp (biome.json > files.ignore).
+    scopes: [root, apps, packages]
+    languages: [typescript, javascript, json]
+  # Rules we care about most (mirrors biome.json highlights for auditors):
+  critical_rules:
+    - "suspicious/noExplicitAny: error"
+    - "complexity/useOptionalChain: error"
+    - "correctness/noUnusedImports: error"
+    - "correctness/useExhaustiveDependencies: warn"
+    - "correctness/useHookAtTopLevel: error"
+    - "style/useConst: error"
+    - "style/noNonNullAssertion: warn"
+
+# Optional deeper analysis. When SonarQube is running locally the
+# orchestrator posts results as a secondary G3 signal. A SonarQube
+# failure does not by itself block the gate (the primary tool does);
+# it gets surfaced in the gate report for context.
+optional_secondary:
+  tool: sonarqube
+  mode: docker_compose_profile
+  profile: sonar
+  up_command: "pnpm sonar:up"
+  down_command: "pnpm sonar:down"
+  analysis_command: "framework/stacks/hooks/sonar_check.py"
+  host: "http://localhost:9000"
+  project_key: "expat-hunter"
+  enforced: false                       # blocks G3 only when enforced: true
+  note: >
+    SonarQube surfaces maintainability / duplication / security
+    hotspots that Biome does not. Enable `enforced: true` once the
+    team agrees on a shared baseline (new issues only, no historical
+    backlog).
+
+# Baseline — existing violations carried over from v4.
+# v4 did not enforce Biome strictly; the codebase has 1391 errors and
+# 212 warnings as of the v5 migration. Rather than block every /build
+# on legacy tech debt, G3 runs in "new code only" mode: the gate passes
+# when the current story does not ADD violations.
+baseline:
+  mode: new_code_only
+  snapshot_command: "pnpm lint 2>&1 | tail -5"
+  snapshot_file: _work/code-quality/biome-baseline.txt
+  updated_at: "2026-04-17"
+  totals_at_migration:
+    errors: 1391
+    warnings: 212
+    files_checked: 583
+  # Policy: each story should only leave the baseline equal or lower.
+  # The orchestrator diffs the new snapshot against the baseline after
+  # `pnpm lint` and fails the gate only if the count increases on the
+  # files touched by this story.
+  tech_debt_plan: _docs/tech-debt-biome-cleanup.md
+
+# G3 passes when:
+#   1. primary.command is runnable (tool installed, config present)
+#   2. No NEW violation on the files this story touches (baseline-diff)
+#   3. (optional) SonarQube returns OK for new code, if enforced
+pass_criteria:
+  - "primary.command is runnable (tool installed, config present)"
+  - "No NEW biome error on files touched by the current story (baseline-diff)"
+  - "No NEW biome warning on files touched by the current story (strict projects may flip this to error)"
+  - "(optional) If enforced: sonarqube analysis returns OK for new code"
+
+# G3 fails with an actionable message if Biome is not installed or
+# biome.json is missing. The orchestrator does NOT fall back to a
+# subjective reviewer — the developer must fix the setup first.
+fail_fast:
+  - "biome.json missing → fail with fix: run `pnpm add -D @biomejs/biome && pnpm exec biome init`"
+  - "pnpm not available → fail with fix: install pnpm (see package.json#engines)"

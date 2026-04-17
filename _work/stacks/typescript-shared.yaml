@@ -1,0 +1,55 @@
+# Shared TypeScript conventions
+#
+# Both typescript-react (frontend) and nodejs-express (backend) pull
+# these rules. They are NOT a stack plugin on their own — the
+# orchestrator doesn't load this file directly. Profile YAMLs reference
+# these sections to avoid duplication.
+#
+# Migrated from v4 _work/stacks/typescript.md.
+
+type_system:
+  optional_vs_nullable:
+    rule: >
+      Use `field?: T` ONLY when the property can be genuinely absent
+      (undefined). Use `field: T | null` when the property is always
+      present but its value can be null. NEVER use `field?: T | null`
+      — that conflates both concepts.
+    heuristics:
+      - "DB column that can be null → `field: T | null`"
+      - "API response field absent in some variants → `field?: T`"
+      - "Optional function parameter → `param?: T`"
+
+  no_any:
+    rule: "Never use `: any`; use `unknown` then narrow with a type guard."
+    constant_rule: "All functions have explicit return types."
+    dynamic_records: "Prefer `Record<string, unknown>` over `object` or `{}`."
+
+  no_magic_values:
+    rule: >
+      Extract magic strings into named constants or enums. Extract
+      magic numbers into named constants with meaningful names.
+    grouping: "Group related constants at the top of a module or in a dedicated constants file."
+
+naming:
+  types_interfaces_classes_enums: PascalCase            # e.g. ContactStatus, CandidateProfile
+  functions_methods_variables: camelCase                # e.g. findByUserId(), contactsFound
+  env_and_module_constants: UPPER_SNAKE_CASE            # e.g. DATABASE_URL, BATCH_SIZE
+  files_backend: snake_case                             # e.g. candidate_profile.ts
+  files_frontend: kebab-case                            # e.g. contact-card.tsx
+
+imports:
+  - "Import shared types from @expat-hunter/shared."
+  - "Use `import type` for type-only imports."
+  - "No circular imports — services never import controllers; hooks never import pages."
+
+anti_patterns:
+  - anti: "field?: T | null"
+    correct: "field: T | null (nullable DB column) OR field?: T (optional param) — never both"
+  - anti: ": any"
+    correct: ": unknown + type guard, or a proper named type"
+  - anti: "magic string 'identified'"
+    correct: "enum member ContactStatus.IDENTIFIED"
+  - anti: "magic number 50"
+    correct: "named constant BATCH_SIZE"
+  - anti: "implicit return type"
+    correct: "explicit `: ReturnType` on every function / method"
