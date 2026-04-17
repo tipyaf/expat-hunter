@@ -111,3 +111,84 @@ definition_of_done:
   - "i18n en + fr"
   - "0 TS errors"
   - "PR merged"
+
+# ─────────────────────────────────────────────────────────────────────────
+# v5 interactions: contract (G9.4 — interaction verification)
+# ─────────────────────────────────────────────────────────────────────────
+
+interactions:
+  # --- Free user submits an allowed app/support question ------------------
+  - action: chat-free-submit-allowed
+    description: "Free user asks an app/support question — allowed, counter decrements"
+    pre_state:
+      - plan: free
+      - user_state: { chat_questions_used: 0 }
+    trigger: type "Comment configurer mon profil ?" in data-testid=chat-input, submit
+    expected:
+      - api_matches: POST /api/chat with payload.messages[-1].content containing "configurer mon profil"
+      - api_status: 200
+      - dom: data-testid=chat-quota-counter has text "14/15"
+      - dom: data-testid=chat-message-assistant is visible
+      - no_console_errors: true
+
+  # --- Free user asks a premium-only topic --------------------------------
+  - action: chat-free-topic-restricted
+    description: "Free user asks about hidden job market — AI declines with upgrade hint"
+    pre_state:
+      - plan: free
+    trigger: type "Donne-moi les offres du marché caché" in data-testid=chat-input, submit
+    expected:
+      - api_status: 200
+      - dom_contains: data-testid=chat-message-assistant matches /premium|upgrade|abonnement/i
+      - dom: data-testid=chat-inline-upgrade-hint is visible
+      - no_console_errors: true
+
+  # --- Free user hits the lifetime quota ----------------------------------
+  - action: chat-free-quota-exhausted
+    description: "Free user at 15/15 — input disabled, upgrade prompt shown"
+    pre_state:
+      - plan: free
+      - user_state: { chat_questions_used: 15 }
+    trigger: navigate /chat
+    expected:
+      - dom_attr: data-testid=chat-input has disabled="true"
+      - dom: data-testid=chat-quota-exhausted-prompt is visible
+      - dom: data-testid=chat-upgrade-cta is visible
+      - no_console_errors: true
+
+  - action: chat-free-quota-upgrade-click
+    description: "Free user at quota clicks upgrade CTA"
+    pre_state:
+      - plan: free
+      - user_state: { chat_questions_used: 15 }
+    trigger: click data-testid=chat-upgrade-cta
+    expected:
+      - url: /upgrade
+      - no_console_errors: true
+
+  # --- Premium user has no restriction ------------------------------------
+  - action: chat-premium-unrestricted
+    description: "Premium user asks about job search — no quota, no counter"
+    pre_state:
+      - plan: premium
+    trigger: type "Trouve-moi des offres à Auckland" in data-testid=chat-input, submit
+    expected:
+      - api_status: 200
+      - dom: data-testid=chat-quota-counter is absent
+      - dom: data-testid=chat-message-assistant is visible
+      - no_console_errors: true
+
+  # --- Backend enforcement (server is the source of truth) ----------------
+  - action: api-chat-free-over-quota-direct
+    description: "Free user at 15/15 bypasses UI and calls the API — backend 429"
+    pre_state:
+      - plan: free
+      - user_state: { chat_questions_used: 15 }
+    trigger: fetch POST /api/chat body={messages:[{role:user,content:"..."}]}
+    expected:
+      - api_status: 429
+      - api_body_contains: quota_exhausted
+      - no_console_errors: true
+
+# v5 migration note: this interactions: block was added post-migration
+# (2026-04-17) from the AC catalogue. Re-check during next /refine.

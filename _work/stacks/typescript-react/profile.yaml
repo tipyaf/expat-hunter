@@ -1,0 +1,148 @@
+# Stack profile: typescript-react (project override for expat-hunter)
+#
+# Framework default targets Vite + React 18 + MSW. This project uses
+# Next.js 14 (App Router) + Biome + Vitest + Playwright, so we override
+# the framework template.
+#
+# Loaded by scripts/orchestrator.py when registry.yaml points to this path.
+
+name: typescript-react
+version: 1.0
+languages: [typescript, javascript]
+min_version: "5.0"          # TypeScript major
+framework: next.js-14-app-router
+
+# --- Build & test commands -------------------------------------------------
+test_command: "pnpm --filter @expat-hunter/frontend test"
+test_coverage_command: "pnpm --filter @expat-hunter/frontend test -- --coverage"
+build_command: "pnpm --filter @expat-hunter/frontend build"
+type_check_command: "pnpm --filter @expat-hunter/frontend exec tsc --noEmit"
+lint_command: "pnpm lint"                    # Biome (root)
+format_check_command: "pnpm lint"            # Biome also formats
+e2e_command: "pnpm --filter @expat-hunter/e2e test"
+smoke_e2e_command: "pnpm test:smoke"
+
+# --- Coverage thresholds ---------------------------------------------------
+coverage:
+  line_min: 80
+  branch_min: 70
+  mutation_min: 80          # via stryker-mutator on changed files
+
+# --- Forbidden patterns (enforced by G1 / check_ds_conformity on UI code) --
+# Kept in sync with the v4 typescript-nextjs.md anti-patterns list.
+forbidden_patterns:
+  - regex: "localStorage\\.setItem\\([\"'](?:token|access_token|refresh_token|auth|session)"
+    reason: "auth tokens in localStorage are XSS-vulnerable; use HttpOnly cookies set by the API"
+    severity: error
+
+  - regex: "dangerouslySetInnerHTML"
+    reason: "XSS vector; always render via JSX. If absolutely needed, sanitize with DOMPurify first and comment why"
+    severity: error
+
+  - regex: ":\\s*any\\b"
+    reason: "no `any` type; use `unknown` + type guard or a proper named type (see _work/stacks/typescript-shared.md)"
+    severity: error
+
+  - regex: "@ts-ignore(?!.*reason:)"
+    reason: "@ts-ignore without a `reason:` explanatory comment hides real type errors"
+    severity: error
+
+  - regex: "console\\.log\\("
+    reason: "strip console.log from production code; use a scoped logger or remove"
+    severity: warning
+    exclude:
+      - "tests/"
+      - "apps/frontend/tests/"
+      - "apps/frontend/**/*.test.tsx"
+      - "apps/frontend/**/*.test.ts"
+      - "e2e/"
+
+  - regex: "fetch\\(['\"]"
+    reason: "never call `fetch` directly; use the api-client.ts wrapper (handles auth, errors, base URL)"
+    severity: error
+    exclude:
+      - "apps/frontend/src/lib/api-client.ts"
+      - "apps/frontend/tests/"
+      - "e2e/"
+
+  - regex: "\\bstyle=\\{\\{"
+    reason: "no inline styles; use Tailwind utility classes"
+    severity: warning
+    exclude:
+      - "apps/frontend/tests/"
+
+  - regex: "export default function"
+    reason: "prefer named exports for components (better refactoring, explicit import names)"
+    severity: warning
+    exclude:
+      - "apps/frontend/src/app/**/page.tsx"     # Next.js App Router requires default export
+      - "apps/frontend/src/app/**/layout.tsx"
+      - "apps/frontend/src/app/**/error.tsx"
+      - "apps/frontend/src/app/**/loading.tsx"
+      - "apps/frontend/src/app/**/not-found.tsx"
+
+# --- Server vs Client Component discipline ---------------------------------
+# Checked contextually by code-reviewer (G7) — declared here for documentation.
+component_discipline:
+  default: server
+  client_marker: "'use client'"
+  client_allowed_in:
+    - "forms (controlled inputs, submission handlers)"
+    - "interactive kanban (drag & drop)"
+    - "modals / dialogs"
+    - "realtime updates / websocket subscriptions"
+    - "theme toggle / locale toggle"
+  keep_client_boundary_low: true
+
+# --- Tools -----------------------------------------------------------------
+tools:
+  required:
+    - biome                  # linter + formatter (root biome.json)
+    - tsc                    # type checker
+    - vitest                 # test runner
+  recommended:
+    - playwright             # e2e
+    - stryker-mutator        # G2.1 mutation testing
+  optional:
+    - sonarqube              # G3 via sonar_check.py (docker-compose profile sonar)
+    - vitest-axe             # G9.5 accessibility in unit tests
+
+# --- Smoke boot (G4.1) -----------------------------------------------------
+# Next.js build + start, hit the home page, assert zero console errors.
+smoke_boot:
+  strategy: nextjs_start_healthcheck
+  see: ./smoke-boot.yaml
+
+# --- Design system reference ----------------------------------------------
+# Checked by G9.1 (check_ds_conformity.py).
+design_system:
+  declaration: specs/design-system.yaml    # if present; otherwise infer from tailwind.config
+  tailwind_config: apps/frontend/tailwind.config.ts
+  dark_mode: class                          # `dark:` prefix toggled via <html class="dark">
+  breakpoints:
+    mobile_max: 768
+    tablet_max: 1024
+
+# --- Accessibility baseline ------------------------------------------------
+accessibility:
+  wcag_level: AA                            # WCAG 2.1 AA (G9.5)
+  contrast_normal: 4.5                      # minimum ratio for normal text
+  contrast_large: 3.0                       # minimum ratio for large text / UI
+  keyboard_alternatives_required_for:
+    - "drag & drop interactions"
+    - "hover-only tooltips"
+
+# --- Performance budgets (G10) ---------------------------------------------
+performance:
+  lcp_max_ms: 2500                          # web-ui baseline target
+  fid_max_ms: 100
+  cls_max: 0.1
+  bundle_size_max_kb: 500                   # per route, gzipped
+  regression_threshold_pct: 5               # G10 fails beyond this vs baseline
+
+# --- Observability (G11) ---------------------------------------------------
+observability:
+  frontend_errors_go_to: sentry             # if configured; absence is warn, not fail
+  min_ratio_per_loc:
+    logs: 0.0                               # frontend logs are optional
+    error_boundaries: 0.002                 # one ErrorBoundary per 500 LOC of UI

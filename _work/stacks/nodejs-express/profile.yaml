@@ -1,0 +1,162 @@
+# Stack profile: nodejs-express (project override for expat-hunter)
+#
+# Framework default targets Express / Fastify / Koa. This project uses
+# AdonisJS 6, so we override the framework template to reflect the
+# AdonisJS conventions, IoC container, Lucid ORM, VineJS validators,
+# and Japa test runner.
+#
+# Loaded by scripts/orchestrator.py when registry.yaml points here.
+
+name: nodejs-express                # kept for registry compatibility
+alias: adonisjs-6                    # human-readable alias
+version: 1.0
+languages: [typescript]
+min_version: "5.0"                   # TypeScript major
+framework: adonisjs-6
+
+# --- Build & test commands -------------------------------------------------
+test_command: "pnpm --filter @expat-hunter/api test"
+test_coverage_command: "pnpm --filter @expat-hunter/api test -- --coverage"
+build_command: "pnpm --filter @expat-hunter/api build"
+type_check_command: "pnpm --filter @expat-hunter/api exec tsc --noEmit"
+lint_command: "pnpm lint"            # Biome (root)
+format_check_command: "pnpm lint"    # Biome
+migration_command: "pnpm db:migrate"
+migration_rollback_command: "pnpm --filter @expat-hunter/api exec node ace migration:rollback"
+
+# --- Coverage thresholds ---------------------------------------------------
+coverage:
+  line_min: 80
+  branch_min: 70
+  mutation_min: 80                   # stryker on changed services
+
+# --- Forbidden patterns ----------------------------------------------------
+# Migrated from v4 typescript-adonisjs.md §Anti-patterns.
+forbidden_patterns:
+  - regex: ":\\s*any\\b"
+    reason: "no `any` type; use `unknown` + type guard or a proper named type"
+    severity: error
+
+  - regex: "@ts-ignore(?!.*reason:)"
+    reason: "@ts-ignore without a `reason:` explanatory comment hides real type errors"
+    severity: error
+
+  - regex: "console\\.(log|info|warn|error)\\("
+    reason: "use the AdonisJS Logger (pino-based). console.* is not structured and pollutes logs"
+    severity: error
+    exclude:
+      - "apps/api/tests/"
+      - "apps/api/**/*.spec.ts"
+      - "apps/api/**/*.test.ts"
+      - "scripts/"
+      - "bin/"
+
+  - regex: "\\.raw\\([\"'`].*\\$\\{"
+    reason: "raw SQL with template-string interpolation is SQL-injection-prone; use Lucid query builder or .raw() with bindings array"
+    severity: error
+
+  - regex: "process\\.env\\."
+    reason: "use `import env from '#start/env'` (AdonisJS Env module) instead of raw process.env"
+    severity: warning
+    exclude:
+      - "apps/api/start/env.ts"
+      - "apps/api/config/"
+      - "apps/api/tests/"
+
+  - regex: "\\brequire\\("
+    reason: "use ES modules (import ...); AdonisJS 6 is ESM-first"
+    severity: error
+    exclude:
+      - "apps/api/ace.js"             # legacy entry stub
+      - "apps/api/tests/"
+
+  - regex: "fs\\.(readFileSync|writeFileSync|existsSync|unlinkSync)"
+    reason: "synchronous file I/O blocks the event loop; use fs/promises or @adonisjs/drive"
+    severity: error
+
+  - regex: "bcrypt\\b.*rounds\\s*:\\s*(?:[1-9]|1[01])\\b"
+    reason: "bcrypt rounds must be ≥12 for password hashing"
+    severity: error
+
+# --- Architectural rules ---------------------------------------------------
+# Enforced contextually by code-reviewer (G7); documented here.
+architecture:
+  layers:
+    controllers: "thin — validate → call service → return response"
+    services: "business logic; one per feature or entity aggregate"
+    repositories: "optional; data access only, via Lucid"
+    validators: "VineJS schemas — one file per controller route"
+    models: "Lucid models; no business logic"
+  injection: "use @inject() + AdonisJS IoC container"
+  no_business_logic_in:
+    - controllers
+    - models
+    - validators
+
+# --- Security baseline (G1 + G12) ------------------------------------------
+security:
+  input_validation: "VineJS on EVERY route before service call"
+  auth_middleware_required_except:
+    - "/api/auth/register"
+    - "/api/auth/login"
+    - "/api/health"
+  password_hashing: "bcrypt via AdonisJS Hash, rounds ≥12"
+  login_rate_limit: "5 attempts / minute / IP"
+  data_query_scope: "every query filters on auth.user.id — no cross-user leakage"
+  secrets_headers:
+    - "X-Content-Type-Options: nosniff"
+    - "X-Frame-Options: DENY"
+    - "Strict-Transport-Security: max-age=31536000; includeSubDomains"
+  cors_origin: "WEB_URL env var (single origin in production)"
+
+# --- Performance (G10) -----------------------------------------------------
+performance:
+  api_p95_latency_max_ms: 500        # synchronous endpoints
+  list_endpoint_pagination: required # default 20, max 100
+  n_plus_one_avoidance: "use preload() / has() on every list endpoint"
+  background_jobs: "BullMQ for scraping / AI / emailing — never in request cycle"
+  db_pool: { min: 2, max: 20 }
+  regression_threshold_pct: 5
+
+# --- Observability (G11) ---------------------------------------------------
+observability:
+  logger: "AdonisJS Logger (pino, JSON format in production)"
+  log_levels:
+    error: "production incidents"
+    warn: "degraded flows"
+    info: "business events"
+    debug: "dev only"
+  must_log: [request_id, user_id, error_code]
+  must_never_log: [password, token, email_body, pii]
+  min_ratio_per_loc:
+    logs: 0.015                      # ~1 structured log per 65 LOC
+    metrics: 0.005                   # ~1 metric per 200 LOC
+    traces: 0.005
+
+# --- Tools -----------------------------------------------------------------
+tools:
+  required:
+    - biome                          # linter + formatter
+    - tsc                            # type checker
+    - japa                           # AdonisJS native test runner
+    - pnpm
+  recommended:
+    - stryker-mutator                # G2.1
+    - schemathesis                   # G12 DAST-lite from OpenAPI
+    - pg_prove                       # DB assertions when Lucid is insufficient
+  optional:
+    - sonarqube                      # G3 via sonar_check.py
+    - pino-pretty                    # dev log formatting
+
+# --- Smoke boot (G4.1) -----------------------------------------------------
+smoke_boot:
+  strategy: adonisjs_start_healthcheck
+  see: ./smoke-boot.yaml
+
+# --- Database / migrations (G13) -------------------------------------------
+migrations:
+  engine: lucid
+  migrations_dir: apps/api/database/migrations
+  seed_command: "pnpm db:seed"
+  rollback_must_be_reversible: true
+  schema_snapshot_command: "pnpm --filter @expat-hunter/api exec node ace migration:status"

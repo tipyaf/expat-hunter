@@ -1,7 +1,7 @@
 # CLAUDE.md — Rules for Claude Code
 
 ## Context
-This project uses the **ai-spec-driven-generator** framework v4.1.1 (in `framework/`).
+This project uses the **ai-spec-driven-generator** framework v5.0 (in `framework/`).
 You must follow a structured, phase-based process with human validation, persistent memory, and machine-verifiable acceptance criteria.
 
 ## Fundamental Principles
@@ -22,9 +22,9 @@ Use skills to dispatch to the right agent(s). Each skill loads ONLY the agents i
 |-------|-------------|---------------|
 | `/spec` | Start a new project or define a feature | product-owner, ux-ui, architect |
 | `/refine` | Break a feature into actionable stories | refinement, product-owner |
-| `/build` | Implement a refined story | developer, validator |
+| `/build` | Implement a refined story | builder, validator |
 | `/validate` | Verify implementation against story file | validator |
-| `/review` | Review all validated features before PR | reviewer, security, tester |
+| `/review` | Review all validated features before PR | code-reviewer, security, test-author |
 | `/scan` | Scan local changes only (staged + unstaged vs integration branch) | (inline) |
 | `/scan-full` | Full codebase SonarQube analysis with hotspots and trends | (inline) |
 | `/sonar` | SonarQube scan of local changes | (inline) |
@@ -97,17 +97,17 @@ PHASE 2 — CONSTRUCTION (per feature loop)
   For each feature [pending → refined → building → testing → validated]:
 
   /refine  → Refinement  → ✅ Human   → story file written + wireframes (UI)
-  /build   → RED (test-engineer) → GREEN (developer) → 🤖 Auto
-  /validate → Validator   → 🤖 Auto    → 11 quality gates
+  /build   → RED (test-author) → GREEN (developer) → 🤖 Auto
+  /validate → Validator   → 🤖 Auto    → 14 quality gates (G1–G14 adaptive)
     Gate  1: Security (OWASP + stack forbidden patterns + AC-SEC-*)
     Gate  2: Unit Tests (execute TU from stack profile)
-    Gate  3: Code Quality (tool if configured, reviewer fallback — NEVER skipped)
+    Gate  3: Code Quality (tool if configured, code-reviewer fallback — NEVER skipped)
     Gate  4: E2E Code from wireframes (UI only — uses data-testid)
     Gate  5: WCAG + Wireframe conformity (UI only)
     Gate  6: E2E Execution (UI only)
     Gate  7: E2E vs Wireframes validation (UI only)
     Gate  8: AC Validation (every verify: command)
-    Gate  9: Story Review (story-reviewer verifies every AC — mandatory)
+    Gate  9: Story Review (code-reviewer verifies every AC — mandatory)
     Gate 10: Code Review (SOLID/KISS + scope + 0 console errors)
     Gate 11: Final Compilation (re-compile to confirm fixes)
   → ALL GATES PASS: atomic commit + PR/MR → status → validated
@@ -140,10 +140,10 @@ PHASE 5 — RELEASE — ✅ Human
 | 1: Plan | /spec | Architect | Human | `specs/expat-hunter-architecture.md` |
 | 2: Scaffold | /build | Developer | Auto | Project compiles/starts |
 | 2.5: Refine | /refine | Refinement | Human | `specs/stories/[feature].yaml` |
-| 3: RED | /build | Test Engineer | Auto | Failing tests written + reviewed |
+| 3: RED | /build | Test-Author | Auto | Failing tests written + reviewed |
 | 3.1: GREEN | /build | Developer | Auto | Production code makes tests pass + compilation |
-| 3.5: Validate | /validate | Validator | Auto | ALL 11 quality gates PASS |
-| 4: Review | /review | Reviewer+Security+Tester | Auto | Quality + security PASS |
+| 3.5: Validate | /validate | Validator | Auto | ALL 14 quality gates (G1–G14 adaptive) PASS |
+| 4: Review | /review | Code-Reviewer+Security+Test-Author | Auto | Quality + security PASS |
 | 5: Deploy | — | DevOps | Human | Infrastructure decision |
 | 6: Release | — | — | Human | Go/no-go decision |
 
@@ -156,7 +156,7 @@ PHASE 5 — RELEASE — ✅ Human
 | **Story files** | Build contracts with `verify:` commands — persists between sessions |
 | **verify: commands** | Machine-verifiable ACs — the validator executes these literally |
 | **Cycle counter** | Max 3 validation cycles per feature before human escalation |
-| **Implementation manifest** | Scope control — developer declares files before coding, reviewer verifies git diff matches |
+| **Implementation manifest** | Scope control — developer declares files before coding, code-reviewer verifies git diff matches |
 | **Code review hook** | Automated Pass 2 — `stacks/hooks/code_review.py` runs anti-patterns + external checks |
 | **Enforcement scripts** | Quality gates — `scripts/check_*.py` block commits on violations |
 | **Build state (gates)** | Per-feature gate results (validation, code review, security, test quality, scope) persisted in manifest — agents resume from last state between sessions |
@@ -285,10 +285,10 @@ acceptance_criteria:
 | Agent | Recommended model | Rationale |
 |-------|-------------------|-----------|
 | Developer | Opus | Must reason across files, understand data flows, write correct business logic |
-| Tester | Opus | Must understand data flows end-to-end, catch subtle mismatches |
+| Test-Author | Opus | Must understand data flows end-to-end, catch subtle mismatches |
 | Refinement | Opus | Reasons across dependency graphs, splits stories, pre-computes oracle values |
-| Reviewer (Pass 1+3) | Opus | Must understand architecture (SOLID violations) and evaluate correctness |
-| Reviewer (Pass 2) | Automated | `code_review.py` — no model needed |
+| Code-Reviewer (Pass 1+3) | Opus | Must understand architecture (SOLID violations) and evaluate correctness |
+| Code-Reviewer (Pass 2) | Automated | `code_review.py` — no model needed |
 | Validator | Sonnet | Systematic execution of verify: commands |
 | Security | Sonnet (per-feature) / Opus (full audit) | Full audit requires cross-codebase reasoning |
 | Product Owner | Sonnet | Structured spec writing, scoping |
@@ -319,8 +319,8 @@ acceptance_criteria:
 | File | Content | Who must read it |
 |------|---------|-----------------|
 | `rules/agent-conduct.md` | Cross-agent behavior rules (single source of truth) | ALL agents, BEFORE their playbook |
-| `rules/coding-standards.md` | SOLID, CQRS, DRY, YAGNI, readability gates, API design | Developer, reviewer, validator |
-| `rules/test-quality.md` | Oracle computation, coverage audit, test anti-patterns, test intentions | Developer, tester, reviewer, validator |
+| `rules/coding-standards.md` | SOLID, CQRS, DRY, YAGNI, readability gates, API design | Developer, code-reviewer, validator |
+| `rules/test-quality.md` | Oracle computation, coverage audit, test anti-patterns, test intentions | Developer, test-author, code-reviewer, validator |
 
 ## Git branching model (MANDATORY)
 
@@ -399,12 +399,12 @@ Before creating any PR, verify:
 | Refinement | Break features into stories, write story files | Write code, make architecture decisions |
 | Developer | Write code, create files | Self-validate, skip story scope |
 | Validator | Run verify: commands, take screenshots | Modify source code, fix bugs |
-| Tester | Write tests, run suites | Modify feature code |
-| Reviewer | Audit quality, flag issues | Modify files directly |
+| Test-Author | Write tests, run suites | Modify feature code |
+| Code-Reviewer | Audit quality, flag issues | Modify files directly |
 | Security | Audit security, flag vulns | Modify files directly |
 | DevOps | Configure CI/CD, deployment | Modify feature code |
-| Test Engineer | TDD RED phase: write failing tests from spec | Write production code, modify existing tests in GREEN phase |
-| Story Reviewer | Verify ACs against committed code, post PASS/FAIL | Modify files, execute tests |
+| Test-Author | TDD RED phase: write failing tests from spec | Write production code, modify existing tests in GREEN phase |
+| Code-Reviewer | Verify ACs against committed code, post PASS/FAIL | Modify files, execute tests |
 
 ## File locations
 - **Framework agents**: `framework/agents/*.md` (core) + `framework/agents/*.ref.md` (templates)
@@ -422,3 +422,15 @@ Before creating any PR, verify:
 - **UX wireframes**: `_work/ux/wireframes/`
 - **Build files**: `_work/build/[feature-id].yaml`
 - **Application code**: `apps/` and `packages/`
+
+<!-- v5 migration note (2026-04-17) -->
+## v5.0 — Framework changes
+
+- Agents: 18 total (new: test-author, code-reviewer, observability-engineer,
+  performance-engineer, data-migration-engineer, release-manager).
+- Gates: G1-G14 (G9.x for UI, G10 for performance baselines, G13 for data fixtures).
+- Orchestrator: `scripts/orchestrator.py` is the single source of truth.
+- New commands: `/ship`, `/next`, `/status`, `/help`, `/resume`.
+- See `_docs/PIPELINE.md`, `_docs/GUIDE.md`, and `_docs/CHEATSHEET.md`.
+<!-- end v5 migration note -->
+

@@ -1,0 +1,185 @@
+# AC templates for typescript-react stack (Next.js 14 App Router)
+#
+# Injected by /refine when a story targets this stack. Each template
+# produces one AC on the story with its `verify:` command filled in.
+# Templates marked `applies_to:` are only injected when the story's
+# manifest touches at least one matching file glob.
+#
+# Migrated from v4 _work/stacks/typescript-nextjs.md §"Auto-generated AC Templates".
+
+ac_sec:
+  - id: AC-SEC-AUTH-COOKIE
+    applies_to: [page, component, hook, form]
+    text: >
+      Given an authenticated area,
+      when the client reads or writes session state,
+      then the session token lives in an HttpOnly cookie set by the API
+      (never in localStorage / sessionStorage / JS-accessible storage).
+    verify: "grep -rnE \"localStorage\\.(set|get)Item\\(['\\\"]+(token|access_token|refresh_token|auth|session)\" apps/frontend/src && exit 1 || exit 0"
+
+  - id: AC-SEC-XSS-PROTECTION
+    applies_to: [page, component, form]
+    text: >
+      Given any user-generated content rendered in the UI,
+      when the content could contain HTML,
+      then it is rendered via React JSX (auto-escaped), or — if
+      dangerouslySetInnerHTML is strictly required — it is first
+      sanitized with DOMPurify, and a comment on the line explains why.
+    verify: "grep -rn 'dangerouslySetInnerHTML' apps/frontend/src | grep -v 'DOMPurify' | grep -v '// safe:' && exit 1 || exit 0"
+
+  - id: AC-SEC-NO-SENSITIVE-IN-BUNDLE
+    applies_to: [all]
+    text: >
+      Given the frontend bundle,
+      when inspecting it after build,
+      then no tokens, passwords, or API keys are embedded;
+      only NEXT_PUBLIC_* variables (non-sensitive by convention) are exposed.
+    verify: "grep -rnE '(password|secret|api_?key|private_?key)\\s*[:=]\\s*[\\\"\\']' apps/frontend/src && exit 1 || exit 0"
+
+ac_bp:
+  - id: AC-BP-TYPING-EXPLICIT-RETURNS
+    applies_to: [all]
+    text: >
+      Given all functions, hooks, and components in this feature,
+      when reviewing the signatures,
+      then every one has an explicit return type (no inference at the
+      public boundary).
+    verify: "pnpm --filter @expat-hunter/frontend exec tsc --noEmit --strict"
+
+  - id: AC-BP-API-CLIENT-WRAPPER
+    applies_to: [page, component, hook]
+    text: >
+      Given any network call in this feature,
+      when making HTTP requests,
+      then the call goes through lib/api-client.ts (handles auth,
+      errors, base URL) — never a raw fetch().
+    verify: "grep -rn 'fetch(' apps/frontend/src --include='*.ts' --include='*.tsx' | grep -v 'api-client.ts' | grep -v '\\.test\\.' && exit 1 || exit 0"
+
+  - id: AC-BP-I18N-NO-HARDCODED-UI-STRINGS
+    applies_to: [page, component]
+    text: >
+      Given any human-readable text in the UI for this feature,
+      when it could be localized,
+      then it is pulled from the i18n catalog (no hardcoded French or
+      English strings in JSX).
+    verify: "pnpm --filter @expat-hunter/frontend exec ts-node scripts/check-i18n-hardcoded.ts"  # per-project helper
+
+  - id: AC-BP-SERVER-CLIENT-BOUNDARY
+    applies_to: [page, component]
+    text: >
+      Given components in this feature,
+      when a component must run in the browser (forms, drag & drop,
+      modals, realtime),
+      then it declares `'use client'` at the top AND the boundary is
+      kept as low as possible — server components stay server.
+    verify: "grep -rln \"'use client'\" apps/frontend/src/app | wc -l"  # manual cap configured per feature
+
+  - id: AC-BP-NAMED-EXPORTS
+    applies_to: [component, hook]
+    text: >
+      Given reusable components and hooks (NOT Next.js route files),
+      when exporting from a module,
+      then named exports are used (no `export default function`).
+    verify: "grep -rln 'export default function' apps/frontend/src/components apps/frontend/src/hooks && exit 1 || exit 0"
+
+ac_a11y:                                      # G9.5 accessibility
+  - id: AC-A11Y-KEYBOARD-REACHABLE
+    applies_to: [page, component]
+    text: >
+      Given any interactive element added by this feature,
+      when navigating with keyboard only (no mouse),
+      then every action is reachable via Tab / Enter / Space with a
+      visible focus indicator.
+    verify: "pnpm --filter @expat-hunter/e2e test -- --grep 'keyboard-navigation'"
+
+  - id: AC-A11Y-SCREEN-READER
+    applies_to: [page, component]
+    text: >
+      Given the UI added by this feature,
+      when using a screen reader (VoiceOver / NVDA),
+      then all content and state changes are announced via semantic
+      HTML, aria-label, aria-live where relevant.
+    verify: "pnpm --filter @expat-hunter/frontend test -- --run src/**/*.a11y.test.tsx"
+
+  - id: AC-A11Y-CONTRAST
+    applies_to: [page, component]
+    text: >
+      Given all text + background combinations introduced by this feature,
+      when measured,
+      then the contrast ratio is ≥4.5:1 for normal text and ≥3:1 for
+      large text (≥18pt regular / ≥14pt bold) and UI components.
+    verify: "pnpm --filter @expat-hunter/e2e exec playwright test --project=a11y"
+
+ac_ui:                                        # G9.3 / G9.4 UI contract
+  - id: AC-UI-RESPONSIVE
+    applies_to: [page, component]
+    text: >
+      Given the UI for this feature,
+      when viewed on mobile (<768px), tablet (768–1024px), and desktop
+      (>1024px),
+      then the layout adapts per the design spec (no horizontal scroll,
+      readable text, no clipped content).
+    verify: "pnpm --filter @expat-hunter/e2e test -- --grep 'responsive'"
+
+  - id: AC-UI-DARK-MODE
+    applies_to: [page, component]
+    text: >
+      Given the UI added by this feature,
+      when dark mode is active (html.dark),
+      then all new elements use dark-mode Tailwind tokens with proper
+      contrast — no raw hex, no style={{ color: '#...' }}.
+    verify: "grep -rnE '#[0-9a-fA-F]{3,8}' apps/frontend/src --include='*.tsx' --include='*.ts' | grep -vE '^.*(tailwind.config|\\.test\\.)' && exit 1 || exit 0"
+
+  - id: AC-UI-I18N-SWITCHABLE
+    applies_to: [page, component]
+    text: >
+      Given UI text in this feature,
+      when the locale switches between fr and en,
+      then every visible string updates accordingly.
+    verify: "pnpm --filter @expat-hunter/e2e test -- --grep 'locale-switch'"
+
+ac_ux:                                        # UX contracts (forms, empty states)
+  - id: AC-UX-FORM-VALIDATION
+    applies_to: [form]
+    text: >
+      Given a form in this feature,
+      when the user submits with invalid data,
+      then inline error messages appear next to the relevant fields
+      (no global modal for field-level errors).
+    verify: "pnpm --filter @expat-hunter/frontend test -- --run src/**/*form*.test.tsx"
+
+  - id: AC-UX-FORM-LOADING
+    applies_to: [form]
+    text: >
+      Given a form submission in this feature,
+      when the request is in flight,
+      then a loading state is shown AND the submit button is disabled
+      (no double-submit race).
+    verify: "pnpm --filter @expat-hunter/frontend test -- --run src/**/*submit*.test.tsx"
+
+  - id: AC-UX-LIST-EMPTY
+    applies_to: [list, table, kanban]
+    text: >
+      Given a list / table / kanban introduced by this feature,
+      when there is no data to display,
+      then an empty state appears with a clear call-to-action
+      (no raw "no results" text alone).
+    verify: "pnpm --filter @expat-hunter/e2e test -- --grep 'empty-state'"
+
+  - id: AC-UX-LIST-LOADING
+    applies_to: [list, table, kanban]
+    text: >
+      Given a data-dependent view,
+      when data is loading,
+      then skeleton placeholders preserve layout (no content shift
+      when data arrives).
+    verify: "pnpm --filter @expat-hunter/frontend test -- --run src/**/*skeleton*.test.tsx"
+
+  - id: AC-UX-API-ERROR-RETRYABLE
+    applies_to: [page, component, hook]
+    text: >
+      Given a data fetch in this feature,
+      when the API returns an error,
+      then a user-friendly message AND a retry affordance are
+      displayed (no silent failure, no stack trace).
+    verify: "pnpm --filter @expat-hunter/e2e test -- --grep 'error-retry'"
