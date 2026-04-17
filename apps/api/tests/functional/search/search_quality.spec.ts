@@ -1,4 +1,3 @@
-import { TEST_USER_PASSWORD, ensureTestUserPremium } from '#tests/helpers/credentials'
 /**
  * E2E test: Search quality validation.
  *
@@ -10,6 +9,7 @@ import { TEST_USER_PASSWORD, ensureTestUserPremium } from '#tests/helpers/creden
 import db from '@adonisjs/lucid/services/db'
 import type { ApiClient } from '@japa/api-client'
 import { test } from '@japa/runner'
+import { TEST_USER_PASSWORD, ensureTestUserPremium } from '#tests/helpers/credentials'
 
 const AUTH_URL = '/api/auth'
 const SEARCH_URL = '/api/recherche'
@@ -56,7 +56,18 @@ async function cleanupAll() {
   await db.from('users').where('email', testUser.email).delete()
 }
 
+// This suite performs a real end-to-end search pipeline run — it calls Hunter.io
+// for email enrichment and OpenRouter for relevance analysis. It only runs when
+// the external API keys are provided (typically locally, not in CI/functional suite).
+const HAS_EXTERNAL_KEYS = Boolean(process.env.HUNTER_API_KEY && process.env.OPENROUTER_API_KEY)
+
 test.group('Search quality — full pipeline', (group) => {
+  if (!HAS_EXTERNAL_KEYS) {
+    group.tap((t) =>
+      t.skip(true, 'HUNTER_API_KEY + OPENROUTER_API_KEY required for live pipeline run'),
+    )
+  }
+
   group.each.setup(async () => {
     await cleanupAll()
   })
@@ -79,7 +90,10 @@ test.group('Search quality — full pipeline', (group) => {
     assert.isString(searchRunId)
 
     // Poll until completed or failed (max 5 minutes)
-    let data: Record<string, unknown> & { contactsFound: number; status: string } = { contactsFound: 0, status: 'pending' }
+    let data: Record<string, unknown> & { contactsFound: number; status: string } = {
+      contactsFound: 0,
+      status: 'pending',
+    }
     const maxWait = 300_000
     const start = Date.now()
     while (Date.now() - start < maxWait) {
@@ -87,7 +101,9 @@ test.group('Search quality — full pipeline', (group) => {
         .get(`${SEARCH_URL}/${searchRunId}/progress`)
         .header('Authorization', `Bearer ${token}`)
       data = progressRes.body().data
-      if (data.status === 'completed' || data.status === 'failed') break
+      if (data.status === 'completed' || data.status === 'failed') {
+        break
+      }
       await new Promise((r) => setTimeout(r, 2000))
     }
 
@@ -95,21 +111,40 @@ test.group('Search quality — full pipeline', (group) => {
     assert.isAbove(data.contactsFound, 0, 'Should find at least 1 contact')
 
     // Check quality in DB
-    const contacts = await db.from('contacts').select('full_name', 'email', 'source', 'email_source', 'relevance_score')
+    const contacts = await db
+      .from('contacts')
+      .select('full_name', 'email', 'source', 'email_source', 'relevance_score')
     const namedContacts = contacts.filter(
       (c: { full_name: string }) =>
         c.full_name !== 'Hiring Manager' &&
         c.full_name !== 'Contact' &&
         c.full_name !== 'Unknown' &&
-        c.full_name.trim().length > 2
+        c.full_name.trim().length > 2,
     )
     const withEmail = contacts.filter((c: { email: string | null }) => c.email !== null)
-    const hunterContacts = contacts.filter((c: { email_source: string | null }) => c.email_source === 'hunter')
+    const hunterContacts = contacts.filter(
+      (c: { email_source: string | null }) => c.email_source === 'hunter',
+    )
 
     // Quality checks
-    assert.isAbove(namedContacts.length, 0, `Need named contacts. Got: ${contacts.slice(0, 5).map((c: { full_name: string }) => c.full_name).join(', ')}`)
-    assert.isAbove(withEmail.length, 0, `Need contacts with emails. ${contacts.length} total, ${withEmail.length} with email`)
-    assert.isAbove(hunterContacts.length, 0, `Hunter should have found contacts. Sources: ${[...new Set(contacts.map((c: { source: string }) => c.source))].join(', ')}`)
+    assert.isAbove(
+      namedContacts.length,
+      0,
+      `Need named contacts. Got: ${contacts
+        .slice(0, 5)
+        .map((c: { full_name: string }) => c.full_name)
+        .join(', ')}`,
+    )
+    assert.isAbove(
+      withEmail.length,
+      0,
+      `Need contacts with emails. ${contacts.length} total, ${withEmail.length} with email`,
+    )
+    assert.isAbove(
+      hunterContacts.length,
+      0,
+      `Hunter should have found contacts. Sources: ${[...new Set(contacts.map((c: { source: string }) => c.source))].join(', ')}`,
+    )
 
     // API result checks
     assert.isDefined(data.contactsRelevant, 'contactsRelevant should be defined')

@@ -1,0 +1,151 @@
+# Story: sc-1134
+# Epic: Tech Debt — Code Quality & Refactoring (sc-1105)
+# Estimate: M (3 pts)
+# Priority: bug
+# Depends on: none
+
+user_story: |
+  As a developer of ExpatHunter,
+  I want the full functional test suite to pass on the develop branch,
+  so that I can trust test runs as a quality signal and unblock validation of future stories.
+
+context: |
+  9 functional tests are consistently failing on `develop` (confirmed on PR #181/sc-1104 review).
+  These failures are pre-existing and unrelated to recent tech debt PRs. They were observed
+  identical on `develop` and `chore/sc-1104` baselines.
+
+  Failing groups:
+  - `tests/functional/admin/users.spec.ts` — 5 failures (login 401, registration 400, validation 422).
+    Likely cause: test user isn't seeded as admin, OR the spec doesn't do a register→login fallback
+    like `job_offers.spec.ts` does, OR the shared admin credentials helper regressed.
+  - `tests/functional/job_offers/job_offers.spec.ts` — 1 failure (`expected 200 to equal 400`
+    on the "returns 400 without search_id" case). Likely cause: route behaviour drifted
+    (no longer requires search_id, or validator is more permissive than the test expects).
+  - `tests/functional/search/search.spec.ts` — 2 failures (`TypeError: Cannot read properties
+    of undefined (reading 'id')`). Likely cause: `createUser()` helper crashes because the
+    register response is 422 on duplicate, so `response.body().user` is undefined. Needs a
+    register→login fallback or stricter cleanup.
+  - `tests/functional/search/search_quality.spec.ts` — 1 failure (`Should find at least 1 contact`).
+    This test requires the Hunter.io API key and real scraping — it's an integration test that
+    must be skipped when the key isn't set, not run as a regular functional test.
+
+scope:
+  files_to_create: []
+  files_to_modify:
+    - apps/api/tests/functional/admin/users.spec.ts              # Fix admin auth setup (register→login fallback, OR seed admin)
+    - apps/api/tests/functional/job_offers/job_offers.spec.ts    # Align test with current validator behaviour (or fix route)
+    - apps/api/tests/functional/search/search.spec.ts            # Fix createUser() fallback / cleanup race
+    - apps/api/tests/functional/search/search_quality.spec.ts    # Conditional skip when HUNTER_API_KEY unset
+  files_to_read:
+    - apps/api/app/controllers/admin_users_controller.ts         # Confirm admin auth contract
+    - apps/api/app/controllers/job_offers_controller.ts          # Confirm search_id validator
+    - apps/api/app/controllers/search_controller.ts              # Confirm register/login shape
+    - apps/api/tests/helpers/credentials.ts                      # Shared TEST_USER_EMAIL / TEST_USER_PASSWORD / ensureTestUserPremium
+    - apps/api/bin/test.ts                                       # Test DB guard
+
+acceptance_criteria:
+  # --- FUNCTIONAL ---
+  - id: "AC-FUNC-1134-01"
+    type: "FUNC"
+    description: |
+      Given the admin users test suite /
+      When `pnpm test` runs `tests/functional/admin/users.spec.ts` /
+      Then all 5 tests pass (login 200, GET list 200, PATCH to premium/free 200, invalid plan 422, non-admin 403).
+    verify: "cd apps/api && node --import tsx/esm bin/test.ts --files=tests/functional/admin/users.spec.ts 2>&1 | tail -20 | grep -E 'passed|failed'"
+    tier: 2
+
+  - id: "AC-FUNC-1134-02"
+    type: "FUNC"
+    description: |
+      Given the job offers functional test /
+      When `pnpm test` runs `tests/functional/job_offers/job_offers.spec.ts` /
+      Then the "GET /api/job-offers returns 400 without search_id" case passes (plus all other cases in the file).
+    verify: "cd apps/api && node --import tsx/esm bin/test.ts --files=tests/functional/job_offers/job_offers.spec.ts 2>&1 | tail -20 | grep -E 'passed|failed'"
+    tier: 2
+
+  - id: "AC-FUNC-1134-03"
+    type: "FUNC"
+    description: |
+      Given the search functional test /
+      When `pnpm test` runs `tests/functional/search/search.spec.ts` /
+      Then both previously-failing cases (`GET /defaults` with profile + `progress endpoint returns status`) pass — no `TypeError: Cannot read properties of undefined`.
+    verify: "cd apps/api && node --import tsx/esm bin/test.ts --files=tests/functional/search/search.spec.ts 2>&1 | tail -20 | grep -E 'passed|failed'"
+    tier: 2
+
+  - id: "AC-FUNC-1134-04"
+    type: "FUNC"
+    description: |
+      Given `HUNTER_API_KEY` is not set in the environment /
+      When `pnpm test` runs `tests/functional/search/search_quality.spec.ts` /
+      Then the suite is skipped gracefully (via `test.skip` condition) and does not contribute a failure.
+    verify: "grep -E 'HUNTER_API_KEY|process\\.env|test\\.skip|group\\.skip' apps/api/tests/functional/search/search_quality.spec.ts"
+    tier: 1
+
+  - id: "AC-FUNC-1134-05"
+    type: "FUNC"
+    description: |
+      Given the full functional test suite /
+      When `pnpm test` runs with `NODE_ENV=test` and a clean test DB /
+      Then the final summary reports 0 failed tests across all functional specs.
+    verify: "cd apps/api && node --import tsx/esm bin/test.ts 2>&1 | tail -5 | grep -E 'failed: 0|passed'"
+    tier: 2
+
+  # --- SECURITY ---
+  - id: "AC-SEC-1134-01"
+    type: "SEC"
+    description: |
+      No commit on this story bypasses hooks — `git log --format=%B` shows no `--no-verify` markers
+      and no weakened assertions (removing expectations to make tests "pass").
+    verify: "git log origin/develop..HEAD --format='%H %s' 2>/dev/null | head -20; ! git log origin/develop..HEAD --format='%B' 2>/dev/null | grep -iE 'no-verify|skip.?hook'"
+    tier: 1
+
+  # --- BEST PRACTICES ---
+  - id: "AC-BP-1134-01"
+    type: "BP"
+    description: "Backend compiles without TypeScript errors (0 errors)."
+    verify: "cd apps/api && npx tsc --noEmit 2>&1 | tail -1"
+    tier: 1
+
+  - id: "AC-BP-1134-02"
+    type: "BP"
+    description: |
+      No `test.skip()` / `test.group.skip()` is added without a documented env-gated condition
+      (e.g. `if (!process.env.HUNTER_API_KEY)`). Blanket skips are banned.
+    verify: "! git diff origin/develop..HEAD -- 'apps/api/tests/functional/**/*.spec.ts' 2>/dev/null | grep -E '^\\+.*\\b(test|group)\\.skip\\(' | grep -vE 'process\\.env|HUNTER_API_KEY|import\\.meta\\.env'"
+    tier: 1
+
+  - id: "AC-BP-1134-03"
+    type: "BP"
+    description: |
+      Zero unhandled runtime crashes during the test run — the test output contains
+      no `UnhandledPromiseRejection` or `uncaughtException` banners
+      (Japa assertion stack traces are expected and excluded from this check).
+    verify: "cd apps/api && node --import tsx/esm bin/test.ts 2>&1 | tee /tmp/sc-1134-test.log > /dev/null; ! grep -E 'UnhandledPromiseRejection|uncaughtException|unhandledRejection' /tmp/sc-1134-test.log"
+    tier: 2
+
+  - id: "AC-BP-1134-DONE"
+    type: "BP"
+    description: |
+      PR is merged into `develop` — story closure gate. After this passes, the validator
+      moves sc-1134 to Done in Shortcut.
+    verify: "gh pr list --state merged --search 'sc-1134' --json number --limit 1 | grep -q number"
+    tier: 1
+
+test_intentions: []
+
+edge_cases:
+  - description: "TEST_USER_EMAIL already exists in the test DB between runs"
+    handling: "Tests use register→login fallback (same pattern as job_offers.spec.ts) so a pre-existing user isn't a fatal error."
+  - description: "HUNTER_API_KEY set in local dev but not in CI"
+    handling: "search_quality.spec.ts condition evaluates `process.env.HUNTER_API_KEY` and skips in CI."
+  - description: "`GET /api/job-offers` route was intentionally changed to not require search_id"
+    handling: "Investigate the controller before modifying the test — if the behaviour is intentional, update the test expectation; if it was a regression, fix the controller and keep the test."
+  - description: "Admin test user missing isAdmin=true flag in the test DB"
+    handling: "Ensure `ensureTestUserPremium` helper (or equivalent) also promotes the user to admin, OR the spec seeds it via a setup step."
+
+dependencies:
+  - "apps/api/tests/helpers/credentials.ts — TEST_USER_EMAIL / TEST_USER_PASSWORD / ensureTestUserPremium"
+  - "Test DB (expat_hunter_test) up via docker-compose"
+  - "`pnpm test` green on develop (current failing baseline)"
+
+ux_ref: null  # Backend-only — no UI changes, no interactions block needed.
