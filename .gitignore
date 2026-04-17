@@ -55,3 +55,9 @@ test-results/
 
 # Validation screenshots (temporary artifacts)
 /*.png
+
+# SDD v5 migration backup (local only — remove once migration verified)
+_backup_v4/
+
+# Claude Code per-dev local settings
+.claude/settings.local.json
